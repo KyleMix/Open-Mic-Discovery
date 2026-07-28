@@ -12,13 +12,10 @@ import { disciplineAccents, fonts, palette } from '@/theme';
 export function LogoMark({ size = 64, color = palette.text }: { size?: number; color?: string }) {
   const stroke = size / 16;
   return (
-    <Svg
-      width={size * 1.5}
-      height={size}
-      viewBox="0 0 96 64"
-      fill="none"
-      accessibilityElementsHidden
-    >
+    // Decorative; the Logo lockup carries the accessibility label. No
+    // accessibility props on Svg itself: react-native-svg's web renderer
+    // passes unknown props straight to the DOM.
+    <Svg width={size * 1.5} height={size} viewBox="0 0 96 64" fill="none">
       {/* Teardrop mic body */}
       <Path
         d="M30 6 C41 6 47 15 47 25 C47 35 40 43 30 50 C20 43 13 35 13 25 C13 15 19 6 30 6 Z"
