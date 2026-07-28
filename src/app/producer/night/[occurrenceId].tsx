@@ -9,6 +9,7 @@ import { useProStatus } from '@/features/pro/use-pro';
 import { ReportModal } from '@/features/safety/components/report-modal';
 import {
   useDrawLottery,
+  useMarkOnDeck,
   useRoster,
   useSetSignupStatus,
   useSetSlotOrder,
@@ -30,6 +31,7 @@ export default function NightScreen() {
   const draw = useDrawLottery();
   const reorder = useSetSlotOrder();
   const setStatus = useSetSignupStatus();
+  const onDeck = useMarkOnDeck();
 
   // Visible randomization: shuffle names on screen while the server draws.
   const [shuffling, setShuffling] = useState<RosterRow[] | null>(null);
@@ -175,10 +177,22 @@ export default function NightScreen() {
             <Text style={styles.slot}>{row.slot_position ?? '·'}</Text>
             <View style={styles.rowBody}>
               <Text style={styles.name}>{row.display_name ?? row.handle ?? 'Performer'}</Text>
-              <Text style={styles.meta}>{row.status}</Text>
+              <Text style={row.on_deck_at ? styles.onDeckMeta : styles.meta}>
+                {row.on_deck_at ? 'On deck' : row.status}
+              </Text>
             </View>
             {row.status === 'confirmed' || row.status === 'drawn' ? (
               <View style={styles.actions}>
+                <IconAction
+                  label={
+                    row.on_deck_at
+                      ? `Take ${row.display_name ?? 'performer'} off deck`
+                      : `Put ${row.display_name ?? 'performer'} on deck and notify them`
+                  }
+                  icon={row.on_deck_at ? 'megaphone' : 'megaphone-outline'}
+                  color={row.on_deck_at ? palette.warning : palette.text}
+                  onPress={() => onDeck.mutate({ signupId: row.id!, onDeck: !row.on_deck_at })}
+                />
                 <IconAction label="Move up" icon="chevron-up" onPress={() => move(row, -1)} />
                 <IconAction label="Move down" icon="chevron-down" onPress={() => move(row, 1)} />
                 <IconAction
@@ -226,6 +240,11 @@ export default function NightScreen() {
       {setStatus.isError ? (
         <ErrorText>
           {setStatus.error instanceof Error ? setStatus.error.message : 'Could not update.'}
+        </ErrorText>
+      ) : null}
+      {onDeck.isError ? (
+        <ErrorText>
+          {onDeck.error instanceof Error ? onDeck.error.message : 'Could not update on deck.'}
         </ErrorText>
       ) : null}
       {reporting?.performer_id ? (
@@ -321,6 +340,11 @@ const styles = StyleSheet.create({
   },
   meta: {
     color: palette.textSecondary,
+    fontSize: type.caption.fontSize,
+  },
+  onDeckMeta: {
+    color: palette.warning,
+    fontFamily: fonts.medium,
     fontSize: type.caption.fontSize,
   },
   actions: {

@@ -150,6 +150,23 @@ export function useSetSlotOrder() {
   });
 }
 
+/** Producer-only: flag the next performer as on deck (server-enforced). */
+export function useMarkOnDeck() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ signupId, onDeck }: { signupId: string; onDeck: boolean }) => {
+      const { error } = await getSupabase().rpc('mark_on_deck', {
+        p_signup_id: signupId,
+        p_on_deck: onDeck,
+      });
+      if (error) {
+        throw new Error(error.message);
+      }
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['signup'] }),
+  });
+}
+
 export function useSetSignupStatus() {
   const queryClient = useQueryClient();
   return useMutation({

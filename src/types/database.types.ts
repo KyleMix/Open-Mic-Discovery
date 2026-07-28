@@ -446,6 +446,7 @@ export type Database = {
           last_confirmed_by: string | null
           moderation_status: Database["public"]["Enums"]["moderation_status"]
           owner_id: string | null
+          poster_url: string | null
           rrule: string
           set_length_minutes: number | null
           signup_closes: string
@@ -474,6 +475,7 @@ export type Database = {
           last_confirmed_by?: string | null
           moderation_status?: Database["public"]["Enums"]["moderation_status"]
           owner_id?: string | null
+          poster_url?: string | null
           rrule: string
           set_length_minutes?: number | null
           signup_closes?: string
@@ -502,6 +504,7 @@ export type Database = {
           last_confirmed_by?: string | null
           moderation_status?: Database["public"]["Enums"]["moderation_status"]
           owner_id?: string | null
+          poster_url?: string | null
           rrule?: string
           set_length_minutes?: number | null
           signup_closes?: string
@@ -913,6 +916,7 @@ export type Database = {
           created_at: string
           id: string
           occurrence_id: string
+          on_deck_at: string | null
           performer_id: string
           slot_position: number | null
           status: Database["public"]["Enums"]["signup_status"]
@@ -922,6 +926,7 @@ export type Database = {
           created_at?: string
           id?: string
           occurrence_id: string
+          on_deck_at?: string | null
           performer_id: string
           slot_position?: number | null
           status?: Database["public"]["Enums"]["signup_status"]
@@ -931,6 +936,7 @@ export type Database = {
           created_at?: string
           id?: string
           occurrence_id?: string
+          on_deck_at?: string | null
           performer_id?: string
           slot_position?: number | null
           status?: Database["public"]["Enums"]["signup_status"]
@@ -1259,6 +1265,7 @@ export type Database = {
           handle: string | null
           id: string | null
           occurrence_id: string | null
+          on_deck_at: string | null
           performer_id: string | null
           slot_position: number | null
           status: Database["public"]["Enums"]["signup_status"] | null
@@ -1512,6 +1519,7 @@ export type Database = {
           created_at: string
           id: string
           occurrence_id: string
+          on_deck_at: string | null
           performer_id: string
           slot_position: number | null
           status: Database["public"]["Enums"]["signup_status"]
@@ -1669,6 +1677,10 @@ export type Database = {
       isnt_empty: { Args: { "": string }; Returns: string }
       lives_ok: { Args: { "": string }; Returns: string }
       longtransactionsenabled: { Args: never; Returns: boolean }
+      mark_on_deck: {
+        Args: { p_on_deck?: boolean; p_signup_id: string }
+        Returns: undefined
+      }
       mics_near: {
         Args: {
           p_days?: number[]

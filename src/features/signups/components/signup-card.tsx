@@ -69,6 +69,9 @@ export function SignupCard({
   } else if (mySignup.data) {
     content = (
       <>
+        {mySignup.data.on_deck_at ? (
+          <Text style={styles.onDeck}>You are on deck. Get ready, you are up soon!</Text>
+        ) : null}
         <Text style={styles.status}>
           {STATUS_LABELS[mySignup.data.status]}
           {mySignup.data.slot_position != null ? ` · Slot ${mySignup.data.slot_position}` : ''}
@@ -143,6 +146,11 @@ const styles = StyleSheet.create({
   },
   status: {
     color: palette.success,
+    fontFamily: fonts.semibold,
+    fontSize: type.heading.fontSize,
+  },
+  onDeck: {
+    color: palette.warning,
     fontFamily: fonts.semibold,
     fontSize: type.heading.fontSize,
   },
