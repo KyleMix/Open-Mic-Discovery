@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
 
 import { Glyph, disciplineGlyphs } from '@/components/glyph';
 import { Body, Button, ErrorText, Field } from '@/components/ui';
 import { describeRecurrence } from '@/features/discovery/recurrence';
-import { DEFAULT_CENTER } from '@/features/discovery/location';
 import { SIGNUP_METHOD_LABELS } from '@/features/discovery/components/mic-card';
+import { PinPicker } from '@/features/producer/components/pin-picker';
 import {
   buildRrule,
   computeAnchorDate,
@@ -168,7 +167,7 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
           return;
         }
         if (!pin) {
-          setFormError('Drop a pin on the map so performers can find the venue.');
+          setFormError('Set the venue location so performers can find it.');
           return;
         }
       }
@@ -472,27 +471,8 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
                   />
                 </View>
               </View>
-              <Body>Tap the map to drop a pin on the venue.</Body>
-              <View style={styles.mapBox}>
-                <MapView
-                  style={StyleSheet.absoluteFill}
-                  initialRegion={{
-                    latitude: DEFAULT_CENTER.lat,
-                    longitude: DEFAULT_CENTER.lng,
-                    latitudeDelta: 0.2,
-                    longitudeDelta: 0.2,
-                  }}
-                  onPress={(e) =>
-                    setPin({
-                      lat: e.nativeEvent.coordinate.latitude,
-                      lng: e.nativeEvent.coordinate.longitude,
-                    })
-                  }
-                  accessibilityLabel="Map for placing the venue pin"
-                >
-                  {pin ? <Marker coordinate={{ latitude: pin.lat, longitude: pin.lng }} /> : null}
-                </MapView>
-              </View>
+              <Body>Place the venue so performers can find it.</Body>
+              <PinPicker pin={pin} onChange={setPin} />
               <Button
                 label="Search existing venues instead"
                 kind="secondary"
@@ -611,12 +591,5 @@ const styles = StyleSheet.create({
   venueMeta: {
     color: palette.textSecondary,
     fontSize: type.caption.fontSize,
-  },
-  mapBox: {
-    borderColor: palette.border,
-    borderRadius: 12,
-    borderWidth: 1,
-    height: 220,
-    overflow: 'hidden',
   },
 });
