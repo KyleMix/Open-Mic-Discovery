@@ -1,25 +1,48 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Body, Button, ErrorText, LoadingView } from '@/components/ui';
+import { useOwnProfile, usePerformerDisciplines } from '@/features/auth/queries';
+import { useSession } from '@/features/auth/session';
 import { FilterBar } from '@/features/discovery/components/filter-bar';
 import { MicCard, formatNextDate } from '@/features/discovery/components/mic-card';
 import { MicMap } from '@/features/discovery/components/mic-map';
 import { radiusLabel } from '@/features/discovery/distance';
 import { DEFAULT_CENTER, requestForegroundLocation } from '@/features/discovery/location';
+import { sortSoonestNearest } from '@/features/discovery/order';
 import { useNearbyMics, useSearchMics } from '@/features/discovery/queries';
 import { useFiltersStore } from '@/stores/filters';
-import { fonts, minTouchTarget, palette, spacing, type } from '@/theme';
+import { fonts, minTouchTarget, palette, spacing, type, type Discipline } from '@/theme';
 
 export default function DiscoverScreen() {
   const router = useRouter();
   const filters = useFiltersStore();
   const view = useFiltersStore((s) => s.view);
   const setView = useFiltersStore((s) => s.setView);
+  const seedDisciplines = useFiltersStore((s) => s.seedDisciplines);
 
-  const [center, setCenter] = useState(DEFAULT_CENTER);
+  const { session } = useSession();
+  const profile = useOwnProfile(session?.user.id);
+  const performerDisciplines = usePerformerDisciplines(session?.user.id);
+
+  // Home base: the private home area from the profile. A tap on the locate
+  // button overrides it with the device position for this session.
+  const [manualCenter, setManualCenter] = useState<{ lat: number; lng: number } | null>(null);
+  const profileCenter =
+    profile.data?.home_lat != null && profile.data?.home_lng != null
+      ? { lat: profile.data.home_lat, lng: profile.data.home_lng }
+      : null;
+  const center = manualCenter ?? profileCenter ?? DEFAULT_CENTER;
+
+  // First open defaults the discipline chips to what this performer does.
+  useEffect(() => {
+    if (performerDisciplines.data) {
+      seedDisciplines(performerDisciplines.data as Discipline[]);
+    }
+  }, [performerDisciplines.data, seedDisciplines]);
+
   const [locating, setLocating] = useState(false);
   const [locationNote, setLocationNote] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -27,6 +50,9 @@ export default function DiscoverScreen() {
   const nearby = useNearbyMics(filters, center);
   const searchResults = useSearchMics(search);
   const searching = search.trim().length >= 2;
+
+  // The list leads with what is happening soonest, closest first.
+  const listData = useMemo(() => sortSoonestNearest(nearby.data ?? []), [nearby.data]);
 
   async function locateMe() {
     // In-context explanation lives right on the button and note below;
@@ -36,10 +62,10 @@ export default function DiscoverScreen() {
     const result = await requestForegroundLocation();
     setLocating(false);
     if (result.status === 'granted') {
-      setCenter({ lat: result.lat, lng: result.lng });
+      setManualCenter({ lat: result.lat, lng: result.lng });
     } else if (result.status === 'denied') {
       setLocationNote(
-        'Location is off. Showing Seattle. Enable location in Settings to search near you.',
+        'Location is off. Showing your home area instead. Enable location in Settings to search right where you are.',
       );
     } else {
       setLocationNote('Could not get your location. Try again.');
@@ -113,7 +139,7 @@ export default function DiscoverScreen() {
             </View>
           ) : (
             <FlatList
-              data={nearby.data}
+              data={listData}
               keyExtractor={(mic) => mic.series_id}
               renderItem={({ item }) => (
                 <MicCard mic={item} onPress={() => openMic(item.series_id)} />

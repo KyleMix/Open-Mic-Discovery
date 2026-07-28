@@ -6,6 +6,10 @@ export type ProfilePatch = {
   display_name: string;
   bio: string | null;
   home_city: string | null;
+  home_region: string | null;
+  home_postal_code: string | null;
+  home_lat: number | null;
+  home_lng: number | null;
   avatar_url: string | null;
   link_instagram: string | null;
   link_tiktok: string | null;

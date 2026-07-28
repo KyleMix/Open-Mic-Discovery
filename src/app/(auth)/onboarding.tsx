@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { completeOnboarding } from '@/features/auth/api';
 import { useSession } from '@/features/auth/session';
@@ -10,6 +10,8 @@ import {
   validateHandle,
   validateRoles,
 } from '@/features/auth/validation';
+import { geocodeHomeArea } from '@/features/profile/geocode';
+import { homeAreaError, homeAreaQuery, normalizeHomeArea } from '@/features/profile/home-area';
 import { useOnboardingStore } from '@/stores/onboarding';
 import { disciplineGlyphs, Glyph } from '@/components/glyph';
 import { Body, Button, ErrorText, Field, Screen, Title, ToggleRow } from '@/components/ui';
@@ -26,6 +28,8 @@ export default function OnboardingScreen() {
   const [handle, setHandle] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [homeCity, setHomeCity] = useState('');
+  const [homeRegion, setHomeRegion] = useState('');
+  const [homeZip, setHomeZip] = useState('');
   const [birthYear, setBirthYear] = useState('');
   const [isPerformer, setIsPerformer] = useState(false);
   const [isProducer, setIsProducer] = useState(false);
@@ -41,9 +45,11 @@ export default function OnboardingScreen() {
   };
 
   async function submit() {
+    const area = normalizeHomeArea({ city: homeCity, region: homeRegion, postalCode: homeZip });
     const nextErrors = {
       handle: validateHandle(handle),
       displayName: validateDisplayName(displayName),
+      homeArea: homeAreaError(area),
       birthYear: validateBirthYear(birthYear, new Date()),
       roles: validateRoles(isPerformer, isProducer),
     };
@@ -58,11 +64,18 @@ export default function OnboardingScreen() {
     setBusy(true);
     setError(null);
     try {
+      // Best effort on device; discovery falls back to its default center
+      // when the platform cannot geocode (web, odd inputs).
+      const coords = await geocodeHomeArea(homeAreaQuery(area));
       await completeOnboarding({
         userId: session.user.id,
         handle,
         displayName: displayName.trim(),
-        homeCity: homeCity.trim() || null,
+        homeCity: area.city || null,
+        homeRegion: area.region || null,
+        homePostalCode: area.postalCode || null,
+        homeLat: coords?.lat ?? null,
+        homeLng: coords?.lng ?? null,
         birthYear: Number(birthYear),
         isPerformer,
         isProducer,
@@ -132,12 +145,32 @@ export default function OnboardingScreen() {
           onChangeText={setDisplayName}
           error={errors.displayName}
         />
+        <Body>
+          Where is home? We use this only to show mics near you. It is never shown on your
+          profile or to anyone else.
+        </Body>
+        <View style={styles.areaRow}>
+          <View style={styles.areaCity}>
+            <Field label="City" value={homeCity} onChangeText={setHomeCity} placeholder="Seattle" />
+          </View>
+          <View style={styles.areaRegion}>
+            <Field
+              label="State"
+              autoCapitalize="characters"
+              value={homeRegion}
+              onChangeText={setHomeRegion}
+              placeholder="WA"
+            />
+          </View>
+        </View>
         <Field
-          label="Home city (optional)"
-          value={homeCity}
-          onChangeText={setHomeCity}
-          placeholder="Seattle"
+          label="Or ZIP code"
+          inputMode="numeric"
+          value={homeZip}
+          onChangeText={setHomeZip}
+          placeholder="98101"
         />
+        {errors.homeArea ? <ErrorText>{errors.homeArea}</ErrorText> : null}
         <Field
           label="Birth year"
           inputMode="numeric"
@@ -170,5 +203,15 @@ const styles = StyleSheet.create({
   scroll: {
     gap: spacing.md,
     paddingBottom: spacing.xxl,
+  },
+  areaRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  areaCity: {
+    flex: 2,
+  },
+  areaRegion: {
+    flex: 1,
   },
 });

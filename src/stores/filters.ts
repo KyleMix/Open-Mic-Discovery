@@ -37,7 +37,9 @@ export const DEFAULT_FILTERS: DiscoveryFilters = {
 
 type FiltersState = DiscoveryFilters & {
   view: 'map' | 'list';
+  disciplinesSeeded: boolean;
   setView: (view: 'map' | 'list') => void;
+  seedDisciplines: (ds: Discipline[]) => void;
   toggleDiscipline: (d: Discipline) => void;
   selectDiscipline: (d: Discipline | null) => void;
   toggleDay: (day: number) => void;
@@ -56,8 +58,17 @@ function toggle<T>(list: T[], item: T): T[] {
 /** Client-only UI state; the server data it selects lives in TanStack Query. */
 export const useFiltersStore = create<FiltersState>((set) => ({
   ...DEFAULT_FILTERS,
-  view: 'map',
+  view: 'list',
+  disciplinesSeeded: false,
   setView: (view) => set({ view }),
+  // One-time default from the performer's own disciplines: what you do is
+  // what you see first. Never overrides a selection the person already made.
+  seedDisciplines: (ds) =>
+    set((s) =>
+      s.disciplinesSeeded || s.disciplines.length > 0
+        ? { disciplinesSeeded: true }
+        : { disciplinesSeeded: true, disciplines: ds },
+    ),
   toggleDiscipline: (d) => set((s) => ({ disciplines: toggle(s.disciplines, d) })),
   selectDiscipline: (d) => set({ disciplines: d === null ? [] : [d] }),
   toggleDay: (day) => set((s) => ({ days: toggle(s.days, day) })),

@@ -50,19 +50,24 @@ select gen_random_uuid(), u.id, u.id::text, 'email',
 from auth.users u
 where u.email like '%@demo.openmic.local' or u.email = 'kylewmixon@gmail.com';
 
-insert into profiles (id, handle, display_name, bio, home_city, birth_year,
-                      is_performer, is_producer, is_admin, eula_version, moderation_status)
+insert into profiles (id, handle, display_name, bio, home_city, home_region, home_lat, home_lng,
+                      birth_year, is_performer, is_producer, is_admin, eula_version, moderation_status)
 values
   ('00000000-0000-4000-a000-000000000001', 'demo_performer', 'Demi Performer',
-   'Acoustic sets and the occasional poem.', 'Seattle', 1994, true, false, false, '1.0', 'approved'),
+   'Acoustic sets and the occasional poem.', 'Seattle', 'WA', 47.6062, -122.3321,
+   1994, true, false, false, '1.0', 'approved'),
   ('00000000-0000-4000-a000-000000000002', 'demo_producer', 'Pat Producer',
-   'I run rooms around Capitol Hill.', 'Seattle', 1987, false, true, false, '1.0', 'approved'),
+   'I run rooms around Capitol Hill.', 'Seattle', 'WA', 47.6062, -122.3321,
+   1987, false, true, false, '1.0', 'approved'),
   ('00000000-0000-4000-a000-000000000003', 'demo_dual', 'Dana Dual',
-   'Comic who also hosts a weekly.', 'Portland', 1991, true, true, false, '1.0', 'approved'),
+   'Comic who also hosts a weekly.', 'Portland', 'OR', 45.5152, -122.6784,
+   1991, true, true, false, '1.0', 'approved'),
   ('00000000-0000-4000-a000-000000000004', 'demo_admin', 'Alex Admin',
-   'Keeping listings fresh.', 'Seattle', 1985, false, false, true, '1.0', 'approved'),
+   'Keeping listings fresh.', 'Seattle', 'WA', 47.6062, -122.3321,
+   1985, false, false, true, '1.0', 'approved'),
   ('00000000-0000-4000-a000-000000000005', 'kyle', 'Kyle',
-   'Building Open Mic Finder.', 'Seattle', 1990, true, true, true, '1.0', 'approved');
+   'Building Open Mic Finder.', 'Seattle', 'WA', 47.6062, -122.3321,
+   1990, true, true, true, '1.0', 'approved');
 
 -- Social links on a couple of demo profiles so the profile screens have
 -- something to render.

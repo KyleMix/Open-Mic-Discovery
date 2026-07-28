@@ -24,9 +24,12 @@ values
 insert into auth.users (id, email) values
   ('00000000-0000-4000-a000-000000000011', 'x1@t.local'),
   ('00000000-0000-4000-a000-000000000012', 'x2@t.local');
-insert into profiles (id, handle, display_name, is_performer, eula_version, moderation_status) values
-  ('00000000-0000-4000-a000-000000000011', 'perf_two', 'Perf Two', true, '1.0', 'approved'),
-  ('00000000-0000-4000-a000-000000000012', 'perf_three', 'Perf Three', true, '1.0', 'approved');
+insert into profiles (id, handle, display_name, home_city, home_region,
+                      is_performer, eula_version, moderation_status) values
+  ('00000000-0000-4000-a000-000000000011', 'perf_two', 'Perf Two', 'Seattle', 'WA',
+   true, '1.0', 'approved'),
+  ('00000000-0000-4000-a000-000000000012', 'perf_three', 'Perf Three', 'Seattle', 'WA',
+   true, '1.0', 'approved');
 
 create temp table fc_occ as
   select id from mic_occurrences

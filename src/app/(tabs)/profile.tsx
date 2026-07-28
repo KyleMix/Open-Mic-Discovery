@@ -6,6 +6,7 @@ import { signOut } from '@/features/auth/api';
 import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
 import { AvatarCircle } from '@/features/profile/avatar-circle';
+import { homeAreaLabel } from '@/features/profile/home-area';
 import { buildSocialLinks } from '@/features/profile/social';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { fonts, minTouchTarget, palette, spacing, type } from '@/theme';
@@ -53,8 +54,12 @@ export default function ProfileScreen() {
         {p.is_performer ? <Text style={styles.roleChip}>Performer</Text> : null}
         {p.is_producer ? <Text style={styles.roleChip}>Producer</Text> : null}
       </View>
-      {p.home_city ? <Body>{p.home_city}</Body> : null}
       {p.bio ? <Body>{p.bio}</Body> : null}
+      {homeAreaLabel(p) ? (
+        <Text style={styles.privateNote}>
+          Home area: {homeAreaLabel(p)} (only you can see this)
+        </Text>
+      ) : null}
       {links.length > 0 ? (
         <View style={styles.linkRow}>
           {links.map((link) => (
@@ -139,6 +144,10 @@ const styles = StyleSheet.create({
   linkChipLabel: {
     color: palette.text,
     fontFamily: fonts.medium,
+    fontSize: type.caption.fontSize,
+  },
+  privateNote: {
+    color: palette.textSecondary,
     fontSize: type.caption.fontSize,
   },
 });

@@ -85,6 +85,10 @@ export type OnboardingInput = {
   handle: string;
   displayName: string;
   homeCity: string | null;
+  homeRegion: string | null;
+  homePostalCode: string | null;
+  homeLat: number | null;
+  homeLng: number | null;
   birthYear: number;
   isPerformer: boolean;
   isProducer: boolean;
@@ -95,6 +99,8 @@ export type OnboardingInput = {
 /**
  * Creates the profile and role rows in one pass. The profile insert carries
  * the accepted EULA version; the server stamps the acceptance timestamp.
+ * The home area (city+state or ZIP, geocoded on device when possible) is
+ * required by a database constraint and stays private to the owner.
  */
 export async function completeOnboarding(input: OnboardingInput): Promise<void> {
   const supabase = getSupabase();
@@ -103,6 +109,10 @@ export async function completeOnboarding(input: OnboardingInput): Promise<void> 
     handle: input.handle,
     display_name: input.displayName,
     home_city: input.homeCity,
+    home_region: input.homeRegion,
+    home_postal_code: input.homePostalCode,
+    home_lat: input.homeLat,
+    home_lng: input.homeLng,
     birth_year: input.birthYear,
     is_performer: input.isPerformer,
     is_producer: input.isProducer,

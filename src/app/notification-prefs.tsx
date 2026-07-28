@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, Text } from 'react-native';
 
 import { Body, Button, ErrorText, LoadingView, ToggleRow } from '@/components/ui';
+import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
 import { requestForegroundLocation } from '@/features/discovery/location';
 import { useUpdatePrefs } from '@/features/notifications/queries';
@@ -13,6 +14,7 @@ import { fonts, palette, spacing, type } from '@/theme';
 /** Granular notification opt-outs. Everything here defaults conservative. */
 export default function NotificationPrefsScreen() {
   const { session } = useSession();
+  const profile = useOwnProfile(session?.user.id);
   const update = useUpdatePrefs();
   const [locationNote, setLocationNote] = useState<string | null>(null);
   const prefs = useQuery({
@@ -58,16 +60,22 @@ export default function NotificationPrefsScreen() {
 
   async function enableNearby() {
     setLocationNote(null);
+    // The profile's home area already carries coordinates for most people;
+    // only fall back to a one-time device location when it does not.
+    if (profile.data?.home_lat != null && profile.data?.home_lng != null) {
+      set({ new_mic_nearby: true });
+      return;
+    }
     const result = await requestForegroundLocation();
     if (result.status !== 'granted') {
       setLocationNote(
-        'Nearby alerts need a one-time location to know what "near you" means. Allow location and try again.',
+        'Nearby alerts need to know your home area. Allow location once, or set your city in Edit profile, then try again.',
       );
       return;
     }
     const { error } = await getSupabase()
       .from('profiles')
-      .update({ home_location: `POINT(${result.lng} ${result.lat})` })
+      .update({ home_lat: result.lat, home_lng: result.lng })
       .eq('id', session!.user.id);
     if (error) {
       setLocationNote('Could not save your home area. Try again.');
@@ -100,7 +108,7 @@ export default function NotificationPrefsScreen() {
       />
       <ToggleRow
         label="New mics near you"
-        description="When a new mic appears within your chosen radius. Turning this on saves your current location once as your home area; it is never tracked."
+        description="When a new mic appears near your home area (from your profile). Your location is never tracked."
         value={p.new_mic_nearby}
         onToggle={(v) => {
           if (v) {

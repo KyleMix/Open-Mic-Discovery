@@ -66,7 +66,6 @@ export function FilterBar() {
   const todayIso = isoWeekday(new Date());
   const quickPick = dayQuickPick(filters.days, todayIso);
   const moreCount = sheetFilterCount(filters, todayIso);
-  const selected = filters.disciplines.length === 1 ? filters.disciplines[0] : null;
 
   return (
     <View style={styles.wrap}>
@@ -78,25 +77,28 @@ export function FilterBar() {
       >
         <Chip
           label="All"
-          active={selected === null && filters.disciplines.length === 0}
+          active={filters.disciplines.length === 0}
           onPress={() => filters.selectDiscipline(null)}
         />
-        {DISCIPLINES.map((d) => (
-          <Chip
-            key={d}
-            label={DISCIPLINE_LABELS[d]}
-            active={selected === d}
-            activeColor={disciplineAccents[d]}
-            onPress={() => filters.selectDiscipline(selected === d ? null : d)}
-            icon={
-              <Glyph
-                name={disciplineGlyphs[d]}
-                size={16}
-                color={selected === d ? disciplineAccents[d] : palette.textSecondary}
-              />
-            }
-          />
-        ))}
+        {DISCIPLINES.map((d) => {
+          const active = filters.disciplines.includes(d);
+          return (
+            <Chip
+              key={d}
+              label={DISCIPLINE_LABELS[d]}
+              active={active}
+              activeColor={disciplineAccents[d]}
+              onPress={() => filters.toggleDiscipline(d)}
+              icon={
+                <Glyph
+                  name={disciplineGlyphs[d]}
+                  size={16}
+                  color={active ? disciplineAccents[d] : palette.textSecondary}
+                />
+              }
+            />
+          );
+        })}
       </ScrollView>
       <ScrollView
         horizontal

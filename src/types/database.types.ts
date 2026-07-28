@@ -760,7 +760,11 @@ export type Database = {
           eula_version: string
           handle: string
           home_city: string | null
+          home_lat: number | null
+          home_lng: number | null
           home_location: unknown
+          home_postal_code: string | null
+          home_region: string | null
           id: string
           is_admin: boolean
           is_performer: boolean
@@ -783,7 +787,11 @@ export type Database = {
           eula_version: string
           handle: string
           home_city?: string | null
+          home_lat?: number | null
+          home_lng?: number | null
           home_location?: unknown
+          home_postal_code?: string | null
+          home_region?: string | null
           id: string
           is_admin?: boolean
           is_performer?: boolean
@@ -806,7 +814,11 @@ export type Database = {
           eula_version?: string
           handle?: string
           home_city?: string | null
+          home_lat?: number | null
+          home_lng?: number | null
           home_location?: unknown
+          home_postal_code?: string | null
+          home_region?: string | null
           id?: string
           is_admin?: boolean
           is_performer?: boolean
@@ -1202,7 +1214,6 @@ export type Database = {
           created_at: string | null
           display_name: string | null
           handle: string | null
-          home_city: string | null
           id: string | null
           is_performer: boolean | null
           is_producer: boolean | null
@@ -1217,7 +1228,6 @@ export type Database = {
           created_at?: string | null
           display_name?: string | null
           handle?: string | null
-          home_city?: string | null
           id?: string | null
           is_performer?: boolean | null
           is_producer?: boolean | null
@@ -1232,7 +1242,6 @@ export type Database = {
           created_at?: string | null
           display_name?: string | null
           handle?: string | null
-          home_city?: string | null
           id?: string | null
           is_performer?: boolean | null
           is_producer?: boolean | null

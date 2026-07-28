@@ -1,6 +1,6 @@
 import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Body, Button, ErrorText, Field, LoadingView, Title } from '@/components/ui';
 import { validateDisplayName } from '@/features/auth/validation';
@@ -8,6 +8,8 @@ import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
 import { AvatarCircle } from '@/features/profile/avatar-circle';
 import { pickAndUploadAvatar } from '@/features/profile/avatar';
+import { geocodeHomeArea } from '@/features/profile/geocode';
+import { homeAreaError, homeAreaQuery, normalizeHomeArea } from '@/features/profile/home-area';
 import { useUpdateProfile } from '@/features/profile/queries';
 import {
   handleError,
@@ -60,6 +62,8 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
   const [displayName, setDisplayName] = useState(profile.display_name);
   const [bio, setBio] = useState(profile.bio ?? '');
   const [homeCity, setHomeCity] = useState(profile.home_city ?? '');
+  const [homeRegion, setHomeRegion] = useState(profile.home_region ?? '');
+  const [homeZip, setHomeZip] = useState(profile.home_postal_code ?? '');
   const [instagram, setInstagram] = useState(profile.link_instagram ?? '');
   const [tiktok, setTiktok] = useState(profile.link_tiktok ?? '');
   const [youtube, setYoutube] = useState(profile.link_youtube ?? '');
@@ -86,12 +90,14 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
   }
 
   async function save() {
+    const area = normalizeHomeArea({ city: homeCity, region: homeRegion, postalCode: homeZip });
     const ig = normalizeHandle(instagram);
     const tt = normalizeHandle(tiktok);
     const yt = normalizeUrl(youtube);
     const web = normalizeUrl(website);
     const nextErrors = {
       displayName: validateDisplayName(displayName),
+      homeArea: homeAreaError(area),
       instagram: handleError(ig),
       tiktok: handleError(tt),
       youtube: urlError(yt),
@@ -103,10 +109,22 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
     }
     setError(null);
     try {
+      // Re-geocode only when the area actually changed, so a failed lookup
+      // never wipes coordinates that were already good.
+      const areaChanged =
+        area.city !== (profile.home_city ?? '') ||
+        area.region !== (profile.home_region ?? '') ||
+        area.postalCode !== (profile.home_postal_code ?? '');
+      const coords = areaChanged ? await geocodeHomeArea(homeAreaQuery(area)) : null;
       await update.mutateAsync({
         display_name: displayName.trim(),
         bio: bio.trim() || null,
-        home_city: homeCity.trim() || null,
+        home_city: area.city || null,
+        home_region: area.region || null,
+        home_postal_code: area.postalCode || null,
+        ...(areaChanged
+          ? { home_lat: coords?.lat ?? null, home_lng: coords?.lng ?? null }
+          : {}),
         link_instagram: ig || null,
         link_tiktok: tt || null,
         link_youtube: yt || null,
@@ -150,12 +168,33 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
         numberOfLines={3}
         placeholder="What you play, your style, anything you want people to know."
       />
+      <Text style={styles.sectionTitle}>Home area</Text>
+      <Body>
+        Used only to show mics near you. Never shown on your profile. Enter city and state, or
+        a ZIP code.
+      </Body>
+      <View style={styles.areaRow}>
+        <View style={styles.areaCity}>
+          <Field label="City" value={homeCity} onChangeText={setHomeCity} placeholder="Seattle" />
+        </View>
+        <View style={styles.areaRegion}>
+          <Field
+            label="State"
+            autoCapitalize="characters"
+            value={homeRegion}
+            onChangeText={setHomeRegion}
+            placeholder="WA"
+          />
+        </View>
+      </View>
       <Field
-        label="Home city (optional)"
-        value={homeCity}
-        onChangeText={setHomeCity}
-        placeholder="Seattle"
+        label="Or ZIP code"
+        inputMode="numeric"
+        value={homeZip}
+        onChangeText={setHomeZip}
+        placeholder="98101"
       />
+      {errors.homeArea ? <ErrorText>{errors.homeArea}</ErrorText> : null}
 
       <Text style={styles.sectionTitle}>Your links</Text>
       <Body>Optional. Paste a link or just type your username.</Body>
@@ -226,5 +265,15 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
     fontSize: type.heading.fontSize,
     marginTop: spacing.sm,
+  },
+  areaRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  areaCity: {
+    flex: 2,
+  },
+  areaRegion: {
+    flex: 1,
   },
 });

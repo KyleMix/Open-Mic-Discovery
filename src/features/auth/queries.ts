@@ -21,6 +21,25 @@ export function useOwnProfile(userId: string | undefined) {
   });
 }
 
+/** The performer's own disciplines, used to personalize discovery. */
+export function usePerformerDisciplines(userId: string | undefined) {
+  return useQuery({
+    queryKey: ['performer-disciplines', userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data, error } = await getSupabase()
+        .from('performer_profiles')
+        .select('disciplines')
+        .eq('profile_id', userId!)
+        .maybeSingle();
+      if (error) {
+        throw new Error(error.message);
+      }
+      return data?.disciplines ?? [];
+    },
+  });
+}
+
 /** The newest EULA text, needed for the acceptance gate. */
 export function useLatestEula() {
   return useQuery({
