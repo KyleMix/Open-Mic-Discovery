@@ -105,12 +105,13 @@ select is(
   'is_admin cannot be self-granted'
 );
 
--- Free-text edits go back through moderation.
+-- Free-text edits pass through the automated filter (clean text stays live;
+-- moderation.test.sql covers the held path).
 update profiles set bio = 'new bio' where id = auth.uid();
 select is(
   (select moderation_status from profiles where id = auth.uid()),
-  'pending'::moderation_status,
-  'editing free text resets moderation_status to pending'
+  'approved'::moderation_status,
+  'clean free-text edits stay live after the filter'
 );
 
 select throws_ok(

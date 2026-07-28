@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -18,6 +19,7 @@ import { SIGNUP_METHOD_LABELS, costLabel } from '@/features/discovery/components
 import { freshness } from '@/features/discovery/freshness';
 import { useFlagListing, useMicDetail } from '@/features/discovery/queries';
 import { useSubmitClaim } from '@/features/producer/queries';
+import { ReportModal } from '@/features/safety/components/report-modal';
 import { SignupCard } from '@/features/signups/components/signup-card';
 import { describeRecurrence, formatLocalTime } from '@/features/discovery/recurrence';
 import { disciplineAccents, fonts, palette, spacing, type, type Discipline } from '@/theme';
@@ -92,6 +94,7 @@ function MicDetail({
   const next = occurrences.find((o) => o.status !== 'cancelled');
   const [flagOpen, setFlagOpen] = useState(false);
   const [claimOpen, setClaimOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   function openDirections() {
     if (!venue) {
@@ -234,8 +237,26 @@ function MicDetail({
         </Pressable>
       ) : null}
 
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Report this listing for abuse"
+        onPress={() => setReportOpen(true)}
+        style={styles.flagButton}
+      >
+        <Ionicons name="flag-outline" size={16} color={palette.textSecondary} />
+        <Text style={styles.flagText}>Report abusive content</Text>
+      </Pressable>
+
       <FlagModal seriesId={series.id} visible={flagOpen} onClose={() => setFlagOpen(false)} />
       <ClaimModal seriesId={series.id} visible={claimOpen} onClose={() => setClaimOpen(false)} />
+      <ReportModal
+        visible={reportOpen}
+        onClose={() => setReportOpen(false)}
+        targetType="series"
+        targetId={series.id}
+        blockableUserId={series.owner_id ?? undefined}
+        targetLabel="this listing"
+      />
     </ScrollView>
   );
 }

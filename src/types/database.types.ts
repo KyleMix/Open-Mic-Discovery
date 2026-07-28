@@ -62,6 +62,21 @@ export type Database = {
           },
         ];
       };
+      banned_terms: {
+        Row: {
+          created_at: string;
+          term: string;
+        };
+        Insert: {
+          created_at?: string;
+          term: string;
+        };
+        Update: {
+          created_at?: string;
+          term?: string;
+        };
+        Relationships: [];
+      };
       blocks: {
         Row: {
           blocked_id: string;
@@ -1431,6 +1446,7 @@ export type Database = {
             Returns: string;
           };
       dearmor: { Args: { '': string }; Returns: string };
+      delete_account: { Args: never; Returns: undefined };
       diag:
         | {
             Args: { msg: unknown };
@@ -1647,6 +1663,14 @@ export type Database = {
           venue_id: string;
           venue_name: string;
         }[];
+      };
+      moderate_content: {
+        Args: {
+          p_approve: boolean;
+          p_target: Database['public']['Enums']['report_target'];
+          p_target_id: string;
+        };
+        Returns: undefined;
       };
       no_plan: { Args: never; Returns: boolean[] };
       num_failed: { Args: never; Returns: number };

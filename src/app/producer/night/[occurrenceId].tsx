@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
+import { ReportModal } from '@/features/safety/components/report-modal';
 import {
   useDrawLottery,
   useRoster,
@@ -27,6 +28,7 @@ export default function NightScreen() {
 
   // Visible randomization: shuffle names on screen while the server draws.
   const [shuffling, setShuffling] = useState<RosterRow[] | null>(null);
+  const [reporting, setReporting] = useState<RosterRow | null>(null);
   const shuffleTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   useEffect(() => {
     return () => {
@@ -152,6 +154,11 @@ export default function NightScreen() {
                   color={palette.danger}
                   onPress={() => setStatus.mutate({ signupId: row.id!, status: 'no_show' })}
                 />
+                <IconAction
+                  label={`Report or block ${row.display_name ?? 'performer'}`}
+                  icon="flag-outline"
+                  onPress={() => setReporting(row)}
+                />
               </View>
             ) : null}
           </View>
@@ -181,6 +188,16 @@ export default function NightScreen() {
         <ErrorText>
           {setStatus.error instanceof Error ? setStatus.error.message : 'Could not update.'}
         </ErrorText>
+      ) : null}
+      {reporting?.performer_id ? (
+        <ReportModal
+          visible
+          onClose={() => setReporting(null)}
+          targetType="profile"
+          targetId={reporting.performer_id}
+          blockableUserId={reporting.performer_id}
+          targetLabel={reporting.display_name ?? 'this performer'}
+        />
       ) : null}
     </ScrollView>
   );
