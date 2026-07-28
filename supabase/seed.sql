@@ -11,31 +11,36 @@
 -- ---------------------------------------------------------------------------
 -- Demo auth users. Password for all: demo-pass-1234
 -- ---------------------------------------------------------------------------
+-- GoTrue requires the internal token columns to be empty strings, not NULL:
+-- its Go scanner returns HTTP 500 on login for any user where they are NULL.
 insert into auth.users
   (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
-   raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+   raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+   confirmation_token, recovery_token, email_change, email_change_token_new,
+   email_change_token_current, phone_change, phone_change_token,
+   reauthentication_token)
 values
   ('00000000-0000-4000-a000-000000000001', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated', 'performer@demo.openmic.local',
    crypt('demo-pass-1234', gen_salt('bf')), now(),
-   '{"provider":"email","providers":["email"]}', '{}', now(), now()),
+   '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', '', '', '', '', ''),
   ('00000000-0000-4000-a000-000000000002', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated', 'producer@demo.openmic.local',
    crypt('demo-pass-1234', gen_salt('bf')), now(),
-   '{"provider":"email","providers":["email"]}', '{}', now(), now()),
+   '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', '', '', '', '', ''),
   ('00000000-0000-4000-a000-000000000003', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated', 'dual@demo.openmic.local',
    crypt('demo-pass-1234', gen_salt('bf')), now(),
-   '{"provider":"email","providers":["email"]}', '{}', now(), now()),
+   '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', '', '', '', '', ''),
   ('00000000-0000-4000-a000-000000000004', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated', 'admin@demo.openmic.local',
    crypt('demo-pass-1234', gen_salt('bf')), now(),
-   '{"provider":"email","providers":["email"]}', '{}', now(), now()),
+   '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', '', '', '', '', ''),
   -- Owner/tester account: performer + producer + admin in one login.
   ('00000000-0000-4000-a000-000000000005', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated', 'kylewmixon@gmail.com',
    crypt('openmic-tester-2026', gen_salt('bf')), now(),
-   '{"provider":"email","providers":["email"]}', '{}', now(), now());
+   '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', '', '', '', '', '');
 
 insert into auth.identities
   (id, user_id, provider_id, provider, identity_data, last_sign_in_at, created_at, updated_at)
