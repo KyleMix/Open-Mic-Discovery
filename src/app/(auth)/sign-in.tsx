@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { Platform, Text, View } from 'react-native';
 
 import { signInWithApple, signInWithEmail, signInWithGoogle } from '@/features/auth/api';
-import { Body, Button, ErrorText, Field, Screen, Title } from '@/components/ui';
+import { Logo } from '@/components/logo';
+import { Body, Button, ErrorText, Field, Screen } from '@/components/ui';
 import { palette, spacing } from '@/theme';
 
 export default function SignInScreen() {
@@ -27,7 +28,9 @@ export default function SignInScreen() {
 
   return (
     <Screen>
-      <Title>Welcome back</Title>
+      <View style={{ alignItems: 'center', marginVertical: spacing.lg }}>
+        <Logo markSize={48} />
+      </View>
       <Body>Find a mic. Get on the list.</Body>
       <Field
         label="Email"

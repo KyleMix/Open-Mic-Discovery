@@ -1,3 +1,9 @@
+import {
+  Poppins_400Regular,
+  Poppins_500Medium,
+  Poppins_600SemiBold,
+  useFonts,
+} from '@expo-google-fonts/poppins';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { DarkTheme, Stack, ThemeProvider, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -99,6 +105,8 @@ function AuthGate({ children }: { children: ReactNode }) {
 }
 
 export default function RootLayout() {
+  // Brand typography; screens render with the system font until loaded.
+  useFonts({ Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold });
   return (
     <QueryClientProvider client={queryClient}>
       <SessionProvider>

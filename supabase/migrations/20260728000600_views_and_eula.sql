@@ -46,7 +46,7 @@ with (security_invoker = off) as
 grant select on public_profiles, performer_public, producer_public to anon, authenticated;
 
 insert into eula_versions (version, body_md) values ('1.0', $eula$
-# OPEN MIC End User License Agreement
+# Open Mic Finder End User License Agreement
 
 Version 1.0, effective July 28, 2026.
 
@@ -54,7 +54,7 @@ By creating an account you agree to this Agreement. If you do not agree, do not 
 
 ## 1. What this app is
 
-OPEN MIC helps you discover open mic events and, where available, sign up to perform. Listings are provided by producers and community members and are not guaranteed to be accurate.
+Open Mic Finder helps you discover open mic events and, where available, sign up to perform. Listings are provided by producers and community members and are not guaranteed to be accurate.
 
 ## 2. Zero tolerance for objectionable content and abuse
 
@@ -72,11 +72,11 @@ Every listing and profile has a Report action. Every profile has a Block action.
 
 ## 5. Events are real-world activities
 
-Producers, not OPEN MIC, run the events listed here. We are not responsible for what happens at a venue, for event cancellations, or for disputes between performers and producers. Use judgment appropriate to attending live events.
+Producers, not Open Mic Finder, run the events listed here. We are not responsible for what happens at a venue, for event cancellations, or for disputes between performers and producers. Use judgment appropriate to attending live events.
 
 ## 6. Age
 
-You must be at least 17 years old to use OPEN MIC. Comedy content in particular may include adult language and themes.
+You must be at least 17 years old to use Open Mic Finder. Comedy content in particular may include adult language and themes.
 
 ## 7. Account deletion
 
@@ -90,5 +90,5 @@ We may update this Agreement. Material changes require you to accept the new ver
 
 The app is provided as is, without warranties of any kind. To the maximum extent permitted by law, our liability is limited to the amount you paid us in the past twelve months.
 
-Contact: legal@openmic.app
+Contact: legal@openmicfinder.app
 $eula$);

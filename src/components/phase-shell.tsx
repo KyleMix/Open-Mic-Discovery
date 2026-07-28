@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { palette, spacing, type } from '@/theme';
+import { fonts, palette, spacing, type } from '@/theme';
 
 type Props = {
   title: string;
@@ -32,8 +32,9 @@ const styles = StyleSheet.create({
   },
   title: {
     color: palette.text,
+    fontFamily: fonts.semibold,
     fontSize: type.title.fontSize,
-    fontWeight: type.title.fontWeight,
+    letterSpacing: 0.5,
     lineHeight: type.title.lineHeight,
   },
   body: {

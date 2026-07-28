@@ -57,7 +57,7 @@ values
   ('00000000-0000-4000-a000-000000000004', 'demo_admin', 'Alex Admin',
    'Keeping listings fresh.', 'Seattle', 1985, false, false, true, '1.0', 'approved'),
   ('00000000-0000-4000-a000-000000000005', 'kyle', 'Kyle',
-   'Building OPEN MIC.', 'Seattle', 1990, true, true, true, '1.0', 'approved');
+   'Building Open Mic Finder.', 'Seattle', 1990, true, true, true, '1.0', 'approved');
 
 insert into performer_profiles (profile_id, disciplines, experience, tags) values
   ('00000000-0000-4000-a000-000000000001', '{music,poetry}', 'developing', '{acoustic,folk}'),
