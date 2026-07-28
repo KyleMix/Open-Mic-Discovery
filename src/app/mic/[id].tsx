@@ -18,6 +18,7 @@ import { useSession } from '@/features/auth/session';
 import { SIGNUP_METHOD_LABELS, costLabel } from '@/features/discovery/components/mic-card';
 import { freshness } from '@/features/discovery/freshness';
 import { useFlagListing, useMicDetail } from '@/features/discovery/queries';
+import { useIsFavorite, useToggleFavorite } from '@/features/favorites/queries';
 import { useSubmitClaim } from '@/features/producer/queries';
 import { ReportModal } from '@/features/safety/components/report-modal';
 import { SignupCard } from '@/features/signups/components/signup-card';
@@ -116,6 +117,7 @@ function MicDetail({
           {(series.disciplines as Discipline[]).map((d) => (
             <Glyph key={d} name={disciplineGlyphs[d]} size={20} color={disciplineAccents[d]} />
           ))}
+          <FavoriteStar seriesId={series.id} />
         </View>
       </View>
 
@@ -346,6 +348,32 @@ function ClaimModal({
         </View>
       </View>
     </Modal>
+  );
+}
+
+function FavoriteStar({ seriesId }: { seriesId: string }) {
+  const { session } = useSession();
+  const isFavorite = useIsFavorite(session?.user.id, seriesId);
+  const toggle = useToggleFavorite();
+  if (!session) {
+    return null;
+  }
+  const active = isFavorite.data ?? false;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={active ? 'Remove from favorites' : 'Add to favorites'}
+      accessibilityState={{ selected: active }}
+      disabled={toggle.isPending || isFavorite.isPending}
+      onPress={() => toggle.mutate({ userId: session.user.id, seriesId, favorite: !active })}
+      style={{ minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
+    >
+      <Ionicons
+        name={active ? 'star' : 'star-outline'}
+        size={24}
+        color={active ? palette.warning : palette.textSecondary}
+      />
+    </Pressable>
   );
 }
 

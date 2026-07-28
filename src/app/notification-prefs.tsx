@@ -1,9 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, Text } from 'react-native';
 
 import { Body, Button, ErrorText, LoadingView, ToggleRow } from '@/components/ui';
 import { useSession } from '@/features/auth/session';
+import { requestForegroundLocation } from '@/features/discovery/location';
 import { useUpdatePrefs } from '@/features/notifications/queries';
 import { getSupabase } from '@/lib/supabase';
 import { fonts, palette, spacing, type } from '@/theme';
@@ -12,6 +14,7 @@ import { fonts, palette, spacing, type } from '@/theme';
 export default function NotificationPrefsScreen() {
   const { session } = useSession();
   const update = useUpdatePrefs();
+  const [locationNote, setLocationNote] = useState<string | null>(null);
   const prefs = useQuery({
     queryKey: ['prefs', session?.user.id],
     enabled: !!session,
@@ -53,6 +56,26 @@ export default function NotificationPrefsScreen() {
   const set = (patch: Partial<typeof p>) =>
     update.mutate({ userId: session.user.id, patch: { ...p, ...patch } });
 
+  async function enableNearby() {
+    setLocationNote(null);
+    const result = await requestForegroundLocation();
+    if (result.status !== 'granted') {
+      setLocationNote(
+        'Nearby alerts need a one-time location to know what "near you" means. Allow location and try again.',
+      );
+      return;
+    }
+    const { error } = await getSupabase()
+      .from('profiles')
+      .update({ home_location: `POINT(${result.lng} ${result.lat})` })
+      .eq('id', session!.user.id);
+    if (error) {
+      setLocationNote('Could not save your home area. Try again.');
+      return;
+    }
+    set({ new_mic_nearby: true });
+  }
+
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
       <Stack.Screen
@@ -77,10 +100,17 @@ export default function NotificationPrefsScreen() {
       />
       <ToggleRow
         label="New mics near you"
-        description="When a new mic appears within your chosen radius of your home city."
+        description="When a new mic appears within your chosen radius. Turning this on saves your current location once as your home area; it is never tracked."
         value={p.new_mic_nearby}
-        onToggle={(v) => set({ new_mic_nearby: v })}
+        onToggle={(v) => {
+          if (v) {
+            enableNearby();
+          } else {
+            set({ new_mic_nearby: false });
+          }
+        }}
       />
+      {locationNote ? <ErrorText>{locationNote}</ErrorText> : null}
       {p.new_mic_nearby ? (
         <>
           <Text style={styles.radiusLabel}>Alert radius</Text>
