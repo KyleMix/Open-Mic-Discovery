@@ -54,7 +54,8 @@ export function Glyph({ name, size = 24, color = palette.text, style }: GlyphPro
       source={sources[name]}
       accessibilityElementsHidden
       importantForAccessibility="no"
-      style={[{ width: size, height: size, tintColor: color }, style]}
+      tintColor={color}
+      style={[{ width: size, height: size }, style]}
     />
   );
 }

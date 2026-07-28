@@ -7,17 +7,24 @@ import type { Database } from '@/types/database.types';
 
 type Discipline = Database['public']['Enums']['discipline'];
 
+/** Supabase network failures can carry empty or non-string messages. */
+function authMessage(error: { message?: unknown }, fallback: string): string {
+  return typeof error.message === 'string' && error.message.trim().length > 0
+    ? error.message
+    : fallback;
+}
+
 export async function signInWithEmail(email: string, password: string): Promise<void> {
   const { error } = await getSupabase().auth.signInWithPassword({ email, password });
   if (error) {
-    throw new Error(error.message);
+    throw new Error(authMessage(error, 'Could not reach the server. Check your connection.'));
   }
 }
 
 export async function signUpWithEmail(email: string, password: string): Promise<void> {
   const { error } = await getSupabase().auth.signUp({ email, password });
   if (error) {
-    throw new Error(error.message);
+    throw new Error(authMessage(error, 'Could not reach the server. Check your connection.'));
   }
 }
 
