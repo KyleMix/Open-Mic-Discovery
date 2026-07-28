@@ -342,25 +342,25 @@ Verified against the npm registry today (2026-07-28). Exact patch versions of `e
 
 **Chosen: New Architecture with Reanimated 4 + react-native-worklets.** Since the brief was written, this stopped being a choice: React Native 0.82+ removed the legacy architecture entirely, and Expo SDK 57 ships RN 0.86. Reanimated 3 is not an option on this stack. The remaining tradeoff is third-party library maturity on New Architecture, which is why every native dependency below was checked for New Arch support. This combination will be recorded in ARCHITECTURE.md with renovate/dependabot configured to never bump these majors automatically.
 
-| Package | Pin | Notes |
-|---------|-----|-------|
-| expo | ~57.0.8 | Latest stable SDK, RN 0.86.2, React 19, New Arch only |
-| react-native | 0.86.2 | Fixed by SDK 57 |
-| expo-router | ~57.0.8 | Typed routes on |
-| react-native-reanimated | ~4.5.3 | Requires worklets package |
-| react-native-worklets | ~0.11.3 | Reanimated 4 peer |
-| react-native-maps | 1.29.0 | New Arch supported |
-| @tanstack/react-query | ^5.101.4 | All server state |
-| zustand | ^5.0.14 | Client-only state |
-| @supabase/supabase-js | ^2.111.0 | Plus generated types |
-| react-native-purchases | ^10.4.4 | RevenueCat (Phase 7) |
-| @sentry/react-native | ~8.20.0 | Via Expo config plugin |
-| expo-location | ~57.0.6 | Foreground only |
-| expo-notifications | ~57.0.7 | Expo Push |
-| typescript | ~5.9.x | See tradeoff below |
-| jest-expo | ~57.x | Unit tests |
-| @testing-library/react-native | latest 13.x | |
-| Maestro | pinned in CI config | Binary, not an npm dep |
+| Package                       | Pin                 | Notes                                                 |
+| ----------------------------- | ------------------- | ----------------------------------------------------- |
+| expo                          | ~57.0.8             | Latest stable SDK, RN 0.86.2, React 19, New Arch only |
+| react-native                  | 0.86.2              | Fixed by SDK 57                                       |
+| expo-router                   | ~57.0.8             | Typed routes on                                       |
+| react-native-reanimated       | ~4.5.3              | Requires worklets package                             |
+| react-native-worklets         | ~0.11.3             | Reanimated 4 peer                                     |
+| react-native-maps             | 1.29.0              | New Arch supported                                    |
+| @tanstack/react-query         | ^5.101.4            | All server state                                      |
+| zustand                       | ^5.0.14             | Client-only state                                     |
+| @supabase/supabase-js         | ^2.111.0            | Plus generated types                                  |
+| react-native-purchases        | ^10.4.4             | RevenueCat (Phase 7)                                  |
+| @sentry/react-native          | ~8.20.0             | Via Expo config plugin                                |
+| expo-location                 | ~57.0.6             | Foreground only                                       |
+| expo-notifications            | ~57.0.7             | Expo Push                                             |
+| typescript                    | ~5.9.x              | See tradeoff below                                    |
+| jest-expo                     | ~57.x               | Unit tests                                            |
+| @testing-library/react-native | latest 13.x         |                                                       |
+| Maestro                       | pinned in CI config | Binary, not an npm dep                                |
 
 ### Tradeoffs to sign off on
 

@@ -150,7 +150,8 @@ Then wait for my approval.
 
 (Claude Code appends here at the end of each phase.)
 
-| Phase | Status | Date | Notes |
-|-------|--------|------|-------|
-| Step 0 | Delivered, awaiting approval | 2026-07-28 | Clarifying questions, schema DDL, dependency pins, and repo structure proposed in docs/STEP0_PROPOSAL.md. No code written. |
-| 0 | Not started | | |
+| Phase  | Status                       | Date       | Notes                                                                                                                      |
+| ------ | ---------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Step 0 | Approved with defaults | 2026-07-28 | Proposal in docs/STEP0_PROPOSAL.md approved as written (all ten defaults, flags F1 to F6, TypeScript and clustering tradeoffs). |
+| 0 | Complete, awaiting review | 2026-07-28 | Shipped: Expo SDK 57 scaffold (New Arch, Reanimated 4.5 + worklets 0.10), TypeScript strict with typed routes, dark-first theme tokens with contrast tests, four-tab router shell, TanStack Query wiring, env handling with lazy Supabase client, ESLint flat config + Prettier, Jest + RNTL (6 tests passing), supabase init, ARCHITECTURE.md, REVIEW_NOTES.md, CLAUDE.md. Stubbed: all four tab bodies are PhaseShell screens, tracked in REVIEW_NOTES.md. TypeScript pinned at ~6.0.3 (template pin) instead of proposed ~5.9, noted in ARCHITECTURE.md decisions. Phase 1 depends on: local Supabase running (Docker) for migrations and generated types. |
+| 1 | Not started | | |
