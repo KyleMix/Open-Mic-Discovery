@@ -28,6 +28,13 @@
       "expo-router",
       "expo-apple-authentication",
       [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Open Mic Finder uses your location only while you use the app, to show open mics near you. It is never tracked in the background.",
+          "isAndroidBackgroundLocationEnabled": false
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#0B0B0F",

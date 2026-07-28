@@ -4,7 +4,9 @@ import {
   Poppins_600SemiBold,
   useFonts,
 } from '@expo-google-fonts/poppins';
-import { QueryClientProvider } from '@tanstack/react-query';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { DarkTheme, Stack, ThemeProvider, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, type ReactNode } from 'react';
@@ -104,11 +106,18 @@ function AuthGate({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+// Cached server data survives restarts so listings stay readable offline
+// (performers check this app in parking lots with one bar of signal).
+const persister = createAsyncStoragePersister({ storage: AsyncStorage });
+
 export default function RootLayout() {
   // Brand typography; screens render with the system font until loaded.
   useFonts({ Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold });
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{ persister, maxAge: 24 * 60 * 60 * 1000 }}
+    >
       <SessionProvider>
         <ThemeProvider value={appTheme}>
           <StatusBar style="light" />
@@ -120,6 +129,6 @@ export default function RootLayout() {
           </AuthGate>
         </ThemeProvider>
       </SessionProvider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }

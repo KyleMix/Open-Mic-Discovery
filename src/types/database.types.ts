@@ -1507,6 +1507,46 @@ export type Database = {
       isnt_empty: { Args: { '': string }; Returns: string };
       lives_ok: { Args: { '': string }; Returns: string };
       longtransactionsenabled: { Args: never; Returns: boolean };
+      mics_near: {
+        Args: {
+          p_days?: number[];
+          p_disciplines?: Database['public']['Enums']['discipline'][];
+          p_end_hour?: number;
+          p_free_only?: boolean;
+          p_lat: number;
+          p_limit?: number;
+          p_lng: number;
+          p_methods?: Database['public']['Enums']['signup_method'][];
+          p_radius_m?: number;
+          p_start_hour?: number;
+        };
+        Returns: {
+          city: string;
+          cost_cents: number;
+          description: string;
+          disciplines: Database['public']['Enums']['discipline'][];
+          distance_m: number;
+          is_active: boolean;
+          last_confirmed_at: string;
+          lat: number;
+          lng: number;
+          neighborhood: string;
+          next_local_date: string;
+          next_occurrence_id: string;
+          next_starts_at: string;
+          next_status: Database['public']['Enums']['occurrence_status'];
+          region: string;
+          rrule: string;
+          series_id: string;
+          set_length_minutes: number;
+          signup_method: Database['public']['Enums']['signup_method'];
+          start_time: string;
+          timezone: string;
+          title: string;
+          venue_id: string;
+          venue_name: string;
+        }[];
+      };
       no_plan: { Args: never; Returns: boolean[] };
       num_failed: { Args: never; Returns: number };
       os_name: { Args: never; Returns: string };
@@ -1609,6 +1649,27 @@ export type Database = {
       postgis_version: { Args: never; Returns: string };
       postgis_wagyu_version: { Args: never; Returns: string };
       runtests: { Args: never; Returns: string[] } | { Args: { '': string }; Returns: string[] };
+      search_mics: {
+        Args: { p_limit?: number; p_query: string };
+        Returns: {
+          city: string;
+          cost_cents: number;
+          disciplines: Database['public']['Enums']['discipline'][];
+          last_confirmed_at: string;
+          lat: number;
+          lng: number;
+          next_starts_at: string;
+          region: string;
+          rrule: string;
+          series_id: string;
+          signup_method: Database['public']['Enums']['signup_method'];
+          start_time: string;
+          timezone: string;
+          title: string;
+          venue_id: string;
+          venue_name: string;
+        }[];
+      };
       skip:
         | { Args: { '': string }; Returns: string }
         | { Args: { how_many: number; why: string }; Returns: string };
