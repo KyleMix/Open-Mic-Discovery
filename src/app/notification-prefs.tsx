@@ -113,12 +113,17 @@ export default function NotificationPrefsScreen() {
       {locationNote ? <ErrorText>{locationNote}</ErrorText> : null}
       {p.new_mic_nearby ? (
         <>
-          <Text style={styles.radiusLabel}>Alert radius</Text>
+          <Text style={styles.radiusLabel}>How far away counts as near you?</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {[10, 25, 50, 100].map((km) => (
+            {[
+              { km: 10, label: '5 miles' },
+              { km: 25, label: '15 miles' },
+              { km: 50, label: '30 miles' },
+              { km: 100, label: '60 miles' },
+            ].map(({ km, label }) => (
               <Button
                 key={km}
-                label={`${km} km`}
+                label={label}
                 kind={p.nearby_radius_km === km ? 'primary' : 'secondary'}
                 onPress={() => set({ nearby_radius_km: km })}
               />

@@ -1,12 +1,14 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { signOut } from '@/features/auth/api';
 import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
+import { AvatarCircle } from '@/features/profile/avatar-circle';
+import { buildSocialLinks } from '@/features/profile/social';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
-import { palette, spacing, type } from '@/theme';
+import { fonts, minTouchTarget, palette, spacing, type } from '@/theme';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -37,17 +39,39 @@ export default function ProfileScreen() {
   }
 
   const p = profile.data;
+  const links = buildSocialLinks(p);
   return (
     <Screen>
-      <Title>{p.display_name}</Title>
-      <Text style={styles.handle}>@{p.handle}</Text>
+      <View style={styles.header}>
+        <AvatarCircle url={p.avatar_url} name={p.display_name} size={72} />
+        <View style={styles.headerText}>
+          <Title>{p.display_name}</Title>
+          <Text style={styles.handle}>@{p.handle}</Text>
+        </View>
+      </View>
       <View style={styles.roles}>
         {p.is_performer ? <Text style={styles.roleChip}>Performer</Text> : null}
         {p.is_producer ? <Text style={styles.roleChip}>Producer</Text> : null}
       </View>
       {p.home_city ? <Body>{p.home_city}</Body> : null}
       {p.bio ? <Body>{p.bio}</Body> : null}
+      {links.length > 0 ? (
+        <View style={styles.linkRow}>
+          {links.map((link) => (
+            <Pressable
+              key={link.key}
+              accessibilityRole="link"
+              accessibilityLabel={`Open ${link.label}`}
+              onPress={() => Linking.openURL(link.url).catch(() => null)}
+              style={({ pressed }) => [styles.linkChip, pressed && styles.linkChipPressed]}
+            >
+              <Text style={styles.linkChipLabel}>{link.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
       {error ? <ErrorText>{error}</ErrorText> : null}
+      <Button label="Edit profile" onPress={() => router.push('/edit-profile')} />
       <Button label="Settings" kind="secondary" onPress={() => router.push('/settings')} />
       {p.is_admin ? (
         <Button label="Moderation queue" kind="secondary" onPress={() => router.push('/admin')} />
@@ -66,6 +90,15 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  headerText: {
+    flex: 1,
+    gap: spacing.xs,
+  },
   handle: {
     color: palette.textSecondary,
     fontSize: type.body.fontSize,
@@ -84,5 +117,28 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
+  },
+  linkRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  linkChip: {
+    alignItems: 'center',
+    backgroundColor: palette.bgElevated,
+    borderColor: palette.border,
+    borderRadius: 22,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: minTouchTarget - 8,
+    paddingHorizontal: spacing.md,
+  },
+  linkChipPressed: {
+    backgroundColor: palette.bgPressed,
+  },
+  linkChipLabel: {
+    color: palette.text,
+    fontFamily: fonts.medium,
+    fontSize: type.caption.fontSize,
   },
 });

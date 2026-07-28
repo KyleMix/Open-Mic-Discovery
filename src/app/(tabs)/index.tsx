@@ -7,6 +7,7 @@ import { Body, Button, ErrorText, LoadingView } from '@/components/ui';
 import { FilterBar } from '@/features/discovery/components/filter-bar';
 import { MicCard, formatNextDate } from '@/features/discovery/components/mic-card';
 import { MicMap } from '@/features/discovery/components/mic-map';
+import { radiusLabel } from '@/features/discovery/distance';
 import { DEFAULT_CENTER, requestForegroundLocation } from '@/features/discovery/location';
 import { useNearbyMics, useSearchMics } from '@/features/discovery/queries';
 import { useFiltersStore } from '@/stores/filters';
@@ -101,10 +102,10 @@ export default function DiscoverScreen() {
             <View style={styles.stateWrap}>
               <Text style={styles.emptyTitle}>No mics here yet</Text>
               <Body>
-                Nothing within {filters.radiusKm} km with these filters. Widen the radius, clear
-                filters, or be the one who puts this scene on the map: producer tools for adding a
-                mic arrive in the My Mics tab.
+                Nothing within {radiusLabel(filters.radiusKm)} matches. Try a bigger distance or
+                tap Clear all. Know a mic we are missing? Add it from the My Mics tab.
               </Body>
+              <Button label="Clear all filters" kind="secondary" onPress={filters.reset} />
             </View>
           ) : view === 'map' ? (
             <View style={styles.mapWrap}>

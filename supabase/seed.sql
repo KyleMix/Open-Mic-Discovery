@@ -64,6 +64,17 @@ values
   ('00000000-0000-4000-a000-000000000005', 'kyle', 'Kyle',
    'Building Open Mic Finder.', 'Seattle', 1990, true, true, true, '1.0', 'approved');
 
+-- Social links on a couple of demo profiles so the profile screens have
+-- something to render.
+update profiles
+set link_instagram = 'demi.performer',
+    link_website = 'https://demiperformer.example.com'
+where id = '00000000-0000-4000-a000-000000000001';
+update profiles
+set link_instagram = 'openmicfinder',
+    link_youtube = 'https://youtube.com/@openmicfinder'
+where id = '00000000-0000-4000-a000-000000000005';
+
 insert into performer_profiles (profile_id, disciplines, experience, tags) values
   ('00000000-0000-4000-a000-000000000001', '{music,poetry}', 'developing', '{acoustic,folk}'),
   ('00000000-0000-4000-a000-000000000003', '{comedy}', 'experienced', '{observational}'),

@@ -39,7 +39,9 @@ type FiltersState = DiscoveryFilters & {
   view: 'map' | 'list';
   setView: (view: 'map' | 'list') => void;
   toggleDiscipline: (d: Discipline) => void;
+  selectDiscipline: (d: Discipline | null) => void;
   toggleDay: (day: number) => void;
+  setDays: (days: number[]) => void;
   setRadiusKm: (km: number) => void;
   setFreeOnly: (freeOnly: boolean) => void;
   toggleMethod: (m: SignupMethod) => void;
@@ -57,13 +59,64 @@ export const useFiltersStore = create<FiltersState>((set) => ({
   view: 'map',
   setView: (view) => set({ view }),
   toggleDiscipline: (d) => set((s) => ({ disciplines: toggle(s.disciplines, d) })),
+  selectDiscipline: (d) => set({ disciplines: d === null ? [] : [d] }),
   toggleDay: (day) => set((s) => ({ days: toggle(s.days, day) })),
+  setDays: (days) => set({ days }),
   setRadiusKm: (radiusKm) => set({ radiusKm }),
   setFreeOnly: (freeOnly) => set({ freeOnly }),
   toggleMethod: (m) => set((s) => ({ methods: toggle(s.methods, m) })),
   setTimeOfDay: (timeOfDay) => set({ timeOfDay }),
   reset: () => set({ ...DEFAULT_FILTERS }),
 }));
+
+/** ISO weekday for a local date, 1 Monday .. 7 Sunday. */
+export function isoWeekday(date: Date): number {
+  const day = date.getDay();
+  return day === 0 ? 7 : day;
+}
+
+/** Friday through Sunday: the nights most people can actually go out. */
+export const WEEKEND_DAYS = [5, 6, 7];
+
+export type DayQuickPick = 'any' | 'today' | 'weekend' | 'custom';
+
+/** Which quick pick, if any, the current day selection matches. */
+export function dayQuickPick(days: number[], todayIso: number): DayQuickPick {
+  if (days.length === 0) {
+    return 'any';
+  }
+  if (days.length === 1 && days[0] === todayIso) {
+    return 'today';
+  }
+  const sorted = [...days].sort();
+  if (
+    sorted.length === WEEKEND_DAYS.length &&
+    sorted.every((d, i) => d === WEEKEND_DAYS[i])
+  ) {
+    return 'weekend';
+  }
+  return 'custom';
+}
+
+/**
+ * How many filters live only inside the All filters sheet, for the badge on
+ * its button. Discipline, quick day picks, and Free have their own visible
+ * controls, so they are not counted here.
+ */
+export function sheetFilterCount(filters: DiscoveryFilters, todayIso: number): number {
+  let count = 0;
+  if (dayQuickPick(filters.days, todayIso) === 'custom') {
+    count += 1;
+  }
+  if (filters.timeOfDay !== null) {
+    count += 1;
+  }
+  count += filters.methods.length;
+  if (filters.radiusKm !== DEFAULT_FILTERS.radiusKm) {
+    count += 1;
+  }
+  return count;
+}
 
 export type MicsNearArgs = Database['public']['Functions']['mics_near']['Args'];
 

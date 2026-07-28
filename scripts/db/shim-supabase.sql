@@ -94,3 +94,39 @@ grant execute on function auth.uid(), auth.role() to anon, authenticated, servic
 
 -- Supabase provisions this publication for Realtime; the shim mirrors it.
 create publication supabase_realtime;
+
+-- Minimal storage schema so migrations can create buckets and object
+-- policies. Mirrors the platform tables' columns that our code touches.
+create schema if not exists storage;
+
+create table if not exists storage.buckets (
+  id          text primary key,
+  name        text not null,
+  public      boolean not null default false,
+  created_at  timestamptz not null default now()
+);
+
+create table if not exists storage.objects (
+  id          uuid primary key default gen_random_uuid(),
+  bucket_id   text references storage.buckets (id),
+  name        text,
+  owner       uuid,
+  metadata    jsonb,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+alter table storage.objects enable row level security;
+
+-- The platform's path helper: every path segment except the file name.
+create or replace function storage.foldername(name text)
+returns text[]
+language sql
+immutable
+as $$
+  select (string_to_array(name, '/'))[1:array_length(string_to_array(name, '/'), 1) - 1];
+$$;
+
+grant usage on schema storage to anon, authenticated, service_role;
+grant select on storage.buckets to anon, authenticated, service_role;
+grant all on storage.objects to anon, authenticated, service_role;
+grant execute on function storage.foldername(text) to anon, authenticated, service_role;

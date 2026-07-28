@@ -40,6 +40,12 @@
         }
       ],
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Open Mic Finder uses your photo library only when you choose a profile photo."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#0B0B0F",

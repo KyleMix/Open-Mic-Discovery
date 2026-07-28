@@ -121,7 +121,7 @@ export function SignupCard({
           </Body>
         ) : null}
         <Button
-          label={signupMethod === 'lottery' ? 'Enter the lottery' : 'Sign up'}
+          label={signupMethod === 'lottery' ? 'Put my name in the draw' : 'Sign me up'}
           busy={join.isPending}
           onPress={() => join.mutate({ occurrenceId: occurrence.id, userId: session.user.id })}
         />

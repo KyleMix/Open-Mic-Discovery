@@ -1,16 +1,26 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Glyph, disciplineGlyphs, signupMethodGlyphs } from '@/components/glyph';
+import { formatMilesFromMeters } from '@/features/discovery/distance';
 import { freshness } from '@/features/discovery/freshness';
 import type { NearbyMic } from '@/features/discovery/queries';
 import { describeRecurrence } from '@/features/discovery/recurrence';
 import { disciplineAccents, fonts, palette, spacing, type, type Discipline } from '@/theme';
 
+// Plain-language names for how you get on stage; shared across discovery,
+// mic detail, and producer screens so the wording never drifts.
 export const SIGNUP_METHOD_LABELS: Record<NearbyMic['signup_method'], string> = {
-  lottery: 'Lottery',
-  first_come: 'First come',
-  reserved_slot: 'Reserved slots',
-  host_booked: 'Host booked',
+  lottery: 'Name draw',
+  first_come: 'Walk-in list',
+  reserved_slot: 'Book ahead',
+  host_booked: 'Invite only',
+};
+
+export const SIGNUP_METHOD_DESCRIPTIONS: Record<NearbyMic['signup_method'], string> = {
+  first_come: 'Add your name when you get there.',
+  lottery: 'Names get drawn at random.',
+  reserved_slot: 'Reserve your spot before the night.',
+  host_booked: 'The host chooses the lineup.',
 };
 
 export function formatNextDate(startsAt: string | null): string {
@@ -37,7 +47,6 @@ type Props = {
 export function MicCard({ mic, onPress }: Props) {
   const fresh = freshness(mic.last_confirmed_at, new Date());
   const recurrence = describeRecurrence(mic.rrule, mic.start_time);
-  const distanceKm = mic.distance_m != null ? mic.distance_m / 1000 : null;
 
   return (
     <Pressable
@@ -65,9 +74,7 @@ export function MicCard({ mic, onPress }: Props) {
         <Text numberOfLines={1} style={styles.venue}>
           {mic.venue_name}
           {mic.neighborhood ? `, ${mic.neighborhood}` : ''}
-          {distanceKm != null
-            ? ` (${distanceKm < 10 ? distanceKm.toFixed(1) : Math.round(distanceKm)} km)`
-            : ''}
+          {mic.distance_m != null ? ` (${formatMilesFromMeters(mic.distance_m)})` : ''}
         </Text>
         <Text style={styles.when}>{recurrence ?? formatNextDate(mic.next_starts_at)}</Text>
         <View style={styles.metaRow}>

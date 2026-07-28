@@ -1,8 +1,16 @@
-import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Glyph, disciplineGlyphs } from '@/components/glyph';
-import { SIGNUP_METHOD_LABELS } from '@/features/discovery/components/mic-card';
-import { TIME_WINDOWS, hasActiveFilters, useFiltersStore, type TimeOfDay } from '@/stores/filters';
+import { FilterSheet } from '@/features/discovery/components/filter-sheet';
+import {
+  WEEKEND_DAYS,
+  dayQuickPick,
+  hasActiveFilters,
+  isoWeekday,
+  sheetFilterCount,
+  useFiltersStore,
+} from '@/stores/filters';
 import {
   disciplineAccents,
   fonts,
@@ -11,22 +19,14 @@ import {
   spacing,
   type Discipline,
 } from '@/theme';
-import type { Database } from '@/types/database.types';
-
-type SignupMethod = Database['public']['Enums']['signup_method'];
 
 const DISCIPLINES: Discipline[] = ['music', 'comedy', 'poetry', 'other'];
-const DAYS: { day: number; label: string }[] = [
-  { day: 1, label: 'Mon' },
-  { day: 2, label: 'Tue' },
-  { day: 3, label: 'Wed' },
-  { day: 4, label: 'Thu' },
-  { day: 5, label: 'Fri' },
-  { day: 6, label: 'Sat' },
-  { day: 7, label: 'Sun' },
-];
-const METHODS: SignupMethod[] = ['first_come', 'lottery', 'reserved_slot', 'host_booked'];
-const RADII = [8, 16, 40, 80];
+const DISCIPLINE_LABELS: Record<Discipline, string> = {
+  music: 'Music',
+  comedy: 'Comedy',
+  poetry: 'Poetry',
+  other: 'Other',
+};
 
 type ChipProps = {
   label: string;
@@ -40,7 +40,7 @@ function Chip({ label, active, onPress, activeColor, icon }: ChipProps) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Filter: ${label}`}
+      accessibilityLabel={label}
       accessibilityState={{ selected: active }}
       onPress={onPress}
       style={[
@@ -54,92 +54,108 @@ function Chip({ label, active, onPress, activeColor, icon }: ChipProps) {
   );
 }
 
-/** One horizontally scrolling row of every discovery filter. */
+/**
+ * The simple face of discovery: one question per row. Row one asks what
+ * kind of mic, row two asks when, plus Free and a door into the full
+ * filter sheet for everything else.
+ */
 export function FilterBar() {
   const filters = useFiltersStore();
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  const todayIso = isoWeekday(new Date());
+  const quickPick = dayQuickPick(filters.days, todayIso);
+  const moreCount = sheetFilterCount(filters, todayIso);
+  const selected = filters.disciplines.length === 1 ? filters.disciplines[0] : null;
 
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.row}
-      accessibilityLabel="Filters"
-    >
-      {hasActiveFilters(filters) ? (
-        <Chip label="Reset" active={false} onPress={filters.reset} />
-      ) : null}
-      {DISCIPLINES.map((d) => (
+    <View style={styles.wrap}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.row}
+        accessibilityLabel="What kind of mic"
+      >
         <Chip
-          key={d}
-          label={d.charAt(0).toUpperCase() + d.slice(1)}
-          active={filters.disciplines.includes(d)}
-          activeColor={disciplineAccents[d]}
-          onPress={() => filters.toggleDiscipline(d)}
-          icon={
-            <Glyph
-              name={disciplineGlyphs[d]}
-              size={14}
-              color={filters.disciplines.includes(d) ? disciplineAccents[d] : palette.textSecondary}
-            />
-          }
+          label="All"
+          active={selected === null && filters.disciplines.length === 0}
+          onPress={() => filters.selectDiscipline(null)}
         />
-      ))}
-      <Chip
-        label="Free"
-        active={filters.freeOnly}
-        onPress={() => filters.setFreeOnly(!filters.freeOnly)}
-      />
-      {DAYS.map(({ day, label }) => (
+        {DISCIPLINES.map((d) => (
+          <Chip
+            key={d}
+            label={DISCIPLINE_LABELS[d]}
+            active={selected === d}
+            activeColor={disciplineAccents[d]}
+            onPress={() => filters.selectDiscipline(selected === d ? null : d)}
+            icon={
+              <Glyph
+                name={disciplineGlyphs[d]}
+                size={16}
+                color={selected === d ? disciplineAccents[d] : palette.textSecondary}
+              />
+            }
+          />
+        ))}
+      </ScrollView>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.row}
+        accessibilityLabel="When and more filters"
+      >
         <Chip
-          key={day}
-          label={label}
-          active={filters.days.includes(day)}
-          onPress={() => filters.toggleDay(day)}
+          label="Any day"
+          active={quickPick === 'any'}
+          onPress={() => filters.setDays([])}
         />
-      ))}
-      {(Object.keys(TIME_WINDOWS) as TimeOfDay[]).map((t) => (
         <Chip
-          key={t}
-          label={TIME_WINDOWS[t].label}
-          active={filters.timeOfDay === t}
-          onPress={() => filters.setTimeOfDay(filters.timeOfDay === t ? null : t)}
+          label="Today"
+          active={quickPick === 'today'}
+          onPress={() => filters.setDays(quickPick === 'today' ? [] : [todayIso])}
         />
-      ))}
-      {METHODS.map((m) => (
         <Chip
-          key={m}
-          label={SIGNUP_METHOD_LABELS[m]}
-          active={filters.methods.includes(m)}
-          onPress={() => filters.toggleMethod(m)}
+          label="Weekend"
+          active={quickPick === 'weekend'}
+          onPress={() => filters.setDays(quickPick === 'weekend' ? [] : WEEKEND_DAYS)}
         />
-      ))}
-      {RADII.map((km) => (
         <Chip
-          key={km}
-          label={`${km} km`}
-          active={filters.radiusKm === km}
-          onPress={() => filters.setRadiusKm(km)}
+          label="Free"
+          active={filters.freeOnly}
+          onPress={() => filters.setFreeOnly(!filters.freeOnly)}
         />
-      ))}
-    </ScrollView>
+        <Chip
+          label={moreCount > 0 ? `More filters (${moreCount})` : 'More filters'}
+          active={moreCount > 0}
+          onPress={() => setSheetOpen(true)}
+        />
+        {hasActiveFilters(filters) ? (
+          <Chip label="Clear all" active={false} onPress={filters.reset} />
+        ) : null}
+      </ScrollView>
+      <FilterSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrap: {
+    gap: spacing.xs,
+    paddingVertical: spacing.xs,
+  },
   row: {
     gap: spacing.sm,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
   },
   chip: {
     alignItems: 'center',
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 18,
+    borderRadius: 22,
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.xs,
-    minHeight: Math.max(36, minTouchTarget - 8),
+    minHeight: minTouchTarget,
     paddingHorizontal: spacing.md,
   },
   chipActive: {
@@ -148,8 +164,8 @@ const styles = StyleSheet.create({
   },
   chipLabel: {
     color: palette.textSecondary,
-    fontFamily: fonts.regular,
-    fontSize: 13,
+    fontFamily: fonts.medium,
+    fontSize: 15,
   },
   chipLabelActive: {
     color: palette.text,
