@@ -1,0 +1,21 @@
+# Maestro smoke flow: performer signs up for a night and withdraws.
+appId: com.openmicfinder.app
+---
+- launchApp
+- runFlow:
+    when:
+      visible: 'Sign in'
+    commands:
+      - tapOn: 'Email'
+      - inputText: 'performer@demo.openmic.local'
+      - tapOn: 'Password'
+      - inputText: 'demo-pass-1234'
+      - tapOn: 'Sign in'
+- extendedWaitUntil:
+    visible: 'Discover'
+    timeout: 15000
+- tapOn: 'Switch to list view'
+- tapOn: 'Velvet Antler Comedy Open Mic.*'
+- extendedWaitUntil:
+    visible: 'Sign up|Withdraw|Signups for .* open'
+    timeout: 10000

@@ -1,0 +1,21 @@
+# Maestro smoke flow: anonymous discovery loop.
+# Run: maestro test e2e/discovery.yaml (dev build with seeded local Supabase)
+appId: com.openmicfinder.app
+---
+- launchApp
+- assertVisible: 'Sign in'
+# Anonymous browsing is allowed; discovery is behind the tabs once signed in,
+# so this flow signs in with the seeded performer account.
+- tapOn: 'Email'
+- inputText: 'performer@demo.openmic.local'
+- tapOn: 'Password'
+- inputText: 'demo-pass-1234'
+- tapOn: 'Sign in'
+- extendedWaitUntil:
+    visible: 'Discover'
+    timeout: 15000
+- tapOn: 'Switch to list view'
+- assertVisible: 'Rusty Fret Open Mic'
+- tapOn: 'Rusty Fret Open Mic.*'
+- assertVisible: 'Every Tuesday, 8:00 PM'
+- assertVisible: 'Get directions'

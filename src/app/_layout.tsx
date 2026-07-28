@@ -16,6 +16,7 @@ import { SessionProvider, useSession } from '@/features/auth/session';
 import { useLatestEula, useOwnProfile } from '@/features/auth/queries';
 import { registerPushToken } from '@/lib/notifications';
 import { queryClient } from '@/lib/query-client';
+import { initSentry } from '@/lib/sentry';
 import { palette } from '@/theme';
 
 const appTheme = {
@@ -117,6 +118,8 @@ function AuthGate({ children }: { children: ReactNode }) {
 // Cached server data survives restarts so listings stay readable offline
 // (performers check this app in parking lots with one bar of signal).
 const persister = createAsyncStoragePersister({ storage: AsyncStorage });
+
+initSentry();
 
 export default function RootLayout() {
   // Brand typography; screens render with the system font until loaded.

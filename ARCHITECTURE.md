@@ -51,6 +51,11 @@ Renovate/dependabot, when added, must be configured to exclude these from automa
 - **2026-07-28, offline reads via TanStack Query persistence.** PersistQueryClientProvider with an AsyncStorage persister (24 h maxAge) keeps listing data readable without a connection. This covers the offline-tolerance standard without a custom cache layer.
 - **2026-07-28, brand.** Official name: Open Mic Finder. Logo recreated as vector components (react-native-svg) in src/components/logo.tsx; wordmark typography is Poppins (loaded at the root layout). The three logo arcs are the discipline accents from src/theme/tokens.ts.
 
+- **2026-07-28, notification outbox pattern.** Database triggers and scheduled queue functions write to notification_outbox; the push-sender Edge Function drains it via Expo Push under the service role. Notifications are decoupled from request paths and every enqueue is idempotent per subject.
+- **2026-07-28, list reorder without a drag dependency.** The producer list uses up/down controls instead of drag-to-reorder: the maintained drag-list libraries predate Reanimated 4 and the New Architecture. Revisit when a compatible library stabilizes; the set_slot_order RPC already accepts an arbitrary full ordering, so only the gesture layer would change.
+- **2026-07-28, monetization boundaries.** RevenueCat handles only the Producer Pro subscription. Freshness actions (create, confirm, cancel) are never paywalled; performer features are free permanently; paid reserved slots are settled outside the app (Apple 3.1.5(a)). Entitlement resolution is a tested pure function; unconfigured production builds fail closed.
+- **2026-07-28, Sentry.** Initialized only when EXPO_PUBLIC_SENTRY_DSN is set; sendDefaultPii is off and no user identity is attached, matching the privacy declarations.
+
 ## Repo layout
 
 See docs/STEP0_PROPOSAL.md section 4 for the full annotated tree. Summary: `src/app` is routes only, `src/features` holds feature modules, `src/lib` holds clients, `src/theme` holds tokens, `supabase/` holds migrations (with RLS policies and pgTAP tests alongside), Edge Functions, and seed data.
