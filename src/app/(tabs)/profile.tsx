@@ -9,7 +9,7 @@ import { AvatarCircle } from '@/features/profile/avatar-circle';
 import { homeAreaLabel } from '@/features/profile/home-area';
 import { buildSocialLinks } from '@/features/profile/social';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
-import { fonts, minTouchTarget, palette, spacing, type } from '@/theme';
+import { disciplineAccents, fonts, minTouchTarget, palette, spacing, type } from '@/theme';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -51,8 +51,26 @@ export default function ProfileScreen() {
         </View>
       </View>
       <View style={styles.roles}>
-        {p.is_performer ? <Text style={styles.roleChip}>Performer</Text> : null}
-        {p.is_producer ? <Text style={styles.roleChip}>Producer</Text> : null}
+        {p.is_performer ? (
+          <Text
+            style={[
+              styles.roleChip,
+              { borderColor: disciplineAccents.music, color: disciplineAccents.music },
+            ]}
+          >
+            Performer
+          </Text>
+        ) : null}
+        {p.is_producer ? (
+          <Text
+            style={[
+              styles.roleChip,
+              { borderColor: disciplineAccents.comedy, color: disciplineAccents.comedy },
+            ]}
+          >
+            Producer
+          </Text>
+        ) : null}
       </View>
       {p.bio ? <Body>{p.bio}</Body> : null}
       {homeAreaLabel(p) ? (

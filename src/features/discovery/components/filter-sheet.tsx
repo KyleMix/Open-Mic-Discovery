@@ -7,7 +7,7 @@ import {
 } from '@/features/discovery/components/mic-card';
 import { RADIUS_CHOICES } from '@/features/discovery/distance';
 import { TIME_WINDOWS, useFiltersStore, type TimeOfDay } from '@/stores/filters';
-import { fonts, minTouchTarget, palette, spacing, type } from '@/theme';
+import { disciplineAccents, fonts, minTouchTarget, palette, spacing, type } from '@/theme';
 import type { Database } from '@/types/database.types';
 
 type SignupMethod = Database['public']['Enums']['signup_method'];
@@ -27,10 +27,12 @@ function SheetChip({
   label,
   active,
   onPress,
+  activeColor,
 }: {
   label: string;
   active: boolean;
   onPress: () => void;
+  activeColor?: string;
 }) {
   return (
     <Pressable
@@ -38,7 +40,10 @@ function SheetChip({
       accessibilityLabel={label}
       accessibilityState={{ selected: active }}
       onPress={onPress}
-      style={[styles.chip, active && styles.chipActive]}
+      style={[
+        styles.chip,
+        active && [styles.chipActive, activeColor ? { borderColor: activeColor } : null],
+      ]}
     >
       <Text style={[styles.chipLabel, active && styles.chipLabelActive]}>{label}</Text>
     </Pressable>
@@ -87,6 +92,7 @@ export function FilterSheet({ visible, onClose }: { visible: boolean; onClose: (
                     key={day}
                     label={label}
                     active={filters.days.includes(day)}
+                    activeColor={disciplineAccents.music}
                     onPress={() => filters.toggleDay(day)}
                   />
                 ))}
@@ -105,6 +111,7 @@ export function FilterSheet({ visible, onClose }: { visible: boolean; onClose: (
                     key={t}
                     label={TIME_WINDOWS[t].label}
                     active={filters.timeOfDay === t}
+                    activeColor={disciplineAccents.comedy}
                     onPress={() => filters.setTimeOfDay(filters.timeOfDay === t ? null : t)}
                   />
                 ))}
@@ -142,6 +149,7 @@ export function FilterSheet({ visible, onClose }: { visible: boolean; onClose: (
                     key={km}
                     label={label}
                     active={filters.radiusKm === km}
+                    activeColor={disciplineAccents.poetry}
                     onPress={() => filters.setRadiusKm(km)}
                   />
                 ))}

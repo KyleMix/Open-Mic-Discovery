@@ -112,6 +112,20 @@ export function Logo({ markSize = 56, color = palette.text, showWordmark = true 
   );
 }
 
+/**
+ * Compact lockup sized for a navigation bar: the mark plus the name at a
+ * legible size. Used as the Discover header so the brand fronts the
+ * screen people see most.
+ */
+export function BrandHeader() {
+  return (
+    <View style={styles.row} accessibilityRole="image" accessibilityLabel="Open Mic Finder">
+      <LogoMark size={30} />
+      <Text style={styles.headerWordmark}>Open Mic Finder</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   row: {
     alignItems: 'center',
@@ -120,5 +134,11 @@ const styles = StyleSheet.create({
   wordmark: {
     fontFamily: fonts.medium,
     letterSpacing: 4,
+  },
+  headerWordmark: {
+    color: palette.text,
+    fontFamily: fonts.semibold,
+    fontSize: 17,
+    letterSpacing: 1.5,
   },
 });

@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 
-import { palette } from '@/theme';
+import { BrandHeader } from '@/components/logo';
+import { disciplineAccents, palette } from '@/theme';
 
 export default function TabsLayout() {
   return (
@@ -9,8 +10,9 @@ export default function TabsLayout() {
       screenOptions={{
         headerStyle: { backgroundColor: palette.bg },
         headerTintColor: palette.text,
+        headerShadowVisible: false,
         tabBarStyle: { backgroundColor: palette.bgElevated, borderTopColor: palette.border },
-        tabBarActiveTintColor: palette.text,
+        tabBarActiveTintColor: disciplineAccents.music,
         tabBarInactiveTintColor: palette.textDisabled,
       }}
     >
@@ -18,6 +20,8 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'Discover',
+          headerTitle: () => <BrandHeader />,
+          headerTitleAlign: 'left',
           tabBarIcon: ({ color, size }) => <Ionicons name="map" color={color} size={size} />,
         }}
       />

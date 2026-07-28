@@ -114,21 +114,25 @@ export function FilterBar() {
         <Chip
           label="Today"
           active={quickPick === 'today'}
+          activeColor={disciplineAccents.music}
           onPress={() => filters.setDays(quickPick === 'today' ? [] : [todayIso])}
         />
         <Chip
           label="Weekend"
           active={quickPick === 'weekend'}
+          activeColor={disciplineAccents.music}
           onPress={() => filters.setDays(quickPick === 'weekend' ? [] : WEEKEND_DAYS)}
         />
         <Chip
           label="Free"
           active={filters.freeOnly}
+          activeColor={palette.success}
           onPress={() => filters.setFreeOnly(!filters.freeOnly)}
         />
         <Chip
           label={moreCount > 0 ? `More filters (${moreCount})` : 'More filters'}
           active={moreCount > 0}
+          activeColor={disciplineAccents.poetry}
           onPress={() => setSheetOpen(true)}
         />
         {hasActiveFilters(filters) ? (
