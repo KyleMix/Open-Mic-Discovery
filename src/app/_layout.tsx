@@ -1,4 +1,12 @@
-import { QueryClientProvider } from '@tanstack/react-query';
+import {
+  Poppins_400Regular,
+  Poppins_500Medium,
+  Poppins_600SemiBold,
+  useFonts,
+} from '@expo-google-fonts/poppins';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { DarkTheme, Stack, ThemeProvider, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, type ReactNode } from 'react';
@@ -6,7 +14,9 @@ import { useEffect, type ReactNode } from 'react';
 import { Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { SessionProvider, useSession } from '@/features/auth/session';
 import { useLatestEula, useOwnProfile } from '@/features/auth/queries';
+import { registerPushToken } from '@/lib/notifications';
 import { queryClient } from '@/lib/query-client';
+import { initSentry } from '@/lib/sentry';
 import { palette } from '@/theme';
 
 const appTheme = {
@@ -39,6 +49,13 @@ function AuthGate({ children }: { children: ReactNode }) {
   const inAuthGroup = segments[0] === '(auth)';
   const authScreen = inAuthGroup ? segments[1] : undefined;
   const waiting = !ready || (session != null && (profile.isPending || eula.isPending));
+
+  // Push registration is quiet and best-effort; the userId is stable per session.
+  useEffect(() => {
+    if (session?.user.id) {
+      registerPushToken(session.user.id);
+    }
+  }, [session?.user.id]);
 
   useEffect(() => {
     if (waiting || profile.isError || eula.isError) {
@@ -98,9 +115,20 @@ function AuthGate({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+// Cached server data survives restarts so listings stay readable offline
+// (performers check this app in parking lots with one bar of signal).
+const persister = createAsyncStoragePersister({ storage: AsyncStorage });
+
+initSentry();
+
 export default function RootLayout() {
+  // Brand typography; screens render with the system font until loaded.
+  useFonts({ Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold });
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{ persister, maxAge: 24 * 60 * 60 * 1000 }}
+    >
       <SessionProvider>
         <ThemeProvider value={appTheme}>
           <StatusBar style="light" />
@@ -112,6 +140,6 @@ export default function RootLayout() {
           </AuthGate>
         </ThemeProvider>
       </SessionProvider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }

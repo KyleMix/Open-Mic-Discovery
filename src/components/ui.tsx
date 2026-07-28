@@ -9,7 +9,7 @@ import {
   type TextInputProps,
 } from 'react-native';
 
-import { minTouchTarget, palette, spacing, type } from '@/theme';
+import { fonts, minTouchTarget, palette, spacing, type } from '@/theme';
 
 export function Screen({ children }: { children: ReactNode }) {
   return <View style={styles.screen}>{children}</View>;
@@ -140,8 +140,9 @@ const styles = StyleSheet.create({
   },
   title: {
     color: palette.text,
+    fontFamily: fonts.semibold,
     fontSize: type.title.fontSize,
-    fontWeight: type.title.fontWeight,
+    letterSpacing: 0.5,
     lineHeight: type.title.lineHeight,
   },
   body: {
@@ -164,8 +165,8 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     color: palette.text,
+    fontFamily: fonts.medium,
     fontSize: type.body.fontSize,
-    fontWeight: '600',
   },
   input: {
     backgroundColor: palette.bgElevated,
@@ -197,8 +198,9 @@ const styles = StyleSheet.create({
   },
   buttonLabel: {
     color: palette.bg,
+    fontFamily: fonts.medium,
     fontSize: type.body.fontSize,
-    fontWeight: '600',
+    letterSpacing: 0.5,
   },
   buttonLabelSecondary: {
     color: palette.text,

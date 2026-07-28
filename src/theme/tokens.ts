@@ -41,6 +41,16 @@ export const spacing = {
   xxl: 48,
 } as const;
 
+/**
+ * Brand typography: Poppins, matching the geometric wordmark in the logo.
+ * Loaded in the root layout; falls back to the system font until ready.
+ */
+export const fonts = {
+  regular: 'Poppins_400Regular',
+  medium: 'Poppins_500Medium',
+  semibold: 'Poppins_600SemiBold',
+} as const;
+
 export const type = {
   title: { fontSize: 28, fontWeight: '700', lineHeight: 34 },
   heading: { fontSize: 20, fontWeight: '600', lineHeight: 26 },

@@ -65,6 +65,22 @@ Small square minimal line illustration, white 2px strokes, one accent color, tra
 
 Icon sheet of ten minimal line icons, white 2px stroke on transparent background, all on the same grid, identical visual weight, 24x24 style, no fills, no text: 1) eighth note, 2) open laughing mouth, 3) quill pen, 4) four-point spark, 5) raffle ticket, 6) numbered list with three rows, 7) bookmark over a chair seat, 8) sealed envelope, 9) checkmark inside a circle, 10) map pin with a small pencil overlapping it.
 
+## Logo: "Open Mic Finder"
+
+Primary horizontal lockup:
+
+Minimalist professional logo for a mobile app called "Open Mic Finder". Flat vector, dark background #0B0B0F. Logo mark on the left: a simple geometric microphone built from clean 2px white line strokes with rounded caps, where the microphone head doubles as a map pin (teardrop pin silhouette with a round mic-grille head), and three small radiating sound-wave arcs to its right, the arcs in blue #4DA6FF, amber #FFB84D, and purple #C084FC. Wordmark to the right of the mark: "Open Mic Finder" in a clean geometric sans-serif typeface, white #F4F4F6, medium weight, generous letter spacing, all on one line. Strictly flat: no gradients, no shadows, no 3D, no texture, no outline box. Generous negative space, balanced composition, crisp edges suitable for SVG conversion. The mark must remain legible at 32 pixels tall.
+
+Mark only (square, avatars and small placements):
+
+Standalone logo mark, square 1:1, transparent background. A geometric microphone drawn in clean 2px white line strokes with rounded caps, its head merged with a map pin teardrop silhouette, three small radiating arcs in blue #4DA6FF, amber #FFB84D, and purple #C084FC. No text. Flat vector, no gradients, no shadows, no 3D. Centered with generous margin, legible at 24 pixels.
+
+Light-background variant:
+
+Same "Open Mic Finder" logo lockup, but for light backgrounds: the microphone-pin mark and wordmark in near-black #0B0B0F strokes instead of white, keeping the three arcs in blue #4DA6FF, amber #FFB84D, and purple #C084FC. Transparent background, flat vector, no gradients or shadows.
+
+Note: "Open Mic Finder" is a candidate final name; the app config still carries the working name "OPEN MIC" until the name is finalized before store submission. If the generator mangles the wordmark text, generate the mark alone and set the wordmark in a real typeface in SVG instead.
+
 ## Generation tips
 
 - Generate the app icon first, then reference it for style consistency; reuse seeds where the tool allows.

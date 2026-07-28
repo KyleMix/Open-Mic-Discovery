@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "OPEN MIC",
+    "name": "Open Mic Finder",
     "slug": "openmic",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,9 +9,14 @@
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0B0B0F",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.openmicfinder.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "com.openmicfinder.app",
       "adaptiveIcon": {
         "backgroundColor": "#0B0B0F",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -27,6 +32,13 @@
     "plugins": [
       "expo-router",
       "expo-apple-authentication",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Open Mic Finder uses your location only while you use the app, to show open mics near you. It is never tracked in the background.",
+          "isAndroidBackgroundLocationEnabled": false
+        }
+      ],
       [
         "expo-splash-screen",
         {

@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -8,6 +9,7 @@ import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/component
 import { palette, spacing, type } from '@/theme';
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { session } = useSession();
   const profile = useOwnProfile(session?.user.id);
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +48,10 @@ export default function ProfileScreen() {
       {p.home_city ? <Body>{p.home_city}</Body> : null}
       {p.bio ? <Body>{p.bio}</Body> : null}
       {error ? <ErrorText>{error}</ErrorText> : null}
+      <Button label="Settings" kind="secondary" onPress={() => router.push('/settings')} />
+      {p.is_admin ? (
+        <Button label="Moderation queue" kind="secondary" onPress={() => router.push('/admin')} />
+      ) : null}
       <Button
         label="Sign out"
         kind="secondary"

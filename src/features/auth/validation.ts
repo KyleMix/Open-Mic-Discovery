@@ -46,7 +46,7 @@ export function validateBirthYear(value: string, now: Date): string | null {
     return 'Enter your four-digit birth year.';
   }
   if (currentYear - year < MINIMUM_AGE) {
-    return `You must be at least ${MINIMUM_AGE} to use OPEN MIC.`;
+    return `You must be at least ${MINIMUM_AGE} to use Open Mic Finder.`;
   }
   return null;
 }

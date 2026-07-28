@@ -62,6 +62,21 @@ export type Database = {
           },
         ];
       };
+      banned_terms: {
+        Row: {
+          created_at: string;
+          term: string;
+        };
+        Insert: {
+          created_at?: string;
+          term: string;
+        };
+        Update: {
+          created_at?: string;
+          term?: string;
+        };
+        Relationships: [];
+      };
       blocks: {
         Row: {
           blocked_id: string;
@@ -540,6 +555,54 @@ export type Database = {
             columns: ['venue_id'];
             isOneToOne: false;
             referencedRelation: 'venues';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      notification_outbox: {
+        Row: {
+          body: string;
+          created_at: string;
+          id: string;
+          kind: string;
+          payload: Json;
+          profile_id: string;
+          sent_at: string | null;
+          title: string;
+        };
+        Insert: {
+          body: string;
+          created_at?: string;
+          id?: string;
+          kind: string;
+          payload?: Json;
+          profile_id: string;
+          sent_at?: string | null;
+          title: string;
+        };
+        Update: {
+          body?: string;
+          created_at?: string;
+          id?: string;
+          kind?: string;
+          payload?: Json;
+          profile_id?: string;
+          sent_at?: string | null;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notification_outbox_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notification_outbox_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'public_profiles';
             referencedColumns: ['id'];
           },
         ];
@@ -1148,6 +1211,41 @@ export type Database = {
         };
         Relationships: [];
       };
+      signup_roster: {
+        Row: {
+          created_at: string | null;
+          display_name: string | null;
+          handle: string | null;
+          id: string | null;
+          occurrence_id: string | null;
+          performer_id: string | null;
+          slot_position: number | null;
+          status: Database['public']['Enums']['signup_status'] | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'signups_occurrence_id_fkey';
+            columns: ['occurrence_id'];
+            isOneToOne: false;
+            referencedRelation: 'mic_occurrences';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'signups_performer_id_fkey';
+            columns: ['performer_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'signups_performer_id_fkey';
+            columns: ['performer_id'];
+            isOneToOne: false;
+            referencedRelation: 'public_profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       tap_funky: {
         Row: {
           args: string | null;
@@ -1348,6 +1446,7 @@ export type Database = {
             Returns: string;
           };
       dearmor: { Args: { '': string }; Returns: string };
+      delete_account: { Args: never; Returns: undefined };
       diag:
         | {
             Args: { msg: unknown };
@@ -1364,6 +1463,24 @@ export type Database = {
       diag_test_name: { Args: { '': string }; Returns: string };
       disablelongtransactions: { Args: never; Returns: string };
       do_tap: { Args: never; Returns: string[] } | { Args: { '': string }; Returns: string[] };
+      draw_lottery: {
+        Args: { p_occurrence_id: string };
+        Returns: {
+          created_at: string;
+          id: string;
+          occurrence_id: string;
+          performer_id: string;
+          slot_position: number | null;
+          status: Database['public']['Enums']['signup_status'];
+          updated_at: string;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'signups';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       dropgeometrycolumn:
         | {
             Args: {
@@ -1507,6 +1624,54 @@ export type Database = {
       isnt_empty: { Args: { '': string }; Returns: string };
       lives_ok: { Args: { '': string }; Returns: string };
       longtransactionsenabled: { Args: never; Returns: boolean };
+      mics_near: {
+        Args: {
+          p_days?: number[];
+          p_disciplines?: Database['public']['Enums']['discipline'][];
+          p_end_hour?: number;
+          p_free_only?: boolean;
+          p_lat: number;
+          p_limit?: number;
+          p_lng: number;
+          p_methods?: Database['public']['Enums']['signup_method'][];
+          p_radius_m?: number;
+          p_start_hour?: number;
+        };
+        Returns: {
+          city: string;
+          cost_cents: number;
+          description: string;
+          disciplines: Database['public']['Enums']['discipline'][];
+          distance_m: number;
+          is_active: boolean;
+          last_confirmed_at: string;
+          lat: number;
+          lng: number;
+          neighborhood: string;
+          next_local_date: string;
+          next_occurrence_id: string;
+          next_starts_at: string;
+          next_status: Database['public']['Enums']['occurrence_status'];
+          region: string;
+          rrule: string;
+          series_id: string;
+          set_length_minutes: number;
+          signup_method: Database['public']['Enums']['signup_method'];
+          start_time: string;
+          timezone: string;
+          title: string;
+          venue_id: string;
+          venue_name: string;
+        }[];
+      };
+      moderate_content: {
+        Args: {
+          p_approve: boolean;
+          p_target: Database['public']['Enums']['report_target'];
+          p_target_id: string;
+        };
+        Returns: undefined;
+      };
       no_plan: { Args: never; Returns: boolean[] };
       num_failed: { Args: never; Returns: number };
       os_name: { Args: never; Returns: string };
@@ -1608,7 +1773,36 @@ export type Database = {
       };
       postgis_version: { Args: never; Returns: string };
       postgis_wagyu_version: { Args: never; Returns: string };
+      review_claim: {
+        Args: { p_approve: boolean; p_claim_id: string };
+        Returns: undefined;
+      };
       runtests: { Args: never; Returns: string[] } | { Args: { '': string }; Returns: string[] };
+      search_mics: {
+        Args: { p_limit?: number; p_query: string };
+        Returns: {
+          city: string;
+          cost_cents: number;
+          disciplines: Database['public']['Enums']['discipline'][];
+          last_confirmed_at: string;
+          lat: number;
+          lng: number;
+          next_starts_at: string;
+          region: string;
+          rrule: string;
+          series_id: string;
+          signup_method: Database['public']['Enums']['signup_method'];
+          start_time: string;
+          timezone: string;
+          title: string;
+          venue_id: string;
+          venue_name: string;
+        }[];
+      };
+      set_slot_order: {
+        Args: { p_occurrence_id: string; p_signup_ids: string[] };
+        Returns: undefined;
+      };
       skip:
         | { Args: { '': string }; Returns: string }
         | { Args: { how_many: number; why: string }; Returns: string };
