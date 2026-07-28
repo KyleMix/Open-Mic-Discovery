@@ -1648,6 +1648,10 @@ export type Database = {
       };
       postgis_version: { Args: never; Returns: string };
       postgis_wagyu_version: { Args: never; Returns: string };
+      review_claim: {
+        Args: { p_approve: boolean; p_claim_id: string };
+        Returns: undefined;
+      };
       runtests: { Args: never; Returns: string[] } | { Args: { '': string }; Returns: string[] };
       search_mics: {
         Args: { p_limit?: number; p_query: string };

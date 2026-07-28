@@ -1,0 +1,106 @@
+/**
+ * Turns the recurrence builder's plain choices into the RRULE subset the
+ * occurrence generator understands. The inverse of discovery/recurrence.ts:
+ * producers never see an RRULE.
+ */
+
+export const WEEKDAY_CODES = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as const;
+export type WeekdayCode = (typeof WEEKDAY_CODES)[number];
+
+export type OrdinalChoice = '1' | '2' | '3' | '4' | '-1';
+
+export type RecurrenceChoice =
+  | { kind: 'weekly'; days: WeekdayCode[] }
+  | { kind: 'biweekly'; days: WeekdayCode[] }
+  | { kind: 'monthly'; ordinals: OrdinalChoice[]; day: WeekdayCode };
+
+export function buildRrule(choice: RecurrenceChoice): string | null {
+  if (choice.kind === 'weekly' || choice.kind === 'biweekly') {
+    if (choice.days.length === 0) {
+      return null;
+    }
+    const byday = [...choice.days]
+      .sort((a, b) => WEEKDAY_CODES.indexOf(a) - WEEKDAY_CODES.indexOf(b))
+      .join(',');
+    return choice.kind === 'weekly'
+      ? `FREQ=WEEKLY;BYDAY=${byday}`
+      : `FREQ=WEEKLY;INTERVAL=2;BYDAY=${byday}`;
+  }
+  if (choice.ordinals.length === 0) {
+    return null;
+  }
+  const byday = [...choice.ordinals]
+    .sort((a, b) => Number(a) - Number(b))
+    .map((o) => `${o}${choice.day}`)
+    .join(',');
+  return `FREQ=MONTHLY;BYDAY=${byday}`;
+}
+
+/** Inverse of buildRrule, used to prefill the builder when editing a series. */
+export function parseRrule(rrule: string): RecurrenceChoice | null {
+  const parts = new Map<string, string>();
+  for (const piece of rrule.split(';')) {
+    const [key, value] = piece.split('=');
+    if (key && value) {
+      parts.set(key.toUpperCase(), value.toUpperCase());
+    }
+  }
+  const byday = (parts.get('BYDAY') ?? '').split(',').filter(Boolean);
+  if (parts.get('FREQ') === 'WEEKLY') {
+    const days = byday.filter((d): d is WeekdayCode =>
+      (WEEKDAY_CODES as readonly string[]).includes(d),
+    );
+    if (days.length !== byday.length || days.length === 0) {
+      return null;
+    }
+    const interval = Number(parts.get('INTERVAL') ?? '1');
+    if (interval === 1) {
+      return { kind: 'weekly', days };
+    }
+    if (interval === 2) {
+      return { kind: 'biweekly', days };
+    }
+    return null;
+  }
+  if (parts.get('FREQ') === 'MONTHLY') {
+    const ordinals: OrdinalChoice[] = [];
+    let day: WeekdayCode | null = null;
+    for (const entry of byday) {
+      const match = entry.match(/^(-?\d)([A-Z]{2})$/);
+      if (!match || !['1', '2', '3', '4', '-1'].includes(match[1])) {
+        return null;
+      }
+      if (!(WEEKDAY_CODES as readonly string[]).includes(match[2])) {
+        return null;
+      }
+      if (day && day !== match[2]) {
+        return null;
+      }
+      day = match[2] as WeekdayCode;
+      ordinals.push(match[1] as OrdinalChoice);
+    }
+    if (!day || ordinals.length === 0) {
+      return null;
+    }
+    return { kind: 'monthly', ordinals, day };
+  }
+  return null;
+}
+
+/**
+ * The anchor date fixes biweekly parity: it must land on a matching weekday
+ * in the week of the first real occurrence. For weekly/monthly rules any
+ * recent date works; for biweekly the caller says whether the mic happens
+ * this week or next.
+ */
+export function computeAnchorDate(
+  choice: RecurrenceChoice,
+  today: Date,
+  biweeklyStartsNextWeek = false,
+): string {
+  const anchor = new Date(today);
+  if (choice.kind === 'biweekly' && biweeklyStartsNextWeek) {
+    anchor.setDate(anchor.getDate() + 7);
+  }
+  return anchor.toISOString().slice(0, 10);
+}

@@ -17,6 +17,7 @@ import { useSession } from '@/features/auth/session';
 import { SIGNUP_METHOD_LABELS, costLabel } from '@/features/discovery/components/mic-card';
 import { freshness } from '@/features/discovery/freshness';
 import { useFlagListing, useMicDetail } from '@/features/discovery/queries';
+import { useSubmitClaim } from '@/features/producer/queries';
 import { describeRecurrence, formatLocalTime } from '@/features/discovery/recurrence';
 import { disciplineAccents, fonts, palette, spacing, type, type Discipline } from '@/theme';
 import type { Database } from '@/types/database.types';
@@ -89,6 +90,7 @@ function MicDetail({
   const recurrence = describeRecurrence(series.rrule, series.start_time);
   const next = occurrences.find((o) => o.status !== 'cancelled');
   const [flagOpen, setFlagOpen] = useState(false);
+  const [claimOpen, setClaimOpen] = useState(false);
 
   function openDirections() {
     if (!venue) {
@@ -210,8 +212,109 @@ function MicDetail({
         <Text style={styles.flagText}>Something wrong with this listing?</Text>
       </Pressable>
 
+      {series.owner_id === null ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Claim this mic if you run it"
+          onPress={() => setClaimOpen(true)}
+          style={styles.flagButton}
+        >
+          <Glyph name="signup-host-booked" size={16} color={palette.textSecondary} />
+          <Text style={styles.flagText}>Do you run this mic? Claim it</Text>
+        </Pressable>
+      ) : null}
+
       <FlagModal seriesId={series.id} visible={flagOpen} onClose={() => setFlagOpen(false)} />
+      <ClaimModal seriesId={series.id} visible={claimOpen} onClose={() => setClaimOpen(false)} />
     </ScrollView>
+  );
+}
+
+function ClaimModal({
+  seriesId,
+  visible,
+  onClose,
+}: {
+  seriesId: string;
+  visible: boolean;
+  onClose: () => void;
+}) {
+  const { session } = useSession();
+  const router = useRouter();
+  const claim = useSubmitClaim();
+  const [evidence, setEvidence] = useState('');
+  const [done, setDone] = useState(false);
+
+  function close() {
+    setEvidence('');
+    setDone(false);
+    claim.reset();
+    onClose();
+  }
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={close}>
+      <View style={styles.modalBackdrop}>
+        <View style={styles.modalSheet}>
+          {done ? (
+            <>
+              <Text style={styles.modalTitle}>Claim submitted</Text>
+              <Body>
+                We review claims by hand to keep listings trustworthy. Once approved, this mic
+                appears in your My Mics tab with full control.
+              </Body>
+              <Button label="Done" onPress={close} />
+            </>
+          ) : !session ? (
+            <>
+              <Text style={styles.modalTitle}>Sign in to claim</Text>
+              <Body>Claiming a mic needs an account so we can hand you the keys.</Body>
+              <Button
+                label="Sign in"
+                onPress={() => {
+                  close();
+                  router.push('/(auth)/sign-in');
+                }}
+              />
+              <Button label="Cancel" kind="secondary" onPress={close} />
+            </>
+          ) : (
+            <>
+              <Text style={styles.modalTitle}>Claim this mic</Text>
+              <Body>
+                Tell us how we can verify you run this night: your role, socials, or who at the
+                venue can vouch for you.
+              </Body>
+              <Field
+                label="How can we verify you?"
+                value={evidence}
+                onChangeText={setEvidence}
+                multiline
+                numberOfLines={3}
+                placeholder="I host every week; the bar manager Sam can confirm."
+              />
+              {claim.isError ? (
+                <ErrorText>
+                  {claim.error instanceof Error ? claim.error.message : 'Could not submit.'}
+                </ErrorText>
+              ) : null}
+              <Button
+                label="Submit claim"
+                busy={claim.isPending}
+                disabled={evidence.trim().length < 10}
+                onPress={() =>
+                  claim.mutate(
+                    { seriesId, userId: session.user.id, evidence: evidence.trim() },
+                    { onSuccess: () => setDone(true) },
+                  )
+                }
+              />
+              <Button label="Cancel" kind="secondary" onPress={close} />
+            </>
+          )}
+        </View>
+      </View>
+    </Modal>
   );
 }
 
