@@ -11,8 +11,9 @@ import {
   validateRoles,
 } from '@/features/auth/validation';
 import { useOnboardingStore } from '@/stores/onboarding';
+import { disciplineGlyphs, Glyph } from '@/components/glyph';
 import { Body, Button, ErrorText, Field, Screen, Title, ToggleRow } from '@/components/ui';
-import { spacing, type Discipline } from '@/theme';
+import { disciplineAccents, palette, spacing, type Discipline } from '@/theme';
 
 const DISCIPLINES: Discipline[] = ['music', 'comedy', 'poetry', 'other'];
 
@@ -106,6 +107,13 @@ export default function OnboardingScreen() {
                 description={disciplineDescription(d)}
                 value={disciplines.includes(d)}
                 onToggle={() => toggleDiscipline(d)}
+                icon={
+                  <Glyph
+                    name={disciplineGlyphs[d]}
+                    size={28}
+                    color={disciplines.includes(d) ? disciplineAccents[d] : palette.textDisabled}
+                  />
+                }
               />
             ))}
           </>

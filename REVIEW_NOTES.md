@@ -12,12 +12,13 @@ Sign in with Apple and Google Sign-In are implemented in code but require provid
 
 Created by the database seed (`supabase/seed.sql`). Local development only; production demo accounts will be created before store submission.
 
-| Role               | Email                        | Password       |
-| ------------------ | ---------------------------- | -------------- |
-| Performer          | performer@demo.openmic.local | demo-pass-1234 |
-| Producer           | producer@demo.openmic.local  | demo-pass-1234 |
-| Dual role          | dual@demo.openmic.local      | demo-pass-1234 |
-| Admin (moderation) | admin@demo.openmic.local     | demo-pass-1234 |
+| Role                             | Email                        | Password            |
+| -------------------------------- | ---------------------------- | ------------------- |
+| Performer                        | performer@demo.openmic.local | demo-pass-1234      |
+| Producer                         | producer@demo.openmic.local  | demo-pass-1234      |
+| Dual role                        | dual@demo.openmic.local      | demo-pass-1234      |
+| Admin (moderation)               | admin@demo.openmic.local     | demo-pass-1234      |
+| Owner/tester (all roles + admin) | kylewmixon@gmail.com         | openmic-tester-2026 |
 
 ## Non-obvious flow walkthroughs
 

@@ -101,9 +101,11 @@ type ToggleRowProps = {
   description: string;
   value: boolean;
   onToggle: (next: boolean) => void;
+  /** Optional leading icon, e.g. a discipline glyph. */
+  icon?: ReactNode;
 };
 
-export function ToggleRow({ label, description, value, onToggle }: ToggleRowProps) {
+export function ToggleRow({ label, description, value, onToggle, icon }: ToggleRowProps) {
   return (
     <Pressable
       accessibilityRole="switch"
@@ -112,6 +114,7 @@ export function ToggleRow({ label, description, value, onToggle }: ToggleRowProp
       onPress={() => onToggle(!value)}
       style={[styles.toggleRow, value && styles.toggleRowActive]}
     >
+      {icon}
       <View style={styles.toggleText}>
         <Text style={styles.fieldLabel}>{label}</Text>
         <Text style={styles.caption}>{description}</Text>

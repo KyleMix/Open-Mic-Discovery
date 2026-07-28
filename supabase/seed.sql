@@ -30,6 +30,11 @@ values
   ('00000000-0000-4000-a000-000000000004', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated', 'admin@demo.openmic.local',
    crypt('demo-pass-1234', gen_salt('bf')), now(),
+   '{"provider":"email","providers":["email"]}', '{}', now(), now()),
+  -- Owner/tester account: performer + producer + admin in one login.
+  ('00000000-0000-4000-a000-000000000005', '00000000-0000-0000-0000-000000000000',
+   'authenticated', 'authenticated', 'kylewmixon@gmail.com',
+   crypt('openmic-tester-2026', gen_salt('bf')), now(),
    '{"provider":"email","providers":["email"]}', '{}', now(), now());
 
 insert into auth.identities
@@ -38,7 +43,7 @@ select gen_random_uuid(), u.id, u.id::text, 'email',
        jsonb_build_object('sub', u.id::text, 'email', u.email, 'email_verified', true),
        now(), now(), now()
 from auth.users u
-where u.email like '%@demo.openmic.local';
+where u.email like '%@demo.openmic.local' or u.email = 'kylewmixon@gmail.com';
 
 insert into profiles (id, handle, display_name, bio, home_city, birth_year,
                       is_performer, is_producer, is_admin, eula_version, moderation_status)
@@ -50,15 +55,19 @@ values
   ('00000000-0000-4000-a000-000000000003', 'demo_dual', 'Dana Dual',
    'Comic who also hosts a weekly.', 'Portland', 1991, true, true, false, '1.0', 'approved'),
   ('00000000-0000-4000-a000-000000000004', 'demo_admin', 'Alex Admin',
-   'Keeping listings fresh.', 'Seattle', 1985, false, false, true, '1.0', 'approved');
+   'Keeping listings fresh.', 'Seattle', 1985, false, false, true, '1.0', 'approved'),
+  ('00000000-0000-4000-a000-000000000005', 'kyle', 'Kyle',
+   'Building OPEN MIC.', 'Seattle', 1990, true, true, true, '1.0', 'approved');
 
 insert into performer_profiles (profile_id, disciplines, experience, tags) values
   ('00000000-0000-4000-a000-000000000001', '{music,poetry}', 'developing', '{acoustic,folk}'),
-  ('00000000-0000-4000-a000-000000000003', '{comedy}', 'experienced', '{observational}');
+  ('00000000-0000-4000-a000-000000000003', '{comedy}', 'experienced', '{observational}'),
+  ('00000000-0000-4000-a000-000000000005', '{music,comedy,poetry}', 'experienced', '{}');
 
 insert into producer_profiles (profile_id, contact_email, contact_phone, verified) values
   ('00000000-0000-4000-a000-000000000002', 'pat@demo.openmic.local', '+12065550142', true),
-  ('00000000-0000-4000-a000-000000000003', 'dana@demo.openmic.local', null, false);
+  ('00000000-0000-4000-a000-000000000003', 'dana@demo.openmic.local', null, false),
+  ('00000000-0000-4000-a000-000000000005', 'kylewmixon@gmail.com', null, true);
 
 -- ---------------------------------------------------------------------------
 -- Venues. PostGIS points are (longitude latitude).
