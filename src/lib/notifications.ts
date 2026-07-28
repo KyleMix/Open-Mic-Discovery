@@ -1,4 +1,4 @@
-import * as Notifications from 'expo-notifications';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
 
 import { getSupabase } from './supabase';
@@ -7,9 +7,18 @@ import { getSupabase } from './supabase';
  * Registers this device for push after sign-in. Fails quietly: simulators,
  * denied permission, and missing EAS project config are all normal states,
  * and notifications are never required to use the app.
+ *
+ * Expo Go dropped remote push support in SDK 53, and importing
+ * expo-notifications there throws at module load, so the import stays lazy
+ * and Expo Go is skipped outright. Development and production builds keep
+ * full push.
  */
 export async function registerPushToken(userId: string): Promise<void> {
+  if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) {
+    return;
+  }
   try {
+    const Notifications = await import('expo-notifications');
     const { status } = await Notifications.getPermissionsAsync();
     let granted = status === 'granted';
     if (!granted) {
