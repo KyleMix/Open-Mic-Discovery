@@ -544,6 +544,54 @@ export type Database = {
           },
         ];
       };
+      notification_outbox: {
+        Row: {
+          body: string;
+          created_at: string;
+          id: string;
+          kind: string;
+          payload: Json;
+          profile_id: string;
+          sent_at: string | null;
+          title: string;
+        };
+        Insert: {
+          body: string;
+          created_at?: string;
+          id?: string;
+          kind: string;
+          payload?: Json;
+          profile_id: string;
+          sent_at?: string | null;
+          title: string;
+        };
+        Update: {
+          body?: string;
+          created_at?: string;
+          id?: string;
+          kind?: string;
+          payload?: Json;
+          profile_id?: string;
+          sent_at?: string | null;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notification_outbox_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notification_outbox_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'public_profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       notification_prefs: {
         Row: {
           favorite_reminders: boolean;
@@ -1148,6 +1196,41 @@ export type Database = {
         };
         Relationships: [];
       };
+      signup_roster: {
+        Row: {
+          created_at: string | null;
+          display_name: string | null;
+          handle: string | null;
+          id: string | null;
+          occurrence_id: string | null;
+          performer_id: string | null;
+          slot_position: number | null;
+          status: Database['public']['Enums']['signup_status'] | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'signups_occurrence_id_fkey';
+            columns: ['occurrence_id'];
+            isOneToOne: false;
+            referencedRelation: 'mic_occurrences';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'signups_performer_id_fkey';
+            columns: ['performer_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'signups_performer_id_fkey';
+            columns: ['performer_id'];
+            isOneToOne: false;
+            referencedRelation: 'public_profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       tap_funky: {
         Row: {
           args: string | null;
@@ -1364,6 +1447,24 @@ export type Database = {
       diag_test_name: { Args: { '': string }; Returns: string };
       disablelongtransactions: { Args: never; Returns: string };
       do_tap: { Args: never; Returns: string[] } | { Args: { '': string }; Returns: string[] };
+      draw_lottery: {
+        Args: { p_occurrence_id: string };
+        Returns: {
+          created_at: string;
+          id: string;
+          occurrence_id: string;
+          performer_id: string;
+          slot_position: number | null;
+          status: Database['public']['Enums']['signup_status'];
+          updated_at: string;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'signups';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       dropgeometrycolumn:
         | {
             Args: {
@@ -1673,6 +1774,10 @@ export type Database = {
           venue_id: string;
           venue_name: string;
         }[];
+      };
+      set_slot_order: {
+        Args: { p_occurrence_id: string; p_signup_ids: string[] };
+        Returns: undefined;
       };
       skip:
         | { Args: { '': string }; Returns: string }

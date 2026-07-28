@@ -83,3 +83,6 @@ $$;
 
 grant usage on schema auth to anon, authenticated, service_role;
 grant execute on function auth.uid(), auth.role() to anon, authenticated, service_role;
+
+-- Supabase provisions this publication for Realtime; the shim mirrors it.
+create publication supabase_realtime;

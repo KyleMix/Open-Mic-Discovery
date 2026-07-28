@@ -18,6 +18,7 @@ import { SIGNUP_METHOD_LABELS, costLabel } from '@/features/discovery/components
 import { freshness } from '@/features/discovery/freshness';
 import { useFlagListing, useMicDetail } from '@/features/discovery/queries';
 import { useSubmitClaim } from '@/features/producer/queries';
+import { SignupCard } from '@/features/signups/components/signup-card';
 import { describeRecurrence, formatLocalTime } from '@/features/discovery/recurrence';
 import { disciplineAccents, fonts, palette, spacing, type, type Discipline } from '@/theme';
 import type { Database } from '@/types/database.types';
@@ -149,6 +150,15 @@ function MicDetail({
           </Text>
         ) : null}
       </Card>
+
+      {next ? (
+        <SignupCard
+          occurrence={next}
+          signupMethod={series.signup_method}
+          signupOpens={series.signup_opens}
+          signupCloses={series.signup_closes}
+        />
+      ) : null}
 
       <Card>
         <View style={styles.methodRow}>

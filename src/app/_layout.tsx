@@ -14,6 +14,7 @@ import { useEffect, type ReactNode } from 'react';
 import { Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { SessionProvider, useSession } from '@/features/auth/session';
 import { useLatestEula, useOwnProfile } from '@/features/auth/queries';
+import { registerPushToken } from '@/lib/notifications';
 import { queryClient } from '@/lib/query-client';
 import { palette } from '@/theme';
 
@@ -47,6 +48,13 @@ function AuthGate({ children }: { children: ReactNode }) {
   const inAuthGroup = segments[0] === '(auth)';
   const authScreen = inAuthGroup ? segments[1] : undefined;
   const waiting = !ready || (session != null && (profile.isPending || eula.isPending));
+
+  // Push registration is quiet and best-effort; the userId is stable per session.
+  useEffect(() => {
+    if (session?.user.id) {
+      registerPushToken(session.user.id);
+    }
+  }, [session?.user.id]);
 
   useEffect(() => {
     if (waiting || profile.isError || eula.isError) {

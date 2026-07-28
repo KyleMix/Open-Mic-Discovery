@@ -1,4 +1,4 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -20,6 +20,7 @@ import type { Database } from '@/types/database.types';
 type Occurrence = Database['public']['Tables']['mic_occurrences']['Row'];
 
 export default function ManageSeriesScreen() {
+  const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const detail = useMicDetail(id);
   const occurrences = useSeriesOccurrences(id);
@@ -194,6 +195,7 @@ export default function ManageSeriesScreen() {
                 />
               ) : (
                 <View style={styles.nightActions}>
+                  <Button label="List" onPress={() => router.push(`/producer/night/${occ.id}`)} />
                   <Button
                     label="This night"
                     kind="secondary"
