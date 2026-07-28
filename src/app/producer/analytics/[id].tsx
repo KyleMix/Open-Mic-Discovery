@@ -1,0 +1,178 @@
+import { useQuery } from '@tanstack/react-query';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+
+import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
+import { useSession } from '@/features/auth/session';
+import { useProStatus } from '@/features/pro/use-pro';
+import { getSupabase } from '@/lib/supabase';
+import { fonts, palette, spacing, type } from '@/theme';
+
+/** Producer Pro: signups and turnout per night for one listing. */
+export default function AnalyticsScreen() {
+  const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { session } = useSession();
+  const pro = useProStatus(session?.user.id);
+
+  const stats = useQuery({
+    queryKey: ['analytics', id],
+    enabled: !!id && (pro.data?.entitled ?? false),
+    queryFn: async () => {
+      const supabase = getSupabase();
+      const { data: occurrences, error } = await supabase
+        .from('mic_occurrences')
+        .select('id, starts_at, status, signups(status)')
+        .eq('series_id', id!)
+        .order('starts_at', { ascending: false })
+        .limit(20);
+      if (error) {
+        throw new Error(error.message);
+      }
+      return occurrences;
+    },
+  });
+
+  if (pro.isPending) {
+    return <LoadingView label="Loading analytics" />;
+  }
+  if (pro.data && !pro.data.entitled) {
+    return (
+      <Screen>
+        <Title>Listing analytics</Title>
+        <Body>Signups and turnout per night are part of Producer Pro.</Body>
+        <Button label="See Producer Pro" onPress={() => router.push('/paywall')} />
+      </Screen>
+    );
+  }
+  if (stats.isPending) {
+    return <LoadingView label="Crunching the numbers" />;
+  }
+  if (stats.isError) {
+    return (
+      <Screen>
+        <Title>Listing analytics</Title>
+        <ErrorText>Could not load analytics.</ErrorText>
+        <Button label="Try again" onPress={() => stats.refetch()} />
+      </Screen>
+    );
+  }
+
+  const nights = stats.data;
+  const totals = nights.reduce(
+    (acc, n) => {
+      for (const s of n.signups) {
+        acc.signups += 1;
+        if (s.status === 'performed') {
+          acc.performed += 1;
+        }
+        if (s.status === 'no_show') {
+          acc.noShows += 1;
+        }
+      }
+      return acc;
+    },
+    { signups: 0, performed: 0, noShows: 0 },
+  );
+
+  return (
+    <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          title: 'Analytics',
+          headerStyle: { backgroundColor: palette.bg },
+          headerTintColor: palette.text,
+        }}
+      />
+      <View style={styles.totalsRow}>
+        <Total label="Signups" value={totals.signups} />
+        <Total label="Performed" value={totals.performed} />
+        <Total label="No-shows" value={totals.noShows} />
+      </View>
+      {nights.length === 0 ? (
+        <Body>No nights yet. Analytics fill in as your mic runs.</Body>
+      ) : (
+        nights.map((n) => (
+          <View key={n.id} style={styles.nightRow}>
+            <Text style={styles.nightDate}>
+              {new Date(n.starts_at).toLocaleDateString(undefined, {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+              })}
+              {n.status === 'cancelled' ? ' (cancelled)' : ''}
+            </Text>
+            <Text style={styles.nightCount}>
+              {n.signups.length} {n.signups.length === 1 ? 'signup' : 'signups'}
+            </Text>
+          </View>
+        ))
+      )}
+    </ScrollView>
+  );
+}
+
+function Total({ label, value }: { label: string; value: number }) {
+  return (
+    <View style={styles.total}>
+      <Text style={styles.totalValue}>{value}</Text>
+      <Text style={styles.totalLabel}>{label}</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  scroll: {
+    backgroundColor: palette.bg,
+    flex: 1,
+  },
+  content: {
+    gap: spacing.sm,
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl,
+  },
+  totalsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  total: {
+    alignItems: 'center',
+    backgroundColor: palette.bgElevated,
+    borderColor: palette.border,
+    borderRadius: 14,
+    borderWidth: 1,
+    flex: 1,
+    gap: spacing.xs,
+    padding: spacing.md,
+  },
+  totalValue: {
+    color: palette.text,
+    fontFamily: fonts.semibold,
+    fontSize: type.title.fontSize,
+  },
+  totalLabel: {
+    color: palette.textSecondary,
+    fontSize: type.caption.fontSize,
+  },
+  nightRow: {
+    alignItems: 'center',
+    backgroundColor: palette.bgElevated,
+    borderColor: palette.border,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: spacing.md,
+  },
+  nightDate: {
+    color: palette.text,
+    fontFamily: fonts.medium,
+    fontSize: type.body.fontSize,
+  },
+  nightCount: {
+    color: palette.textSecondary,
+    fontSize: type.body.fontSize,
+  },
+});

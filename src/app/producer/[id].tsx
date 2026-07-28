@@ -103,6 +103,13 @@ export default function ManageSeriesScreen() {
         <View style={styles.buttonRow}>
           <View style={styles.buttonFlex}>
             <Button
+              label="Analytics"
+              kind="secondary"
+              onPress={() => router.push(`/producer/analytics/${series.id}`)}
+            />
+          </View>
+          <View style={styles.buttonFlex}>
+            <Button
               label={editing ? 'Close editor' : 'Edit mic (all future nights)'}
               kind="secondary"
               onPress={() => setEditing(!editing)}

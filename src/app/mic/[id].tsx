@@ -162,6 +162,7 @@ function MicDetail({
           signupMethod={series.signup_method}
           signupOpens={series.signup_opens}
           signupCloses={series.signup_closes}
+          costCents={series.cost_cents}
         />
       ) : null}
 

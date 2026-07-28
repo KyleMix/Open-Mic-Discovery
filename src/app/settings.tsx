@@ -37,6 +37,13 @@ export default function SettingsScreen() {
         onPress={() => router.push('/notification-prefs')}
       />
 
+      <Text style={styles.sectionTitle}>Subscriptions</Text>
+      <Button
+        label="Producer Pro and Restore Purchases"
+        kind="secondary"
+        onPress={() => router.push('/paywall')}
+      />
+
       <Text style={styles.sectionTitle}>Blocked users</Text>
       {blocked.isPending ? (
         <Body>Loading...</Body>

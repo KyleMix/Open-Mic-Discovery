@@ -25,10 +25,17 @@ type Props = {
   signupMethod: Database['public']['Enums']['signup_method'];
   signupOpens: string;
   signupCloses: string;
+  costCents?: number;
 };
 
 /** The "I am on the list" moment: signup state and actions for a night. */
-export function SignupCard({ occurrence, signupMethod, signupOpens, signupCloses }: Props) {
+export function SignupCard({
+  occurrence,
+  signupMethod,
+  signupOpens,
+  signupCloses,
+  costCents = 0,
+}: Props) {
   const router = useRouter();
   const { session } = useSession();
   const profile = useOwnProfile(session?.user.id);
@@ -106,6 +113,12 @@ export function SignupCard({ occurrence, signupMethod, signupOpens, signupCloses
           <ErrorText>
             {join.error instanceof Error ? join.error.message : 'Could not sign up.'}
           </ErrorText>
+        ) : null}
+        {signupMethod === 'reserved_slot' && costCents > 0 ? (
+          <Body>
+            Slots at this mic cost ${(costCents / 100).toFixed(costCents % 100 === 0 ? 0 : 2)}, paid
+            at the venue or to the host directly, never inside this app.
+          </Body>
         ) : null}
         <Button
           label={signupMethod === 'lottery' ? 'Enter the lottery' : 'Sign up'}
