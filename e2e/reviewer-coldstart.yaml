@@ -1,0 +1,36 @@
+# Maestro flow: reviewer cold start.
+#
+# Reviewers are not in Seattle and often deny location. This launches with
+# the location permission denied and asserts Discover still shows populated
+# content (the profile home area, or the seeded Seattle region with its
+# "first Open Mic Finder city" note when no home area exists). It must
+# never land on an empty map or empty list.
+# Run: maestro test e2e/reviewer-coldstart.yaml (dev build with seeded local Supabase)
+appId: com.openmicfinder.app
+---
+- launchApp:
+    permissions:
+      location: deny
+- runFlow:
+    when:
+      visible: 'Sign in'
+    commands:
+      - tapOn: 'Email'
+      - inputText: 'performer@demo.openmic.local'
+      - tapOn: 'Password'
+      - inputText: 'demo-pass-1234'
+      - tapOn: 'Sign in'
+- extendedWaitUntil:
+    visible: 'Discover'
+    timeout: 15000
+# The locate tap must degrade gracefully with the permission denied.
+- tapOn: 'Use my location to find mics near me'
+- assertVisible: 'Location is off.*'
+# Content is populated regardless: the seeded region renders listings.
+- assertVisible: 'Rusty Fret Open Mic.*'
+# Search is the obvious way to look at other areas.
+- tapOn: 'Search by city or venue'
+- inputText: 'Tacoma'
+- extendedWaitUntil:
+    visible: '.*Tacoma.*'
+    timeout: 10000
