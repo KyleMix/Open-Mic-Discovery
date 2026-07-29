@@ -12,12 +12,7 @@ import { pickAndUploadAvatar } from '@/features/profile/avatar';
 import { geocodeHomeArea } from '@/features/profile/geocode';
 import { homeAreaError, homeAreaQuery, normalizeHomeArea } from '@/features/profile/home-area';
 import { useUpdateProfile, useUpdateRoles } from '@/features/profile/queries';
-import {
-  handleError,
-  normalizeHandle,
-  normalizeUrl,
-  urlError,
-} from '@/features/profile/social';
+import { handleError, normalizeHandle, normalizeUrl, urlError } from '@/features/profile/social';
 import { disciplineAccents, fonts, palette, spacing, type, type Discipline } from '@/theme';
 
 const DISCIPLINES: Discipline[] = ['music', 'comedy', 'poetry', 'other'];
@@ -165,9 +160,7 @@ function EditProfileForm({
         home_city: area.city || null,
         home_region: area.region || null,
         home_postal_code: area.postalCode || null,
-        ...(areaChanged
-          ? { home_lat: coords?.lat ?? null, home_lng: coords?.lng ?? null }
-          : {}),
+        ...(areaChanged ? { home_lat: coords?.lat ?? null, home_lng: coords?.lng ?? null } : {}),
         link_instagram: ig || null,
         link_tiktok: tt || null,
         link_youtube: yt || null,
@@ -184,6 +177,7 @@ function EditProfileForm({
       style={styles.scroll}
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
     >
       <ScreenHeader />
       <Pressable
@@ -255,8 +249,8 @@ function EditProfileForm({
 
       <Text style={styles.sectionTitle}>Home area</Text>
       <Body>
-        Used only to show mics near you. Never shown on your profile. Enter city and state, or
-        a ZIP code.
+        Used only to show mics near you. Never shown on your profile. Enter city and state, or a ZIP
+        code.
       </Body>
       <View style={styles.areaRow}>
         <View style={styles.areaCity}>

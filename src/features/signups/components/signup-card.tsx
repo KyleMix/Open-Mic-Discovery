@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { Body, Button, ErrorText } from '@/components/ui';
 import { useOwnProfile } from '@/features/auth/queries';
+import { eventDate } from '@/features/discovery/local-time';
 import { useSession } from '@/features/auth/session';
 import { useEnablePerformerRole } from '@/features/profile/queries';
 import { STATUS_LABELS } from '@/features/signups/labels';
@@ -15,6 +16,8 @@ type Occurrence = Database['public']['Tables']['mic_occurrences']['Row'];
 
 type Props = {
   occurrence: Occurrence;
+  /** The mic's IANA timezone; night labels render in venue-local time. */
+  timezone: string | null;
   signupMethod: Database['public']['Enums']['signup_method'];
   signupOpens: string;
   signupCloses: string;
@@ -24,6 +27,7 @@ type Props = {
 /** The "I am on the list" moment: signup state and actions for a night. */
 export function SignupCard({
   occurrence,
+  timezone,
   signupMethod,
   signupOpens,
   signupCloses,
@@ -42,7 +46,7 @@ export function SignupCard({
   }
 
   const window = signupWindow(occurrence.starts_at, signupOpens, signupCloses, new Date());
-  const nightLabel = new Date(occurrence.starts_at).toLocaleDateString(undefined, {
+  const nightLabel = eventDate(occurrence.starts_at, timezone, {
     weekday: 'long',
     month: 'short',
     day: 'numeric',
@@ -60,8 +64,8 @@ export function SignupCard({
     content = (
       <>
         <Body>
-          Signing up needs the performer role. One tap turns it on; it sits alongside any other
-          role you have.
+          Signing up needs the performer role. One tap turns it on; it sits alongside any other role
+          you have.
         </Body>
         {enablePerformer.isError ? (
           <ErrorText>
@@ -105,7 +109,7 @@ export function SignupCard({
     content = (
       <Body>
         Signups for {nightLabel} open{' '}
-        {window.opensAt.toLocaleDateString(undefined, {
+        {eventDate(window.opensAt.toISOString(), timezone, {
           weekday: 'long',
           month: 'short',
           day: 'numeric',

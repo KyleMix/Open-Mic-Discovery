@@ -1717,6 +1717,7 @@ export type Database = {
           next_occurrence_id: string
           next_starts_at: string
           next_status: Database["public"]["Enums"]["occurrence_status"]
+          poster_url: string
           region: string
           rrule: string
           series_id: string

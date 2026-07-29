@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Body, Button, ErrorText, Field } from '@/components/ui';
+import { Body, Button, ErrorText, Field, KeyboardShift } from '@/components/ui';
 import { useSession } from '@/features/auth/session';
 import {
   useBlockUser,
@@ -63,90 +63,92 @@ export function ReportModal({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
-      <View style={styles.backdrop}>
-        <View style={styles.sheet}>
-          {done ? (
-            <>
-              <Text style={styles.title}>Report received</Text>
-              <Body>
-                Thank you. Reports are reviewed within 24 hours and acted on when they break the
-                rules everyone accepted.
-              </Body>
-              {blockableUserId && session && blockableUserId !== session.user.id ? (
+      <KeyboardShift>
+        <View style={styles.backdrop}>
+          <View style={styles.sheet}>
+            {done ? (
+              <>
+                <Text style={styles.title}>Report received</Text>
+                <Body>
+                  Thank you. Reports are reviewed within 24 hours and acted on when they break the
+                  rules everyone accepted.
+                </Body>
+                {blockableUserId && session && blockableUserId !== session.user.id ? (
+                  <Button
+                    label="Also block this user"
+                    kind="secondary"
+                    busy={block.isPending}
+                    onPress={() =>
+                      block.mutate(
+                        { blockerId: session.user.id, blockedId: blockableUserId },
+                        { onSuccess: close },
+                      )
+                    }
+                  />
+                ) : null}
+                <Button label="Done" onPress={close} />
+              </>
+            ) : !session ? (
+              <>
+                <Text style={styles.title}>Sign in to report</Text>
+                <Body>Reporting needs an account so our moderators can follow up.</Body>
                 <Button
-                  label="Also block this user"
-                  kind="secondary"
-                  busy={block.isPending}
+                  label="Sign in"
+                  onPress={() => {
+                    close();
+                    router.push('/(auth)/sign-in');
+                  }}
+                />
+                <Button label="Cancel" kind="secondary" onPress={close} />
+              </>
+            ) : (
+              <>
+                <Text style={styles.title}>Report {targetLabel}</Text>
+                {REASONS.map((r) => (
+                  <Pressable
+                    key={r.reason}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: reason === r.reason }}
+                    onPress={() => setReason(r.reason)}
+                    style={[styles.reasonRow, reason === r.reason && styles.reasonRowActive]}
+                  >
+                    <Text style={styles.reasonText}>{r.label}</Text>
+                  </Pressable>
+                ))}
+                <Field
+                  label="Details (optional)"
+                  value={details}
+                  onChangeText={setDetails}
+                  placeholder="What happened?"
+                />
+                {report.isError ? (
+                  <ErrorText>
+                    {report.error instanceof Error ? report.error.message : 'Could not submit.'}
+                  </ErrorText>
+                ) : null}
+                <Button
+                  label="Submit report"
+                  busy={report.isPending}
+                  disabled={!reason}
                   onPress={() =>
-                    block.mutate(
-                      { blockerId: session.user.id, blockedId: blockableUserId },
-                      { onSuccess: close },
+                    report.mutate(
+                      {
+                        reporterId: session.user.id,
+                        targetType,
+                        targetId,
+                        reason: reason!,
+                        details: details.trim() || null,
+                      },
+                      { onSuccess: () => setDone(true) },
                     )
                   }
                 />
-              ) : null}
-              <Button label="Done" onPress={close} />
-            </>
-          ) : !session ? (
-            <>
-              <Text style={styles.title}>Sign in to report</Text>
-              <Body>Reporting needs an account so our moderators can follow up.</Body>
-              <Button
-                label="Sign in"
-                onPress={() => {
-                  close();
-                  router.push('/(auth)/sign-in');
-                }}
-              />
-              <Button label="Cancel" kind="secondary" onPress={close} />
-            </>
-          ) : (
-            <>
-              <Text style={styles.title}>Report {targetLabel}</Text>
-              {REASONS.map((r) => (
-                <Pressable
-                  key={r.reason}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: reason === r.reason }}
-                  onPress={() => setReason(r.reason)}
-                  style={[styles.reasonRow, reason === r.reason && styles.reasonRowActive]}
-                >
-                  <Text style={styles.reasonText}>{r.label}</Text>
-                </Pressable>
-              ))}
-              <Field
-                label="Details (optional)"
-                value={details}
-                onChangeText={setDetails}
-                placeholder="What happened?"
-              />
-              {report.isError ? (
-                <ErrorText>
-                  {report.error instanceof Error ? report.error.message : 'Could not submit.'}
-                </ErrorText>
-              ) : null}
-              <Button
-                label="Submit report"
-                busy={report.isPending}
-                disabled={!reason}
-                onPress={() =>
-                  report.mutate(
-                    {
-                      reporterId: session.user.id,
-                      targetType,
-                      targetId,
-                      reason: reason!,
-                      details: details.trim() || null,
-                    },
-                    { onSuccess: () => setDone(true) },
-                  )
-                }
-              />
-              <Button label="Cancel" kind="secondary" onPress={close} />
-            </>
-          )}
+                <Button label="Cancel" kind="secondary" onPress={close} />
+              </>
+            )}
+          </View>
         </View>
-      </View>
+      </KeyboardShift>
     </Modal>
   );
 }

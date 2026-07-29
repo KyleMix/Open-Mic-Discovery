@@ -2,7 +2,7 @@ import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { Body, Button, ErrorText, Field, LoadingView, Title } from '@/components/ui';
+import { Body, Button, ErrorText, Field, KeyboardShift, LoadingView, Title } from '@/components/ui';
 import { useSession } from '@/features/auth/session';
 import { useBlockedUsers, useDeleteAccount, useUnblockUser } from '@/features/safety/queries';
 import { fonts, palette, spacing, type } from '@/theme';
@@ -85,33 +85,35 @@ function DeleteConfirmModal({ visible, onClose }: { visible: boolean; onClose: (
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <View style={styles.sheet}>
-          <Text style={styles.sectionTitle}>Delete your account?</Text>
-          <Body>This is immediate and permanent. Type DELETE to confirm.</Body>
-          <Field
-            label="Confirmation"
-            value={confirmText}
-            onChangeText={setConfirmText}
-            autoCapitalize="characters"
-            placeholder="DELETE"
-          />
-          {deleteAccount.isError ? (
-            <ErrorText>
-              {deleteAccount.error instanceof Error
-                ? deleteAccount.error.message
-                : 'Could not delete the account.'}
-            </ErrorText>
-          ) : null}
-          <Button
-            label="Delete my account forever"
-            busy={deleteAccount.isPending}
-            disabled={confirmText.trim() !== 'DELETE'}
-            onPress={() => deleteAccount.mutate()}
-          />
-          <Button label="Keep my account" kind="secondary" onPress={onClose} />
+      <KeyboardShift>
+        <View style={styles.backdrop}>
+          <View style={styles.sheet}>
+            <Text style={styles.sectionTitle}>Delete your account?</Text>
+            <Body>This is immediate and permanent. Type DELETE to confirm.</Body>
+            <Field
+              label="Confirmation"
+              value={confirmText}
+              onChangeText={setConfirmText}
+              autoCapitalize="characters"
+              placeholder="DELETE"
+            />
+            {deleteAccount.isError ? (
+              <ErrorText>
+                {deleteAccount.error instanceof Error
+                  ? deleteAccount.error.message
+                  : 'Could not delete the account.'}
+              </ErrorText>
+            ) : null}
+            <Button
+              label="Delete my account forever"
+              busy={deleteAccount.isPending}
+              disabled={confirmText.trim() !== 'DELETE'}
+              onPress={() => deleteAccount.mutate()}
+            />
+            <Button label="Keep my account" kind="secondary" onPress={onClose} />
+          </View>
         </View>
-      </View>
+      </KeyboardShift>
     </Modal>
   );
 }

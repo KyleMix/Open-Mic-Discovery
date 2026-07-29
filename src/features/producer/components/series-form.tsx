@@ -235,7 +235,11 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
+    >
       <Field
         label="Mic name"
         value={title}

@@ -103,7 +103,11 @@ export default function OnboardingScreen() {
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+      >
         <Title>Who are you out there?</Title>
         <Body>Pick everything that applies. Most people in a scene end up doing both.</Body>
         <ToggleRow
@@ -155,8 +159,8 @@ export default function OnboardingScreen() {
           error={errors.displayName}
         />
         <Body>
-          Where is home? We use this only to show mics near you. It is never shown on your
-          profile or to anyone else.
+          Where is home? We use this only to show mics near you. It is never shown on your profile
+          or to anyone else.
         </Body>
         <View style={styles.areaRow}>
           <View style={styles.areaCity}>

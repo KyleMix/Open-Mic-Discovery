@@ -9,12 +9,12 @@ import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persi
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { DarkTheme, Stack, ThemeProvider, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, type ReactNode } from 'react';
+import { useCallback, useEffect, type ReactNode } from 'react';
 
 import { Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { SessionProvider, useSession } from '@/features/auth/session';
 import { useLatestEula, useOwnProfile } from '@/features/auth/queries';
-import { registerPushToken } from '@/lib/notifications';
+import { registerPushToken, useNotificationTaps } from '@/lib/notifications';
 import { queryClient } from '@/lib/query-client';
 import { initSentry } from '@/lib/sentry';
 import { palette } from '@/theme';
@@ -56,6 +56,15 @@ function AuthGate({ children }: { children: ReactNode }) {
       registerPushToken(session.user.id);
     }
   }, [session?.user.id]);
+
+  // Tapping a push lands on the mic it is about, cold start included.
+  const routeFromTap = useCallback(
+    (path: string) => {
+      router.push(path as Parameters<typeof router.push>[0]);
+    },
+    [router],
+  );
+  useNotificationTaps(routeFromTap);
 
   useEffect(() => {
     if (waiting || profile.isError || eula.isError) {
@@ -135,7 +144,7 @@ export default function RootLayout() {
         <ThemeProvider value={appTheme}>
           <StatusBar style="light" />
           <AuthGate>
-            <Stack screenOptions={{ headerShown: false }}>
+            <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="(auth)" />
             </Stack>
