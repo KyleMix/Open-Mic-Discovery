@@ -21,7 +21,7 @@ Created by the database seed (`supabase/seed.sql`). Local development only; prod
 ## Walkthrough of every non-obvious flow
 
 - **EULA gate.** Every new account accepts the EULA before onboarding; the accepted version and a server-stamped timestamp are recorded. Publishing a newer EULA version routes existing users back to the gate on next launch.
-- **Age gate.** Onboarding requires a birth year; under-17 cannot complete setup. Rated 17+ for comedy content.
+- **Age gate.** Onboarding requires a birth year; under-18 cannot complete setup, enforced by a database trigger as well as the client (`supabase/tests/age-gate.test.sql`). The store rating targets Apple's 16+ tier for comedy content; the in-app 18 gate is the stricter limit and governs actual account creation.
 - **Dual roles.** One account can hold Performer and Producer together (onboarding, or later from the My Mics tab). There are no separate account types.
 - **Freshness badge.** Green within 14 days of producer confirmation, amber to 45, gray after or never-confirmed. Confirmation is one tap and server-stamped: it cannot be backdated or forged, so the badge is trustworthy.
 - **Signup windows.** Signups open at each mic's configured offset and close at showtime (or its close offset), enforced by row level security, not just UI.
