@@ -4,21 +4,14 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Body, Button, ErrorText } from '@/components/ui';
 import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
+import { useEnablePerformerRole } from '@/features/profile/queries';
+import { STATUS_LABELS } from '@/features/signups/labels';
 import { useJoinList, useMySignup, useWithdraw } from '@/features/signups/queries';
 import { signupWindow } from '@/features/signups/window';
 import { fonts, palette, spacing, type } from '@/theme';
 import type { Database } from '@/types/database.types';
 
 type Occurrence = Database['public']['Tables']['mic_occurrences']['Row'];
-
-const STATUS_LABELS: Record<Database['public']['Enums']['signup_status'], string> = {
-  requested: 'In the draw',
-  confirmed: 'On the list',
-  waitlisted: 'Waitlisted',
-  drawn: 'Drawn: on the list',
-  performed: 'Performed',
-  no_show: 'Marked no-show',
-};
 
 type Props = {
   occurrence: Occurrence;
@@ -42,6 +35,7 @@ export function SignupCard({
   const mySignup = useMySignup(occurrence.id, session?.user.id);
   const join = useJoinList();
   const withdraw = useWithdraw();
+  const enablePerformer = useEnablePerformerRole();
 
   if (signupMethod === 'host_booked' || occurrence.status !== 'scheduled') {
     return null;
@@ -63,7 +57,26 @@ export function SignupCard({
       </>
     );
   } else if (profile.data && !profile.data.is_performer) {
-    content = <Body>Enable the performer role on your profile to sign up for slots.</Body>;
+    content = (
+      <>
+        <Body>
+          Signing up needs the performer role. One tap turns it on; it sits alongside any other
+          role you have.
+        </Body>
+        {enablePerformer.isError ? (
+          <ErrorText>
+            {enablePerformer.error instanceof Error
+              ? enablePerformer.error.message
+              : 'Could not turn on performing.'}
+          </ErrorText>
+        ) : null}
+        <Button
+          label="Turn on performing"
+          busy={enablePerformer.isPending}
+          onPress={() => enablePerformer.mutate(session.user.id)}
+        />
+      </>
+    );
   } else if (mySignup.isPending) {
     content = <Body>Checking your signup...</Body>;
   } else if (mySignup.data) {

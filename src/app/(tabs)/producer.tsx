@@ -55,9 +55,37 @@ export default function ProducerScreen() {
       </Screen>
     );
   }
+  const claimsBox =
+    profile.data?.is_admin && claims.data && claims.data.length > 0 ? (
+      <View style={styles.claimsBox}>
+        <Text style={styles.sectionTitle}>Pending claims</Text>
+        {claims.data.map((claim) => (
+          <View key={claim.id} style={styles.claimRow}>
+            <Text style={styles.claimText}>
+              {claim.series?.title ?? 'Unknown mic'}: {claim.evidence ?? 'no evidence given'}
+            </Text>
+            <View style={styles.claimActions}>
+              <Button
+                label="Approve"
+                busy={review.isPending}
+                onPress={() => review.mutate({ claimId: claim.id, approve: true })}
+              />
+              <Button
+                label="Reject"
+                kind="secondary"
+                busy={review.isPending}
+                onPress={() => review.mutate({ claimId: claim.id, approve: false })}
+              />
+            </View>
+          </View>
+        ))}
+      </View>
+    ) : null;
+
   if (profile.data && !profile.data.is_producer) {
     return (
       <Screen>
+        {claimsBox}
         <Title>Run a mic?</Title>
         <Body>
           Producers keep listings accurate, manage signup lists, and post lineups. Enabling the
@@ -88,32 +116,7 @@ export default function ProducerScreen() {
         ListHeaderComponent={
           <View style={styles.header}>
             <Button label="Add a mic" onPress={() => router.push('/producer/new')} />
-            {profile.data?.is_admin && claims.data && claims.data.length > 0 ? (
-              <View style={styles.claimsBox}>
-                <Text style={styles.sectionTitle}>Pending claims</Text>
-                {claims.data.map((claim) => (
-                  <View key={claim.id} style={styles.claimRow}>
-                    <Text style={styles.claimText}>
-                      {claim.series?.title ?? 'Unknown mic'}:{' '}
-                      {claim.evidence ?? 'no evidence given'}
-                    </Text>
-                    <View style={styles.claimActions}>
-                      <Button
-                        label="Approve"
-                        busy={review.isPending}
-                        onPress={() => review.mutate({ claimId: claim.id, approve: true })}
-                      />
-                      <Button
-                        label="Reject"
-                        kind="secondary"
-                        busy={review.isPending}
-                        onPress={() => review.mutate({ claimId: claim.id, approve: false })}
-                      />
-                    </View>
-                  </View>
-                ))}
-              </View>
-            ) : null}
+            {claimsBox}
           </View>
         }
         ListEmptyComponent={

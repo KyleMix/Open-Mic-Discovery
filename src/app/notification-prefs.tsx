@@ -1,15 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 
+import { SelectField } from '@/components/select';
 import { Body, Button, ErrorText, LoadingView, ToggleRow } from '@/components/ui';
 import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
 import { requestForegroundLocation } from '@/features/discovery/location';
 import { useUpdatePrefs } from '@/features/notifications/queries';
 import { getSupabase } from '@/lib/supabase';
-import { fonts, palette, spacing, type } from '@/theme';
+import { palette, spacing } from '@/theme';
 
 /** Granular notification opt-outs. Everything here defaults conservative. */
 export default function NotificationPrefsScreen() {
@@ -120,24 +121,17 @@ export default function NotificationPrefsScreen() {
       />
       {locationNote ? <ErrorText>{locationNote}</ErrorText> : null}
       {p.new_mic_nearby ? (
-        <>
-          <Text style={styles.radiusLabel}>How far away counts as near you?</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {[
-              { km: 10, label: '5 miles' },
-              { km: 25, label: '15 miles' },
-              { km: 50, label: '30 miles' },
-              { km: 100, label: '60 miles' },
-            ].map(({ km, label }) => (
-              <Button
-                key={km}
-                label={label}
-                kind={p.nearby_radius_km === km ? 'primary' : 'secondary'}
-                onPress={() => set({ nearby_radius_km: km })}
-              />
-            ))}
-          </ScrollView>
-        </>
+        <SelectField
+          label="How far away counts as near you?"
+          value={p.nearby_radius_km}
+          options={[
+            { value: 10, label: '5 miles' },
+            { value: 25, label: '15 miles' },
+            { value: 50, label: '30 miles' },
+            { value: 100, label: '60 miles' },
+          ]}
+          onChange={(km) => set({ nearby_radius_km: km })}
+        />
       ) : null}
       <ToggleRow
         label="Weekly digest"
@@ -166,10 +160,5 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     padding: spacing.lg,
     paddingBottom: spacing.xxl,
-  },
-  radiusLabel: {
-    color: palette.text,
-    fontFamily: fonts.medium,
-    fontSize: type.body.fontSize,
   },
 });

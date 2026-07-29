@@ -7,6 +7,7 @@ import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/component
 import { useSession } from '@/features/auth/session';
 import { useProStatus } from '@/features/pro/use-pro';
 import { ReportModal } from '@/features/safety/components/report-modal';
+import { STATUS_LABELS } from '@/features/signups/labels';
 import {
   useDrawLottery,
   useMarkOnDeck,
@@ -86,7 +87,7 @@ export default function NightScreen() {
             <Text style={styles.slot}>{row.slot_position ?? '·'}</Text>
             <View style={styles.rowBody}>
               <Text style={styles.name}>{row.display_name ?? row.handle ?? 'Performer'}</Text>
-              <Text style={styles.meta}>{row.status}</Text>
+              <Text style={styles.meta}>{row.status ? STATUS_LABELS[row.status] : ''}</Text>
             </View>
           </View>
         ))}
@@ -178,7 +179,7 @@ export default function NightScreen() {
             <View style={styles.rowBody}>
               <Text style={styles.name}>{row.display_name ?? row.handle ?? 'Performer'}</Text>
               <Text style={row.on_deck_at ? styles.onDeckMeta : styles.meta}>
-                {row.on_deck_at ? 'On deck' : row.status}
+                {row.on_deck_at ? 'On deck' : row.status ? STATUS_LABELS[row.status] : ''}
               </Text>
             </View>
             {row.status === 'confirmed' || row.status === 'drawn' ? (
@@ -213,6 +214,12 @@ export default function NightScreen() {
                   onPress={() => setReporting(row)}
                 />
               </View>
+            ) : row.status === 'performed' || row.status === 'no_show' ? (
+              <IconAction
+                label={`Undo and put ${row.display_name ?? 'performer'} back on the list`}
+                icon="arrow-undo"
+                onPress={() => setStatus.mutate({ signupId: row.id!, status: 'confirmed' })}
+              />
             ) : null}
           </View>
         ))

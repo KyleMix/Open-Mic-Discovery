@@ -2,10 +2,19 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Glyph, disciplineGlyphs } from '@/components/glyph';
+import { SelectField } from '@/components/select';
 import { Body, Button, ErrorText, Field } from '@/components/ui';
 import { describeRecurrence } from '@/features/discovery/recurrence';
-import { SIGNUP_METHOD_LABELS } from '@/features/discovery/components/mic-card';
+import {
+  SIGNUP_METHOD_DESCRIPTIONS,
+  SIGNUP_METHOD_LABELS,
+} from '@/features/discovery/components/mic-card';
 import { PinPicker } from '@/features/producer/components/pin-picker';
+import {
+  DEFAULT_SIGNUP_OPENS_DAYS,
+  SIGNUP_OPENS_CHOICES,
+  parseSignupOpensDays,
+} from '@/features/producer/signup-opens';
 import {
   buildRrule,
   computeAnchorDate,
@@ -39,8 +48,25 @@ const ORDINAL_LABELS: Record<OrdinalChoice, string> = {
 };
 const DISCIPLINES: Discipline[] = ['music', 'comedy', 'poetry', 'other'];
 const METHODS: SignupMethod[] = ['first_come', 'lottery', 'reserved_slot', 'host_booked'];
-const HOURS = Array.from({ length: 24 }, (_, h) => h);
-const MINUTES = [0, 15, 30, 45];
+
+function hourLabel(h: number): string {
+  return `${h % 12 === 0 ? 12 : h % 12} ${h >= 12 ? 'PM' : 'AM'}`;
+}
+
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, h) => ({ value: h, label: hourLabel(h) }));
+const MINUTE_OPTIONS = [0, 15, 30, 45].map((m) => ({
+  value: m,
+  label: `:${String(m).padStart(2, '0')}`,
+}));
+const METHOD_OPTIONS = METHODS.map((m) => ({
+  value: m,
+  label: SIGNUP_METHOD_LABELS[m],
+  description: SIGNUP_METHOD_DESCRIPTIONS[m],
+}));
+const SIGNUP_OPENS_OPTIONS = SIGNUP_OPENS_CHOICES.map(({ days, label }) => ({
+  value: days,
+  label,
+}));
 
 export type SeriesFormValues = {
   title: string;
@@ -74,6 +100,7 @@ type ExistingSeries = {
   signup_method: SignupMethod;
   rrule: string;
   start_time: string;
+  signup_opens: string;
   cost_cents: number;
   cost_note: string | null;
   set_length_minutes: number | null;
@@ -105,7 +132,9 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
   const existingTime = existing?.start_time?.slice(0, 5).split(':');
   const [hour, setHour] = useState<number>(existingTime ? Number(existingTime[0]) : 19);
   const [minute, setMinute] = useState<number>(existingTime ? Number(existingTime[1]) : 0);
-  const [signupOpensDays, setSignupOpensDays] = useState(7);
+  const [signupOpensDays, setSignupOpensDays] = useState(
+    existing ? parseSignupOpensDays(existing.signup_opens) : DEFAULT_SIGNUP_OPENS_DAYS,
+  );
   const [costDollars, setCostDollars] = useState(
     existing ? String(existing.cost_cents / 100) : '0',
   );
@@ -331,71 +360,35 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
       ) : null}
 
       <Text style={styles.sectionLabel}>Start time</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chipRow}
-      >
-        {HOURS.map((h) => (
-          <Pressable
-            key={h}
-            accessibilityRole="button"
-            accessibilityState={{ selected: hour === h }}
-            accessibilityLabel={`${h % 12 === 0 ? 12 : h % 12} ${h >= 12 ? 'PM' : 'AM'}`}
-            onPress={() => setHour(h)}
-            style={chipStyle(hour === h)}
-          >
-            <Text
-              style={styles.chipText}
-            >{`${h % 12 === 0 ? 12 : h % 12} ${h >= 12 ? 'PM' : 'AM'}`}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
-      <View style={styles.chipRow}>
-        {MINUTES.map((m) => (
-          <Pressable
-            key={m}
-            accessibilityRole="button"
-            accessibilityState={{ selected: minute === m }}
-            accessibilityLabel={`${m} minutes past`}
-            onPress={() => setMinute(m)}
-            style={chipStyle(minute === m)}
-          >
-            <Text style={styles.chipText}>:{String(m).padStart(2, '0')}</Text>
-          </Pressable>
-        ))}
+      <View style={styles.pairRow}>
+        <View style={[styles.pairItem, { flex: 2 }]}>
+          <SelectField label="Hour" value={hour} options={HOUR_OPTIONS} onChange={setHour} />
+        </View>
+        <View style={styles.pairItem}>
+          <SelectField
+            label="Minutes"
+            value={minute}
+            options={MINUTE_OPTIONS}
+            onChange={setMinute}
+          />
+        </View>
       </View>
 
       {preview ? <Text style={styles.preview}>{preview}</Text> : null}
 
       <Text style={styles.sectionLabel}>Signups</Text>
-      <View style={styles.chipRow}>
-        {METHODS.map((m) => (
-          <Pressable
-            key={m}
-            accessibilityRole="button"
-            accessibilityState={{ selected: method === m }}
-            onPress={() => setMethod(m)}
-            style={chipStyle(method === m)}
-          >
-            <Text style={styles.chipText}>{SIGNUP_METHOD_LABELS[m]}</Text>
-          </Pressable>
-        ))}
-      </View>
-      <View style={styles.chipRow}>
-        {[1, 3, 7, 14, 30].map((days) => (
-          <Pressable
-            key={days}
-            accessibilityRole="button"
-            accessibilityState={{ selected: signupOpensDays === days }}
-            accessibilityLabel={`Signups open ${days} days before`}
-            onPress={() => setSignupOpensDays(days)}
-            style={chipStyle(signupOpensDays === days)}
-          >
-            <Text style={styles.chipText}>{days === 1 ? 'Day before' : `${days} days out`}</Text>
-          </Pressable>
-        ))}
-      </View>
+      <SelectField
+        label="How performers get on stage"
+        value={method}
+        options={METHOD_OPTIONS}
+        onChange={setMethod}
+      />
+      <SelectField
+        label="When signups open"
+        value={signupOpensDays}
+        options={SIGNUP_OPENS_OPTIONS}
+        onChange={setSignupOpensDays}
+      />
       <Body>Signups open this far ahead of each night and close at showtime.</Body>
 
       <View style={styles.pairRow}>
