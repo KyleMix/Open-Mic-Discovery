@@ -1,6 +1,17 @@
-import { requestAgeRangeAsync, type AgeRangeResponse } from 'expo-age-range';
+import type { AgeRangeRequest, AgeRangeResponse } from 'expo-age-range';
 
 import { MINIMUM_AGE } from './validation';
+
+/**
+ * expo-age-range's native module does not exist in Expo Go, and importing
+ * the package throws there at load time. It is loaded lazily, only when a
+ * signal is actually requested, so merely importing this file (the
+ * onboarding route does) can never crash a build without the module.
+ */
+async function requestPlatformAgeRange(options: AgeRangeRequest): Promise<AgeRangeResponse> {
+  const mod = await import('expo-age-range');
+  return mod.requestAgeRangeAsync(options);
+}
 
 /**
  * Platform age signal (Apple Declared Age Range, Google Play age signals),
@@ -56,7 +67,7 @@ export function evaluateAgeSignal(
  */
 export async function ageSignalError(
   enabled: boolean = isAgeSignalEnabled(),
-  request: (options: { threshold1: number }) => Promise<AgeRangeResponse> = requestAgeRangeAsync,
+  request: (options: { threshold1: number }) => Promise<AgeRangeResponse> = requestPlatformAgeRange,
   gate: number = MINIMUM_AGE,
 ): Promise<string | null> {
   if (!enabled) {
