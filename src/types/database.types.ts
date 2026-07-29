@@ -1495,6 +1495,11 @@ export type Database = {
           }
       dearmor: { Args: { "": string }; Returns: string }
       delete_account: { Args: never; Returns: undefined }
+      delete_account_web: { Args: { p_user_id: string }; Returns: undefined }
+      deletion_request_allowed: {
+        Args: { p_email_key: string; p_ip_key: string }
+        Returns: boolean
+      }
       diag:
         | {
             Args: { msg: unknown }

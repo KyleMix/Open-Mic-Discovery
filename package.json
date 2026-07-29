@@ -49,6 +49,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@supabase/postgres-meta": "^0.96.6",
     "@testing-library/react-native": "^14.0.1",
     "@types/jest": "29.5.14",
     "@types/node": "^26.1.2",
