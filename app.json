@@ -33,6 +33,19 @@
       "expo-router",
       "expo-apple-authentication",
       [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
+            "buildToolsVersion": "36.0.0"
+          },
+          "ios": {
+            "deploymentTarget": "16.4"
+          }
+        }
+      ],
+      [
         "expo-location",
         {
           "locationWhenInUsePermission": "Open Mic Finder uses your location only while you use the app, to show open mics near you. It is never tracked in the background.",
