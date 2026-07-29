@@ -1,13 +1,16 @@
+import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Glyph } from '@/components/glyph';
 import { Body, Button, ErrorText, Field, LoadingView, Screen, Title } from '@/components/ui';
+import { useSession } from '@/features/auth/session';
 import { freshness } from '@/features/discovery/freshness';
 import { useMicDetail } from '@/features/discovery/queries';
 import { describeRecurrence } from '@/features/discovery/recurrence';
 import { SeriesForm, type SeriesFormValues } from '@/features/producer/components/series-form';
+import { pickAndUploadPoster } from '@/features/producer/poster';
 import {
   useConfirmSeries,
   useSeriesOccurrences,
@@ -28,7 +31,10 @@ export default function ManageSeriesScreen() {
   const updateSeries = useUpdateSeries();
   const updateOccurrence = useUpdateOccurrence();
 
+  const { session } = useSession();
   const [editing, setEditing] = useState(false);
+  const [posterBusy, setPosterBusy] = useState(false);
+  const [posterError, setPosterError] = useState<string | null>(null);
   const [nightAction, setNightAction] = useState<{
     occurrence: Occurrence;
     mode: 'cancel' | 'edit';
@@ -49,6 +55,24 @@ export default function ManageSeriesScreen() {
 
   const series = detail.data.series;
   const fresh = freshness(series.last_confirmed_at, new Date());
+
+  async function changePoster() {
+    if (!session) {
+      return;
+    }
+    setPosterBusy(true);
+    setPosterError(null);
+    try {
+      const url = await pickAndUploadPoster(session.user.id, series.id);
+      if (url) {
+        updateSeries.mutate({ seriesId: series.id, patch: { poster_url: url } });
+      }
+    } catch (e) {
+      setPosterError(e instanceof Error ? e.message : 'Could not upload the poster. Try again.');
+    } finally {
+      setPosterBusy(false);
+    }
+  }
 
   function submitEdit(values: SeriesFormValues) {
     updateSeries.mutate(
@@ -129,6 +153,27 @@ export default function ManageSeriesScreen() {
             />
           </View>
         </View>
+
+        <Text style={styles.sectionTitle}>Poster</Text>
+        {series.poster_url ? (
+          <Image
+            source={{ uri: series.poster_url }}
+            accessibilityLabel="Event poster"
+            style={styles.poster}
+            contentFit="cover"
+          />
+        ) : (
+          <Body>
+            A poster makes your listing pop. Performers see it at the top of your mic page.
+          </Body>
+        )}
+        <Button
+          label={series.poster_url ? 'Replace poster' : 'Add a poster'}
+          kind="secondary"
+          busy={posterBusy}
+          onPress={changePoster}
+        />
+        {posterError ? <ErrorText>{posterError}</ErrorText> : null}
 
         {editing ? (
           <View style={styles.editorBox}>
@@ -377,6 +422,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: spacing.sm,
     paddingTop: spacing.md,
+  },
+  poster: {
+    borderColor: palette.border,
+    borderRadius: 14,
+    borderWidth: 1,
+    height: 220,
+    width: '100%',
   },
   sectionTitle: {
     color: palette.text,

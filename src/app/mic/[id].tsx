@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -15,6 +16,7 @@ import {
 import { Glyph, disciplineGlyphs, signupMethodGlyphs } from '@/components/glyph';
 import { Body, Button, ErrorText, Field, LoadingView, Screen, Title } from '@/components/ui';
 import { useSession } from '@/features/auth/session';
+import { addToCalendar } from '@/features/calendar/calendar';
 import { SIGNUP_METHOD_LABELS, costLabel } from '@/features/discovery/components/mic-card';
 import { freshness } from '@/features/discovery/freshness';
 import { useFlagListing, useMicDetail } from '@/features/discovery/queries';
@@ -109,8 +111,36 @@ function MicDetail({
     Linking.openURL(url).catch(() => null);
   }
 
+  async function addNightToCalendar() {
+    if (!next) {
+      return;
+    }
+    const startsAt = new Date(next.starts_at);
+    const endsAt = new Date(startsAt.getTime() + 3 * 60 * 60 * 1000);
+    try {
+      await addToCalendar({
+        title: series.title,
+        startsAt,
+        endsAt,
+        location: venue ? `${venue.name}, ${venue.address_line}, ${venue.city}` : series.title,
+        notes: `${SIGNUP_METHOD_LABELS[series.signup_method]} · ${costLabel(series.cost_cents)}. Added from Open Mic Finder.`,
+      });
+    } catch {
+      // The person backed out of the system sheet or the platform refused;
+      // either way there is nothing useful to surface.
+    }
+  }
+
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      {series.poster_url ? (
+        <Image
+          source={{ uri: series.poster_url }}
+          accessibilityLabel={`${series.title} poster`}
+          style={styles.poster}
+          contentFit="cover"
+        />
+      ) : null}
       <View style={styles.titleRow}>
         <Text style={styles.title}>{series.title}</Text>
         <View style={styles.glyphRow}>
@@ -143,6 +173,9 @@ function MicDetail({
         ) : (
           <Text style={styles.nextDate}>No upcoming dates listed</Text>
         )}
+        {next ? (
+          <Button label="Add to my calendar" kind="secondary" onPress={addNightToCalendar} />
+        ) : null}
         {occurrences.some((o) => o.status === 'cancelled') ? (
           <Text style={styles.cancelNote}>
             {occurrences
@@ -503,6 +536,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
     justifyContent: 'space-between',
+  },
+  poster: {
+    borderColor: palette.border,
+    borderRadius: 14,
+    borderWidth: 1,
+    height: 260,
+    width: '100%',
   },
   title: {
     color: palette.text,
