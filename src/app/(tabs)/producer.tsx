@@ -132,25 +132,27 @@ export default function ProducerScreen() {
           const fresh = freshness(item.last_confirmed_at, new Date());
           const confirming = confirm.isPending && confirmingId === item.id;
           return (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Manage ${item.title}`}
-              onPress={() => router.push(`/producer/${item.id}`)}
-              style={({ pressed }) => [
-                styles.card,
-                pressed && { backgroundColor: palette.bgPressed },
-              ]}
-            >
-              <View style={styles.cardTop}>
-                <Text style={styles.cardTitle} numberOfLines={1}>
-                  {item.title}
+            <View style={styles.card}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Manage ${item.title}`}
+                onPress={() => router.push(`/producer/${item.id}`)}
+                style={({ pressed }) => [
+                  styles.cardTouch,
+                  pressed && { backgroundColor: palette.bgPressed },
+                ]}
+              >
+                <View style={styles.cardTop}>
+                  <Text style={styles.cardTitle} numberOfLines={1}>
+                    {item.title}
+                  </Text>
+                  {!item.is_active ? <Text style={styles.pausedTag}>Paused</Text> : null}
+                </View>
+                <Text style={styles.cardMeta}>
+                  {item.venue?.name}, {item.venue?.city} ·{' '}
+                  {describeRecurrence(item.rrule, item.start_time) ?? 'Schedule varies'}
                 </Text>
-                {!item.is_active ? <Text style={styles.pausedTag}>Paused</Text> : null}
-              </View>
-              <Text style={styles.cardMeta}>
-                {item.venue?.name}, {item.venue?.city} ·{' '}
-                {describeRecurrence(item.rrule, item.start_time) ?? 'Schedule varies'}
-              </Text>
+              </Pressable>
               <View style={styles.cardBottom}>
                 <View style={styles.freshRow}>
                   <Glyph name="freshness-badge" size={14} color={fresh.color} />
@@ -166,7 +168,7 @@ export default function ProducerScreen() {
                   }}
                 />
               </View>
-            </Pressable>
+            </View>
           );
         }}
       />
@@ -220,7 +222,13 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     gap: spacing.sm,
+    overflow: 'hidden',
+    paddingBottom: spacing.md,
+  },
+  cardTouch: {
+    gap: spacing.sm,
     padding: spacing.md,
+    paddingBottom: 0,
   },
   cardTop: {
     alignItems: 'center',
@@ -247,6 +255,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
     justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
   },
   freshRow: {
     alignItems: 'center',

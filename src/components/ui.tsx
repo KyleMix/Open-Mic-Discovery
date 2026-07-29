@@ -1,6 +1,8 @@
 import { type ReactNode } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -9,10 +11,28 @@ import {
   type TextInputProps,
 } from 'react-native';
 
+import { PressableScale } from '@/components/pressable-scale';
 import { fonts, minTouchTarget, palette, spacing, type } from '@/theme';
 
 export function Screen({ children }: { children: ReactNode }) {
   return <View style={styles.screen}>{children}</View>;
+}
+
+/**
+ * Wraps a bottom-sheet modal's backdrop so the sheet rides above the
+ * keyboard while typing (iOS lifts with padding; Android's resize mode
+ * already shrinks the window). Without this, sheets pinned to the bottom
+ * sit exactly where the keyboard appears and inputs vanish under it.
+ */
+export function KeyboardShift({ children }: { children: ReactNode }) {
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={styles.keyboardShift}
+    >
+      {children}
+    </KeyboardAvoidingView>
+  );
 }
 
 export function Title({ children }: { children: ReactNode }) {
@@ -72,16 +92,15 @@ type ButtonProps = {
 export function Button({ label, onPress, disabled, busy, kind = 'primary' }: ButtonProps) {
   const isDisabled = disabled || busy;
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ disabled: !!isDisabled, busy: !!busy }}
       disabled={isDisabled}
       onPress={onPress}
-      style={({ pressed }) => [
+      style={[
         styles.button,
         kind === 'secondary' && styles.buttonSecondary,
-        pressed && styles.buttonPressed,
         isDisabled && styles.buttonDisabled,
       ]}
     >
@@ -92,7 +111,7 @@ export function Button({ label, onPress, disabled, busy, kind = 'primary' }: But
           {label}
         </Text>
       )}
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -130,6 +149,9 @@ const styles = StyleSheet.create({
     backgroundColor: palette.bg,
     padding: spacing.lg,
     gap: spacing.md,
+  },
+  keyboardShift: {
+    flex: 1,
   },
   center: {
     flex: 1,

@@ -46,16 +46,17 @@ export default function NotificationPrefsScreen() {
     );
   }
 
-  const p = prefs.data ?? {
-    profile_id: session.user.id,
-    signup_updates: true,
-    favorite_reminders: true,
-    new_mic_nearby: false,
-    nearby_radius_km: 25,
-    weekly_digest: false,
-    updated_at: '',
+  const p = {
+    signup_updates: prefs.data?.signup_updates ?? true,
+    favorite_reminders: prefs.data?.favorite_reminders ?? true,
+    new_mic_nearby: prefs.data?.new_mic_nearby ?? false,
+    nearby_radius_km: prefs.data?.nearby_radius_km ?? 25,
+    weekly_digest: prefs.data?.weekly_digest ?? false,
   };
 
+  // Send only the preference fields. Spreading the whole row here used to
+  // leak updated_at into the upsert, which the server rejects, so taps on
+  // these toggles failed for anyone missing a prefs row.
   const set = (patch: Partial<typeof p>) =>
     update.mutate({ userId: session.user.id, patch: { ...p, ...patch } });
 

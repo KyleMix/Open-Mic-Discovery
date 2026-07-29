@@ -202,7 +202,7 @@ function SearchResults({
           <Text style={styles.searchResultMeta}>
             {item.venue_name}, {item.city}
             {item.distance_m != null ? ` (${formatMilesFromMeters(item.distance_m)})` : ''} ·{' '}
-            {formatNextDate(item.next_starts_at)}
+            {formatNextDate(item.next_starts_at, item.timezone)}
           </Text>
         </Pressable>
       )}

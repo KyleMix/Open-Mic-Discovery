@@ -14,6 +14,8 @@ export default function TabsLayout() {
         tabBarStyle: { backgroundColor: palette.bgElevated, borderTopColor: palette.border },
         tabBarActiveTintColor: disciplineAccents.music,
         tabBarInactiveTintColor: palette.textDisabled,
+        // A quick cross-fade between tabs instead of a hard cut.
+        animation: 'fade',
       }}
     >
       <Tabs.Screen

@@ -1,7 +1,10 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { Glyph, disciplineGlyphs, signupMethodGlyphs } from '@/components/glyph';
+import { PressableScale } from '@/components/pressable-scale';
 import { formatMilesFromMeters } from '@/features/discovery/distance';
+import { eventDateShort } from '@/features/discovery/local-time';
 import { freshness } from '@/features/discovery/freshness';
 import type { NearbyMic } from '@/features/discovery/queries';
 import { describeRecurrence } from '@/features/discovery/recurrence';
@@ -23,16 +26,11 @@ export const SIGNUP_METHOD_DESCRIPTIONS: Record<NearbyMic['signup_method'], stri
   host_booked: 'The host chooses the lineup.',
 };
 
-export function formatNextDate(startsAt: string | null): string {
+export function formatNextDate(startsAt: string | null, timezone?: string | null): string {
   if (!startsAt) {
     return 'No upcoming date';
   }
-  const date = new Date(startsAt);
-  return date.toLocaleDateString(undefined, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  });
+  return eventDateShort(startsAt, timezone);
 }
 
 export function costLabel(costCents: number): string {
@@ -49,17 +47,26 @@ export function MicCard({ mic, onPress }: Props) {
   const recurrence = describeRecurrence(mic.rrule, mic.start_time);
 
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
       accessibilityLabel={`${mic.title} at ${mic.venue_name}`}
       onPress={onPress}
-      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      style={styles.card}
     >
       <View style={styles.accents}>
         {(mic.disciplines as Discipline[]).map((d) => (
           <View key={d} style={[styles.accentBar, { backgroundColor: disciplineAccents[d] }]} />
         ))}
       </View>
+      {mic.poster_url ? (
+        <Image
+          source={{ uri: mic.poster_url }}
+          accessibilityLabel={`${mic.title} poster`}
+          style={styles.poster}
+          contentFit="cover"
+          transition={150}
+        />
+      ) : null}
       <View style={styles.body}>
         <View style={styles.titleRow}>
           <Text numberOfLines={1} style={styles.title}>
@@ -76,7 +83,9 @@ export function MicCard({ mic, onPress }: Props) {
           {mic.neighborhood ? `, ${mic.neighborhood}` : ''}
           {mic.distance_m != null ? ` (${formatMilesFromMeters(mic.distance_m)})` : ''}
         </Text>
-        <Text style={styles.when}>{recurrence ?? formatNextDate(mic.next_starts_at)}</Text>
+        <Text style={styles.when}>
+          {recurrence ?? formatNextDate(mic.next_starts_at, mic.timezone)}
+        </Text>
         <View style={styles.metaRow}>
           <View style={styles.metaItem}>
             <Glyph
@@ -93,7 +102,7 @@ export function MicCard({ mic, onPress }: Props) {
           </View>
         </View>
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -106,14 +115,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     overflow: 'hidden',
   },
-  cardPressed: {
-    backgroundColor: palette.bgPressed,
-  },
   accents: {
     width: 4,
   },
   accentBar: {
     flex: 1,
+  },
+  poster: {
+    alignSelf: 'stretch',
+    backgroundColor: palette.bgPressed,
+    width: 72,
   },
   body: {
     flex: 1,
