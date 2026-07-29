@@ -11,8 +11,7 @@ import { join } from 'path';
 
 // Jest runs from the repo root; this test only reads repo files.
 const root = process.cwd();
-/* eslint-disable @typescript-eslint/no-require-imports */
-const appJson = require('../../app.json') as {
+const appJson = JSON.parse(readFileSync(join(root, 'app.json'), 'utf8')) as {
   expo: {
     ios: { associatedDomains?: string[]; bundleIdentifier: string };
     android: {
@@ -26,7 +25,6 @@ const appJson = require('../../app.json') as {
     };
   };
 };
-/* eslint-enable @typescript-eslint/no-require-imports */
 const aasa = JSON.parse(
   readFileSync(join(root, 'web', '.well-known', 'apple-app-site-association'), 'utf8'),
 ) as {

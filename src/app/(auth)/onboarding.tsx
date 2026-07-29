@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { ageSignalError } from '@/features/auth/ageSignal';
 import { completeOnboarding } from '@/features/auth/api';
 import { useSession } from '@/features/auth/session';
 import {
@@ -55,6 +56,14 @@ export default function OnboardingScreen() {
     };
     setErrors(nextErrors);
     if (Object.values(nextErrors).some(Boolean)) {
+      return;
+    }
+    // Platform age signal, only when the AGE_SIGNAL_ENABLED flag is on.
+    // An under-gate signal takes the same block path as the birth-year
+    // check; nothing beyond this pass/fail is stored.
+    const signalError = await ageSignalError();
+    if (signalError) {
+      setErrors({ ...nextErrors, birthYear: signalError });
       return;
     }
     if (!session || !acceptedEulaVersion) {
