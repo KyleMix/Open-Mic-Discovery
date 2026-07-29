@@ -1,0 +1,113 @@
+# Maestro end-to-end flows on an Android emulator.
+#
+# Runs the three flows in e2e/ (discovery, signup, reviewer-coldstart)
+# against a debug build talking to a local Supabase stack seeded with the
+# repo seed, on PRs that touch app code.
+#
+# Secrets (owner setup; the workflow runs without them today):
+#   MAESTRO_CLOUD_API_KEY  Optional. Set it and flip RUN_ON_MAESTRO_CLOUD
+#                          to true below to upload the build and run the
+#                          flows on Maestro Cloud instead of the local
+#                          emulator (faster, video recordings, no KVM).
+#   EXPO_TOKEN             Optional. Only needed if this workflow is later
+#                          changed to pull EAS builds instead of building
+#                          the debug APK with Gradle here.
+# No other secrets are required: the local Supabase stack publishes its own
+# anon key, which is not a secret.
+name: e2e
+
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'e2e/**'
+      - 'app.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'supabase/**'
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  maestro-emulator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      RUN_ON_MAESTRO_CLOUD: 'false'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start seeded Supabase
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: supabase start
+      - name: Point the app at the local stack
+        run: |
+          STATUS=$(supabase status -o env)
+          echo "$STATUS" | grep API_URL | sed 's/^API_URL=/EXPO_PUBLIC_SUPABASE_URL=/' >> "$GITHUB_ENV"
+          echo "$STATUS" | grep ANON_KEY | sed 's/^ANON_KEY=/EXPO_PUBLIC_SUPABASE_ANON_KEY=/' >> "$GITHUB_ENV"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Prebuild the Android project
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Build the debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Install Maestro
+        run: |
+          curl -Ls https://get.maestro.mobile.dev | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Enable KVM for the emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run the Maestro flows on an emulator
+        if: env.RUN_ON_MAESTRO_CLOUD != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          # 10.0.2.2 is the emulator's route to the host's local Supabase.
+          script: |
+            adb install android/app/build/outputs/apk/debug/app-debug.apk
+            adb reverse tcp:54321 tcp:54321
+            maestro test e2e/
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: http://10.0.2.2:54321
+
+      - name: Run the Maestro flows on Maestro Cloud
+        if: env.RUN_ON_MAESTRO_CLOUD == 'true'
+        run: |
+          maestro cloud \
+            --api-key "${{ secrets.MAESTRO_CLOUD_API_KEY }}" \
+            --app-file android/app/build/outputs/apk/debug/app-debug.apk \
+            e2e/
+
+      - name: Upload Maestro logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-logs
+          path: ~/.maestro/tests
+          if-no-files-found: ignore
