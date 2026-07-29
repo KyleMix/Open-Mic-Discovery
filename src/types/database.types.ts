@@ -85,16 +85,19 @@ export type Database = {
       }
       blocks: {
         Row: {
+          blocked_display_name: string | null
           blocked_id: string
           blocker_id: string
           created_at: string
         }
         Insert: {
+          blocked_display_name?: string | null
           blocked_id: string
           blocker_id: string
           created_at?: string
         }
         Update: {
+          blocked_display_name?: string | null
           blocked_id?: string
           blocker_id?: string
           created_at?: string
@@ -1840,11 +1843,12 @@ export type Database = {
         | { Args: never; Returns: string[] }
         | { Args: { "": string }; Returns: string[] }
       search_mics: {
-        Args: { p_limit?: number; p_query: string }
+        Args: { p_lat?: number; p_limit?: number; p_lng?: number; p_query: string }
         Returns: {
           city: string
           cost_cents: number
           disciplines: Database["public"]["Enums"]["discipline"][]
+          distance_m: number
           last_confirmed_at: string
           lat: number
           lng: number

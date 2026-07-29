@@ -15,6 +15,7 @@ import {
   SIGNUP_OPENS_CHOICES,
   parseSignupOpensDays,
 } from '@/features/producer/signup-opens';
+import { defaultTimezone, timezoneOptions } from '@/features/producer/timezones';
 import {
   buildRrule,
   computeAnchorDate,
@@ -76,6 +77,7 @@ export type SeriesFormValues = {
   rrule: string;
   anchorDate: string;
   startTime: string;
+  timezone: string;
   signupOpensDays: number;
   costDollars: string;
   costNote: string;
@@ -100,6 +102,7 @@ type ExistingSeries = {
   signup_method: SignupMethod;
   rrule: string;
   start_time: string;
+  timezone: string;
   signup_opens: string;
   cost_cents: number;
   cost_note: string | null;
@@ -135,6 +138,7 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
   const [signupOpensDays, setSignupOpensDays] = useState(
     existing ? parseSignupOpensDays(existing.signup_opens) : DEFAULT_SIGNUP_OPENS_DAYS,
   );
+  const [timezone, setTimezone] = useState(existing?.timezone ?? defaultTimezone());
   const [costDollars, setCostDollars] = useState(
     existing ? String(existing.cost_cents / 100) : '0',
   );
@@ -209,6 +213,7 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
       rrule,
       anchorDate: computeAnchorDate(recurrence, new Date(), biweeklyNextWeek),
       startTime,
+      timezone,
       signupOpensDays,
       costDollars,
       costNote: costNote.trim(),
@@ -373,6 +378,13 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
           />
         </View>
       </View>
+      <SelectField
+        label="Timezone"
+        value={timezone}
+        options={timezoneOptions(existing?.timezone)}
+        onChange={setTimezone}
+      />
+      <Body>Times are always local to the venue, even across daylight saving.</Body>
 
       {preview ? <Text style={styles.preview}>{preview}</Text> : null}
 

@@ -79,7 +79,9 @@ function AuthGate({ children }: { children: ReactNode }) {
       }
       return;
     }
-    if (inAuthGroup) {
+    // reset-password keeps its recovery session on screen until the new
+    // password is saved; every other auth screen bounces into the app.
+    if (inAuthGroup && authScreen !== 'reset-password') {
       router.replace('/(tabs)');
     }
   }, [

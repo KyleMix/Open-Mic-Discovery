@@ -54,7 +54,7 @@ export default function SettingsScreen() {
       ) : (
         blocked.data.map((b) => (
           <View key={b.blocked_id} style={styles.blockRow}>
-            <Text style={styles.blockText}>Blocked user</Text>
+            <Text style={styles.blockText}>{b.blocked_display_name ?? 'Blocked user'}</Text>
             <Button
               label="Unblock"
               kind="secondary"

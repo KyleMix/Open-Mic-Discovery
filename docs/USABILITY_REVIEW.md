@@ -46,6 +46,13 @@ Kept as chips deliberately: short sets of 2 to 7 one-word options where every ch
 2. Good: the moderation queue is one tap from the Profile tab, groups reports, held content, and data-quality flags, and states the 24-hour target on screen.
 3. Recommended: the Settings blocked-user list shows "Blocked user" with no name, because blocking removes the profile from your queries entirely (by design, server side). Consider storing a display-name snapshot at block time so the unblock list is meaningful.
 
+## Follow-up: every recommendation above is now built (2026-07-29)
+
+- Forgot password: Sign in, Forgot password sends a reset email whose link deep-links back into the app (openmic://reset-password) to a set-new-password screen. The auth gate holds the recovery session on that screen until the new password is saved. Expired or cross-device links get a plain explanation and a one-tap path to a fresh link. Owner setup: allow the openmic:// redirect in the hosted Supabase Auth settings.
+- Timezone picker: the producer form now picks the listing's IANA timezone from a dropdown of US zones, defaulting to the device's zone (fallback America/Los_Angeles). Editing it regenerates untouched future nights through the existing reconcile trigger. A stored zone outside the list stays selectable.
+- Blocked list names: migration 001600 snapshots the blocked user's display name onto the block row with a server-side trigger (client-supplied values are overwritten; pgTAP-tested), and Settings shows it. The snapshot never re-exposes the blocked profile.
+- Distance in search: migration 001700 gives search_mics an optional center and a distance_m column (SECURITY INVOKER, so row level security still applies; pgTAP-tested). Search results now read "The Rusty Fret, Seattle (1.2 mi) · Tue, Aug 4", using the same center as discovery.
+
 ## Checks
 
 `npm run typecheck`, `npm run lint`, and `npm test` all pass (93 tests, including new coverage for the dropdown component, the signup-opens interval parser, and the filter store's method setter).

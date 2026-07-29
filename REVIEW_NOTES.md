@@ -44,14 +44,18 @@ Created by the database seed (`supabase/seed.sql`). Local development only; prod
 - **Simple filters.** Discover shows two plain rows: what kind of mic (single tap: All, Music, Comedy, Poetry, Other) and when (Any day, Today, Weekend), plus Free and an All filters sheet. The sheet asks one labeled question per section (days, time, cost, how you get on stage, distance) in plain language. Short option sets are big tappable chips; the signup-style question is a multi-select dropdown that reads "Any way" until something is picked. Distances read in miles; the server still works in km. Signup methods use plain names everywhere: Walk-in list, Name draw, Book ahead, Invite only.
 - **Dropdown selects.** Fields with many options use a shared dropdown control (trigger opens a bottom sheet of large options with one-line explanations): producer form start time, signup method, and signup-open lead time, the filter sheet signup style, and the nearby-alert radius in notification preferences.
 - **Roster safety net.** On the night-of list, performed and no-show rows keep an undo action that puts the performer back on the list, and all roster views show plain-language statuses.
+- **Forgot password.** Sign in, Forgot password emails a reset link that deep-links back into the app (openmic://reset-password) to set a new password. The link is single-use and device-bound (PKCE): opened elsewhere or expired, the screen explains and offers a fresh link.
+- **Timezone per listing.** The producer form picks the mic's IANA timezone (defaulting to the device zone); occurrence generation follows it across daylight saving. Changing it regenerates untouched future nights, same as any schedule edit.
+- **Blocked list shows names.** Blocking snapshots the display name onto the block row (server-side trigger, spoof-proof, pgTAP-tested), so Settings shows who is blocked without re-exposing the blocked profile.
+- **Distance in search.** Search results show miles from the same center discovery uses (home area, or the device position after a locate tap). Distance math stays in PostGIS (search_mics takes an optional center).
 - **Profile customization.** Profile tab, Edit profile: photo (square-cropped from the library, stored in the public avatars bucket under the user's own folder, enforced by storage RLS) plus Instagram, TikTok, YouTube, and website. Handle fields accept @names or pasted URLs and normalize; only https links are accepted (database check constraints back this). Links render as tappable chips on the profile. Editing display name or bio re-enters the moderation filter, same as onboarding.
 
 ## Build-time notes for reviewers and testers
 
 - Android maps need a Google Maps API key at build time (`android.config.googleMaps.apiKey`); iOS uses Apple Maps with no key.
-- Sign in with Apple and Google require provider credentials in Supabase Auth; email/password always works.
+- Sign in with Apple and Google require provider credentials in Supabase Auth; email/password always works, including the in-app password reset.
 - Push notifications require a physical device and an EAS project id; every flow degrades quietly without them.
-- New listings default to the America/Los_Angeles timezone (the launch region); timezone selection is planned before multi-region expansion.
+- New listings carry a timezone picker (US zones) that defaults to the device's zone, falling back to America/Los_Angeles. The reset-link email flow requires the app's `openmic://` scheme; on the hosted project, add the scheme URL to the Supabase Auth redirect allowlist.
 
 ## Temporary screens
 

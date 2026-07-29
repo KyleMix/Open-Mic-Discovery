@@ -29,7 +29,7 @@ export default function NewSeriesScreen() {
           rrule: values.rrule,
           anchor_date: values.anchorDate,
           start_time: values.startTime,
-          timezone: 'America/Los_Angeles',
+          timezone: values.timezone,
           signup_opens: `${values.signupOpensDays} days`,
           cost_cents: Math.round(Number(values.costDollars || '0') * 100),
           cost_note: values.costNote || null,
