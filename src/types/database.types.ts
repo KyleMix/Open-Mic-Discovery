@@ -7,31 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       attendance_log: {
@@ -110,16 +85,19 @@ export type Database = {
       }
       blocks: {
         Row: {
+          blocked_display_name: string | null
           blocked_id: string
           blocker_id: string
           created_at: string
         }
         Insert: {
+          blocked_display_name?: string | null
           blocked_id: string
           blocker_id: string
           created_at?: string
         }
         Update: {
+          blocked_display_name?: string | null
           blocked_id?: string
           blocker_id?: string
           created_at?: string
@@ -471,6 +449,7 @@ export type Database = {
           last_confirmed_by: string | null
           moderation_status: Database["public"]["Enums"]["moderation_status"]
           owner_id: string | null
+          poster_url: string | null
           rrule: string
           set_length_minutes: number | null
           signup_closes: string
@@ -499,6 +478,7 @@ export type Database = {
           last_confirmed_by?: string | null
           moderation_status?: Database["public"]["Enums"]["moderation_status"]
           owner_id?: string | null
+          poster_url?: string | null
           rrule: string
           set_length_minutes?: number | null
           signup_closes?: string
@@ -527,6 +507,7 @@ export type Database = {
           last_confirmed_by?: string | null
           moderation_status?: Database["public"]["Enums"]["moderation_status"]
           owner_id?: string | null
+          poster_url?: string | null
           rrule?: string
           set_length_minutes?: number | null
           signup_closes?: string
@@ -938,6 +919,7 @@ export type Database = {
           created_at: string
           id: string
           occurrence_id: string
+          on_deck_at: string | null
           performer_id: string
           slot_position: number | null
           status: Database["public"]["Enums"]["signup_status"]
@@ -947,6 +929,7 @@ export type Database = {
           created_at?: string
           id?: string
           occurrence_id: string
+          on_deck_at?: string | null
           performer_id: string
           slot_position?: number | null
           status?: Database["public"]["Enums"]["signup_status"]
@@ -956,6 +939,7 @@ export type Database = {
           created_at?: string
           id?: string
           occurrence_id?: string
+          on_deck_at?: string | null
           performer_id?: string
           slot_position?: number | null
           status?: Database["public"]["Enums"]["signup_status"]
@@ -1035,8 +1019,7 @@ export type Database = {
         Insert: {
           address_line: string
           age_restriction?:
-            | Database["public"]["Enums"]["age_restriction"]
-            | null
+            Database["public"]["Enums"]["age_restriction"] | null
           city: string
           country?: string
           created_at?: string
@@ -1059,8 +1042,7 @@ export type Database = {
         Update: {
           address_line?: string
           age_restriction?:
-            | Database["public"]["Enums"]["age_restriction"]
-            | null
+            Database["public"]["Enums"]["age_restriction"] | null
           city?: string
           country?: string
           created_at?: string
@@ -1180,6 +1162,27 @@ export type Database = {
           },
         ]
       }
+      pg_all_foreign_keys: {
+        Row: {
+          fk_columns: unknown[] | null
+          fk_constraint_name: unknown
+          fk_schema_name: unknown
+          fk_table_name: unknown
+          fk_table_oid: unknown
+          is_deferrable: boolean | null
+          is_deferred: boolean | null
+          match_type: string | null
+          on_delete: string | null
+          on_update: string | null
+          pk_columns: unknown[] | null
+          pk_constraint_name: unknown
+          pk_index_name: unknown
+          pk_schema_name: unknown
+          pk_table_name: unknown
+          pk_table_oid: unknown
+        }
+        Relationships: []
+      }
       producer_public: {
         Row: {
           contact_email: string | null
@@ -1265,6 +1268,7 @@ export type Database = {
           handle: string | null
           id: string | null
           occurrence_id: string | null
+          on_deck_at: string | null
           performer_id: string | null
           slot_position: number | null
           status: Database["public"]["Enums"]["signup_status"] | null
@@ -1293,8 +1297,35 @@ export type Database = {
           },
         ]
       }
+      tap_funky: {
+        Row: {
+          args: string | null
+          is_definer: boolean | null
+          is_strict: boolean | null
+          is_visible: boolean | null
+          kind: unknown
+          langoid: unknown
+          name: unknown
+          oid: unknown
+          owner: unknown
+          returns: string | null
+          returns_set: boolean | null
+          schema: unknown
+          volatility: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      _cleanup: { Args: never; Returns: boolean }
+      _contract_on: { Args: { "": string }; Returns: unknown }
+      _currtest: { Args: never; Returns: number }
+      _db_privs: { Args: never; Returns: unknown[] }
+      _extensions: { Args: never; Returns: unknown[] }
+      _get: { Args: { "": string }; Returns: number }
+      _get_latest: { Args: { "": string }; Returns: number[] }
+      _get_note: { Args: { "": string }; Returns: string }
+      _is_verbose: { Args: never; Returns: boolean }
       _postgis_deprecate: {
         Args: { newname: string; oldname: string; version: string }
         Returns: undefined
@@ -1313,6 +1344,10 @@ export type Database = {
         Args: { ""?: string; att_name: string; tbl: unknown }
         Returns: string
       }
+      _prokind: { Args: { p_oid: unknown }; Returns: unknown }
+      _query: { Args: { "": string }; Returns: string }
+      _refine_vol: { Args: { "": string }; Returns: string }
+      _retval: { Args: { "": string }; Returns: string }
       _st_3dintersects: {
         Args: { geom1: unknown; geom2: unknown }
         Returns: boolean
@@ -1384,6 +1419,9 @@ export type Database = {
         Returns: unknown
       }
       _st_within: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      _table_privs: { Args: never; Returns: unknown[] }
+      _temptypes: { Args: { "": string }; Returns: string }
+      _todo: { Args: never; Returns: string }
       addauth: { Args: { "": string }; Returns: boolean }
       addgeometrycolumn:
         | {
@@ -1422,14 +1460,74 @@ export type Database = {
             }
             Returns: string
           }
+      col_is_null:
+        | {
+            Args: {
+              column_name: unknown
+              description?: string
+              schema_name: unknown
+              table_name: unknown
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              column_name: unknown
+              description?: string
+              table_name: unknown
+            }
+            Returns: string
+          }
+      col_not_null:
+        | {
+            Args: {
+              column_name: unknown
+              description?: string
+              schema_name: unknown
+              table_name: unknown
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              column_name: unknown
+              description?: string
+              table_name: unknown
+            }
+            Returns: string
+          }
+      dearmor: { Args: { "": string }; Returns: string }
       delete_account: { Args: never; Returns: undefined }
+      delete_account_web: { Args: { p_user_id: string }; Returns: undefined }
+      deletion_request_allowed: {
+        Args: { p_email_key: string; p_ip_key: string }
+        Returns: boolean
+      }
+      diag:
+        | {
+            Args: { msg: unknown }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.diag(msg => text), public.diag(msg => anyelement). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
+        | {
+            Args: { msg: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.diag(msg => text), public.diag(msg => anyelement). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
+      diag_test_name: { Args: { "": string }; Returns: string }
       disablelongtransactions: { Args: never; Returns: string }
+      do_tap:
+        | { Args: never; Returns: string[] }
+        | { Args: { "": string }; Returns: string[] }
       draw_lottery: {
         Args: { p_occurrence_id: string }
         Returns: {
           created_at: string
           id: string
           occurrence_id: string
+          on_deck_at: string | null
           performer_id: string
           slot_position: number | null
           status: Database["public"]["Enums"]["signup_status"]
@@ -1474,6 +1572,14 @@ export type Database = {
         | { Args: { table_name: string }; Returns: string }
       enablelongtransactions: { Args: never; Returns: string }
       equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      fail:
+        | { Args: never; Returns: string }
+        | { Args: { "": string }; Returns: string }
+      findfuncs: { Args: { "": string }; Returns: string[] }
+      finish: { Args: { exception_on_failure?: boolean }; Returns: string[] }
+      format_type_string: { Args: { "": string }; Returns: string }
+      gen_random_uuid: { Args: never; Returns: string }
+      gen_salt: { Args: { "": string }; Returns: string }
       geometry: { Args: { "": string }; Returns: unknown }
       geometry_above: {
         Args: { geom1: unknown; geom2: unknown }
@@ -1573,7 +1679,16 @@ export type Database = {
       }
       geomfromewkt: { Args: { "": string }; Returns: unknown }
       gettransactionid: { Args: never; Returns: unknown }
+      has_unique: { Args: { "": string }; Returns: string }
+      in_todo: { Args: never; Returns: boolean }
+      is_empty: { Args: { "": string }; Returns: string }
+      isnt_empty: { Args: { "": string }; Returns: string }
+      lives_ok: { Args: { "": string }; Returns: string }
       longtransactionsenabled: { Args: never; Returns: boolean }
+      mark_on_deck: {
+        Args: { p_on_deck?: boolean; p_signup_id: string }
+        Returns: undefined
+      }
       mics_near: {
         Args: {
           p_days?: number[]
@@ -1623,6 +1738,19 @@ export type Database = {
         }
         Returns: undefined
       }
+      no_plan: { Args: never; Returns: boolean[] }
+      num_failed: { Args: never; Returns: number }
+      os_name: { Args: never; Returns: string }
+      pass:
+        | { Args: never; Returns: string }
+        | { Args: { "": string }; Returns: string }
+      pg_version: { Args: never; Returns: string }
+      pg_version_num: { Args: never; Returns: number }
+      pgp_armor_headers: {
+        Args: { "": string }
+        Returns: Record<string, unknown>[]
+      }
+      pgtap_version: { Args: never; Returns: number }
       populate_geometry_columns:
         | { Args: { tbl_oid: unknown; use_typmod?: boolean }; Returns: number }
         | { Args: { use_typmod?: boolean }; Returns: string }
@@ -1638,8 +1766,12 @@ export type Database = {
         Args: { geomcolumn: string; geomschema: string; geomtable: string }
         Returns: string
       }
-      postgis_extensions_upgrade: { Args: never; Returns: string }
+      postgis_extensions_upgrade: {
+        Args: { target_version?: string }
+        Returns: string
+      }
       postgis_full_version: { Args: never; Returns: string }
+      postgis_geos_compiled_version: { Args: never; Returns: string }
       postgis_geos_version: { Args: never; Returns: string }
       postgis_lib_build_date: { Args: never; Returns: string }
       postgis_lib_revision: { Args: never; Returns: string }
@@ -1652,7 +1784,53 @@ export type Database = {
       postgis_scripts_build_date: { Args: never; Returns: string }
       postgis_scripts_installed: { Args: never; Returns: string }
       postgis_scripts_released: { Args: never; Returns: string }
+      postgis_srs: {
+        Args: { auth_name: string; auth_srid: string }
+        Returns: {
+          auth_name: string
+          auth_srid: string
+          point_ne: unknown
+          point_sw: unknown
+          proj4text: string
+          srname: string
+          srtext: string
+        }[]
+      }
+      postgis_srs_all: {
+        Args: never
+        Returns: {
+          auth_name: string
+          auth_srid: string
+          point_ne: unknown
+          point_sw: unknown
+          proj4text: string
+          srname: string
+          srtext: string
+        }[]
+      }
+      postgis_srs_codes: { Args: { auth_name: string }; Returns: string[] }
+      postgis_srs_search: {
+        Args: { authname?: string; bounds: unknown }
+        Returns: {
+          auth_name: string
+          auth_srid: string
+          point_ne: unknown
+          point_sw: unknown
+          proj4text: string
+          srname: string
+          srtext: string
+        }[]
+      }
       postgis_svn_version: { Args: never; Returns: string }
+      postgis_transform_pipeline_geometry: {
+        Args: {
+          forward: boolean
+          geom: unknown
+          pipeline: string
+          to_srid: number
+        }
+        Returns: unknown
+      }
       postgis_type_name: {
         Args: {
           coord_dimension: number
@@ -1667,12 +1845,16 @@ export type Database = {
         Args: { p_approve: boolean; p_claim_id: string }
         Returns: undefined
       }
+      runtests:
+        | { Args: never; Returns: string[] }
+        | { Args: { "": string }; Returns: string[] }
       search_mics: {
-        Args: { p_limit?: number; p_query: string }
+        Args: { p_lat?: number; p_limit?: number; p_lng?: number; p_query: string }
         Returns: {
           city: string
           cost_cents: number
           disciplines: Database["public"]["Enums"]["discipline"][]
+          distance_m: number
           last_confirmed_at: string
           lat: number
           lng: number
@@ -1692,6 +1874,9 @@ export type Database = {
         Args: { p_occurrence_id: string; p_signup_ids: string[] }
         Returns: undefined
       }
+      skip:
+        | { Args: { "": string }; Returns: string }
+        | { Args: { how_many: number; why: string }; Returns: string }
       st_3dclosestpoint: {
         Args: { geom1: unknown; geom2: unknown }
         Returns: unknown
@@ -2036,6 +2221,10 @@ export type Database = {
       st_intersects:
         | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }
         | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      st_inversetransformpipeline: {
+        Args: { geom: unknown; pipeline: string; to_srid?: number }
+        Returns: unknown
+      }
       st_isvaliddetail: {
         Args: { flags?: number; geom: unknown }
         Returns: Database["public"]["CompositeTypes"]["valid_detail"]
@@ -2046,6 +2235,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      st_largestemptycircle: {
+        Args: { boundary?: unknown; geom: unknown; tolerance?: number }
+        Returns: Record<string, unknown>
+      }
       st_length:
         | { Args: { geog: unknown; use_spheroid?: boolean }; Returns: number }
         | { Args: { "": string }; Returns: number }
@@ -2053,6 +2246,14 @@ export type Database = {
       st_linecrossingdirection: {
         Args: { line1: unknown; line2: unknown }
         Returns: number
+      }
+      st_lineextend: {
+        Args: {
+          distance_backward?: number
+          distance_forward: number
+          geom: unknown
+        }
+        Returns: unknown
       }
       st_linefromencodedpolyline: {
         Args: { nprecision?: number; txtin: string }
@@ -2160,10 +2361,23 @@ export type Database = {
       }
       st_polyfromtext: { Args: { "": string }; Returns: unknown }
       st_polygonfromtext: { Args: { "": string }; Returns: unknown }
-      st_project: {
-        Args: { azimuth: number; distance: number; geog: unknown }
-        Returns: unknown
-      }
+      st_project:
+        | {
+            Args: { azimuth: number; distance: number; geog: unknown }
+            Returns: unknown
+          }
+        | {
+            Args: { distance: number; geog_from: unknown; geog_to: unknown }
+            Returns: unknown
+          }
+        | {
+            Args: { azimuth: number; distance: number; geom1: unknown }
+            Returns: unknown
+          }
+        | {
+            Args: { distance: number; geom1: unknown; geom2: unknown }
+            Returns: unknown
+          }
       st_quantizecoordinates: {
         Args: {
           g: unknown
@@ -2251,6 +2465,10 @@ export type Database = {
             Returns: unknown
           }
         | { Args: { geom: unknown; to_proj: string }; Returns: unknown }
+      st_transformpipeline: {
+        Args: { geom: unknown; pipeline: string; to_srid?: number }
+        Returns: unknown
+      }
       st_triangulatepolygon: { Args: { g1: unknown }; Returns: unknown }
       st_union:
         | { Args: { geom1: unknown; geom2: unknown }; Returns: unknown }
@@ -2273,6 +2491,16 @@ export type Database = {
         Args: { geom: unknown; move: number; wrap: number }
         Returns: unknown
       }
+      throws_ok: { Args: { "": string }; Returns: string }
+      todo:
+        | { Args: { how_many: number }; Returns: boolean[] }
+        | { Args: { how_many: number; why: string }; Returns: boolean[] }
+        | { Args: { why: string }; Returns: boolean[] }
+        | { Args: { how_many: number; why: string }; Returns: boolean[] }
+      todo_end: { Args: never; Returns: boolean[] }
+      todo_start:
+        | { Args: never; Returns: boolean[] }
+        | { Args: { "": string }; Returns: boolean[] }
       unlockrows: { Args: { "": string }; Returns: number }
       updategeometrysrid: {
         Args: {
@@ -2322,6 +2550,9 @@ export type Database = {
         | "no_show"
     }
     CompositeTypes: {
+      _time_trial_type: {
+        a_time: number | null
+      }
       geometry_dump: {
         path: number[] | null
         geom: unknown
@@ -2343,12 +2574,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2370,13 +2601,12 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2395,13 +2625,12 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2420,13 +2649,12 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2439,11 +2667,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2453,9 +2681,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       age_restriction: ["all_ages", "eighteen_plus", "twenty_one_plus"],
@@ -2498,4 +2723,3 @@ export const Constants = {
     },
   },
 } as const
-
