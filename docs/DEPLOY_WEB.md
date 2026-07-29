@@ -9,6 +9,8 @@ Nothing in it has a build step: every file deploys as-is to any static host
 | URL                                        | File in repo                    | Why                                                                          |
 | ------------------------------------------ | ------------------------------- | ---------------------------------------------------------------------------- |
 | `https://openmicfinder.app/delete-account` | `web/delete-account/index.html` | Google Play web deletion requirement. Linked from the Play Data Safety form. |
+| `https://openmicfinder.app/privacy` | TODO(owner): host the privacy policy here | Linked from the paywall (Apple 3.1.2), the delete-account page, and both store listings. |
+| `https://openmicfinder.app/terms` | TODO(owner): host the EULA text here (same text as the in-app `eula_versions` current version) | Linked from the paywall (Apple 3.1.2). |
 
 The page must be reachable with no login and no app install.
 
