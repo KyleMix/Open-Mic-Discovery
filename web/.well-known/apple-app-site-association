@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["TODO_TEAM_ID.com.openmicfinder.app"],
+        "components": [
+          {
+            "/": "/mic/*",
+            "comment": "Open mic detail pages open in the app when installed"
+          }
+        ]
+      }
+    ]
+  }
+}

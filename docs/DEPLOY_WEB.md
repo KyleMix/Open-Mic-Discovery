@@ -63,9 +63,42 @@ The page must be reachable with no login and no app install.
    paths end in the same state and that invalid or already-deleted accounts
    fail safely.
 
-## Universal Links and App Links files
+## Universal Links and App Links
 
-Covered in a later phase: `web/.well-known/apple-app-site-association` and
-`web/.well-known/assetlinks.json` deploy from the same static site. See the
-placeholders in those files for the values the owner must fill in after EAS
-credentials exist.
+`https://openmicfinder.app/mic/<id>` opens the app's mic page when the app
+is installed. Config: `associatedDomains` and the autoVerify `intentFilters`
+entry in `app.json`; Expo Router serves the `/mic/[id]` route from any cold
+start. `src/lib/linking.test.ts` keeps config, route, and well-known files
+in agreement.
+
+Deploy both files from `web/.well-known/` at the domain root:
+
+- `https://openmicfinder.app/.well-known/apple-app-site-association`
+  (content type `application/json`, no redirect, no file extension)
+- `https://openmicfinder.app/.well-known/assetlinks.json`
+
+### Values the owner must fill in (after EAS credentials exist)
+
+1. `apple-app-site-association`: replace `TODO_TEAM_ID` with the Apple
+   Team ID shown by `eas credentials` (iOS) or in the Apple Developer
+   membership page. The final value looks like `AB12CD34EF.com.openmicfinder.app`.
+2. `assetlinks.json`: replace `TODO_SHA256_CERT_FINGERPRINT` with the
+   SHA-256 fingerprint of the Play App Signing key: Play Console, Setup,
+   App integrity, App signing key certificate (or `eas credentials`
+   (Android), Keystore, colon-separated SHA-256). Add a second array entry
+   with the upload key fingerprint if internal-track testing needs it.
+
+### Manual verification procedure
+
+1. After deploying both files, check
+   `curl -i https://openmicfinder.app/.well-known/apple-app-site-association`
+   returns 200, JSON, no redirect; same for `assetlinks.json`.
+2. Validate Android with
+   `https://developers.google.com/digital-asset-links/tools/generator`.
+3. Install a release build on each platform. Kill the app. Open
+   `https://openmicfinder.app/mic/<seeded id>` from Notes (iOS) or a chat
+   app (Android); the app must open directly to that mic's detail screen.
+4. Android: `adb shell pm get-app-links com.openmicfinder.app` must show
+   the domain as `verified`.
+5. iOS: Settings, Developer, Universal Links diagnostics can confirm the
+   AASA fetch if step 3 fails.
