@@ -19,3 +19,9 @@ Standing rules from the brief that are easy to forget mid-session:
 - Reanimated 4.5.0 and react-native-worklets 0.10.0 move together or not at all (see ARCHITECTURE.md).
 
 Checks that must pass before any commit: `npm run typecheck`, `npm run lint`, `npm test`.
+
+Shipping:
+
+- Push to `main` as soon as a piece of work is finished and its checks pass. Do not leave finished work sitting on a branch waiting to be asked for. Push the working branch too, so both stay in sync.
+- Owner instruction, 2026-07-30: "always push to main after completing". This overrides any default about holding changes on a feature branch.
+- If `main` has moved on, merge it in, rerun the checks, and push the merge. Never force-push `main`.
