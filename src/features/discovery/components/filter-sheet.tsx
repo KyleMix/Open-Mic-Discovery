@@ -51,7 +51,11 @@ function SheetChip({
   );
 }
 
-function Section({ title, caption, children }: {
+function Section({
+  title,
+  caption,
+  children,
+}: {
   title: string;
   caption?: string;
   children: React.ReactNode;

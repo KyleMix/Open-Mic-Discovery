@@ -37,8 +37,31 @@ export function costLabel(costCents: number): string {
   return costCents === 0 ? 'Free' : `$${(costCents / 100).toFixed(costCents % 100 === 0 ? 0 : 2)}`;
 }
 
+/**
+ * What the card actually draws, rather than a whole nearby row. Search returns
+ * a slightly different shape, and both satisfy this, so a searched mic and a
+ * nearby mic render as the same card instead of two different formats.
+ */
+export type MicCardMic = Pick<
+  NearbyMic,
+  | 'series_id'
+  | 'title'
+  | 'disciplines'
+  | 'signup_method'
+  | 'cost_cents'
+  | 'rrule'
+  | 'start_time'
+  | 'timezone'
+  | 'last_confirmed_at'
+  | 'venue_name'
+  | 'neighborhood'
+  | 'distance_m'
+  | 'next_starts_at'
+  | 'poster_url'
+>;
+
 type Props = {
-  mic: NearbyMic;
+  mic: MicCardMic;
   onPress: () => void;
 };
 

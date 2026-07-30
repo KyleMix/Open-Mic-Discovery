@@ -7,10 +7,10 @@ import { Body, Button, ErrorText, LoadingView } from '@/components/ui';
 import { useOwnProfile, usePerformerDisciplines } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
 import { FilterBar } from '@/features/discovery/components/filter-bar';
-import { MicCard, formatNextDate } from '@/features/discovery/components/mic-card';
+import { MicCard } from '@/features/discovery/components/mic-card';
 import { MicMap } from '@/features/discovery/components/mic-map';
 import { resolveDiscoverCenter, SEATTLE_FALLBACK_NOTE } from '@/features/discovery/center';
-import { formatMilesFromMeters, radiusLabel } from '@/features/discovery/distance';
+import { radiusLabel } from '@/features/discovery/distance';
 import { requestForegroundLocation } from '@/features/discovery/location';
 import { sortSoonestNearest } from '@/features/discovery/order';
 import { useNearbyMics, useSearchMics } from '@/features/discovery/queries';
@@ -132,8 +132,8 @@ export default function DiscoverScreen() {
             <View style={styles.stateWrap}>
               <Text style={styles.emptyTitle}>No mics here yet</Text>
               <Body>
-                Nothing within {radiusLabel(filters.radiusKm)} matches. Try a bigger distance or
-                tap Clear all. Know a mic we are missing? Add it from the My Mics tab.
+                Nothing within {radiusLabel(filters.radiusKm)} matches. Try a bigger distance or tap
+                Clear all. Know a mic we are missing? Add it from the My Mics tab.
               </Body>
               <Button label="Clear all filters" kind="secondary" onPress={filters.reset} />
             </View>
@@ -188,24 +188,12 @@ function SearchResults({
       data={state.data}
       keyExtractor={(r) => r.series_id}
       contentContainerStyle={styles.list}
-      renderItem={({ item }) => (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`${item.title} in ${item.city}`}
-          onPress={() => onSelect(item.series_id)}
-          style={({ pressed }) => [
-            styles.searchResult,
-            pressed && { backgroundColor: palette.bgPressed },
-          ]}
-        >
-          <Text style={styles.searchResultTitle}>{item.title}</Text>
-          <Text style={styles.searchResultMeta}>
-            {item.venue_name}, {item.city}
-            {item.distance_m != null ? ` (${formatMilesFromMeters(item.distance_m)})` : ''} ·{' '}
-            {formatNextDate(item.next_starts_at, item.timezone)}
-          </Text>
-        </Pressable>
-      )}
+      ListHeaderComponent={
+        <Text style={styles.resultCount}>
+          {state.data.length === 1 ? '1 mic found' : `${state.data.length} mics found`}
+        </Text>
+      }
+      renderItem={({ item }) => <MicCard mic={item} onPress={() => onSelect(item.series_id)} />}
     />
   );
 }
@@ -267,21 +255,9 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
     fontSize: type.heading.fontSize,
   },
-  searchResult: {
-    backgroundColor: palette.bgElevated,
-    borderColor: palette.border,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: spacing.xs,
-    padding: spacing.md,
-  },
-  searchResultTitle: {
-    color: palette.text,
-    fontFamily: fonts.medium,
-    fontSize: type.body.fontSize,
-  },
-  searchResultMeta: {
+  resultCount: {
     color: palette.textSecondary,
     fontSize: type.caption.fontSize,
+    paddingBottom: spacing.xs,
   },
 });
