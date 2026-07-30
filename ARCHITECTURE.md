@@ -25,12 +25,14 @@ Living document. Records the stack, the pinned version combination, and decision
 
 Pinned pairs that must move together, never via a transitive bump:
 
-- `react-native-reanimated` 4.5.0 + `react-native-worklets` 0.10.0 (the SDK 57 template pairing; upgrade only both at once, only to a pairing Expo documents as SDK-compatible)
+- `react-native-reanimated` 4.5.1 + `react-native-worklets` 0.10.1 (upgrade only both at once, only to a pairing Expo documents as SDK-compatible; bumped together from 4.5.0/0.10.0 on 2026-07-30 because `npx expo install --check` named both for SDK 57)
 - All `expo-*` packages upgrade via `npx expo install`, never by hand, so they stay SDK-matched.
 
 Renovate/dependabot, when added, must be configured to exclude these from automatic major bumps.
 
 ## Decisions log
+
+- **2026-07-30, SDK 57 patch alignment.** `npx expo install --check` named fourteen packages behind the SDK, so all of them moved at once: expo 57.0.9, react-native 0.86.2, expo-router 57.0.9, and the rest. Reanimated and worklets moved together (4.5.0/0.10.0 to 4.5.1/0.10.1), which is the only way that pair is allowed to move, and Expo's own compatibility list is the authority that sanctions the new pairing. `@expo/vector-icons` and `@react-native-async-storage/async-storage` were tightened to the exact ranges the SDK pins, since a caret there lets a future install drift off the SDK unnoticed. All 37 SDK-managed dependencies now match `expo/bundledNativeModules.json` exactly. Applying this needs a clean install: `expo install --fix` against a populated node_modules fails with an ERESOLVE on react-native, because npm resolves the new peer set against the old tree.
 
 - **2026-07-28, TypeScript ~6.0.3.** Step 0 proposed ~5.9, but the SDK 57 template pins ~6.0 (still the standard TypeScript compiler). We follow the template pin. npm `latest` is now TypeScript 7 (the Go compiler); we do not adopt it until the Expo toolchain does.
 - **2026-07-28, React Compiler experiment stays on.** The SDK 57 template enables `experiments.reactCompiler`. Kept: it removes a class of manual memoization work. If it miscompiles anything we turn it off in app.json and note it here.

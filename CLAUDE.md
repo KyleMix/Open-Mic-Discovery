@@ -16,7 +16,7 @@ Standing rules from the brief that are easy to forget mid-session:
 - Write tests alongside features, not after.
 - No joke bank, setlist tools, timers, social feed, DMs, follower graph, or AI features in v1.
 - Expo SDK 57: consult https://docs.expo.dev/versions/v57.0.0/ for current APIs. Upgrade expo packages only via `npx expo install`.
-- Reanimated 4.5.0 and react-native-worklets 0.10.0 move together or not at all (see ARCHITECTURE.md).
+- Reanimated 4.5.1 and react-native-worklets 0.10.1 move together or not at all (see ARCHITECTURE.md).
 
 Checks that must pass before any commit: `npm run typecheck`, `npm run lint`, `npm test`.
 
