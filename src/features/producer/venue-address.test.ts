@@ -1,4 +1,4 @@
-import { isPlausibleCoords, venueAddressQuery } from './venue-geocode';
+import { isPlausibleCoords, venueAddressQuery } from './venue-address';
 
 describe('venueAddressQuery', () => {
   it('joins street, city, and state into one lookup string', () => {

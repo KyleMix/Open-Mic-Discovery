@@ -10,7 +10,8 @@ import {
   SIGNUP_METHOD_LABELS,
 } from '@/features/discovery/components/mic-card';
 import { PinPicker } from '@/features/producer/components/pin-picker';
-import { geocodeVenueAddress, venueAddressQuery } from '@/features/producer/venue-geocode';
+import { venueAddressQuery } from '@/features/producer/venue-address';
+import { geocodeVenueAddress } from '@/features/producer/venue-geocode';
 import {
   coerceSignupOpensMinutes,
   defaultSignupOpensMinutes,
