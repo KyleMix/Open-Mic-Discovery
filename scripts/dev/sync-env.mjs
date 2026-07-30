@@ -150,7 +150,18 @@ const target = flags.includes('--android-emulator')
 
 const status = readStatus();
 const rawUrl = pick(status, ['API_URL', 'api_url', 'SUPABASE_URL']);
-const anon = pick(status, ['ANON_KEY', 'anon_key', 'SUPABASE_ANON_KEY']);
+// Supabase is migrating from the legacy anon JWT to publishable keys
+// (sb_publishable_...). Recent CLIs print only the new pair in the start
+// banner while still reporting ANON_KEY in JSON. Either works as the second
+// argument to createClient, so prefer the legacy key and fall back.
+const anon = pick(status, [
+  'ANON_KEY',
+  'anon_key',
+  'SUPABASE_ANON_KEY',
+  'PUBLISHABLE_KEY',
+  'publishable_key',
+  'SUPABASE_PUBLISHABLE_KEY',
+]);
 const url = rawUrl ? retarget(rawUrl, target) : rawUrl;
 
 if (!rawUrl || !anon) {
