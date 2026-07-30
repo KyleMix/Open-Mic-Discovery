@@ -100,60 +100,80 @@ if (inCodespace && isLoopback) {
 // 4. Probe the way the app actually would, with the key, against endpoints
 // that mean something. Health paths move between Supabase releases, so a 404
 // on one proves nothing; sign-in uses GoTrue and PostgREST, so probe those.
-const base = url.replace(/\/$/, '');
-const probes = [
+const PROBES = [
   { path: '/auth/v1/settings', what: 'auth (GoTrue)' },
   { path: '/rest/v1/', what: 'database (PostgREST)' },
 ];
 
-let sawLoginPage = false;
-let reachable = false;
-
-for (const probe of probes) {
-  const target = `${base}${probe.path}`;
-  try {
-    const res = await fetch(target, {
-      headers: { apikey: anon, Authorization: `Bearer ${anon}` },
-      redirect: 'manual',
-      signal: AbortSignal.timeout(10000),
-    });
-    const body = await res.text().catch(() => '');
-    const location = res.headers.get('location') ?? '';
-
-    if (location.includes('github.com') || /<html/i.test(body)) {
-      sawLoginPage = true;
-      continue;
-    }
-    if (res.ok) {
-      ok(`${probe.what} answered ${res.status} with the key in .env`);
-      reachable = true;
-    } else if (res.status === 401 || res.status === 403) {
-      bad(
-        `${probe.what} rejected the key in .env (${res.status})`,
-        'npm run dev:env        (the anon key is regenerated on every recreate)',
-      );
-      reachable = true;
-    } else {
-      warn(`${probe.what} answered ${res.status} at ${probe.path}`);
-    }
-  } catch (error) {
-    const reason = String(error?.cause?.code ?? error?.name ?? error);
-    if (isLoopback && inCodespace) {
-      warn(`could not reach ${target} from inside the Codespace (${reason})`);
-    } else {
-      warn(`could not reach ${target} (${reason})`);
+/** Returns what a base URL looks like: Supabase, a login page, or neither. */
+async function probeBase(rawBase) {
+  const base = rawBase.replace(/\/$/, '');
+  const result = { supabase: false, loginPage: false, badKey: false, notes: [] };
+  for (const { path, what } of PROBES) {
+    try {
+      const res = await fetch(`${base}${path}`, {
+        headers: { apikey: anon, Authorization: `Bearer ${anon}` },
+        redirect: 'manual',
+        signal: AbortSignal.timeout(10000),
+      });
+      const body = await res.text().catch(() => '');
+      const location = res.headers.get('location') ?? '';
+      if (location.includes('github.com') || /<html/i.test(body)) {
+        result.loginPage = true;
+      } else if (res.ok) {
+        result.supabase = true;
+        result.notes.push(`${what} answered ${res.status}`);
+      } else if (res.status === 401 || res.status === 403) {
+        result.supabase = true;
+        result.badKey = true;
+        result.notes.push(`${what} rejected the key (${res.status})`);
+      } else {
+        result.notes.push(`${what} answered ${res.status}`);
+      }
+    } catch (error) {
+      result.notes.push(`${what} unreachable (${String(error?.cause?.code ?? error?.name)})`);
     }
   }
+  return result;
 }
 
-if (sawLoginPage) {
+const configured = await probeBase(url);
+configured.notes.forEach((n) => console.log(`  ...   via .env URL: ${n}`));
+
+// When .env points somewhere other than the stack's own address, probing both
+// separates "Supabase is broken" from "only the forwarding is broken". Those
+// need completely different fixes and look identical from the browser.
+const localUrl = status?.API_URL ?? status?.api_url;
+const differs = localUrl && localUrl.replace(/\/$/, '') !== url.replace(/\/$/, '');
+const local = differs ? await probeBase(localUrl) : null;
+if (local) {
+  local.notes.forEach((n) => console.log(`  ...   via ${localUrl}: ${n}`));
+}
+
+if (configured.loginPage) {
   bad(
     'the Supabase URL answered with a login page, not Supabase',
     'Set port 54321 to Public in the Ports panel. Private ports bounce\n' +
       '        cross-origin requests to a GitHub login page, which the browser\n' +
       '        reports only as "Failed to fetch".',
   );
-} else if (!reachable && !(isLoopback && inCodespace)) {
+} else if (configured.badKey) {
+  bad(
+    'Supabase rejected the key in .env',
+    'npm run dev:env        (the anon key is regenerated on every recreate)',
+  );
+} else if (configured.supabase) {
+  ok('the URL in .env reaches Supabase and the key is accepted');
+} else if (local?.supabase) {
+  // The decisive case: Supabase is healthy on its own address, so nothing is
+  // wrong with the stack. The forwarded hostname is not carrying traffic to it.
+  bad(
+    `Supabase is healthy at ${localUrl} but the forwarded URL does not reach it`,
+    'Port 54321 is not being forwarded. In the Ports panel: add port 54321\n' +
+      '        if it is missing, then set its visibility to Public. A forwarded\n' +
+      '        port that is not actually mapped answers every path with 404.',
+  );
+} else if (!(isLoopback && inCodespace)) {
   bad(
     'neither the auth nor the database endpoint answered like Supabase',
     'Check the stack is healthy: npx supabase status',
