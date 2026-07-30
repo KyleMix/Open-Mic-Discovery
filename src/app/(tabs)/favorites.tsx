@@ -96,6 +96,9 @@ export default function FavoritesScreen() {
                     distance_m: null,
                     next_starts_at: null,
                     poster_url: s.poster_url,
+                    // Favorites read the series, not a night, so there is no
+                    // guest to name here.
+                    featured_name: null,
                   }}
                   onPress={() => router.push(`/mic/${s.id}`)}
                 />

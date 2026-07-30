@@ -57,6 +57,8 @@ export type MicCardMic = {
   distance_m: number | null;
   next_starts_at: string | null;
   poster_url: string | null;
+  /** Guest on the next night, if the producer named one. */
+  featured_name: string | null;
 };
 
 type Props = {
@@ -108,6 +110,13 @@ export function MicCard({ mic, onPress }: Props) {
         <Text style={styles.when}>
           {recurrence ?? formatNextDate(mic.next_starts_at, mic.timezone)}
         </Text>
+        {/* A guest is the reason someone picks one night over another, so it
+            belongs on the card rather than only on the mic page. */}
+        {mic.featured_name ? (
+          <Text numberOfLines={1} style={styles.featured}>
+            Featuring {mic.featured_name}
+          </Text>
+        ) : null}
         <View style={styles.metaRow}>
           <View style={styles.metaItem}>
             <Glyph
@@ -175,6 +184,11 @@ const styles = StyleSheet.create({
   },
   when: {
     color: palette.text,
+    fontSize: type.caption.fontSize,
+  },
+  featured: {
+    color: disciplineAccents.music,
+    fontFamily: fonts.medium,
     fontSize: type.caption.fontSize,
   },
   metaRow: {

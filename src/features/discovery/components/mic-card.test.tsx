@@ -29,6 +29,7 @@ const SEARCH_ROW: SearchResult = {
   distance_m: 2253,
   next_starts_at: '2026-08-11T02:00:00.000Z',
   poster_url: null as unknown as string,
+  featured_name: null as unknown as string,
 };
 
 describe('MicCard from a search result', () => {
@@ -51,5 +52,17 @@ describe('MicCard from a search result', () => {
   it('labels the card for screen readers with the mic and venue', async () => {
     await render(<MicCard mic={SEARCH_ROW} onPress={jest.fn()} />);
     expect(screen.getByLabelText('The Log Cabin at The Log Cabin')).toBeTruthy();
+  });
+
+  it('names the guest when the night has one, since that is the draw', async () => {
+    await render(
+      <MicCard mic={{ ...SEARCH_ROW, featured_name: 'Nia Guest' }} onPress={jest.fn()} />,
+    );
+    expect(screen.getByText('Featuring Nia Guest')).toBeTruthy();
+  });
+
+  it('and says nothing at all when it does not', async () => {
+    await render(<MicCard mic={SEARCH_ROW} onPress={jest.fn()} />);
+    expect(screen.queryByText(/Featuring/)).toBeNull();
   });
 });

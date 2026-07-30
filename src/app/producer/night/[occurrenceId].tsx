@@ -4,6 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
+import { useNightAttendance, usePlanRoster } from '@/features/plans/queries';
+import { attendanceSummary } from '@/features/plans/summary';
+import { useNightContext } from '@/features/producer/queries';
+import { isWalkIn } from '@/features/producer/signup-opens';
 import { ReportModal } from '@/features/safety/components/report-modal';
 import { STATUS_LABELS } from '@/features/signups/labels';
 import {
@@ -14,7 +18,7 @@ import {
   useSetSlotOrder,
   type RosterRow,
 } from '@/features/signups/queries';
-import { fonts, palette, spacing, type } from '@/theme';
+import { disciplineAccents, fonts, palette, spacing, type } from '@/theme';
 
 /**
  * The producer's live list for one night: running order, lottery draw with
@@ -105,6 +109,8 @@ export default function NightScreen() {
           headerTintColor: palette.text,
         }}
       />
+
+      <WhoIsComing occurrenceId={occurrenceId} />
 
       {pending.length > 0 ? (
         <View style={styles.drawBox}>
@@ -228,6 +234,47 @@ export default function NightScreen() {
   );
 }
 
+/**
+ * How the room is shaping up, before it fills.
+ *
+ * On a walk-in night the running order below is empty until people arrive and
+ * sign the sheet, so without this the producer has nothing to plan from. The
+ * names are stage names, which is what the performer was told would be shown.
+ */
+function WhoIsComing({ occurrenceId }: { occurrenceId: string | undefined }) {
+  const night = useNightContext(occurrenceId);
+  const counts = useNightAttendance(occurrenceId);
+  const roster = usePlanRoster(occurrenceId);
+
+  if (counts.isPending || !counts.data) {
+    return null;
+  }
+
+  const method = night.data?.series?.signup_method;
+  const summary = attendanceSummary(counts.data, method ? isWalkIn(method) : false);
+  const names = roster.data ?? [];
+
+  return (
+    <View style={styles.comingBox}>
+      <Text style={styles.sectionTitle}>Who is coming</Text>
+      <Body>{summary}</Body>
+      {names.length > 0 ? (
+        <Text style={styles.pendingName}>
+          {names
+            .map(
+              (n) =>
+                `${n.stage_name ?? n.handle ?? 'Someone'}${n.is_performer ? '' : ' (watching)'}`,
+            )
+            .join(', ')}
+        </Text>
+      ) : null}
+      {night.data?.featured_name ? (
+        <Text style={styles.featured}>Featuring {night.data.featured_name}</Text>
+      ) : null}
+    </View>
+  );
+}
+
 function IconAction({
   label,
   icon,
@@ -260,6 +307,19 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     padding: spacing.lg,
     paddingBottom: spacing.xxl,
+  },
+  comingBox: {
+    backgroundColor: palette.bgElevated,
+    borderColor: palette.border,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: spacing.xs,
+    padding: spacing.md,
+  },
+  featured: {
+    color: disciplineAccents.music,
+    fontFamily: fonts.medium,
+    fontSize: type.caption.fontSize,
   },
   drawBox: {
     backgroundColor: palette.bgElevated,

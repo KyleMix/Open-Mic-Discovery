@@ -248,6 +248,33 @@ where o.series_id = '20000000-0000-4000-c000-000000000001'
 order by o.starts_at
 limit 1;
 
+-- Plans on the next walk-in night at the mic demo_producer runs, so the
+-- producer screens have a headcount to show and the Going tab is not empty.
+-- One performer, one person coming to watch: the split the producer reads.
+insert into attendance_plans (occurrence_id, profile_id)
+select o.id, p.id
+from mic_occurrences o
+cross join (values
+  ('00000000-0000-4000-a000-000000000001'::uuid),
+  ('00000000-0000-4000-a000-000000000003'::uuid)
+) as p(id)
+where o.series_id = '20000000-0000-4000-c000-000000000001'
+  and o.starts_at > now()
+  and o.starts_at = (
+    select min(o2.starts_at) from mic_occurrences o2
+    where o2.series_id = o.series_id and o2.starts_at > now()
+  );
+
+-- A guest on one upcoming night, which is what the featured line renders from.
+update mic_occurrences
+set featured_name = 'Marisol Vega',
+    featured_note = 'Touring songwriter, playing a short set before the list starts.'
+where id = (
+  select o.id from mic_occurrences o
+  where o.series_id = '20000000-0000-4000-c000-000000000001' and o.starts_at > now()
+  order by o.starts_at limit 1
+);
+
 insert into favorites (profile_id, series_id) values
   ('00000000-0000-4000-a000-000000000001', '20000000-0000-4000-c000-000000000001'),
   ('00000000-0000-4000-a000-000000000001', '20000000-0000-4000-c000-000000000016'),

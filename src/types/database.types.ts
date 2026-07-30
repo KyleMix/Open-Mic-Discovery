@@ -40,6 +40,20 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'attendance_log_occurrence_id_fkey';
+            columns: ['occurrence_id'];
+            isOneToOne: false;
+            referencedRelation: 'my_upcoming_nights';
+            referencedColumns: ['occurrence_id'];
+          },
+          {
+            foreignKeyName: 'attendance_log_occurrence_id_fkey';
+            columns: ['occurrence_id'];
+            isOneToOne: false;
+            referencedRelation: 'occurrence_attendance';
+            referencedColumns: ['occurrence_id'];
+          },
+          {
             foreignKeyName: 'attendance_log_profile_id_fkey';
             columns: ['profile_id'];
             isOneToOne: false;
@@ -58,6 +72,67 @@ export type Database = {
             columns: ['series_id'];
             isOneToOne: false;
             referencedRelation: 'mic_series';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'attendance_log_series_id_fkey';
+            columns: ['series_id'];
+            isOneToOne: false;
+            referencedRelation: 'my_upcoming_nights';
+            referencedColumns: ['series_id'];
+          },
+        ];
+      };
+      attendance_plans: {
+        Row: {
+          created_at: string;
+          occurrence_id: string;
+          profile_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          occurrence_id: string;
+          profile_id: string;
+        };
+        Update: {
+          created_at?: string;
+          occurrence_id?: string;
+          profile_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'attendance_plans_occurrence_id_fkey';
+            columns: ['occurrence_id'];
+            isOneToOne: false;
+            referencedRelation: 'mic_occurrences';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'attendance_plans_occurrence_id_fkey';
+            columns: ['occurrence_id'];
+            isOneToOne: false;
+            referencedRelation: 'my_upcoming_nights';
+            referencedColumns: ['occurrence_id'];
+          },
+          {
+            foreignKeyName: 'attendance_plans_occurrence_id_fkey';
+            columns: ['occurrence_id'];
+            isOneToOne: false;
+            referencedRelation: 'occurrence_attendance';
+            referencedColumns: ['occurrence_id'];
+          },
+          {
+            foreignKeyName: 'attendance_plans_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'attendance_plans_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'public_profiles';
             referencedColumns: ['id'];
           },
         ];
@@ -194,6 +269,13 @@ export type Database = {
             referencedRelation: 'mic_series';
             referencedColumns: ['id'];
           },
+          {
+            foreignKeyName: 'claim_requests_series_id_fkey';
+            columns: ['series_id'];
+            isOneToOne: false;
+            referencedRelation: 'my_upcoming_nights';
+            referencedColumns: ['series_id'];
+          },
         ];
       };
       device_push_tokens: {
@@ -291,6 +373,13 @@ export type Database = {
             referencedRelation: 'mic_series';
             referencedColumns: ['id'];
           },
+          {
+            foreignKeyName: 'favorites_series_id_fkey';
+            columns: ['series_id'];
+            isOneToOne: false;
+            referencedRelation: 'my_upcoming_nights';
+            referencedColumns: ['series_id'];
+          },
         ];
       };
       listing_flags: {
@@ -363,6 +452,13 @@ export type Database = {
             referencedRelation: 'mic_series';
             referencedColumns: ['id'];
           },
+          {
+            foreignKeyName: 'listing_flags_series_id_fkey';
+            columns: ['series_id'];
+            isOneToOne: false;
+            referencedRelation: 'my_upcoming_nights';
+            referencedColumns: ['series_id'];
+          },
         ];
       };
       mic_occurrences: {
@@ -370,6 +466,8 @@ export type Database = {
           cancellation_note: string | null;
           created_at: string;
           doors_at: string | null;
+          featured_name: string | null;
+          featured_note: string | null;
           id: string;
           local_date: string;
           override_cost_cents: number | null;
@@ -384,6 +482,8 @@ export type Database = {
           cancellation_note?: string | null;
           created_at?: string;
           doors_at?: string | null;
+          featured_name?: string | null;
+          featured_note?: string | null;
           id?: string;
           local_date: string;
           override_cost_cents?: number | null;
@@ -398,6 +498,8 @@ export type Database = {
           cancellation_note?: string | null;
           created_at?: string;
           doors_at?: string | null;
+          featured_name?: string | null;
+          featured_note?: string | null;
           id?: string;
           local_date?: string;
           override_cost_cents?: number | null;
@@ -422,6 +524,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'mic_series';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mic_occurrences_series_id_fkey';
+            columns: ['series_id'];
+            isOneToOne: false;
+            referencedRelation: 'my_upcoming_nights';
+            referencedColumns: ['series_id'];
           },
         ];
       };
@@ -951,6 +1060,20 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'signups_occurrence_id_fkey';
+            columns: ['occurrence_id'];
+            isOneToOne: false;
+            referencedRelation: 'my_upcoming_nights';
+            referencedColumns: ['occurrence_id'];
+          },
+          {
+            foreignKeyName: 'signups_occurrence_id_fkey';
+            columns: ['occurrence_id'];
+            isOneToOne: false;
+            referencedRelation: 'occurrence_attendance';
+            referencedColumns: ['occurrence_id'];
+          },
+          {
             foreignKeyName: 'signups_performer_id_fkey';
             columns: ['performer_id'];
             isOneToOne: false;
@@ -1118,6 +1241,57 @@ export type Database = {
         };
         Relationships: [];
       };
+      my_upcoming_nights: {
+        Row: {
+          cancellation_note: string | null;
+          cost_cents: number | null;
+          disciplines: Database['public']['Enums']['discipline'][] | null;
+          featured_name: string | null;
+          last_confirmed_at: string | null;
+          neighborhood: string | null;
+          occurrence_id: string | null;
+          occurrence_status: Database['public']['Enums']['occurrence_status'] | null;
+          on_deck_at: string | null;
+          planning: boolean | null;
+          poster_url: string | null;
+          rrule: string | null;
+          series_id: string | null;
+          signup_method: Database['public']['Enums']['signup_method'] | null;
+          signup_status: Database['public']['Enums']['signup_status'] | null;
+          slot_position: number | null;
+          start_time: string | null;
+          starts_at: string | null;
+          timezone: string | null;
+          title: string | null;
+          venue_name: string | null;
+        };
+        Relationships: [];
+      };
+      occurrence_attendance: {
+        Row: {
+          occurrence_id: string | null;
+          performer_plan_count: number | null;
+          plan_count: number | null;
+          series_id: string | null;
+          signup_count: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mic_occurrences_series_id_fkey';
+            columns: ['series_id'];
+            isOneToOne: false;
+            referencedRelation: 'mic_series';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mic_occurrences_series_id_fkey';
+            columns: ['series_id'];
+            isOneToOne: false;
+            referencedRelation: 'my_upcoming_nights';
+            referencedColumns: ['series_id'];
+          },
+        ];
+      };
       performer_public: {
         Row: {
           disciplines: Database['public']['Enums']['discipline'][] | null;
@@ -1177,6 +1351,53 @@ export type Database = {
           pk_table_oid: unknown;
         };
         Relationships: [];
+      };
+      plan_roster: {
+        Row: {
+          created_at: string | null;
+          handle: string | null;
+          is_performer: boolean | null;
+          occurrence_id: string | null;
+          profile_id: string | null;
+          stage_name: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'attendance_plans_occurrence_id_fkey';
+            columns: ['occurrence_id'];
+            isOneToOne: false;
+            referencedRelation: 'mic_occurrences';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'attendance_plans_occurrence_id_fkey';
+            columns: ['occurrence_id'];
+            isOneToOne: false;
+            referencedRelation: 'my_upcoming_nights';
+            referencedColumns: ['occurrence_id'];
+          },
+          {
+            foreignKeyName: 'attendance_plans_occurrence_id_fkey';
+            columns: ['occurrence_id'];
+            isOneToOne: false;
+            referencedRelation: 'occurrence_attendance';
+            referencedColumns: ['occurrence_id'];
+          },
+          {
+            foreignKeyName: 'attendance_plans_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'attendance_plans_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'public_profiles';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       producer_public: {
         Row: {
@@ -1275,6 +1496,20 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'mic_occurrences';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'signups_occurrence_id_fkey';
+            columns: ['occurrence_id'];
+            isOneToOne: false;
+            referencedRelation: 'my_upcoming_nights';
+            referencedColumns: ['occurrence_id'];
+          },
+          {
+            foreignKeyName: 'signups_occurrence_id_fkey';
+            columns: ['occurrence_id'];
+            isOneToOne: false;
+            referencedRelation: 'occurrence_attendance';
+            referencedColumns: ['occurrence_id'];
           },
           {
             foreignKeyName: 'signups_performer_id_fkey';
@@ -1699,6 +1934,7 @@ export type Database = {
           description: string;
           disciplines: Database['public']['Enums']['discipline'][];
           distance_m: number;
+          featured_name: string;
           is_active: boolean;
           last_confirmed_at: string;
           lat: number;
@@ -1847,6 +2083,7 @@ export type Database = {
           cost_cents: number;
           disciplines: Database['public']['Enums']['discipline'][];
           distance_m: number;
+          featured_name: string;
           last_confirmed_at: string;
           lat: number;
           lng: number;

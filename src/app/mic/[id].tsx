@@ -30,6 +30,7 @@ import { SIGNUP_METHOD_LABELS, costLabel } from '@/features/discovery/components
 import { freshness } from '@/features/discovery/freshness';
 import { useFlagListing, useMicDetail } from '@/features/discovery/queries';
 import { useIsFavorite, useToggleFavorite } from '@/features/favorites/queries';
+import { PlanToggle } from '@/features/plans/components/plan-toggle';
 import { useSubmitClaim } from '@/features/producer/queries';
 import { SignUpPrompt } from '@/features/auth/components/sign-up-prompt';
 import { shareMic } from '@/features/discovery/share';
@@ -209,6 +210,14 @@ function MicDetail({
         ) : (
           <Text style={styles.nextDate}>No upcoming dates listed</Text>
         )}
+        {/* A guest is the reason to pick this night over the next one, so it
+            sits with the date rather than further down the page. */}
+        {next?.featured_name ? (
+          <>
+            <Text style={styles.featured}>Featuring {next.featured_name}</Text>
+            {next.featured_note ? <Text style={styles.costNote}>{next.featured_note}</Text> : null}
+          </>
+        ) : null}
         {next ? (
           <Button label="Add to my calendar" kind="secondary" onPress={addNightToCalendar} />
         ) : null}
@@ -224,6 +233,16 @@ function MicDetail({
           </Text>
         ) : null}
       </Card>
+
+      {/* Saying you are coming is separate from signing up, and works on
+          nights where there is no list to sign at all. */}
+      {next ? (
+        <PlanToggle
+          occurrence={next}
+          timezone={series.timezone}
+          signupMethod={series.signup_method}
+        />
+      ) : null}
 
       {next ? (
         <SignupCard
@@ -694,6 +713,11 @@ const styles = StyleSheet.create({
   costNote: {
     color: palette.textSecondary,
     fontSize: type.caption.fontSize,
+  },
+  featured: {
+    color: disciplineAccents.music,
+    fontFamily: fonts.medium,
+    fontSize: type.body.fontSize,
   },
   venueName: {
     color: palette.text,

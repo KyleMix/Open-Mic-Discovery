@@ -19,8 +19,10 @@ import { freshness } from '@/features/discovery/freshness';
 import { useMicDetail } from '@/features/discovery/queries';
 import { eventDate, eventDateShort } from '@/features/discovery/local-time';
 import { describeRecurrence } from '@/features/discovery/recurrence';
+import { useSeriesAttendance } from '@/features/plans/queries';
+import { attendanceSummary } from '@/features/plans/summary';
 import { SeriesForm, type SeriesFormValues } from '@/features/producer/components/series-form';
-import { signupOpensInterval } from '@/features/producer/signup-opens';
+import { isWalkIn, signupOpensInterval } from '@/features/producer/signup-opens';
 import { pickAndUploadPoster } from '@/features/producer/poster';
 import {
   useConfirmSeries,
@@ -38,6 +40,7 @@ export default function ManageSeriesScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const detail = useMicDetail(id);
   const occurrences = useSeriesOccurrences(id);
+  const attendance = useSeriesAttendance(id);
   const confirm = useConfirmSeries();
   const updateSeries = useUpdateSeries();
   const updateOccurrence = useUpdateOccurrence();
@@ -50,6 +53,9 @@ export default function ManageSeriesScreen() {
     occurrence: Occurrence;
     mode: 'cancel' | 'edit';
   } | null>(null);
+
+  // Headcounts arrive as one row per night; the rows below look them up.
+  const counts = new Map((attendance.data ?? []).map((a) => [a.occurrence_id, a]));
 
   if (detail.isPending) {
     return <LoadingView label="Loading your mic" />;
@@ -242,11 +248,25 @@ export default function ManageSeriesScreen() {
                   {eventDateShort(occ.starts_at, series.timezone)}
                   {occ.override_title ? ` · ${occ.override_title}` : ''}
                 </Text>
+                {occ.featured_name ? (
+                  <Text style={styles.featured}>Featuring {occ.featured_name}</Text>
+                ) : null}
                 {occ.status === 'cancelled' ? (
                   <Text style={styles.cancelledNote}>
                     Cancelled{occ.cancellation_note ? `: ${occ.cancellation_note}` : ''}
                   </Text>
-                ) : null}
+                ) : (
+                  <Text style={styles.nightCount}>
+                    {attendanceSummary(
+                      counts.get(occ.id) ?? {
+                        plan_count: 0,
+                        performer_plan_count: 0,
+                        signup_count: 0,
+                      },
+                      isWalkIn(series.signup_method),
+                    )}
+                  </Text>
+                )}
               </View>
               {occ.status === 'cancelled' ? (
                 <Button
@@ -312,6 +332,8 @@ function NightModal({
   const [overrideCost, setOverrideCost] = useState(
     occurrence.override_cost_cents != null ? String(occurrence.override_cost_cents / 100) : '',
   );
+  const [featuredName, setFeaturedName] = useState(occurrence.featured_name ?? '');
+  const [featuredNote, setFeaturedNote] = useState(occurrence.featured_note ?? '');
 
   const dateLabel = eventDate(occurrence.starts_at, timezone);
 
@@ -335,6 +357,8 @@ function NightModal({
             override_cost_cents: overrideCost.trim()
               ? Math.round(Number(overrideCost) * 100)
               : null,
+            featured_name: featuredName.trim() || null,
+            featured_note: featuredNote.trim() || null,
           },
         },
         { onSuccess: onClose },
@@ -380,6 +404,23 @@ function NightModal({
                   value={overrideCost}
                   onChangeText={setOverrideCost}
                   inputMode="decimal"
+                />
+                {/* A named guest is what pulls performers to one night over
+                    another, so it shows on the listing and on the card in
+                    Discover, not just here. */}
+                <Field
+                  label="Featured artist (optional)"
+                  value={featuredName}
+                  onChangeText={setFeaturedName}
+                  placeholder="Nia Guest"
+                  maxLength={80}
+                />
+                <Field
+                  label="A line about them (optional)"
+                  value={featuredNote}
+                  onChangeText={setFeaturedNote}
+                  placeholder="Headlining before her tour"
+                  maxLength={200}
                 />
               </>
             )}
@@ -478,6 +519,15 @@ const styles = StyleSheet.create({
   },
   cancelledNote: {
     color: palette.danger,
+    fontSize: type.caption.fontSize,
+  },
+  nightCount: {
+    color: palette.textSecondary,
+    fontSize: type.caption.fontSize,
+  },
+  featured: {
+    color: palette.success,
+    fontFamily: fonts.medium,
     fontSize: type.caption.fontSize,
   },
   nightActions: {

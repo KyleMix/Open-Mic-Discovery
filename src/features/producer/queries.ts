@@ -186,6 +186,29 @@ export function useSeriesOccurrences(seriesId: string | undefined) {
   });
 }
 
+/**
+ * One night plus the parts of its series the night screen needs: the method
+ * decides how a headcount is worded, and the timezone decides what "tonight"
+ * means.
+ */
+export function useNightContext(occurrenceId: string | undefined) {
+  return useQuery({
+    queryKey: ['producer', 'night', occurrenceId],
+    enabled: !!occurrenceId,
+    queryFn: async () => {
+      const { data, error } = await getSupabase()
+        .from('mic_occurrences')
+        .select('*, series:mic_series(id, title, signup_method, timezone)')
+        .eq('id', occurrenceId!)
+        .maybeSingle();
+      if (error) {
+        throw new Error(error.message);
+      }
+      return data;
+    },
+  });
+}
+
 export function useSubmitClaim() {
   const invalidate = useInvalidateSeries();
   return useMutation({
