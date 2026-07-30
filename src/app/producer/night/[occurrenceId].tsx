@@ -259,11 +259,11 @@ function LiveEntry({
   if (!night.data) {
     return null;
   }
-  const window = liveWindow(night.data.starts_at, new Date());
+  const window = liveWindow(night.data.starts_at, new Date(), night.data.live_ended_at);
   if (window.state !== 'open') {
     return null;
   }
-  return <Button label="Start Live mode" onPress={onOpen} />;
+  return <Button label="Go live" onPress={onOpen} />;
 }
 
 /**

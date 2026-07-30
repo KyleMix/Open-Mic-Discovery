@@ -175,7 +175,10 @@ export function useSeriesOccurrences(seriesId: string | undefined) {
         .from('mic_occurrences')
         .select('*')
         .eq('series_id', seriesId!)
-        .gte('starts_at', new Date().toISOString())
+        // Reaches back half a day, not to now: a mic that started an hour ago
+        // is the one most likely to need the controls, and filtering on the
+        // start time alone made a running show disappear from its own list.
+        .gte('starts_at', new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString())
         .order('starts_at')
         .limit(10);
       if (error) {
@@ -206,6 +209,44 @@ export function useNightContext(occurrenceId: string | undefined) {
       }
       return data;
     },
+  });
+}
+
+/**
+ * Ending the show. The server clears every on-deck flag with it: "you are on
+ * deck" is a promise you are about to be called up, and after the show it is
+ * not true of anybody.
+ */
+export function useEndShow() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (occurrenceId: string) => {
+      const { error } = await getSupabase().rpc('end_show', { p_occurrence_id: occurrenceId });
+      if (error) {
+        throw new Error(error.message);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['producer'] });
+      return queryClient.invalidateQueries({ queryKey: ['signup'] });
+    },
+  });
+}
+
+/** For the host who ended the night while people were still waiting to go up. */
+export function useReopenShow() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (occurrenceId: string) => {
+      const { error } = await getSupabase()
+        .from('mic_occurrences')
+        .update({ live_ended_at: null })
+        .eq('id', occurrenceId);
+      if (error) {
+        throw new Error(error.message);
+      }
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['producer'] }),
   });
 }
 

@@ -6,24 +6,35 @@
  * show that is three days away invites a tap that marks the first performer
  * done for a night nobody has attended.
  *
- * It closes six hours after the start time. A mic that began at 8 is over by
- * 2 in the morning, and leaving the controls live indefinitely means a stray
- * tap next week rewrites a list that already happened.
+ * It stays open until the host ends the show. A clock cannot know when a mic
+ * finishes: a night that runs long would have taken the controls away
+ * mid-show, and one that wraps early would have left them open for hours. The
+ * host knows, so the host says.
+ *
+ * The day-long backstop is only there for the host who forgets. Without it,
+ * last week's list stays one tap from being rewritten forever.
  */
 export const LIVE_OPENS_MS = 60 * 60 * 1000;
-export const LIVE_CLOSES_MS = 6 * 60 * 60 * 1000;
+export const LIVE_BACKSTOP_MS = 24 * 60 * 60 * 1000;
 
 export type LiveWindow =
-  { state: 'too_early'; opensAt: Date } | { state: 'open' } | { state: 'over' };
+  | { state: 'too_early'; opensAt: Date }
+  | { state: 'open' }
+  | { state: 'ended'; endedAt: Date }
+  | { state: 'over' };
 
-export function liveWindow(startsAt: string, now: Date): LiveWindow {
+export function liveWindow(startsAt: string, now: Date, liveEndedAt?: string | null): LiveWindow {
+  // The host's own word beats every clock here, in both directions: a show
+  // ended is ended even if it started ten minutes ago.
+  if (liveEndedAt) {
+    return { state: 'ended', endedAt: new Date(liveEndedAt) };
+  }
   const start = new Date(startsAt).getTime();
   const opens = start - LIVE_OPENS_MS;
-  const closes = start + LIVE_CLOSES_MS;
   if (now.getTime() < opens) {
     return { state: 'too_early', opensAt: new Date(opens) };
   }
-  if (now.getTime() > closes) {
+  if (now.getTime() > start + LIVE_BACKSTOP_MS) {
     return { state: 'over' };
   }
   return { state: 'open' };

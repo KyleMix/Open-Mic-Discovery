@@ -10,7 +10,7 @@ import { eventDate, eventTime } from '@/features/discovery/local-time';
 import { liveOrder, performerName, type LiveRow } from '@/features/live/order';
 import { formatClock, overBy, timerTone } from '@/features/live/timer';
 import { liveWindow } from '@/features/live/window';
-import { useNightContext } from '@/features/producer/queries';
+import { useEndShow, useNightContext, useReopenShow } from '@/features/producer/queries';
 import { useMarkOnDeck, useRoster, useSetSignupStatus } from '@/features/signups/queries';
 import { fonts, palette, spacing, type } from '@/theme';
 
@@ -32,6 +32,9 @@ export default function LiveScreen() {
   const roster = useRoster(occurrenceId);
   const setStatus = useSetSignupStatus();
   const onDeck = useMarkOnDeck();
+  const endShow = useEndShow();
+  const reopen = useReopenShow();
+  const [confirmingEnd, setConfirmingEnd] = useState(false);
 
   // A host does not want to unlock their phone between every set.
   useKeepAwake();
@@ -89,7 +92,7 @@ export default function LiveScreen() {
   }
 
   const timezone = night.data.series?.timezone ?? null;
-  const window = liveWindow(night.data.starts_at, new Date());
+  const window = liveWindow(night.data.starts_at, new Date(), night.data.live_ended_at);
   if (window.state === 'too_early') {
     return (
       <Screen>
@@ -103,13 +106,37 @@ export default function LiveScreen() {
       </Screen>
     );
   }
+  if (window.state === 'ended') {
+    return (
+      <Screen>
+        <Title>Show ended</Title>
+        <Body>
+          You closed this one at {eventTime(window.endedAt.toISOString(), timezone)}. Nothing else
+          can be marked from here.
+        </Body>
+        {/* Ending the night by accident with people still waiting to go up is
+            a bad five minutes for everyone, so there is a way back. */}
+        <Button
+          label="Reopen the show"
+          kind="secondary"
+          busy={reopen.isPending}
+          onPress={() => occurrenceId && reopen.mutate(occurrenceId)}
+        />
+        {reopen.isError ? (
+          <ErrorText>
+            {reopen.error instanceof Error ? reopen.error.message : 'Could not reopen the show.'}
+          </ErrorText>
+        ) : null}
+      </Screen>
+    );
+  }
   if (window.state === 'over') {
     return (
       <Screen>
         <Title>That night is done</Title>
         <Body>
-          Live closes six hours after the start time, so a stray tap cannot rewrite a list that has
-          already happened.
+          This night was more than a day ago and was never ended, so the controls have closed
+          themselves. A stray tap cannot rewrite a list that has already happened.
         </Body>
       </Screen>
     );
@@ -245,6 +272,32 @@ export default function LiveScreen() {
         </ErrorText>
       ) : null}
 
+      {/* Two taps, because ending the show clears everyone off deck and shuts
+          the controls for the night. */}
+      {confirmingEnd ? (
+        <View style={styles.endBox}>
+          <Text style={styles.endTitle}>End the show?</Text>
+          <Body>
+            {live.current
+              ? `${live.order.length - live.done} still to go up. Ending now closes the controls and takes everyone off deck.`
+              : 'That closes the controls for tonight and takes everyone off deck.'}
+          </Body>
+          <Button
+            label="Yes, end the show"
+            busy={endShow.isPending}
+            onPress={() => occurrenceId && endShow.mutate(occurrenceId)}
+          />
+          <Button label="Keep going" kind="secondary" onPress={() => setConfirmingEnd(false)} />
+          {endShow.isError ? (
+            <ErrorText>
+              {endShow.error instanceof Error ? endShow.error.message : 'Could not end the show.'}
+            </ErrorText>
+          ) : null}
+        </View>
+      ) : (
+        <Button label="End show" kind="secondary" onPress={() => setConfirmingEnd(true)} />
+      )}
+
       <Text style={styles.label}>
         Running order ({live.done} of {live.order.length} done)
       </Text>
@@ -317,6 +370,20 @@ const styles = StyleSheet.create({
   },
   buttonFlex: {
     flex: 1,
+  },
+  endBox: {
+    backgroundColor: palette.bgElevated,
+    borderColor: palette.danger,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    padding: spacing.md,
+  },
+  endTitle: {
+    color: palette.text,
+    fontFamily: fonts.semibold,
+    fontSize: type.heading.fontSize,
   },
   nextBox: {
     alignItems: 'center',

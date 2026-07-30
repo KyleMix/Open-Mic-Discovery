@@ -483,6 +483,7 @@ export type Database = {
           featured_name: string | null;
           featured_note: string | null;
           id: string;
+          live_ended_at: string | null;
           local_date: string;
           override_cost_cents: number | null;
           override_title: string | null;
@@ -499,6 +500,7 @@ export type Database = {
           featured_name?: string | null;
           featured_note?: string | null;
           id?: string;
+          live_ended_at?: string | null;
           local_date: string;
           override_cost_cents?: number | null;
           override_title?: string | null;
@@ -515,6 +517,7 @@ export type Database = {
           featured_name?: string | null;
           featured_note?: string | null;
           id?: string;
+          live_ended_at?: string | null;
           local_date?: string;
           override_cost_cents?: number | null;
           override_title?: string | null;
@@ -1860,6 +1863,7 @@ export type Database = {
         | { Args: { schema_name: string; table_name: string }; Returns: string }
         | { Args: { table_name: string }; Returns: string };
       enablelongtransactions: { Args: never; Returns: string };
+      end_show: { Args: { p_occurrence_id: string }; Returns: string };
       equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean };
       fail: { Args: never; Returns: string } | { Args: { '': string }; Returns: string };
       findfuncs: { Args: { '': string }; Returns: string[] };

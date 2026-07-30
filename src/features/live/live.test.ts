@@ -22,9 +22,26 @@ describe('when a producer can run the night', () => {
     expect(liveWindow(START, at('2026-08-11T04:30:00.000Z')).state).toBe('open');
   });
 
-  it('closes once the night is long over', () => {
-    // A stray tap the following week must not rewrite a list that happened.
-    expect(liveWindow(START, at('2026-08-11T08:01:00.000Z')).state).toBe('over');
+  it('stays open as long as the show runs, because a clock cannot know', () => {
+    // Six hours in, the old rule had taken the controls away mid-show.
+    expect(liveWindow(START, at('2026-08-11T09:00:00.000Z')).state).toBe('open');
+  });
+
+  it('closes the moment the host says the show is over', () => {
+    const window = liveWindow(START, at('2026-08-11T04:30:00.000Z'), '2026-08-11T04:29:00.000Z');
+    expect(window.state).toBe('ended');
+  });
+
+  it('takes the host at their word over the clock, in both directions', () => {
+    // Ended is ended, even ten minutes after the doors opened.
+    expect(
+      liveWindow(START, at('2026-08-11T02:10:00.000Z'), '2026-08-11T02:09:00.000Z').state,
+    ).toBe('ended');
+  });
+
+  it('gives up after a day, for the host who forgot to end it', () => {
+    // Without this, last week's list stays one tap from being rewritten.
+    expect(liveWindow(START, at('2026-08-12T02:01:00.000Z')).state).toBe('over');
     expect(liveWindow(START, at('2026-08-18T02:00:00.000Z')).state).toBe('over');
   });
 });

@@ -19,6 +19,7 @@ import { freshness } from '@/features/discovery/freshness';
 import { useMicDetail } from '@/features/discovery/queries';
 import { eventDate, eventDateShort } from '@/features/discovery/local-time';
 import { describeRecurrence } from '@/features/discovery/recurrence';
+import { liveWindow } from '@/features/live/window';
 import { useSeriesAttendance } from '@/features/plans/queries';
 import { attendanceSummary } from '@/features/plans/summary';
 import { SeriesForm, type SeriesFormValues } from '@/features/producer/components/series-form';
@@ -56,6 +57,13 @@ export default function ManageSeriesScreen() {
 
   // Headcounts arrive as one row per night; the rows below look them up.
   const counts = new Map((attendance.data ?? []).map((a) => [a.occurrence_id, a]));
+
+  // The one night, if any, the host can be running right now.
+  const liveTonight = (occurrences.data ?? []).find(
+    (o) =>
+      o.status === 'scheduled' &&
+      liveWindow(o.starts_at, new Date(), o.live_ended_at).state === 'open',
+  );
 
   if (detail.isPending) {
     return <LoadingView label="Loading your mic" />;
@@ -138,6 +146,23 @@ export default function ManageSeriesScreen() {
           <Glyph name="freshness-badge" size={16} color={fresh.color} />
           <Text style={[styles.meta, { color: fresh.color }]}>{fresh.label}</Text>
         </View>
+        {/* The night in front of them, before anything else on the screen.
+            Live used to be buried on the list screen, which is not where a
+            host looks an hour before the door. */}
+        {liveTonight ? (
+          <View style={styles.liveBox}>
+            <Text style={styles.liveTitle}>Tonight is live</Text>
+            <Body>
+              {eventDate(liveTonight.starts_at, series.timezone)}. Run the room from here: the
+              running order, a silent set timer, and on deck notices.
+            </Body>
+            <Button
+              label="Go live"
+              onPress={() => router.push(`/producer/live/${liveTonight.id}`)}
+            />
+          </View>
+        ) : null}
+
         <Body>
           One tap keeps your listing trusted: confirming updates the freshness badge every performer
           sees.
@@ -251,6 +276,7 @@ export default function ManageSeriesScreen() {
                 {occ.featured_name ? (
                   <Text style={styles.featured}>Featuring {occ.featured_name}</Text>
                 ) : null}
+                {occ.live_ended_at ? <Text style={styles.nightCount}>Show ended</Text> : null}
                 {occ.status === 'cancelled' ? (
                   <Text style={styles.cancelledNote}>
                     Cancelled{occ.cancellation_note ? `: ${occ.cancellation_note}` : ''}
@@ -282,7 +308,17 @@ export default function ManageSeriesScreen() {
                 />
               ) : (
                 <View style={styles.nightActions}>
-                  <Button label="List" onPress={() => router.push(`/producer/night/${occ.id}`)} />
+                  {liveWindow(occ.starts_at, new Date(), occ.live_ended_at).state === 'open' ? (
+                    <Button
+                      label="Go live"
+                      onPress={() => router.push(`/producer/live/${occ.id}`)}
+                    />
+                  ) : null}
+                  <Button
+                    label="List"
+                    kind="secondary"
+                    onPress={() => router.push(`/producer/night/${occ.id}`)}
+                  />
                   <Button
                     label="This night"
                     kind="secondary"
@@ -520,6 +556,19 @@ const styles = StyleSheet.create({
   cancelledNote: {
     color: palette.danger,
     fontSize: type.caption.fontSize,
+  },
+  liveBox: {
+    backgroundColor: palette.bgElevated,
+    borderColor: palette.success,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: spacing.sm,
+    padding: spacing.md,
+  },
+  liveTitle: {
+    color: palette.success,
+    fontFamily: fonts.semibold,
+    fontSize: type.heading.fontSize,
   },
   nightCount: {
     color: palette.textSecondary,
