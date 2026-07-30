@@ -33,6 +33,8 @@ import { useIsFavorite, useToggleFavorite } from '@/features/favorites/queries';
 import { useSubmitClaim } from '@/features/producer/queries';
 import { ReportModal } from '@/features/safety/components/report-modal';
 import { SignupCard } from '@/features/signups/components/signup-card';
+import { signupOpensClockTime } from '@/features/signups/window';
+import { isWalkIn } from '@/features/producer/signup-opens';
 import { eventDate, eventDateShort, eventTime } from '@/features/discovery/local-time';
 import { describeRecurrence, formatLocalTime } from '@/features/discovery/recurrence';
 import { disciplineAccents, fonts, palette, spacing, type, type Discipline } from '@/theme';
@@ -216,6 +218,21 @@ function MicDetail({
           ) : null}
           {series.capacity ? <Fact label="Spots" value={String(series.capacity)} /> : null}
           <Fact label="Starts" value={formatLocalTime(series.start_time)} />
+          {/* A walk-in list is signed at the venue, so when the sheet goes out
+              is the thing a performer plans around. Only shown for walk-in:
+              every other method opens days ahead, where a clock time alone
+              would be meaningless. */}
+          {isWalkIn(series.signup_method)
+            ? (() => {
+                const opens = signupOpensClockTime(series.start_time, series.signup_opens);
+                return (
+                  <Fact
+                    label="List opens"
+                    value={opens.dayBefore ? `${opens.time} prev day` : opens.time}
+                  />
+                );
+              })()
+            : null}
         </View>
         {series.cost_note ? <Text style={styles.costNote}>{series.cost_note}</Text> : null}
       </Card>

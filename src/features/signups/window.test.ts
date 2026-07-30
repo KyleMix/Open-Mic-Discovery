@@ -1,4 +1,4 @@
-import { parseIntervalMs, signupWindow } from './window';
+import { parseIntervalMs, signupOpensClockTime, signupWindow } from './window';
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -42,5 +42,35 @@ describe('signupWindow', () => {
     expect(
       signupWindow(startsAt, '7 days', '00:00:00', new Date('2026-08-04T03:01:00Z')).state,
     ).toBe('closed');
+  });
+});
+
+describe('signupOpensClockTime', () => {
+  it('subtracts a sub-day lead time from the local start time', () => {
+    expect(signupOpensClockTime('19:00:00', '01:00:00')).toEqual({
+      time: '6:00 PM',
+      dayBefore: false,
+    });
+    expect(signupOpensClockTime('19:00:00', '00:30:00')).toEqual({
+      time: '6:30 PM',
+      dayBefore: false,
+    });
+    expect(signupOpensClockTime('19:00:00', '03:00:00')).toEqual({
+      time: '4:00 PM',
+      dayBefore: false,
+    });
+  });
+
+  it('renders noon and midnight the way a reader expects', () => {
+    expect(signupOpensClockTime('13:00:00', '01:00:00').time).toBe('12:00 PM');
+    expect(signupOpensClockTime('01:00:00', '01:00:00').time).toBe('12:00 AM');
+  });
+
+  it('flags a lead time that crosses back over midnight', () => {
+    // A 12:30 AM show opening 3 hours early opens the previous evening.
+    expect(signupOpensClockTime('00:30:00', '03:00:00')).toEqual({
+      time: '9:30 PM',
+      dayBefore: true,
+    });
   });
 });

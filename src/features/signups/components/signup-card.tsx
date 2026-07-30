@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { Body, Button, ErrorText } from '@/components/ui';
 import { useOwnProfile } from '@/features/auth/queries';
-import { eventDate } from '@/features/discovery/local-time';
+import { eventDate, eventDateShort, eventTime } from '@/features/discovery/local-time';
 import { useSession } from '@/features/auth/session';
 import { useEnablePerformerRole } from '@/features/profile/queries';
 import { STATUS_LABELS } from '@/features/signups/labels';
@@ -106,14 +106,22 @@ export function SignupCard({
       </>
     );
   } else if (window.state === 'not_yet') {
+    // The time matters as much as the date, and for a walk-in list it is the
+    // whole answer: a list opening an hour before a 7 PM show read as "open
+    // Monday, Aug 10", which is the same day as the mic and says nothing.
+    const opensIso = window.opensAt.toISOString();
+    const opensOnEventDay =
+      eventDateShort(opensIso, timezone) === eventDateShort(occurrence.starts_at, timezone);
     content = (
       <Body>
         Signups for {nightLabel} open{' '}
-        {eventDate(window.opensAt.toISOString(), timezone, {
-          weekday: 'long',
-          month: 'short',
-          day: 'numeric',
-        })}
+        {opensOnEventDay
+          ? `at ${eventTime(opensIso, timezone)}`
+          : `${eventDate(opensIso, timezone, {
+              weekday: 'long',
+              month: 'short',
+              day: 'numeric',
+            })} at ${eventTime(opensIso, timezone)}`}
         .
       </Body>
     );

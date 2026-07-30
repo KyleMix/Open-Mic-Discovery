@@ -37,3 +37,29 @@ export function signupWindow(
   }
   return { state: 'closed' };
 }
+
+/**
+ * The clock time a list opens, derived from the mic's local start time and its
+ * lead time. Used where a series is described in general rather than a single
+ * night, so it has no date to work from and stays on the local clock.
+ *
+ * `dayBefore` is true when the lead time crosses back over midnight, which a
+ * late-night mic can do: a 12:30 AM show with a 3 hour lead opens at 9:30 PM
+ * the previous evening, and saying just "9:30 PM" would be a day wrong.
+ */
+export function signupOpensClockTime(
+  startTime: string,
+  signupOpens: string,
+): { time: string; dayBefore: boolean } {
+  const [hours, minutes] = startTime.split(':');
+  const startMinutes = Number(hours) * 60 + Number(minutes ?? '0');
+  const leadMinutes = Math.round(parseIntervalMs(signupOpens) / 60000);
+  const raw = startMinutes - leadMinutes;
+  const dayBefore = raw < 0;
+  const wrapped = ((raw % 1440) + 1440) % 1440;
+  const hour24 = Math.floor(wrapped / 60);
+  const minute = wrapped % 60;
+  const period = hour24 >= 12 ? 'PM' : 'AM';
+  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+  return { time: `${hour12}:${String(minute).padStart(2, '0')} ${period}`, dayBefore };
+}
