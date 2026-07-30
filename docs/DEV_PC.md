@@ -63,8 +63,15 @@ npm run web
 Open `http://127.0.0.1:8081`, the address the dev server prints. VS Code tunnels
 forwarded Codespace ports to your own machine, so that works, and `54321`
 tunnels the same way. Loopback is therefore the correct default in a Codespace,
-not a mistake. Check that `54321` appears in the Ports panel; it does not need
-to be Public for this.
+not a mistake.
+
+**Forward port 54321 by hand.** In the Ports panel, click Add Port and enter
+`54321`. Leave it Private. Codespaces only auto-forwards ports it detects, and
+it detects `8081` because the Expo dev server announces it, but Supabase binds
+inside Docker and usually goes unnoticed. Without that forward, the browser
+cannot reach `http://127.0.0.1:54321` even though everything inside the
+Codespace can, so `npm run dev:doctor` will report the stack as perfectly
+healthy while the app fails with `ERR_CONNECTION_REFUSED`.
 
 **The two addresses have to match.** The app's origin and the Supabase URL must
 be the same kind of address:
@@ -189,6 +196,7 @@ distinguishes them.
 | Sign-in hangs on phone                      | Run `npm run dev:env -- --lan`, check the firewall.                                           |
 | `AuthRetryableFetchError: Failed to fetch`  | Run `npm run dev:doctor`, which tells you which cause it is.                                  |
 | `blocked by CORS policy` in a Codespace     | App origin and Supabase URL are different kinds of address. Match them (see Codespace above). |
+| Codespace: doctor is clean, browser refuses | Port 54321 is not in the Ports panel. Add Port, `54321`.                                      |
 | `npm error Missing script: "dev:up"`        | Checkout predates the script. `git pull && npm install`.                                      |
 | `Missing environment variable EXPO_PUBLIC_` | No `.env`. Run `npm run dev:up`.                                                              |
 | Env changes appear to do nothing            | Expo inlines `EXPO_PUBLIC_` at build. Restart it.                                             |

@@ -87,8 +87,17 @@ if (status) {
 const isLoopback = /^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])/.test(url);
 if (inCodespace && isLoopback) {
   ok('URL is loopback, which pairs with opening the app at http://127.0.0.1:8081');
-  console.log('        VS Code forwards 54321 to your machine, so this is the usual setup.');
   console.log('        Opening the app at *.app.github.dev instead? Use --codespace.');
+  // Blind spot worth naming: every probe below runs inside the Codespace,
+  // where loopback always works whether or not the port is forwarded. Only
+  // the browser, outside, can tell. A missing forward looks perfectly healthy
+  // from here and fails with ERR_CONNECTION_REFUSED there.
+  const port = new URL(url).port || '54321';
+  console.log(`        CHECK BY HAND: port ${port} must be listed in the Ports panel.`);
+  console.log('        Codespaces only auto-forwards ports it detects, and Supabase');
+  console.log('        binds inside Docker, so it is often missing. Add Port if so.');
+  console.log('        This script cannot see the Ports panel: it runs inside the');
+  console.log('        Codespace, where loopback works either way.');
 } else if (inCodespace) {
   ok('URL is the forwarded host, which pairs with opening the app at *.app.github.dev');
   console.log('        Opening the app at http://127.0.0.1:8081 instead? Use --localhost.');
