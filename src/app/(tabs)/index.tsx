@@ -9,8 +9,9 @@ import { useSession } from '@/features/auth/session';
 import { FilterBar } from '@/features/discovery/components/filter-bar';
 import { MicCard, formatNextDate } from '@/features/discovery/components/mic-card';
 import { MicMap } from '@/features/discovery/components/mic-map';
-import { radiusLabel } from '@/features/discovery/distance';
-import { DEFAULT_CENTER, requestForegroundLocation } from '@/features/discovery/location';
+import { resolveDiscoverCenter, SEATTLE_FALLBACK_NOTE } from '@/features/discovery/center';
+import { formatMilesFromMeters, radiusLabel } from '@/features/discovery/distance';
+import { requestForegroundLocation } from '@/features/discovery/location';
 import { sortSoonestNearest } from '@/features/discovery/order';
 import { useNearbyMics, useSearchMics } from '@/features/discovery/queries';
 import { useFiltersStore } from '@/stores/filters';
@@ -34,7 +35,7 @@ export default function DiscoverScreen() {
     profile.data?.home_lat != null && profile.data?.home_lng != null
       ? { lat: profile.data.home_lat, lng: profile.data.home_lng }
       : null;
-  const center = manualCenter ?? profileCenter ?? DEFAULT_CENTER;
+  const center = resolveDiscoverCenter(manualCenter, profileCenter);
 
   // First open defaults the discipline chips to what this performer does.
   useEffect(() => {
@@ -48,7 +49,7 @@ export default function DiscoverScreen() {
   const [search, setSearch] = useState('');
 
   const nearby = useNearbyMics(filters, center);
-  const searchResults = useSearchMics(search);
+  const searchResults = useSearchMics(search, center);
   const searching = search.trim().length >= 2;
 
   // The list leads with what is happening soonest, closest first.
@@ -111,6 +112,9 @@ export default function DiscoverScreen() {
         </Pressable>
       </View>
       {locationNote ? <Text style={styles.locationNote}>{locationNote}</Text> : null}
+      {center.source === 'seattle_fallback' && !searching ? (
+        <Text style={styles.locationNote}>{SEATTLE_FALLBACK_NOTE}</Text>
+      ) : null}
 
       {searching ? (
         <SearchResults state={searchResults} onSelect={openMic} />
@@ -196,7 +200,9 @@ function SearchResults({
         >
           <Text style={styles.searchResultTitle}>{item.title}</Text>
           <Text style={styles.searchResultMeta}>
-            {item.venue_name}, {item.city} · {formatNextDate(item.next_starts_at)}
+            {item.venue_name}, {item.city}
+            {item.distance_m != null ? ` (${formatMilesFromMeters(item.distance_m)})` : ''} ·{' '}
+            {formatNextDate(item.next_starts_at, item.timezone)}
           </Text>
         </Pressable>
       )}

@@ -1,16 +1,20 @@
--- EULA 1.1: the app is now called Open Mic Explorer.
+-- EULA 1.2: the app is now called Open Mic Explorer.
 --
--- The 1.0 text in 20260728000600_views_and_eula.sql is left untouched. It is
--- already applied and it is the exact text people accepted, so it stays as the
--- historical record. A rename changes who the agreement names as the operator,
--- so it ships as a new version and the acceptance gate in src/app/_layout.tsx
--- asks everyone to accept it once. Only the name, the contact address, and the
--- version header differ from 1.0; no term changed.
+-- Carries forward 1.1 verbatim (18+ age gate, web deletion path) and changes
+-- only the name of the app. 1.0 and 1.1 are left untouched: they are already
+-- applied, they are the exact text people accepted, and profiles.eula_version
+-- references them. Publishing a new version routes every existing user through
+-- the acceptance gate on next launch, which is the designed behavior.
+--
+-- The contact address and the deletion URL still sit on openmicfinder.app.
+-- That domain hosts the live delete-account page, the association files, and
+-- the privacy and terms pages, so it is deliberately not renamed here. See
+-- docs/DEPLOY_WEB.md for what moving it would involve.
 
-insert into eula_versions (version, body_md) values ('1.1', $eula$
+insert into eula_versions (version, body_md) values ('1.2', $eula$
 # Open Mic Explorer End User License Agreement
 
-Version 1.1, effective July 30, 2026. Replaces version 1.0, which named the app Open Mic Finder. No terms changed, only the name of the app and the contact address.
+Version 1.2, effective July 30, 2026. Replaces version 1.1, which named the app Open Mic Finder. No terms changed, only the name of the app.
 
 By creating an account you agree to this Agreement. If you do not agree, do not use the app.
 
@@ -38,11 +42,11 @@ Producers, not Open Mic Explorer, run the events listed here. We are not respons
 
 ## 6. Age
 
-You must be at least 17 years old to use Open Mic Explorer. Comedy content in particular may include adult language and themes.
+You must be at least 18 years old to use Open Mic Explorer. Comedy content in particular may include adult language and themes.
 
 ## 7. Account deletion
 
-You can delete your account at any time from Settings. Deletion removes your sign-in and personal data; anonymized records of past signups may be retained for the integrity of event history.
+You can delete your account at any time from Settings, or from the web at openmicfinder.app/delete-account. Deletion removes your sign-in and personal data; anonymized records of past signups may be retained for the integrity of event history.
 
 ## 8. Changes
 
@@ -52,5 +56,34 @@ We may update this Agreement. Material changes require you to accept the new ver
 
 The app is provided as is, without warranties of any kind. To the maximum extent permitted by law, our liability is limited to the amount you paid us in the past twelve months.
 
-Contact: legal@openmicexplorer.app
+Contact: legal@openmicfinder.app
 $eula$);
+
+-- The age gate error message users see, renamed alongside the agreement.
+create or replace function private.enforce_age_gate()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  gate constant integer := 18;
+  current_year integer := extract(year from now())::integer;
+begin
+  -- Server-side flows (seed, service role, admin repair) are exempt; every
+  -- end-user write path carries auth.uid().
+  if auth.uid() is null or private.is_admin() then
+    return new;
+  end if;
+  if tg_op = 'INSERT' and new.birth_year is null then
+    raise exception 'birth year is required'
+      using errcode = '23514';
+  end if;
+  -- On update, null stays allowed: account deletion anonymizes the column.
+  if new.birth_year is not null and current_year - new.birth_year < gate then
+    raise exception 'you must be at least % to use Open Mic Explorer', gate
+      using errcode = '23514';
+  end if;
+  return new;
+end;
+$$;

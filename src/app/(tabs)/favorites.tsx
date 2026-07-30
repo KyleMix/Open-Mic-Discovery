@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -62,28 +63,39 @@ export default function FavoritesScreen() {
           }
           const fresh = freshness(s.last_confirmed_at, new Date());
           return (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`${s.title}`}
-              onPress={() => router.push(`/mic/${s.id}`)}
-              style={({ pressed }) => [
-                styles.card,
-                pressed && { backgroundColor: palette.bgPressed },
-              ]}
-            >
-              <View style={styles.cardBody}>
-                <Text style={styles.cardTitle} numberOfLines={1}>
-                  {s.title}
-                </Text>
-                <Text style={styles.cardMeta}>
-                  {s.venue?.name}, {s.venue?.city} ·{' '}
-                  {describeRecurrence(s.rrule, s.start_time) ?? 'Schedule varies'}
-                </Text>
-                <View style={styles.freshRow}>
-                  <Glyph name="freshness-badge" size={14} color={fresh.color} />
-                  <Text style={[styles.cardMeta, { color: fresh.color }]}>{fresh.label}</Text>
+            <View style={styles.card}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`${s.title}`}
+                onPress={() => router.push(`/mic/${s.id}`)}
+                style={({ pressed }) => [
+                  styles.cardTouch,
+                  pressed && { backgroundColor: palette.bgPressed },
+                ]}
+              >
+                {s.poster_url ? (
+                  <Image
+                    source={{ uri: s.poster_url }}
+                    accessibilityLabel={`${s.title} poster`}
+                    style={styles.poster}
+                    contentFit="cover"
+                    transition={150}
+                  />
+                ) : null}
+                <View style={styles.cardBody}>
+                  <Text style={styles.cardTitle} numberOfLines={1}>
+                    {s.title}
+                  </Text>
+                  <Text style={styles.cardMeta}>
+                    {s.venue?.name}, {s.venue?.city} ·{' '}
+                    {describeRecurrence(s.rrule, s.start_time) ?? 'Schedule varies'}
+                  </Text>
+                  <View style={styles.freshRow}>
+                    <Glyph name="freshness-badge" size={14} color={fresh.color} />
+                    <Text style={[styles.cardMeta, { color: fresh.color }]}>{fresh.label}</Text>
+                  </View>
                 </View>
-              </View>
+              </Pressable>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`Remove ${s.title} from favorites`}
@@ -94,7 +106,7 @@ export default function FavoritesScreen() {
               >
                 <Text style={styles.star}>★</Text>
               </Pressable>
-            </Pressable>
+            </View>
           );
         }}
       />
@@ -118,11 +130,25 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     flexDirection: 'row',
+    overflow: 'hidden',
+    paddingRight: spacing.sm,
+  },
+  cardTouch: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
     padding: spacing.md,
   },
   cardBody: {
     flex: 1,
     gap: spacing.xs,
+  },
+  poster: {
+    backgroundColor: palette.bgPressed,
+    borderRadius: 8,
+    height: 56,
+    marginRight: spacing.md,
+    width: 44,
   },
   cardTitle: {
     color: palette.text,

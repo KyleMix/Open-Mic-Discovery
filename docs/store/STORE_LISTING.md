@@ -6,7 +6,7 @@
 - iOS subtitle (30 chars max): Find a mic. Get on the list.
 - Bundle id / package: com.openmicexplorer.app
 - Category: Entertainment (primary), Music (secondary)
-- Age rating: 17+ (Apple: infrequent/mild mature themes, user generated content; Play: rate honestly through the questionnaire, UGC yes)
+- Age rating: Apple 16+ under the current tier system (infrequent/mild mature themes, user generated content); Play: rate honestly through the questionnaire, UGC yes. The in-app age gate is 18 and is the stricter control.
 
 ## Short description (Play, 80 chars)
 

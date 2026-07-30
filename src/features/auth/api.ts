@@ -28,6 +28,40 @@ export async function signUpWithEmail(email: string, password: string): Promise<
   }
 }
 
+/**
+ * Emails a password-reset link that deep-links back into the app at
+ * /reset-password. With PKCE the code in that link can only be exchanged
+ * by the device that requested it, so the email says to open it here.
+ */
+export async function sendPasswordReset(email: string): Promise<void> {
+  const redirectTo = Linking.createURL('reset-password');
+  const { error } = await getSupabase().auth.resetPasswordForEmail(email.trim(), { redirectTo });
+  if (error) {
+    throw new Error(authMessage(error, 'Could not send the reset email. Check your connection.'));
+  }
+}
+
+/** Turns the code from a reset link into a signed-in recovery session. */
+export async function exchangeRecoveryCode(code: string): Promise<void> {
+  const { error } = await getSupabase().auth.exchangeCodeForSession(code);
+  if (error) {
+    throw new Error(
+      authMessage(
+        error,
+        'That reset link is expired or was requested on another device. Request a new one.',
+      ),
+    );
+  }
+}
+
+/** Sets a new password for the signed-in (recovery) session. */
+export async function updatePassword(password: string): Promise<void> {
+  const { error } = await getSupabase().auth.updateUser({ password });
+  if (error) {
+    throw new Error(authMessage(error, 'Could not update the password. Try again.'));
+  }
+}
+
 export async function signOut(): Promise<void> {
   const { error } = await getSupabase().auth.signOut();
   if (error) {

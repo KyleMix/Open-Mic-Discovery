@@ -85,16 +85,19 @@ export type Database = {
       }
       blocks: {
         Row: {
+          blocked_display_name: string | null
           blocked_id: string
           blocker_id: string
           created_at: string
         }
         Insert: {
+          blocked_display_name?: string | null
           blocked_id: string
           blocker_id: string
           created_at?: string
         }
         Update: {
+          blocked_display_name?: string | null
           blocked_id?: string
           blocker_id?: string
           created_at?: string
@@ -1495,6 +1498,11 @@ export type Database = {
           }
       dearmor: { Args: { "": string }; Returns: string }
       delete_account: { Args: never; Returns: undefined }
+      delete_account_web: { Args: { p_user_id: string }; Returns: undefined }
+      deletion_request_allowed: {
+        Args: { p_email_key: string; p_ip_key: string }
+        Returns: boolean
+      }
       diag:
         | {
             Args: { msg: unknown }
@@ -1709,6 +1717,7 @@ export type Database = {
           next_occurrence_id: string
           next_starts_at: string
           next_status: Database["public"]["Enums"]["occurrence_status"]
+          poster_url: string
           region: string
           rrule: string
           series_id: string
@@ -1840,11 +1849,12 @@ export type Database = {
         | { Args: never; Returns: string[] }
         | { Args: { "": string }; Returns: string[] }
       search_mics: {
-        Args: { p_limit?: number; p_query: string }
+        Args: { p_lat?: number; p_limit?: number; p_lng?: number; p_query: string }
         Returns: {
           city: string
           cost_cents: number
           disciplines: Database["public"]["Enums"]["discipline"][]
+          distance_m: number
           last_confirmed_at: string
           lat: number
           lng: number

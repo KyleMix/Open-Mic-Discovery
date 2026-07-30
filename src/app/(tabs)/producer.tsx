@@ -55,9 +55,37 @@ export default function ProducerScreen() {
       </Screen>
     );
   }
+  const claimsBox =
+    profile.data?.is_admin && claims.data && claims.data.length > 0 ? (
+      <View style={styles.claimsBox}>
+        <Text style={styles.sectionTitle}>Pending claims</Text>
+        {claims.data.map((claim) => (
+          <View key={claim.id} style={styles.claimRow}>
+            <Text style={styles.claimText}>
+              {claim.series?.title ?? 'Unknown mic'}: {claim.evidence ?? 'no evidence given'}
+            </Text>
+            <View style={styles.claimActions}>
+              <Button
+                label="Approve"
+                busy={review.isPending}
+                onPress={() => review.mutate({ claimId: claim.id, approve: true })}
+              />
+              <Button
+                label="Reject"
+                kind="secondary"
+                busy={review.isPending}
+                onPress={() => review.mutate({ claimId: claim.id, approve: false })}
+              />
+            </View>
+          </View>
+        ))}
+      </View>
+    ) : null;
+
   if (profile.data && !profile.data.is_producer) {
     return (
       <Screen>
+        {claimsBox}
         <Title>Run a mic?</Title>
         <Body>
           Producers keep listings accurate, manage signup lists, and post lineups. Enabling the
@@ -88,32 +116,7 @@ export default function ProducerScreen() {
         ListHeaderComponent={
           <View style={styles.header}>
             <Button label="Add a mic" onPress={() => router.push('/producer/new')} />
-            {profile.data?.is_admin && claims.data && claims.data.length > 0 ? (
-              <View style={styles.claimsBox}>
-                <Text style={styles.sectionTitle}>Pending claims</Text>
-                {claims.data.map((claim) => (
-                  <View key={claim.id} style={styles.claimRow}>
-                    <Text style={styles.claimText}>
-                      {claim.series?.title ?? 'Unknown mic'}:{' '}
-                      {claim.evidence ?? 'no evidence given'}
-                    </Text>
-                    <View style={styles.claimActions}>
-                      <Button
-                        label="Approve"
-                        busy={review.isPending}
-                        onPress={() => review.mutate({ claimId: claim.id, approve: true })}
-                      />
-                      <Button
-                        label="Reject"
-                        kind="secondary"
-                        busy={review.isPending}
-                        onPress={() => review.mutate({ claimId: claim.id, approve: false })}
-                      />
-                    </View>
-                  </View>
-                ))}
-              </View>
-            ) : null}
+            {claimsBox}
           </View>
         }
         ListEmptyComponent={
@@ -129,25 +132,27 @@ export default function ProducerScreen() {
           const fresh = freshness(item.last_confirmed_at, new Date());
           const confirming = confirm.isPending && confirmingId === item.id;
           return (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Manage ${item.title}`}
-              onPress={() => router.push(`/producer/${item.id}`)}
-              style={({ pressed }) => [
-                styles.card,
-                pressed && { backgroundColor: palette.bgPressed },
-              ]}
-            >
-              <View style={styles.cardTop}>
-                <Text style={styles.cardTitle} numberOfLines={1}>
-                  {item.title}
+            <View style={styles.card}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Manage ${item.title}`}
+                onPress={() => router.push(`/producer/${item.id}`)}
+                style={({ pressed }) => [
+                  styles.cardTouch,
+                  pressed && { backgroundColor: palette.bgPressed },
+                ]}
+              >
+                <View style={styles.cardTop}>
+                  <Text style={styles.cardTitle} numberOfLines={1}>
+                    {item.title}
+                  </Text>
+                  {!item.is_active ? <Text style={styles.pausedTag}>Paused</Text> : null}
+                </View>
+                <Text style={styles.cardMeta}>
+                  {item.venue?.name}, {item.venue?.city} ·{' '}
+                  {describeRecurrence(item.rrule, item.start_time) ?? 'Schedule varies'}
                 </Text>
-                {!item.is_active ? <Text style={styles.pausedTag}>Paused</Text> : null}
-              </View>
-              <Text style={styles.cardMeta}>
-                {item.venue?.name}, {item.venue?.city} ·{' '}
-                {describeRecurrence(item.rrule, item.start_time) ?? 'Schedule varies'}
-              </Text>
+              </Pressable>
               <View style={styles.cardBottom}>
                 <View style={styles.freshRow}>
                   <Glyph name="freshness-badge" size={14} color={fresh.color} />
@@ -163,7 +168,7 @@ export default function ProducerScreen() {
                   }}
                 />
               </View>
-            </Pressable>
+            </View>
           );
         }}
       />
@@ -217,7 +222,13 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     gap: spacing.sm,
+    overflow: 'hidden',
+    paddingBottom: spacing.md,
+  },
+  cardTouch: {
+    gap: spacing.sm,
     padding: spacing.md,
+    paddingBottom: 0,
   },
   cardTop: {
     alignItems: 'center',
@@ -244,6 +255,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
     justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
   },
   freshRow: {
     alignItems: 'center',

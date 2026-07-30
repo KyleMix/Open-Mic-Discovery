@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { ageSignalError } from '@/features/auth/ageSignal';
 import { completeOnboarding } from '@/features/auth/api';
 import { useSession } from '@/features/auth/session';
 import {
@@ -57,6 +58,14 @@ export default function OnboardingScreen() {
     if (Object.values(nextErrors).some(Boolean)) {
       return;
     }
+    // Platform age signal, only when the AGE_SIGNAL_ENABLED flag is on.
+    // An under-gate signal takes the same block path as the birth-year
+    // check; nothing beyond this pass/fail is stored.
+    const signalError = await ageSignalError();
+    if (signalError) {
+      setErrors({ ...nextErrors, birthYear: signalError });
+      return;
+    }
     if (!session || !acceptedEulaVersion) {
       setError('Session expired. Sign in again.');
       return;
@@ -94,7 +103,11 @@ export default function OnboardingScreen() {
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+      >
         <Title>Who are you out there?</Title>
         <Body>Pick everything that applies. Most people in a scene end up doing both.</Body>
         <ToggleRow
@@ -146,8 +159,8 @@ export default function OnboardingScreen() {
           error={errors.displayName}
         />
         <Body>
-          Where is home? We use this only to show mics near you. It is never shown on your
-          profile or to anyone else.
+          Where is home? We use this only to show mics near you. It is never shown on your profile
+          or to anyone else.
         </Body>
         <View style={styles.areaRow}>
           <View style={styles.areaCity}>

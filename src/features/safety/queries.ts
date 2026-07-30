@@ -69,7 +69,7 @@ export function useBlockedUsers(userId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await getSupabase()
         .from('blocks')
-        .select('blocked_id, created_at')
+        .select('blocked_id, blocked_display_name, created_at')
         .eq('blocker_id', userId!);
       if (error) {
         throw new Error(error.message);

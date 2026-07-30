@@ -23,13 +23,17 @@ export function useNearbyMics(filters: DiscoveryFilters, center: { lat: number; 
   });
 }
 
-export function useSearchMics(query: string) {
+export function useSearchMics(query: string, center?: { lat: number; lng: number } | null) {
   const trimmed = query.trim();
   return useQuery({
-    queryKey: ['mics', 'search', trimmed],
+    queryKey: ['mics', 'search', trimmed, center],
     enabled: trimmed.length >= 2,
     queryFn: async (): Promise<SearchResult[]> => {
-      const { data, error } = await getSupabase().rpc('search_mics', { p_query: trimmed });
+      const { data, error } = await getSupabase().rpc('search_mics', {
+        p_query: trimmed,
+        p_lat: center?.lat,
+        p_lng: center?.lng,
+      });
       if (error) {
         throw new Error(error.message);
       }

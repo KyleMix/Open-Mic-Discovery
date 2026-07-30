@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Delete your Open Mic Explorer account</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        padding: 2rem 1rem 4rem;
+        background: #0b0b0f;
+        color: #f2f2f6;
+        font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        line-height: 1.55;
+      }
+      main {
+        max-width: 34rem;
+        margin: 0 auto;
+      }
+      h1 {
+        font-size: 1.6rem;
+        line-height: 1.25;
+      }
+      h2 {
+        font-size: 1.1rem;
+        margin-top: 2rem;
+      }
+      p,
+      li {
+        color: #c9c9d4;
+      }
+      strong {
+        color: #f2f2f6;
+      }
+      label {
+        display: block;
+        margin: 1.25rem 0 0.4rem;
+        font-weight: 600;
+      }
+      input[type='email'] {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.75rem;
+        border-radius: 0.6rem;
+        border: 1px solid #33333f;
+        background: #16161d;
+        color: #f2f2f6;
+        font-size: 1rem;
+      }
+      button {
+        margin-top: 1rem;
+        padding: 0.8rem 1.4rem;
+        border: 0;
+        border-radius: 0.6rem;
+        background: #c0392b;
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      .checkline {
+        display: flex;
+        gap: 0.6rem;
+        align-items: flex-start;
+        margin-top: 1.25rem;
+      }
+      .checkline input {
+        margin-top: 0.3rem;
+      }
+      .notice {
+        margin-top: 1.25rem;
+        padding: 0.9rem 1rem;
+        border-radius: 0.6rem;
+        background: #16161d;
+        border: 1px solid #33333f;
+      }
+      .notice.error {
+        border-color: #c0392b;
+      }
+      .hidden {
+        display: none;
+      }
+      a {
+        color: #7fb2ff;
+      }
+      footer {
+        margin-top: 3rem;
+        font-size: 0.85rem;
+        color: #8a8a96;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Delete your Open Mic Explorer account</h1>
+      <p>
+        This page permanently deletes an Open Mic Explorer account. It works even if you have
+        already uninstalled the app. You can also delete your account inside the app: Profile tab,
+        Settings, Delete account.
+      </p>
+
+      <h2>What deletion removes</h2>
+      <ul>
+        <li>
+          Your sign-in is removed entirely. The account can never be used again and your email
+          address is freed.
+        </li>
+        <li>
+          Your profile is anonymized: display name, handle, photo, bio, social links, home area, and
+          birth year are all erased.
+        </li>
+        <li>
+          Your favorites, saved preferences, push notification tokens, blocks, and performer details
+          are deleted.
+        </li>
+        <li>Producer contact details and payout references are deleted.</li>
+      </ul>
+
+      <h2>What is retained, and why</h2>
+      <ul>
+        <li>
+          Anonymized signup and lineup history rows are kept so past events stay intact for other
+          people. They no longer contain anything that identifies you: they point at a blank record
+          labeled "Deleted user".
+        </li>
+        <li>
+          Content you reported, and moderation records about content, are kept for safety and legal
+          reasons. They are not linked to your identity after deletion.
+        </li>
+      </ul>
+
+      <h2>How long it takes</h2>
+      <p>
+        Deletion runs immediately when you confirm. Your sign-in stops working right away. Backup
+        copies age out of our systems within 30 days.
+      </p>
+
+      <div id="request-section">
+        <h2>Start deletion</h2>
+        <p>
+          Enter the email address on the account. We will send a confirmation link to prove the
+          address is yours. No password needed.
+        </p>
+        <form id="request-form">
+          <label for="email">Account email</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            required
+            autocomplete="email"
+            placeholder="you@example.com"
+          />
+          <button id="request-button" type="submit">Email me a confirmation link</button>
+        </form>
+      </div>
+
+      <div id="confirm-section" class="hidden">
+        <h2>Confirm deletion</h2>
+        <p>Your email address is confirmed. This is the last step, and it cannot be undone.</p>
+        <div class="checkline">
+          <input id="confirm-check" type="checkbox" />
+          <label for="confirm-check" style="margin: 0; font-weight: 400">
+            I understand my account and personal data will be permanently deleted.
+          </label>
+        </div>
+        <button id="confirm-button" disabled>Permanently delete my account</button>
+      </div>
+
+      <div id="status" class="notice hidden" role="status"></div>
+
+      <footer>
+        Questions? Contact <a href="mailto:support@openmicfinder.app">support@openmicfinder.app</a>.
+        Details on data handling are in the app's privacy policy at
+        <a href="https://openmicfinder.app/privacy">openmicfinder.app/privacy</a>.
+      </footer>
+    </main>
+
+    <script>
+      // TODO(owner): after deploying the deletion-request Edge Function, set
+      // this to https://<project-ref>.supabase.co/functions/v1/deletion-request
+      var FUNCTION_URL = 'https://YOUR-PROJECT-REF.supabase.co/functions/v1/deletion-request';
+
+      var statusBox = document.getElementById('status');
+      var requestSection = document.getElementById('request-section');
+      var confirmSection = document.getElementById('confirm-section');
+      var confirmCheck = document.getElementById('confirm-check');
+      var confirmButton = document.getElementById('confirm-button');
+
+      function showStatus(message, isError) {
+        statusBox.textContent = message;
+        statusBox.classList.remove('hidden');
+        statusBox.classList.toggle('error', Boolean(isError));
+      }
+
+      function post(payload) {
+        return fetch(FUNCTION_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }).then(function (res) {
+          return res.json().then(function (data) {
+            return { ok: res.ok, data: data };
+          });
+        });
+      }
+
+      // The emailed link redirects back here with tokens in the URL fragment.
+      var hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      var accessToken = hashParams.get('access_token');
+      if (accessToken) {
+        requestSection.classList.add('hidden');
+        confirmSection.classList.remove('hidden');
+        // Keep the token out of the address bar once read.
+        history.replaceState(null, '', window.location.pathname);
+      }
+
+      document.getElementById('request-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var button = document.getElementById('request-button');
+        button.disabled = true;
+        showStatus('Sending...', false);
+        post({ action: 'request', email: document.getElementById('email').value })
+          .then(function (result) {
+            showStatus(
+              result.data.message || result.data.error || 'Something went wrong. Try again.',
+              !result.ok,
+            );
+          })
+          .catch(function () {
+            showStatus('Could not reach the server. Check your connection and try again.', true);
+          })
+          .then(function () {
+            button.disabled = false;
+          });
+      });
+
+      confirmCheck.addEventListener('change', function () {
+        confirmButton.disabled = !confirmCheck.checked;
+      });
+
+      confirmButton.addEventListener('click', function () {
+        confirmButton.disabled = true;
+        showStatus('Deleting your account...', false);
+        post({ action: 'confirm', access_token: accessToken })
+          .then(function (result) {
+            if (result.ok) {
+              confirmSection.classList.add('hidden');
+              showStatus(result.data.message, false);
+            } else {
+              showStatus(result.data.error || 'Deletion failed. Try again.', true);
+              confirmButton.disabled = !confirmCheck.checked;
+            }
+          })
+          .catch(function () {
+            showStatus('Could not reach the server. Check your connection and try again.', true);
+            confirmButton.disabled = !confirmCheck.checked;
+          });
+      });
+    </script>
+  </body>
+</html>

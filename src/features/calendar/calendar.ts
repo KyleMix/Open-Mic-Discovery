@@ -1,4 +1,10 @@
-import * as Calendar from 'expo-calendar';
+// The legacy entry point is deliberate, not a stale import: the new
+// object-oriented expo-calendar API requires at least write-only calendar
+// permission for its event form, while legacy createEventInCalendarAsync
+// opens the system sheet with no permission at all. Our privacy posture
+// (REVIEW_NOTES, Data Safety answers) is that calendar permission is never
+// requested, so this stays on the permissionless API.
+import * as Calendar from 'expo-calendar/legacy';
 import { Linking, Platform } from 'react-native';
 
 /**

@@ -4,7 +4,8 @@
  * errors inline without throwing.
  */
 
-export const MINIMUM_AGE = 17;
+// Mirrors the server-side gate in supabase/migrations/20260729000200_age_gate_18.sql.
+export const MINIMUM_AGE = 18;
 export const HANDLE_PATTERN = /^[a-z0-9_]{3,30}$/;
 
 export function validateEmail(email: string): string | null {
