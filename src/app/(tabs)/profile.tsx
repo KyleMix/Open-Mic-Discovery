@@ -44,9 +44,9 @@ export default function ProfileScreen() {
   return (
     <Screen>
       <View style={styles.header}>
-        <AvatarCircle url={p.avatar_url} name={p.display_name} size={72} />
+        <AvatarCircle url={p.avatar_url} name={p.stage_name} size={72} />
         <View style={styles.headerText}>
-          <Title>{p.display_name}</Title>
+          <Title>{p.stage_name}</Title>
           <Text style={styles.handle}>@{p.handle}</Text>
         </View>
       </View>

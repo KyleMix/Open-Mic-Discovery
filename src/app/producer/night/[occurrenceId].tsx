@@ -113,7 +113,7 @@ export default function NightScreen() {
           </Text>
           {pending.map((r) => (
             <Text key={r.id} style={styles.pendingName}>
-              {r.display_name ?? r.handle ?? 'Performer'}
+              {r.stage_name ?? r.handle ?? 'Performer'}
             </Text>
           ))}
           {draw.isError ? (
@@ -137,7 +137,7 @@ export default function NightScreen() {
           <View key={row.id} style={styles.row}>
             <Text style={styles.slot}>{row.slot_position ?? '·'}</Text>
             <View style={styles.rowBody}>
-              <Text style={styles.name}>{row.display_name ?? row.handle ?? 'Performer'}</Text>
+              <Text style={styles.name}>{row.stage_name ?? row.handle ?? 'Performer'}</Text>
               <Text style={row.on_deck_at ? styles.onDeckMeta : styles.meta}>
                 {row.on_deck_at ? 'On deck' : row.status ? STATUS_LABELS[row.status] : ''}
               </Text>
@@ -147,8 +147,8 @@ export default function NightScreen() {
                 <IconAction
                   label={
                     row.on_deck_at
-                      ? `Take ${row.display_name ?? 'performer'} off deck`
-                      : `Put ${row.display_name ?? 'performer'} on deck and notify them`
+                      ? `Take ${row.stage_name ?? 'performer'} off deck`
+                      : `Put ${row.stage_name ?? 'performer'} on deck and notify them`
                   }
                   icon={row.on_deck_at ? 'megaphone' : 'megaphone-outline'}
                   color={row.on_deck_at ? palette.warning : palette.text}
@@ -169,14 +169,14 @@ export default function NightScreen() {
                   onPress={() => setStatus.mutate({ signupId: row.id!, status: 'no_show' })}
                 />
                 <IconAction
-                  label={`Report or block ${row.display_name ?? 'performer'}`}
+                  label={`Report or block ${row.stage_name ?? 'performer'}`}
                   icon="flag-outline"
                   onPress={() => setReporting(row)}
                 />
               </View>
             ) : row.status === 'performed' || row.status === 'no_show' ? (
               <IconAction
-                label={`Undo and put ${row.display_name ?? 'performer'} back on the list`}
+                label={`Undo and put ${row.stage_name ?? 'performer'} back on the list`}
                 icon="arrow-undo"
                 onPress={() => setStatus.mutate({ signupId: row.id!, status: 'confirmed' })}
               />
@@ -192,7 +192,7 @@ export default function NightScreen() {
             <View key={row.id} style={styles.row}>
               <Text style={styles.slot}>·</Text>
               <View style={styles.rowBody}>
-                <Text style={styles.name}>{row.display_name ?? row.handle ?? 'Performer'}</Text>
+                <Text style={styles.name}>{row.stage_name ?? row.handle ?? 'Performer'}</Text>
               </View>
               <Button
                 label="Promote"
@@ -221,7 +221,7 @@ export default function NightScreen() {
           targetType="profile"
           targetId={reporting.performer_id}
           blockableUserId={reporting.performer_id}
-          targetLabel={reporting.display_name ?? 'this performer'}
+          targetLabel={reporting.stage_name ?? 'this performer'}
         />
       ) : null}
     </ScrollView>

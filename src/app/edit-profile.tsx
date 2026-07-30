@@ -89,6 +89,7 @@ function EditProfileForm({
   const [isProducer, setIsProducer] = useState(profile.is_producer);
   const [disciplines, setDisciplines] = useState<Discipline[]>(initialDisciplines);
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url);
+  const [stageName, setStageName] = useState(profile.stage_name);
   const [displayName, setDisplayName] = useState(profile.display_name);
   const [bio, setBio] = useState(profile.bio ?? '');
   const [homeCity, setHomeCity] = useState(profile.home_city ?? '');
@@ -126,6 +127,7 @@ function EditProfileForm({
     const yt = normalizeUrl(youtube);
     const web = normalizeUrl(website);
     const nextErrors = {
+      stageName: validateDisplayName(stageName),
       displayName: validateDisplayName(displayName),
       homeArea: homeAreaError(area),
       roles: validateRoles(isPerformer, isProducer),
@@ -155,6 +157,7 @@ function EditProfileForm({
         area.postalCode !== (profile.home_postal_code ?? '');
       const coords = areaChanged ? await geocodeHomeArea(homeAreaQuery(area)) : null;
       await update.mutateAsync({
+        stage_name: stageName.trim(),
         display_name: displayName.trim(),
         bio: bio.trim() || null,
         home_city: area.city || null,
@@ -187,16 +190,24 @@ function EditProfileForm({
         disabled={photoBusy}
         style={styles.avatarWrap}
       >
-        <AvatarCircle url={avatarUrl} name={displayName} size={96} />
+        <AvatarCircle url={avatarUrl} name={stageName} size={96} />
         <Text style={styles.changePhoto}>{photoBusy ? 'Uploading...' : 'Change photo'}</Text>
       </Pressable>
 
       <Field
-        label="Name"
+        label="Stage name"
+        value={stageName}
+        onChangeText={setStageName}
+        error={errors.stageName}
+      />
+      <Body>This is the name on every signup list and public profile.</Body>
+      <Field
+        label="Name (private)"
         value={displayName}
         onChangeText={setDisplayName}
         error={errors.displayName}
       />
+      <Body>Only you see this. Nothing outside your own account ever shows it.</Body>
       <Field
         label="About you (optional)"
         value={bio}

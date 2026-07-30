@@ -79,7 +79,8 @@
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
-    "db:types": "supabase gen types typescript --local > src/types/database.types.ts"
+    "db:types": "supabase gen types typescript --local > src/types/database.types.ts",
+    "db:types:local": "node scripts/dev/gen-types.mjs"
   },
   "jest": {
     "preset": "jest-expo",

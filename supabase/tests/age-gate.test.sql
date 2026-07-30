@@ -14,9 +14,9 @@ select set_config('request.jwt.claims',
 -- Under the gate: rejected server side.
 select throws_ok(
   format($sql$
-    insert into profiles (id, handle, display_name, home_city, home_region,
+    insert into profiles (id, handle, display_name, stage_name, home_city, home_region,
                           birth_year, is_performer, eula_version)
-    values ('00000000-0000-4000-a000-0000000000b1', 'too_young', 'Too Young',
+    values ('00000000-0000-4000-a000-0000000000b1', 'too_young', 'Too Young', 'Too Young',
             'Seattle', 'WA', %s, true, '1.1')
   $sql$, extract(year from now())::int - 17),
   '23514', null,
@@ -25,9 +25,9 @@ select throws_ok(
 
 -- Missing birth year: rejected server side.
 select throws_ok(
-  $$insert into profiles (id, handle, display_name, home_city, home_region,
+  $$insert into profiles (id, handle, display_name, stage_name, home_city, home_region,
                           is_performer, eula_version)
-    values ('00000000-0000-4000-a000-0000000000b1', 'no_year', 'No Year',
+    values ('00000000-0000-4000-a000-0000000000b1', 'no_year', 'No Year', 'No Year',
             'Seattle', 'WA', true, '1.1')$$,
   '23514', 'birth year is required',
   'a profile without a birth year is rejected server side'
@@ -36,9 +36,9 @@ select throws_ok(
 -- Exactly at the gate: allowed.
 select lives_ok(
   format($sql$
-    insert into profiles (id, handle, display_name, home_city, home_region,
+    insert into profiles (id, handle, display_name, stage_name, home_city, home_region,
                           birth_year, is_performer, eula_version)
-    values ('00000000-0000-4000-a000-0000000000b1', 'just_of_age', 'Just Of Age',
+    values ('00000000-0000-4000-a000-0000000000b1', 'just_of_age', 'Just Of Age', 'Just Of Age',
             'Seattle', 'WA', %s, true, '1.1')
   $sql$, extract(year from now())::int - 18),
   'a birth year implying age 18 is accepted'

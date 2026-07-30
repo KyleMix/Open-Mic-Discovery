@@ -6,6 +6,7 @@ import type { Database } from '@/types/database.types';
 type Discipline = Database['public']['Enums']['discipline'];
 
 export type ProfilePatch = {
+  stage_name: string;
   display_name: string;
   bio: string | null;
   home_city: string | null;

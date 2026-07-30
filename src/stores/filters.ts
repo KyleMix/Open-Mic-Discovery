@@ -102,10 +102,7 @@ export function dayQuickPick(days: number[], todayIso: number): DayQuickPick {
     return 'today';
   }
   const sorted = [...days].sort();
-  if (
-    sorted.length === WEEKEND_DAYS.length &&
-    sorted.every((d, i) => d === WEEKEND_DAYS[i])
-  ) {
+  if (sorted.length === WEEKEND_DAYS.length && sorted.every((d, i) => d === WEEKEND_DAYS[i])) {
     return 'weekend';
   }
   return 'custom';

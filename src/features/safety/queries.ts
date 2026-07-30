@@ -102,7 +102,7 @@ export function useModerationQueue(isAdmin: boolean) {
       const [profiles, venues, series, reports, flags] = await Promise.all([
         supabase
           .from('profiles')
-          .select('id, handle, display_name, bio')
+          .select('id, handle, stage_name, display_name, bio')
           .eq('moderation_status', 'pending')
           .is('deleted_at', null),
         supabase

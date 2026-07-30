@@ -88,11 +88,11 @@ select is(
   (select count(*)::int from producer_profiles), 0,
   'performer cannot read any producer_profiles row'
 );
-update profiles set display_name = 'gotcha'
+update profiles set stage_name = 'gotcha'
 where id = '00000000-0000-4000-a000-000000000002';
 select is(
   (select count(*)::int from public_profiles
-   where id = '00000000-0000-4000-a000-000000000002' and display_name = 'gotcha'),
+   where id = '00000000-0000-4000-a000-000000000002' and stage_name = 'gotcha'),
   0,
   'update of another user''s profile affects zero rows'
 );

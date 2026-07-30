@@ -36,8 +36,8 @@ export default function ForgotPasswordScreen() {
       <Screen>
         <Title>Check your email</Title>
         <Body>
-          If an account exists for {email.trim()}, a reset link is on its way. Open the link on
-          this device: it brings you back here to set a new password.
+          If an account exists for {email.trim()}, a reset link is on its way. Open the link on this
+          device: it brings you back here to set a new password.
         </Body>
         <Button label="Back to sign in" onPress={() => router.replace('/(auth)/sign-in')} />
         <Button label="Send it again" kind="secondary" busy={busy} onPress={submit} />

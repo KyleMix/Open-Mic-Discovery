@@ -774,6 +774,7 @@ export type Database = {
           link_website: string | null;
           link_youtube: string | null;
           moderation_status: Database['public']['Enums']['moderation_status'];
+          stage_name: string;
           updated_at: string;
         };
         Insert: {
@@ -801,6 +802,7 @@ export type Database = {
           link_website?: string | null;
           link_youtube?: string | null;
           moderation_status?: Database['public']['Enums']['moderation_status'];
+          stage_name: string;
           updated_at?: string;
         };
         Update: {
@@ -828,6 +830,7 @@ export type Database = {
           link_website?: string | null;
           link_youtube?: string | null;
           moderation_status?: Database['public']['Enums']['moderation_status'];
+          stage_name?: string;
           updated_at?: string;
         };
         Relationships: [
@@ -1213,7 +1216,6 @@ export type Database = {
           avatar_url: string | null;
           bio: string | null;
           created_at: string | null;
-          display_name: string | null;
           handle: string | null;
           id: string | null;
           is_performer: boolean | null;
@@ -1222,12 +1224,12 @@ export type Database = {
           link_tiktok: string | null;
           link_website: string | null;
           link_youtube: string | null;
+          stage_name: string | null;
         };
         Insert: {
           avatar_url?: string | null;
           bio?: string | null;
           created_at?: string | null;
-          display_name?: string | null;
           handle?: string | null;
           id?: string | null;
           is_performer?: boolean | null;
@@ -1236,12 +1238,12 @@ export type Database = {
           link_tiktok?: string | null;
           link_website?: string | null;
           link_youtube?: string | null;
+          stage_name?: string | null;
         };
         Update: {
           avatar_url?: string | null;
           bio?: string | null;
           created_at?: string | null;
-          display_name?: string | null;
           handle?: string | null;
           id?: string | null;
           is_performer?: boolean | null;
@@ -1250,19 +1252,20 @@ export type Database = {
           link_tiktok?: string | null;
           link_website?: string | null;
           link_youtube?: string | null;
+          stage_name?: string | null;
         };
         Relationships: [];
       };
       signup_roster: {
         Row: {
           created_at: string | null;
-          display_name: string | null;
           handle: string | null;
           id: string | null;
           occurrence_id: string | null;
           on_deck_at: string | null;
           performer_id: string | null;
           slot_position: number | null;
+          stage_name: string | null;
           status: Database['public']['Enums']['signup_status'] | null;
         };
         Relationships: [
@@ -1833,7 +1836,12 @@ export type Database = {
       };
       runtests: { Args: never; Returns: string[] } | { Args: { '': string }; Returns: string[] };
       search_mics: {
-        Args: { p_lat?: number; p_limit?: number; p_lng?: number; p_query: string };
+        Args: {
+          p_lat?: number;
+          p_limit?: number;
+          p_lng?: number;
+          p_query: string;
+        };
         Returns: {
           city: string;
           cost_cents: number;
