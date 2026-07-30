@@ -6,8 +6,9 @@ import { useOwnProfile } from '@/features/auth/queries';
 import { eventDate, eventDateShort, eventTime } from '@/features/discovery/local-time';
 import { useSession } from '@/features/auth/session';
 import { useEnablePerformerRole } from '@/features/profile/queries';
+import { spotsDetail } from '@/features/signups/capacity';
 import { STATUS_LABELS } from '@/features/signups/labels';
-import { useJoinList, useMySignup, useWithdraw } from '@/features/signups/queries';
+import { useJoinList, useMySignup, useNightSpots, useWithdraw } from '@/features/signups/queries';
 import { signupWindow } from '@/features/signups/window';
 import { fonts, palette, spacing, type } from '@/theme';
 import type { Database } from '@/types/database.types';
@@ -36,6 +37,7 @@ export function SignupCard({
   const { session } = useSession();
   const profile = useOwnProfile(session?.user.id);
   const mySignup = useMySignup(occurrence.id, session?.user.id);
+  const spots = useNightSpots(occurrence.id);
   const join = useJoinList();
   const withdraw = useWithdraw();
   const enablePerformer = useEnablePerformerRole();
@@ -161,7 +163,23 @@ export function SignupCard({
     );
   }
 
-  return <View style={styles.card}>{content}</View>;
+  // Shown in every state, including before signups open and after they close:
+  // "how full is this" is the question, and the answer does not depend on
+  // whether this particular person can act on it yet.
+  const fullness = spots.data
+    ? spotsDetail(spots.data.spots_left, spots.data.capacity, spots.data.planning_performers ?? 0)
+    : null;
+
+  return (
+    <View style={styles.card}>
+      {fullness ? (
+        <Text style={[styles.spots, (spots.data?.spots_left ?? 1) <= 0 && styles.spotsFull]}>
+          {fullness}
+        </Text>
+      ) : null}
+      {content}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -177,6 +195,14 @@ const styles = StyleSheet.create({
     color: palette.success,
     fontFamily: fonts.semibold,
     fontSize: type.heading.fontSize,
+  },
+  spots: {
+    color: palette.textSecondary,
+    fontSize: type.caption.fontSize,
+  },
+  spotsFull: {
+    color: palette.danger,
+    fontFamily: fonts.medium,
   },
   onDeck: {
     color: palette.warning,

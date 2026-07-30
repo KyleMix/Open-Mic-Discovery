@@ -1,0 +1,87 @@
+import { liveOrder, performerName, type LiveRow } from './order';
+
+const row = (over: Partial<LiveRow>): LiveRow => ({
+  id: 'sg-1',
+  status: 'confirmed',
+  slot_position: 1,
+  created_at: '2026-08-10T18:00:00.000Z',
+  stage_name: 'The First',
+  handle: 'first',
+  performer_id: 'p-1',
+  on_deck_at: null,
+  ...over,
+});
+
+describe('where the night is up to', () => {
+  const list = [
+    row({ id: 'a', slot_position: 1, stage_name: 'First' }),
+    row({ id: 'b', slot_position: 2, stage_name: 'Second' }),
+    row({ id: 'c', slot_position: 3, stage_name: 'Third' }),
+  ];
+
+  it('starts at the top of the list', () => {
+    const live = liveOrder(list);
+    expect(performerName(live.current)).toBe('First');
+    expect(performerName(live.next)).toBe('Second');
+    expect(live.done).toBe(0);
+  });
+
+  it('moves on as people are marked done, with no state on the device', () => {
+    // The host's phone can die mid-night and the answer stays the same.
+    const live = liveOrder([{ ...list[0], status: 'performed' }, list[1], list[2]]);
+    expect(performerName(live.current)).toBe('Second');
+    expect(performerName(live.next)).toBe('Third');
+    expect(live.done).toBe(1);
+  });
+
+  it('treats a no-show as done, because the night still moved past them', () => {
+    const live = liveOrder([{ ...list[0], status: 'no_show' }, list[1], list[2]]);
+    expect(performerName(live.current)).toBe('Second');
+    expect(live.done).toBe(1);
+  });
+
+  it('runs out cleanly at the end rather than looping', () => {
+    const live = liveOrder(list.map((r) => ({ ...r, status: 'performed' as const })));
+    expect(live.current).toBeNull();
+    expect(live.next).toBeNull();
+    expect(live.done).toBe(3);
+  });
+
+  it('looks a set ahead, which is what on deck runs on', () => {
+    const live = liveOrder(list);
+    expect(performerName(live.afterNext)).toBe('Third');
+    // And runs out rather than wrapping around.
+    expect(liveOrder([list[0], list[1]]).afterNext).toBeNull();
+  });
+
+  it('has nobody up next on the last set', () => {
+    const live = liveOrder([
+      { ...list[0], status: 'performed' },
+      { ...list[1], status: 'performed' },
+      list[2],
+    ]);
+    expect(performerName(live.current)).toBe('Third');
+    expect(live.next).toBeNull();
+  });
+
+  it('leaves the waitlist out until the host promotes someone', () => {
+    const live = liveOrder([...list, row({ id: 'w', status: 'waitlisted', slot_position: null })]);
+    expect(live.order).toHaveLength(3);
+  });
+
+  it('puts a performer with no number at the back, not the front', () => {
+    // A plain numeric compare on null would have opened the night with them.
+    const live = liveOrder([
+      row({ id: 'x', slot_position: null, stage_name: 'Late add' }),
+      ...list,
+    ]);
+    expect(performerName(live.current)).toBe('First');
+    expect(performerName(live.order[3])).toBe('Late add');
+  });
+
+  it('falls back to the handle, and then to something sayable', () => {
+    expect(performerName(row({ stage_name: null }))).toBe('first');
+    expect(performerName(row({ stage_name: null, handle: null }))).toBe('Performer');
+    expect(performerName(null)).toBe('Performer');
+  });
+});

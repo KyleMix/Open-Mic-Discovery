@@ -198,7 +198,7 @@ export function useNightContext(occurrenceId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await getSupabase()
         .from('mic_occurrences')
-        .select('*, series:mic_series(id, title, signup_method, timezone)')
+        .select('*, series:mic_series(id, title, signup_method, timezone, set_length_minutes)')
         .eq('id', occurrenceId!)
         .maybeSingle();
       if (error) {

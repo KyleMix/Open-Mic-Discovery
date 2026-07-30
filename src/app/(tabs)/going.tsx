@@ -127,6 +127,9 @@ function NightRow({ night, onPress }: { night: UpcomingNight; onPress: () => voi
           next_starts_at: night.starts_at,
           poster_url: night.poster_url,
           featured_name: night.featured_name,
+          // You are already on this night; the count belongs where the
+          // decision is made, not here.
+          spots_left: null,
         }}
         onPress={onPress}
       />

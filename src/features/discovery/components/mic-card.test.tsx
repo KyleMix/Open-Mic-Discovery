@@ -30,6 +30,8 @@ const SEARCH_ROW: SearchResult = {
   next_starts_at: '2026-08-11T02:00:00.000Z',
   poster_url: null as unknown as string,
   featured_name: null as unknown as string,
+  capacity: null as unknown as number,
+  spots_left: null as unknown as number,
 };
 
 describe('MicCard from a search result', () => {

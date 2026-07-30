@@ -27,6 +27,31 @@ export function useMySignup(occurrenceId: string | undefined, userId: string | u
   });
 }
 
+/**
+ * How full a night is. Public: the whole point is that someone browsing sees
+ * the pressure before they tap. Counts only, never who.
+ */
+export function useNightSpots(occurrenceId: string | undefined) {
+  return useQuery({
+    queryKey: ['signup', 'spots', occurrenceId],
+    enabled: !!occurrenceId,
+    // The number moves as people sign up, and a stale one is the reason
+    // someone taps expecting a slot and lands on a waitlist.
+    staleTime: 15_000,
+    queryFn: async () => {
+      const { data, error } = await getSupabase()
+        .from('occurrence_spots')
+        .select('capacity, taken, spots_left, planning_performers')
+        .eq('occurrence_id', occurrenceId!)
+        .maybeSingle();
+      if (error) {
+        throw new Error(error.message);
+      }
+      return data;
+    },
+  });
+}
+
 export function useJoinList() {
   const queryClient = useQueryClient();
   return useMutation({

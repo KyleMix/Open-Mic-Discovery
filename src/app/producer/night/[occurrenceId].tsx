@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
+import { liveWindow } from '@/features/live/window';
 import { useNightAttendance, usePlanRoster } from '@/features/plans/queries';
 import { attendanceSummary } from '@/features/plans/summary';
 import { useNightContext } from '@/features/producer/queries';
@@ -26,6 +27,7 @@ import { disciplineAccents, fonts, palette, spacing, type } from '@/theme';
  * Realtime keeps every open copy of this screen in sync.
  */
 export default function NightScreen() {
+  const router = useRouter();
   const { occurrenceId } = useLocalSearchParams<{ occurrenceId: string }>();
   const roster = useRoster(occurrenceId);
   const draw = useDrawLottery();
@@ -108,6 +110,11 @@ export default function NightScreen() {
           headerStyle: { backgroundColor: palette.bg },
           headerTintColor: palette.text,
         }}
+      />
+
+      <LiveEntry
+        occurrenceId={occurrenceId}
+        onOpen={() => router.push(`/producer/live/${occurrenceId}`)}
       />
 
       <WhoIsComing occurrenceId={occurrenceId} />
@@ -232,6 +239,31 @@ export default function NightScreen() {
       ) : null}
     </ScrollView>
   );
+}
+
+/**
+ * The way in to running the night.
+ *
+ * Hidden until an hour before the door. A button offering to start a show
+ * three days out is an invitation to mark the first performer done for a
+ * night nobody has turned up to yet.
+ */
+function LiveEntry({
+  occurrenceId,
+  onOpen,
+}: {
+  occurrenceId: string | undefined;
+  onOpen: () => void;
+}) {
+  const night = useNightContext(occurrenceId);
+  if (!night.data) {
+    return null;
+  }
+  const window = liveWindow(night.data.starts_at, new Date());
+  if (window.state !== 'open') {
+    return null;
+  }
+  return <Button label="Start Live mode" onPress={onOpen} />;
 }
 
 /**

@@ -15,6 +15,9 @@ jest.mock('@/features/profile/queries', () => ({
 }));
 jest.mock('@/features/signups/queries', () => ({
   useMySignup: () => ({ data: null, isPending: false }),
+  useNightSpots: () => ({
+    data: { capacity: 20, taken: 16, spots_left: 4, planning_performers: 0 },
+  }),
   useJoinList: () => ({ mutate: jest.fn(), isPending: false, isError: false }),
   useWithdraw: () => ({ mutate: jest.fn(), isPending: false }),
 }));
@@ -55,5 +58,14 @@ describe('when signups have not opened yet', () => {
     const text = screen.getByText(/Signups for .* open/i);
     // Both parts matter a week out: which day, and what time that day.
     expect(text.props.children.flat().join('')).toMatch(/Monday, Aug 3 at 7:00\s?PM/i);
+  });
+});
+
+describe('how full the night is', () => {
+  it('shows the count in every state, including before signups open', async () => {
+    // "How full is this" does not depend on whether this person can act on
+    // it yet, and it is the reason to come back when the list opens.
+    await renderCard('7 days');
+    expect(screen.getByText('4 of 20 spots left.')).toBeTruthy();
   });
 });

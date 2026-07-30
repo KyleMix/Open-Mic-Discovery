@@ -6,6 +6,7 @@ import { PressableScale } from '@/components/pressable-scale';
 import { formatMilesFromMeters } from '@/features/discovery/distance';
 import { eventDateShort } from '@/features/discovery/local-time';
 import { freshness } from '@/features/discovery/freshness';
+import { spotsLabel } from '@/features/signups/capacity';
 import type { NearbyMic } from '@/features/discovery/queries';
 import { describeRecurrence } from '@/features/discovery/recurrence';
 import { disciplineAccents, fonts, palette, spacing, type, type Discipline } from '@/theme';
@@ -59,6 +60,8 @@ export type MicCardMic = {
   poster_url: string | null;
   /** Guest on the next night, if the producer named one. */
   featured_name: string | null;
+  /** Spots left on the next night; null when the host set no cap. */
+  spots_left: number | null;
 };
 
 type Props = {
@@ -68,6 +71,7 @@ type Props = {
 
 export function MicCard({ mic, onPress }: Props) {
   const fresh = freshness(mic.last_confirmed_at, new Date());
+  const spots = spotsLabel(mic.spots_left);
   const recurrence = describeRecurrence(mic.rrule, mic.start_time);
 
   return (
@@ -131,6 +135,13 @@ export function MicCard({ mic, onPress }: Props) {
             <Glyph name="freshness-badge" size={14} color={fresh.color} />
             <Text style={[styles.metaText, { color: fresh.color }]}>{fresh.label}</Text>
           </View>
+          {/* Full is the one state worth interrupting the row for: it changes
+              whether signing up gets you a slot or a place in the queue. */}
+          {spots ? (
+            <Text style={[styles.metaText, spots.tone !== 'plain' && styles.spotsAlert]}>
+              {spots.label}
+            </Text>
+          ) : null}
         </View>
       </View>
     </PressableScale>
@@ -185,6 +196,10 @@ const styles = StyleSheet.create({
   when: {
     color: palette.text,
     fontSize: type.caption.fontSize,
+  },
+  spotsAlert: {
+    color: palette.danger,
+    fontFamily: fonts.medium,
   },
   featured: {
     color: disciplineAccents.music,

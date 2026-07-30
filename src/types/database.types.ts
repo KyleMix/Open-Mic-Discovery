@@ -54,6 +54,13 @@ export type Database = {
             referencedColumns: ['occurrence_id'];
           },
           {
+            foreignKeyName: 'attendance_log_occurrence_id_fkey';
+            columns: ['occurrence_id'];
+            isOneToOne: false;
+            referencedRelation: 'occurrence_spots';
+            referencedColumns: ['occurrence_id'];
+          },
+          {
             foreignKeyName: 'attendance_log_profile_id_fkey';
             columns: ['profile_id'];
             isOneToOne: false;
@@ -119,6 +126,13 @@ export type Database = {
             columns: ['occurrence_id'];
             isOneToOne: false;
             referencedRelation: 'occurrence_attendance';
+            referencedColumns: ['occurrence_id'];
+          },
+          {
+            foreignKeyName: 'attendance_plans_occurrence_id_fkey';
+            columns: ['occurrence_id'];
+            isOneToOne: false;
+            referencedRelation: 'occurrence_spots';
             referencedColumns: ['occurrence_id'];
           },
           {
@@ -1074,6 +1088,13 @@ export type Database = {
             referencedColumns: ['occurrence_id'];
           },
           {
+            foreignKeyName: 'signups_occurrence_id_fkey';
+            columns: ['occurrence_id'];
+            isOneToOne: false;
+            referencedRelation: 'occurrence_spots';
+            referencedColumns: ['occurrence_id'];
+          },
+          {
             foreignKeyName: 'signups_performer_id_fkey';
             columns: ['performer_id'];
             isOneToOne: false;
@@ -1292,6 +1313,32 @@ export type Database = {
           },
         ];
       };
+      occurrence_spots: {
+        Row: {
+          capacity: number | null;
+          occurrence_id: string | null;
+          planning_performers: number | null;
+          series_id: string | null;
+          spots_left: number | null;
+          taken: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mic_occurrences_series_id_fkey';
+            columns: ['series_id'];
+            isOneToOne: false;
+            referencedRelation: 'mic_series';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mic_occurrences_series_id_fkey';
+            columns: ['series_id'];
+            isOneToOne: false;
+            referencedRelation: 'my_upcoming_nights';
+            referencedColumns: ['series_id'];
+          },
+        ];
+      };
       performer_public: {
         Row: {
           disciplines: Database['public']['Enums']['discipline'][] | null;
@@ -1381,6 +1428,13 @@ export type Database = {
             columns: ['occurrence_id'];
             isOneToOne: false;
             referencedRelation: 'occurrence_attendance';
+            referencedColumns: ['occurrence_id'];
+          },
+          {
+            foreignKeyName: 'attendance_plans_occurrence_id_fkey';
+            columns: ['occurrence_id'];
+            isOneToOne: false;
+            referencedRelation: 'occurrence_spots';
             referencedColumns: ['occurrence_id'];
           },
           {
@@ -1509,6 +1563,13 @@ export type Database = {
             columns: ['occurrence_id'];
             isOneToOne: false;
             referencedRelation: 'occurrence_attendance';
+            referencedColumns: ['occurrence_id'];
+          },
+          {
+            foreignKeyName: 'signups_occurrence_id_fkey';
+            columns: ['occurrence_id'];
+            isOneToOne: false;
+            referencedRelation: 'occurrence_spots';
             referencedColumns: ['occurrence_id'];
           },
           {
@@ -1929,6 +1990,7 @@ export type Database = {
           p_start_hour?: number;
         };
         Returns: {
+          capacity: number;
           city: string;
           cost_cents: number;
           description: string;
@@ -1950,6 +2012,7 @@ export type Database = {
           series_id: string;
           set_length_minutes: number;
           signup_method: Database['public']['Enums']['signup_method'];
+          spots_left: number;
           start_time: string;
           timezone: string;
           title: string;
@@ -2079,6 +2142,7 @@ export type Database = {
           p_query: string;
         };
         Returns: {
+          capacity: number;
           city: string;
           cost_cents: number;
           disciplines: Database['public']['Enums']['discipline'][];
@@ -2094,6 +2158,7 @@ export type Database = {
           rrule: string;
           series_id: string;
           signup_method: Database['public']['Enums']['signup_method'];
+          spots_left: number;
           start_time: string;
           timezone: string;
           title: string;
