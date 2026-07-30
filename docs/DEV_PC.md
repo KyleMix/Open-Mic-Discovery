@@ -48,8 +48,9 @@ What is different in the browser:
   same mics as a distance-ordered list with a note saying so. Discover defaults
   to the list view anyway, so most flows are unaffected.
 - **No push notifications.** Test those on a device build.
-- **Producer Pro is unlocked.** RevenueCat's native module is absent, and dev
-  builds treat unconfigured as unlocked so Pro screens stay reachable.
+- **Purchases are not real.** RevenueCat runs in Browser Mode on web (the dev
+  server logs this), so Pro screens render but no store transaction happens.
+  Verify real purchase and restore flows on a device build.
 - **No Apple sign in.** iOS only. Use email and password.
 
 ## 2. GitHub Codespace
@@ -65,8 +66,9 @@ Then open the forwarded port 8081 from the Ports panel.
 runs in the browser on your own machine, so it reaches Supabase through the
 forwarded hostname, not through the Codespace's loopback. Forwarded ports are
 private by default, and the auth cookie is not sent on cross-origin fetches, so
-a private port answers Supabase requests with GitHub's login page. Sign-in then
-fails with a parse error rather than anything that mentions permissions.
+a private port bounces Supabase requests to GitHub's login page. The browser
+reports that only as `Failed to fetch`. Nothing in the error mentions ports or
+permissions.
 
 `dev:env` detects `CODESPACES=true` and writes the forwarded URL automatically:
 
@@ -109,8 +111,8 @@ Scan the QR code with Expo Go. `--lan` writes your machine's LAN IP so the
 phone can reach Supabase. The phone and the PC must be on the same network, and
 Windows Firewall has to allow Node on a private network.
 
-Expo Go skips push (SDK 53 dropped it), `expo-age-range`, and RevenueCat. The
-app handles all three explicitly, so it boots and runs.
+Expo Go skips push (SDK 53 dropped it), `expo-age-range`, and RevenueCat's
+native module. The app handles all three explicitly, so it boots and runs.
 
 ## Picking the right Supabase host
 
@@ -159,13 +161,28 @@ so the app cannot point at it. Useful in CI and on machines without Docker.
 
 ## When something looks broken
 
-| Symptom                                     | Cause                                                    |
-| ------------------------------------------- | -------------------------------------------------------- |
-| Every request 401s                          | Stale anon key. Run `npm run dev:env`.                   |
-| Sign-in hangs on emulator, fine in browser  | Wrong host. Run `npm run dev:env -- --android-emulator`. |
-| Sign-in hangs on phone                      | Run `npm run dev:env -- --lan`, check the firewall.      |
-| Codespace: sign-in fails parsing a response | Port 54321 is Private. Set it Public in the Ports panel. |
-| `npm error Missing script: "dev:up"`        | Checkout predates the script. `git pull && npm install`. |
-| `Missing environment variable EXPO_PUBLIC_` | No `.env`. Run `npm run dev:up`.                         |
-| Env changes appear to do nothing            | Expo inlines `EXPO_PUBLIC_` at build. Restart it.        |
-| Metro serves a stale bundle                 | `npx expo start --clear`.                                |
+Run this first. It checks the stack, the key, the host, and what the Supabase
+URL actually answers with, then prints the fixes in the order to apply them:
+
+```bash
+npm run dev:doctor
+```
+
+`AuthRetryableFetchError: Failed to fetch` in the browser console is worth
+calling out, because four unrelated causes all produce that one message and the
+browser will not say which: the stack is down, the key is stale, the URL is a
+host the browser cannot reach, or the Codespace port is private. `dev:doctor`
+distinguishes them.
+
+### Symptoms and causes
+
+| Symptom                                     | Cause                                                        |
+| ------------------------------------------- | ------------------------------------------------------------ |
+| Every request 401s                          | Stale anon key. Run `npm run dev:env`.                       |
+| Sign-in hangs on emulator, fine in browser  | Wrong host. Run `npm run dev:env -- --android-emulator`.     |
+| Sign-in hangs on phone                      | Run `npm run dev:env -- --lan`, check the firewall.          |
+| `AuthRetryableFetchError: Failed to fetch`  | Run `npm run dev:doctor`, which tells you which cause it is. |
+| `npm error Missing script: "dev:up"`        | Checkout predates the script. `git pull && npm install`.     |
+| `Missing environment variable EXPO_PUBLIC_` | No `.env`. Run `npm run dev:up`.                             |
+| Env changes appear to do nothing            | Expo inlines `EXPO_PUBLIC_` at build. Restart it.            |
+| Metro serves a stale bundle                 | `npx expo start --clear`.                                    |

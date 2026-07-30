@@ -71,6 +71,7 @@
     "web": "expo start --web",
     "dev:env": "node scripts/dev/sync-env.mjs",
     "dev:up": "npm run db:start && npm run dev:env",
+    "dev:doctor": "node scripts/dev/doctor.mjs",
     "lint": "expo lint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
