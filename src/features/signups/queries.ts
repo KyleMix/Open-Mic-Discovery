@@ -1,3 +1,4 @@
+import * as Haptics from 'expo-haptics';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
@@ -43,7 +44,15 @@ export function useJoinList() {
         throw new Error(error.message);
       }
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['signup'] }),
+    // Getting on the list is the moment the whole app exists for. A tap
+    // confirms it landed without the person having to read anything.
+    onSuccess: () => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => null);
+      return queryClient.invalidateQueries({ queryKey: ['signup'] });
+    },
+    onError: () => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => null);
+    },
   });
 }
 

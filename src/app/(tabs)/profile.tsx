@@ -4,6 +4,7 @@ import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { signOut } from '@/features/auth/api';
 import { useOwnProfile } from '@/features/auth/queries';
+import { SignUpPrompt } from '@/features/auth/components/sign-up-prompt';
 import { useSession } from '@/features/auth/session';
 import { AvatarCircle } from '@/features/profile/avatar-circle';
 import { homeAreaLabel } from '@/features/profile/home-area';
@@ -17,6 +18,23 @@ export default function ProfileScreen() {
   const profile = useOwnProfile(session?.user.id);
   const [error, setError] = useState<string | null>(null);
 
+  // Browsing is open, so this tab is reachable with no account at all.
+  if (!session) {
+    return (
+      <Screen>
+        <Title>Your profile</Title>
+        <SignUpPrompt
+          title="Perform under your stage name"
+          reason="Your stage name is what producers and other performers see on the list, never your email."
+          perks={[
+            'Sign up for slots and track where you have played',
+            'Save mics and get reminded the day of',
+            'Link your Instagram, TikTok, or site so people can find you',
+          ]}
+        />
+      </Screen>
+    );
+  }
   if (profile.isPending) {
     return <LoadingView label="Loading your profile" />;
   }

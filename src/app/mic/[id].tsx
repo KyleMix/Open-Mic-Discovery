@@ -31,6 +31,8 @@ import { freshness } from '@/features/discovery/freshness';
 import { useFlagListing, useMicDetail } from '@/features/discovery/queries';
 import { useIsFavorite, useToggleFavorite } from '@/features/favorites/queries';
 import { useSubmitClaim } from '@/features/producer/queries';
+import { SignUpPrompt } from '@/features/auth/components/sign-up-prompt';
+import { shareMic } from '@/features/discovery/share';
 import { ReportModal } from '@/features/safety/components/report-modal';
 import { SignupCard } from '@/features/signups/components/signup-card';
 import { signupOpensClockTime } from '@/features/signups/window';
@@ -110,6 +112,7 @@ function MicDetail({
   const [flagOpen, setFlagOpen] = useState(false);
   const [claimOpen, setClaimOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [savePrompt, setSavePrompt] = useState(false);
 
   function openDirections() {
     if (!venue) {
@@ -159,9 +162,37 @@ function MicDetail({
           {(series.disciplines as Discipline[]).map((d) => (
             <Glyph key={d} name={disciplineGlyphs[d]} size={20} color={disciplineAccents[d]} />
           ))}
-          <FavoriteStar seriesId={series.id} />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Share ${series.title}`}
+            onPress={() =>
+              shareMic({
+                series_id: series.id,
+                title: series.title,
+                venue_name: venue?.name ?? null,
+                next_starts_at: next?.starts_at ?? null,
+                timezone: series.timezone,
+              }).catch(() => null)
+            }
+            style={styles.iconTap}
+          >
+            <Ionicons name="share-outline" size={24} color={palette.textSecondary} />
+          </Pressable>
+          <FavoriteStar seriesId={series.id} onSignedOutPress={() => setSavePrompt(true)} />
         </View>
       </View>
+
+      {savePrompt ? (
+        <SignUpPrompt
+          title="Save this mic"
+          reason="Favorites live with your account, so they follow you to any device."
+          perks={[
+            'A nudge on the morning it happens',
+            'Told the moment signups open',
+            'Get on the list without leaving the app',
+          ]}
+        />
+      ) : null}
 
       <View style={styles.freshRow}>
         <Glyph name="freshness-badge" size={16} color={fresh.color} />
@@ -408,12 +439,29 @@ function ClaimModal({
   );
 }
 
-function FavoriteStar({ seriesId }: { seriesId: string }) {
+function FavoriteStar({
+  seriesId,
+  onSignedOutPress,
+}: {
+  seriesId: string;
+  onSignedOutPress: () => void;
+}) {
   const { session } = useSession();
   const isFavorite = useIsFavorite(session?.user.id, seriesId);
   const toggle = useToggleFavorite();
+  // Signed out the star still shows and still responds. Hiding it hid the
+  // reason to make an account; tapping it now says what saving would do.
   if (!session) {
-    return null;
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Save this mic"
+        onPress={onSignedOutPress}
+        style={{ minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
+      >
+        <Ionicons name="star-outline" size={24} color={palette.textSecondary} />
+      </Pressable>
+    );
   }
   const active = isFavorite.data ?? false;
   return (
@@ -575,6 +623,12 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
     fontSize: type.title.fontSize,
     lineHeight: type.title.lineHeight,
+  },
+  iconTap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+    minWidth: 44,
   },
   glyphRow: {
     flexDirection: 'row',

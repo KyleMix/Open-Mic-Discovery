@@ -1,7 +1,7 @@
-import { useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Body, Button, ErrorText } from '@/components/ui';
+import { SignUpPrompt } from '@/features/auth/components/sign-up-prompt';
 import { useOwnProfile } from '@/features/auth/queries';
 import { eventDate, eventDateShort, eventTime } from '@/features/discovery/local-time';
 import { useSession } from '@/features/auth/session';
@@ -33,7 +33,6 @@ export function SignupCard({
   signupCloses,
   costCents = 0,
 }: Props) {
-  const router = useRouter();
   const { session } = useSession();
   const profile = useOwnProfile(session?.user.id);
   const mySignup = useMySignup(occurrence.id, session?.user.id);
@@ -55,10 +54,15 @@ export function SignupCard({
   let content: React.ReactNode;
   if (!session) {
     content = (
-      <>
-        <Body>Sign in to get on the list for {nightLabel}.</Body>
-        <Button label="Sign in" onPress={() => router.push('/(auth)/sign-in')} />
-      </>
+      <SignUpPrompt
+        title={`Get on the list for ${nightLabel}`}
+        reason="Your spot on a signup list needs a name attached to it, so this one does need an account."
+        perks={[
+          'Your slot number, live, as the list fills',
+          'A heads up when you are on deck',
+          'Save this mic and get reminded the day of',
+        ]}
+      />
     );
   } else if (profile.data && !profile.data.is_performer) {
     content = (

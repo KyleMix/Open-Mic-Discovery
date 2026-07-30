@@ -42,23 +42,22 @@ export function costLabel(costCents: number): string {
  * a slightly different shape, and both satisfy this, so a searched mic and a
  * nearby mic render as the same card instead of two different formats.
  */
-export type MicCardMic = Pick<
-  NearbyMic,
-  | 'series_id'
-  | 'title'
-  | 'disciplines'
-  | 'signup_method'
-  | 'cost_cents'
-  | 'rrule'
-  | 'start_time'
-  | 'timezone'
-  | 'last_confirmed_at'
-  | 'venue_name'
-  | 'neighborhood'
-  | 'distance_m'
-  | 'next_starts_at'
-  | 'poster_url'
->;
+export type MicCardMic = {
+  series_id: string;
+  title: string;
+  disciplines: NearbyMic['disciplines'];
+  signup_method: NearbyMic['signup_method'];
+  cost_cents: number;
+  rrule: string;
+  start_time: string;
+  timezone: string | null;
+  last_confirmed_at: string | null;
+  venue_name: string;
+  neighborhood: string | null;
+  distance_m: number | null;
+  next_starts_at: string | null;
+  poster_url: string | null;
+};
 
 type Props = {
   mic: MicCardMic;

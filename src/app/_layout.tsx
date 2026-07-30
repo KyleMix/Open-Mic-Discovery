@@ -71,8 +71,12 @@ function AuthGate({ children }: { children: ReactNode }) {
       return;
     }
     if (!session) {
-      if (!inAuthGroup || authScreen === 'eula' || authScreen === 'onboarding') {
-        router.replace('/(auth)/sign-in');
+      // Browsing is open. Discovery, search, and mic pages all read fine
+      // signed out, and the account is pitched where it actually pays off
+      // (getting on a list, favorites, running a mic) rather than at the door.
+      // Only the two screens that assume a session bounce back out.
+      if (authScreen === 'eula' || authScreen === 'onboarding') {
+        router.replace('/(tabs)');
       }
       return;
     }

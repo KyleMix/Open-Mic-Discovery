@@ -5,6 +5,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Glyph } from '@/components/glyph';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { useOwnProfile } from '@/features/auth/queries';
+import { SignUpPrompt } from '@/features/auth/components/sign-up-prompt';
 import { useSession } from '@/features/auth/session';
 import { freshness } from '@/features/discovery/freshness';
 import { describeRecurrence } from '@/features/discovery/recurrence';
@@ -32,8 +33,15 @@ export default function ProducerScreen() {
     return (
       <Screen>
         <Title>My Mics</Title>
-        <Body>Sign in to create a listing, claim the mic you run, and keep it fresh.</Body>
-        <Button label="Sign in" onPress={() => router.push('/(auth)/sign-in')} />
+        <SignUpPrompt
+          title="Run a mic?"
+          reason="Listing a mic puts you on the hook for keeping it accurate, so it needs an account."
+          perks={[
+            'List a night in about two minutes',
+            'One tap to confirm it is still running',
+            'Run the signup list from the side of the stage',
+          ]}
+        />
       </Screen>
     );
   }
