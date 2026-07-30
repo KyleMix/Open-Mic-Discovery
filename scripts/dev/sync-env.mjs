@@ -10,11 +10,21 @@
  *   node scripts/dev/sync-env.mjs                     browser or iOS simulator
  *   node scripts/dev/sync-env.mjs --android-emulator  Android emulator
  *   node scripts/dev/sync-env.mjs --lan               phone on the same Wi-Fi
+ *   node scripts/dev/sync-env.mjs --codespace         app opened at *.app.github.dev
  *
- * The host matters. Supabase binds to 127.0.0.1 on your machine, but inside an
- * Android emulator 127.0.0.1 is the emulator itself, and on a phone it is the
- * phone. Both need a different address to reach the same stack, which is why
- * signing in works in the browser and hangs everywhere else.
+ * The host matters. Supabase binds to 127.0.0.1 on the machine running it, but
+ * inside an Android emulator 127.0.0.1 is the emulator itself, and on a phone
+ * it is the phone. Both need a different address to reach the same stack, which
+ * is why signing in works in the browser and hangs everywhere else.
+ *
+ * In a Codespace the default is still loopback, because VS Code tunnels
+ * forwarded ports to 127.0.0.1 on your own machine: opening the app at
+ * http://127.0.0.1:8081 means 127.0.0.1:54321 reaches Supabase too. Only when
+ * you open the app at its https://<name>-8081.app.github.dev address does
+ * Supabase have to be the matching forwarded URL, which is what --codespace
+ * writes. The rule is that the two must be the same kind of address: mixing
+ * them puts an origin the GitHub proxy will not answer with CORS headers in
+ * front of every request.
  *
  * Only EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY are touched.
  * Every other line in .env, including comments and your own keys, is kept.
@@ -140,13 +150,11 @@ const target = flags.includes('--android-emulator')
     ? 'lan'
     : flags.includes('--codespace')
       ? 'codespace'
-      : flags.includes('--localhost')
-        ? 'localhost'
-        : // Loopback is never reachable from a Codespace, so default to the
-          // forwarded hostname there rather than writing a URL that cannot work.
-          process.env.CODESPACES === 'true'
-          ? 'codespace'
-          : 'localhost';
+      : // Loopback, including in a Codespace: VS Code tunnels forwarded ports
+        // to 127.0.0.1 on your own machine, and the Expo dev server prints
+        // http://127.0.0.1:8081, so that pairing is what people actually use.
+        // --codespace is for opening the app at its app.github.dev address.
+        'localhost';
 
 const status = readStatus();
 const rawUrl = pick(status, ['API_URL', 'api_url', 'SUPABASE_URL']);
@@ -197,9 +205,18 @@ console.log(`  ${ANON_KEY}=${anon.slice(0, 12)}... (${anon.length} chars)`);
 
 if (target === 'codespace') {
   console.log(
-    '\n  Set port 54321 to Public in the Ports panel, or the browser gets\n' +
-      "  GitHub's login page instead of Supabase. Forwarded ports are private\n" +
-      '  by default and the auth cookie is not sent on cross-origin fetches.',
+    '\n  Only correct if you open the app at its https://<name>-8081.app.github.dev\n' +
+      '  address. If you open http://127.0.0.1:8081, which is what the dev server\n' +
+      '  prints, rerun without --codespace: mixing the two origins gets every\n' +
+      '  request blocked by CORS.\n' +
+      '\n  Port 54321 also has to be Public in the Ports panel for this to work.',
+  );
+} else if (process.env.CODESPACES === 'true') {
+  console.log(
+    '\n  Codespace detected, and loopback is the right default: VS Code forwards\n' +
+      '  54321 to your machine, same as 8081. Make sure 54321 appears in the\n' +
+      '  Ports panel. Use --codespace only if you open the app at its\n' +
+      '  app.github.dev address instead of http://127.0.0.1:8081.',
   );
 }
 

@@ -60,28 +60,33 @@ npm run dev:up
 npm run web
 ```
 
-Then open the forwarded port 8081 from the Ports panel.
+Open `http://127.0.0.1:8081`, the address the dev server prints. VS Code tunnels
+forwarded Codespace ports to your own machine, so that works, and `54321`
+tunnels the same way. Loopback is therefore the correct default in a Codespace,
+not a mistake. Check that `54321` appears in the Ports panel; it does not need
+to be Public for this.
 
-**Set port 54321 to Public in the Ports panel.** This is not optional. The app
-runs in the browser on your own machine, so it reaches Supabase through the
-forwarded hostname, not through the Codespace's loopback. Forwarded ports are
-private by default, and the auth cookie is not sent on cross-origin fetches, so
-a private port bounces Supabase requests to GitHub's login page. The browser
-reports that only as `Failed to fetch`. Nothing in the error mentions ports or
-permissions.
+**The two addresses have to match.** The app's origin and the Supabase URL must
+be the same kind of address:
 
-`dev:env` detects `CODESPACES=true` and writes the forwarded URL automatically:
+| Open the app at                      | Supabase URL must be                  | Command                          |
+| ------------------------------------ | ------------------------------------- | -------------------------------- |
+| `http://127.0.0.1:8081`              | `http://127.0.0.1:54321`              | `npm run dev:env` (default)      |
+| `https://<name>-8081.app.github.dev` | `https://<name>-54321.app.github.dev` | `npm run dev:env -- --codespace` |
+
+Mixing them is the trap. A page served from `http://127.0.0.1:8081` calling
+`https://<name>-54321.app.github.dev` is cross-origin, and GitHub's proxy does
+not answer the preflight with an `Access-Control-Allow-Origin` header, so every
+request dies with:
 
 ```
-EXPO_PUBLIC_SUPABASE_URL=https://<codespace-name>-54321.app.github.dev
+blocked by CORS policy: Response to preflight request doesn't pass access
+control check: No 'Access-Control-Allow-Origin' header is present
 ```
 
-Public here means anyone with the URL can reach your dev database for the life
-of the Codespace. That is fine for seeded demo data, and worth remembering if
-you ever load anything real into it.
-
-Force loopback with `npm run dev:env -- --localhost` if you are driving the app
-entirely inside the Codespace, for example from a terminal browser or tests.
+If you take the `--codespace` route, port `54321` must also be set to Public, and
+Public means anyone with the URL can reach your dev database while the Codespace
+lives.
 
 ## 3. Android emulator (most faithful)
 
@@ -119,13 +124,14 @@ native module. The app handles all three explicitly, so it boots and runs.
 Supabase binds to `127.0.0.1` inside whatever machine runs it. Whether that is
 reachable depends entirely on where the app is running.
 
-| Running the app in       | Command                                 | Supabase URL written                  |
-| ------------------------ | --------------------------------------- | ------------------------------------- |
-| Browser, same machine    | `npm run dev:env`                       | `http://127.0.0.1:54321`              |
-| Browser, via a Codespace | `npm run dev:env` (auto-detected)       | `https://<name>-54321.app.github.dev` |
-| Android emulator         | `npm run dev:env -- --android-emulator` | `http://10.0.2.2:54321`               |
-| Phone on the same Wi-Fi  | `npm run dev:env -- --lan`              | `http://<your-lan-ip>:54321`          |
-| Force loopback           | `npm run dev:env -- --localhost`        | `http://127.0.0.1:54321`              |
+| Running the app in                   | Command                                 | Supabase URL written                  |
+| ------------------------------------ | --------------------------------------- | ------------------------------------- |
+| Browser, same machine                | `npm run dev:env`                       | `http://127.0.0.1:54321`              |
+| Codespace, app at `127.0.0.1:8081`   | `npm run dev:env`                       | `http://127.0.0.1:54321`              |
+| Codespace, app at `*.app.github.dev` | `npm run dev:env -- --codespace`        | `https://<name>-54321.app.github.dev` |
+| Android emulator                     | `npm run dev:env -- --android-emulator` | `http://10.0.2.2:54321`               |
+| Phone on the same Wi-Fi              | `npm run dev:env -- --lan`              | `http://<your-lan-ip>:54321`          |
+| Force loopback                       | `npm run dev:env -- --localhost`        | `http://127.0.0.1:54321`              |
 
 Get this wrong and the app builds, loads, and then hangs or 401s on sign-in,
 which looks like an auth bug rather than a networking one.
@@ -176,13 +182,14 @@ distinguishes them.
 
 ### Symptoms and causes
 
-| Symptom                                     | Cause                                                        |
-| ------------------------------------------- | ------------------------------------------------------------ |
-| Every request 401s                          | Stale anon key. Run `npm run dev:env`.                       |
-| Sign-in hangs on emulator, fine in browser  | Wrong host. Run `npm run dev:env -- --android-emulator`.     |
-| Sign-in hangs on phone                      | Run `npm run dev:env -- --lan`, check the firewall.          |
-| `AuthRetryableFetchError: Failed to fetch`  | Run `npm run dev:doctor`, which tells you which cause it is. |
-| `npm error Missing script: "dev:up"`        | Checkout predates the script. `git pull && npm install`.     |
-| `Missing environment variable EXPO_PUBLIC_` | No `.env`. Run `npm run dev:up`.                             |
-| Env changes appear to do nothing            | Expo inlines `EXPO_PUBLIC_` at build. Restart it.            |
-| Metro serves a stale bundle                 | `npx expo start --clear`.                                    |
+| Symptom                                     | Cause                                                                                         |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Every request 401s                          | Stale anon key. Run `npm run dev:env`.                                                        |
+| Sign-in hangs on emulator, fine in browser  | Wrong host. Run `npm run dev:env -- --android-emulator`.                                      |
+| Sign-in hangs on phone                      | Run `npm run dev:env -- --lan`, check the firewall.                                           |
+| `AuthRetryableFetchError: Failed to fetch`  | Run `npm run dev:doctor`, which tells you which cause it is.                                  |
+| `blocked by CORS policy` in a Codespace     | App origin and Supabase URL are different kinds of address. Match them (see Codespace above). |
+| `npm error Missing script: "dev:up"`        | Checkout predates the script. `git pull && npm install`.                                      |
+| `Missing environment variable EXPO_PUBLIC_` | No `.env`. Run `npm run dev:up`.                                                              |
+| Env changes appear to do nothing            | Expo inlines `EXPO_PUBLIC_` at build. Restart it.                                             |
+| Metro serves a stale bundle                 | `npx expo start --clear`.                                                                     |

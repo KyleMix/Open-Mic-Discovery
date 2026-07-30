@@ -81,18 +81,18 @@ if (status) {
   }
 }
 
-// 3. The host has to be reachable from wherever the app actually runs.
+// 3. The Supabase URL has to be the same kind of address as the one the app is
+// opened at. This cannot be detected from here, because only the browser knows
+// its own origin, so state the pairing rather than guessing at it.
 const isLoopback = /^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])/.test(url);
 if (inCodespace && isLoopback) {
-  bad(
-    'URL is loopback, but the app runs in a browser outside this Codespace',
-    'npm run dev:env        (rewrites it to the forwarded https URL)',
-  );
-} else if (inCodespace && url.startsWith('http://')) {
-  bad(
-    'URL is plain http, but the forwarded page is https, so the browser blocks it',
-    'npm run dev:env        (rewrites it to https)',
-  );
+  ok('URL is loopback, which pairs with opening the app at http://127.0.0.1:8081');
+  console.log('        VS Code forwards 54321 to your machine, so this is the usual setup.');
+  console.log('        Opening the app at *.app.github.dev instead? Use --codespace.');
+} else if (inCodespace) {
+  ok('URL is the forwarded host, which pairs with opening the app at *.app.github.dev');
+  console.log('        Opening the app at http://127.0.0.1:8081 instead? Use --localhost.');
+  console.log('        Mixing the two gets every request blocked by CORS.');
 } else {
   ok('URL host is appropriate for this environment');
 }
@@ -166,14 +166,17 @@ if (configured.loginPage) {
   ok('the URL in .env reaches Supabase and the key is accepted');
 } else if (local?.supabase) {
   // The decisive case: Supabase is healthy on its own address, so nothing is
-  // wrong with the stack. The forwarded hostname is not carrying traffic to it.
+  // wrong with the stack. The URL in .env is not carrying traffic to it.
   bad(
-    `Supabase is healthy at ${localUrl} but the forwarded URL does not reach it`,
-    'Port 54321 is not being forwarded. In the Ports panel: add port 54321\n' +
-      '        if it is missing, then set its visibility to Public. A forwarded\n' +
-      '        port that is not actually mapped answers every path with 404.',
+    `Supabase is healthy at ${localUrl} but the URL in .env does not reach it`,
+    inCodespace
+      ? 'npm run dev:env -- --localhost    (pairs with http://127.0.0.1:8081,\n' +
+          '        which is the address the dev server prints and VS Code forwards)\n' +
+          '        Only keep the forwarded URL if you open the app at\n' +
+          '        *.app.github.dev, and then port 54321 must be Public.'
+      : 'npm run dev:env        (rewrites .env to the address of the stack)',
   );
-} else if (!(isLoopback && inCodespace)) {
+} else {
   bad(
     'neither the auth nor the database endpoint answered like Supabase',
     'Check the stack is healthy: npx supabase status',
