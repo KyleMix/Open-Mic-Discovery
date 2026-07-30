@@ -97,35 +97,67 @@ if (inCodespace && isLoopback) {
   ok('URL host is appropriate for this environment');
 }
 
-// 4. Probe the configured URL the way the app would.
-const health = `${url.replace(/\/$/, '')}/auth/v1/health`;
-try {
-  const res = await fetch(health, { redirect: 'manual', signal: AbortSignal.timeout(10000) });
-  const body = await res.text().catch(() => '');
-  const location = res.headers.get('location') ?? '';
+// 4. Probe the way the app actually would, with the key, against endpoints
+// that mean something. Health paths move between Supabase releases, so a 404
+// on one proves nothing; sign-in uses GoTrue and PostgREST, so probe those.
+const base = url.replace(/\/$/, '');
+const probes = [
+  { path: '/auth/v1/settings', what: 'auth (GoTrue)' },
+  { path: '/rest/v1/', what: 'database (PostgREST)' },
+];
 
-  if (location.includes('github.com') || /<html/i.test(body)) {
-    bad(
-      `${health} answered with a login page, not Supabase`,
-      'Set port 54321 to Public in the Ports panel. Private ports bounce\n' +
-        '        cross-origin requests to a GitHub login page, which the browser\n' +
-        '        reports only as "Failed to fetch".',
-    );
-  } else if (res.ok || res.status === 401) {
-    ok(`${health} answered like Supabase (${res.status})`);
-  } else {
-    warn(`${health} answered ${res.status}, which is unexpected but not fatal`);
+let sawLoginPage = false;
+let reachable = false;
+
+for (const probe of probes) {
+  const target = `${base}${probe.path}`;
+  try {
+    const res = await fetch(target, {
+      headers: { apikey: anon, Authorization: `Bearer ${anon}` },
+      redirect: 'manual',
+      signal: AbortSignal.timeout(10000),
+    });
+    const body = await res.text().catch(() => '');
+    const location = res.headers.get('location') ?? '';
+
+    if (location.includes('github.com') || /<html/i.test(body)) {
+      sawLoginPage = true;
+      continue;
+    }
+    if (res.ok) {
+      ok(`${probe.what} answered ${res.status} with the key in .env`);
+      reachable = true;
+    } else if (res.status === 401 || res.status === 403) {
+      bad(
+        `${probe.what} rejected the key in .env (${res.status})`,
+        'npm run dev:env        (the anon key is regenerated on every recreate)',
+      );
+      reachable = true;
+    } else {
+      warn(`${probe.what} answered ${res.status} at ${probe.path}`);
+    }
+  } catch (error) {
+    const reason = String(error?.cause?.code ?? error?.name ?? error);
+    if (isLoopback && inCodespace) {
+      warn(`could not reach ${target} from inside the Codespace (${reason})`);
+    } else {
+      warn(`could not reach ${target} (${reason})`);
+    }
   }
-} catch (error) {
-  const reason = String(error?.cause?.code ?? error?.name ?? error);
-  if (isLoopback && inCodespace) {
-    warn(`could not reach ${health} from inside the Codespace (${reason})`);
-  } else {
-    bad(
-      `could not reach ${health} (${reason})`,
-      'Check that Supabase is running: npm run db:start',
-    );
-  }
+}
+
+if (sawLoginPage) {
+  bad(
+    'the Supabase URL answered with a login page, not Supabase',
+    'Set port 54321 to Public in the Ports panel. Private ports bounce\n' +
+      '        cross-origin requests to a GitHub login page, which the browser\n' +
+      '        reports only as "Failed to fetch".',
+  );
+} else if (!reachable && !(isLoopback && inCodespace)) {
+  bad(
+    'neither the auth nor the database endpoint answered like Supabase',
+    'Check the stack is healthy: npx supabase status',
+  );
 }
 
 report();
@@ -136,8 +168,10 @@ function report() {
     console.log('  dev server: EXPO_PUBLIC_ values are inlined at build time.\n');
     process.exit(0);
   }
+  // Several checks can land on the same fix (both probes rejecting one stale
+  // key, say). Listing it twice reads like two separate things to do.
   console.log('\n  Fix, in order:\n');
-  problems.forEach((p, i) => console.log(`    ${i + 1}. ${p}`));
+  [...new Set(problems)].forEach((p, i) => console.log(`    ${i + 1}. ${p}`));
   console.log('\n  Then restart the dev server. EXPO_PUBLIC_ values are inlined at');
   console.log('  build time, so editing .env alone changes nothing.\n');
   process.exit(1);
