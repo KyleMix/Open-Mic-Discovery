@@ -15,7 +15,7 @@ import { Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { SessionProvider, useSession } from '@/features/auth/session';
 import { useLatestEula, useOwnProfile } from '@/features/auth/queries';
 import { registerPushToken, useNotificationTaps } from '@/lib/notifications';
-import { queryClient } from '@/lib/query-client';
+import { CACHE_BUSTER, queryClient } from '@/lib/query-client';
 import { initSentry } from '@/lib/sentry';
 import { palette } from '@/theme';
 
@@ -142,7 +142,7 @@ export default function RootLayout() {
   return (
     <PersistQueryClientProvider
       client={queryClient}
-      persistOptions={{ persister, maxAge: 24 * 60 * 60 * 1000 }}
+      persistOptions={{ persister, maxAge: 24 * 60 * 60 * 1000, buster: CACHE_BUSTER }}
     >
       <SessionProvider>
         <ThemeProvider value={appTheme}>
