@@ -88,6 +88,24 @@ function lanAddress() {
 }
 
 /**
+ * The public URL GitHub Codespaces forwards a port to. In a Codespace the app
+ * runs in the browser on your own machine, so it cannot reach the Codespace's
+ * loopback at all: it has to go back out through the forwarded hostname.
+ */
+function codespaceUrl(port) {
+  const name = process.env.CODESPACE_NAME;
+  const domain = process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN;
+  if (!name || !domain) {
+    fail(
+      'This does not look like a Codespace: CODESPACE_NAME and\n' +
+        '  GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN are not both set.\n' +
+        '  Run without --codespace, or pass --localhost to force loopback.',
+    );
+  }
+  return `https://${name}-${port}.${domain}`;
+}
+
+/**
  * Repoint a loopback URL at an address the target device can actually reach.
  * Anything that is already non-loopback is left alone.
  */
@@ -98,6 +116,9 @@ function retarget(rawUrl, target) {
   const parsed = new URL(rawUrl);
   if (!['127.0.0.1', 'localhost', '::1', '0.0.0.0'].includes(parsed.hostname)) {
     return rawUrl;
+  }
+  if (target === 'codespace') {
+    return codespaceUrl(parsed.port || '54321');
   }
   if (target === 'android') {
     // The Android emulator aliases the host machine's loopback to 10.0.2.2.
@@ -117,7 +138,15 @@ const target = flags.includes('--android-emulator')
   ? 'android'
   : flags.includes('--lan')
     ? 'lan'
-    : 'localhost';
+    : flags.includes('--codespace')
+      ? 'codespace'
+      : flags.includes('--localhost')
+        ? 'localhost'
+        : // Loopback is never reachable from a Codespace, so default to the
+          // forwarded hostname there rather than writing a URL that cannot work.
+          process.env.CODESPACES === 'true'
+          ? 'codespace'
+          : 'localhost';
 
 const status = readStatus();
 const rawUrl = pick(status, ['API_URL', 'api_url', 'SUPABASE_URL']);
@@ -148,9 +177,19 @@ const targetLabel = {
   localhost: 'browser or iOS simulator',
   android: 'Android emulator',
   lan: 'phone on the same Wi-Fi',
+  codespace: 'GitHub Codespace (forwarded port)',
 }[target];
 
 console.log(`  target: ${targetLabel}`);
 console.log(`  ${URL_KEY}=${url}`);
 console.log(`  ${ANON_KEY}=${anon.slice(0, 12)}... (${anon.length} chars)`);
+
+if (target === 'codespace') {
+  console.log(
+    '\n  Set port 54321 to Public in the Ports panel, or the browser gets\n' +
+      "  GitHub's login page instead of Supabase. Forwarded ports are private\n" +
+      '  by default and the auth cookie is not sent on cross-origin fetches.',
+  );
+}
+
 console.log('\n  .env is up to date. Restart the Expo dev server to pick it up.\n');
