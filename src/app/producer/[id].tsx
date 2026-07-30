@@ -20,6 +20,7 @@ import { useMicDetail } from '@/features/discovery/queries';
 import { eventDate, eventDateShort } from '@/features/discovery/local-time';
 import { describeRecurrence } from '@/features/discovery/recurrence';
 import { SeriesForm, type SeriesFormValues } from '@/features/producer/components/series-form';
+import { signupOpensInterval } from '@/features/producer/signup-opens';
 import { pickAndUploadPoster } from '@/features/producer/poster';
 import {
   useConfirmSeries,
@@ -96,7 +97,7 @@ export default function ManageSeriesScreen() {
           rrule: values.rrule,
           start_time: values.startTime,
           timezone: values.timezone,
-          signup_opens: `${values.signupOpensDays} days`,
+          signup_opens: signupOpensInterval(values.signupOpensMinutes),
           cost_cents: Math.round(Number(values.costDollars || '0') * 100),
           cost_note: values.costNote || null,
           set_length_minutes: values.setLengthMinutes ? Number(values.setLengthMinutes) : null,

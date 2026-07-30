@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import { Body, Button, Screen, Title } from '@/components/ui';
 import { useSession } from '@/features/auth/session';
 import { SeriesForm, type SeriesFormValues } from '@/features/producer/components/series-form';
+import { signupOpensInterval } from '@/features/producer/signup-opens';
 import { useCreateSeries } from '@/features/producer/queries';
 import { palette } from '@/theme';
 
@@ -30,7 +31,7 @@ export default function NewSeriesScreen() {
           anchor_date: values.anchorDate,
           start_time: values.startTime,
           timezone: values.timezone,
-          signup_opens: `${values.signupOpensDays} days`,
+          signup_opens: signupOpensInterval(values.signupOpensMinutes),
           cost_cents: Math.round(Number(values.costDollars || '0') * 100),
           cost_note: values.costNote || null,
           set_length_minutes: values.setLengthMinutes ? Number(values.setLengthMinutes) : null,

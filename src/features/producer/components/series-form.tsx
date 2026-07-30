@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Glyph, disciplineGlyphs } from '@/components/glyph';
@@ -10,10 +10,13 @@ import {
   SIGNUP_METHOD_LABELS,
 } from '@/features/discovery/components/mic-card';
 import { PinPicker } from '@/features/producer/components/pin-picker';
+import { geocodeVenueAddress, venueAddressQuery } from '@/features/producer/venue-geocode';
 import {
-  DEFAULT_SIGNUP_OPENS_DAYS,
-  SIGNUP_OPENS_CHOICES,
-  parseSignupOpensDays,
+  coerceSignupOpensMinutes,
+  defaultSignupOpensMinutes,
+  isWalkIn,
+  signupOpensChoices,
+  parseSignupOpensMinutes,
 } from '@/features/producer/signup-opens';
 import { defaultTimezone, timezoneOptions } from '@/features/producer/timezones';
 import {
@@ -64,10 +67,6 @@ const METHOD_OPTIONS = METHODS.map((m) => ({
   label: SIGNUP_METHOD_LABELS[m],
   description: SIGNUP_METHOD_DESCRIPTIONS[m],
 }));
-const SIGNUP_OPENS_OPTIONS = SIGNUP_OPENS_CHOICES.map(({ days, label }) => ({
-  value: days,
-  label,
-}));
 
 export type SeriesFormValues = {
   title: string;
@@ -78,7 +77,7 @@ export type SeriesFormValues = {
   anchorDate: string;
   startTime: string;
   timezone: string;
-  signupOpensDays: number;
+  signupOpensMinutes: number;
   costDollars: string;
   costNote: string;
   setLengthMinutes: string;
@@ -135,8 +134,10 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
   const existingTime = existing?.start_time?.slice(0, 5).split(':');
   const [hour, setHour] = useState<number>(existingTime ? Number(existingTime[0]) : 19);
   const [minute, setMinute] = useState<number>(existingTime ? Number(existingTime[1]) : 0);
-  const [signupOpensDays, setSignupOpensDays] = useState(
-    existing ? parseSignupOpensDays(existing.signup_opens) : DEFAULT_SIGNUP_OPENS_DAYS,
+  const [signupOpensMinutes, setSignupOpensMinutes] = useState(
+    existing
+      ? parseSignupOpensMinutes(existing.signup_opens, existing.signup_method)
+      : defaultSignupOpensMinutes('first_come'),
   );
   const [timezone, setTimezone] = useState(existing?.timezone ?? defaultTimezone());
   const [costDollars, setCostDollars] = useState(
@@ -165,6 +166,68 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
   const startTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
   const rrule = buildRrule(recurrence);
   const preview = rrule ? describeRecurrence(rrule, startTime) : null;
+  const signupOpensOptions = signupOpensChoices(method).map(({ minutes, label }) => ({
+    value: minutes,
+    label,
+  }));
+
+  // Look the venue up from its address so producers never have to copy
+  // coordinates out of a map. Runs once the address is complete, leaves the
+  // pin alone after any manual placement, and never blocks the form: the
+  // picker below stays available whether the lookup succeeds, fails, or (on
+  // web) is unavailable entirely.
+  const addressQuery = venueAddressQuery({
+    street: venueAddress,
+    city: venueCity,
+    region: venueRegion,
+  });
+  const [lookup, setLookup] = useState<'idle' | 'searching' | 'found' | 'failed'>('idle');
+  const pinnedByHand = useRef(false);
+  const lookedUp = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!addingVenue || !addressQuery || pinnedByHand.current) {
+      return;
+    }
+    if (lookedUp.current === addressQuery) {
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      lookedUp.current = addressQuery;
+      setLookup('searching');
+      const coords = await geocodeVenueAddress(addressQuery);
+      if (cancelled) {
+        return;
+      }
+      if (coords) {
+        setPin(coords);
+        setLookup('found');
+      } else {
+        setLookup('failed');
+      }
+    }, 800);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [addingVenue, addressQuery]);
+
+  async function findAddressAgain() {
+    if (!addressQuery) {
+      return;
+    }
+    pinnedByHand.current = false;
+    lookedUp.current = addressQuery;
+    setLookup('searching');
+    const coords = await geocodeVenueAddress(addressQuery);
+    if (coords) {
+      setPin(coords);
+      setLookup('found');
+    } else {
+      setLookup('failed');
+    }
+  }
 
   function toggleIn<T>(list: T[], item: T): T[] {
     return list.includes(item) ? list.filter((x) => x !== item) : [...list, item];
@@ -214,7 +277,7 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
       anchorDate: computeAnchorDate(recurrence, new Date(), biweeklyNextWeek),
       startTime,
       timezone,
-      signupOpensDays,
+      signupOpensMinutes,
       costDollars,
       costNote: costNote.trim(),
       setLengthMinutes: setLength,
@@ -397,15 +460,24 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
         label="How performers get on stage"
         value={method}
         options={METHOD_OPTIONS}
-        onChange={setMethod}
+        onChange={(next) => {
+          setMethod(next);
+          // A walk-in list measures its lead time in minutes and everything
+          // else in days, so the current pick may not exist in the new set.
+          setSignupOpensMinutes((current) => coerceSignupOpensMinutes(current, next));
+        }}
       />
       <SelectField
-        label="When signups open"
-        value={signupOpensDays}
-        options={SIGNUP_OPENS_OPTIONS}
-        onChange={setSignupOpensDays}
+        label={isWalkIn(method) ? 'When the list opens' : 'When signups open'}
+        value={signupOpensMinutes}
+        options={signupOpensOptions}
+        onChange={setSignupOpensMinutes}
       />
-      <Body>Signups open this far ahead of each night and close at showtime.</Body>
+      <Body>
+        {isWalkIn(method)
+          ? 'The list opens this long before each show and closes at showtime.'
+          : 'Signups open this far ahead of each night and close at showtime.'}
+      </Body>
 
       <View style={styles.pairRow}>
         <View style={styles.pairItem}>
@@ -480,8 +552,37 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
                   />
                 </View>
               </View>
-              <Body>Place the venue so performers can find it.</Body>
-              <PinPicker pin={pin} onChange={setPin} />
+              <Text style={styles.sectionLabel}>Location</Text>
+              {lookup === 'searching' ? (
+                <Body>Finding the address on the map...</Body>
+              ) : lookup === 'found' ? (
+                <Body>Found it from the address. Move the pin if it is not quite right.</Body>
+              ) : lookup === 'failed' ? (
+                <Body>
+                  Could not find that address automatically. Place the venue yourself below.
+                </Body>
+              ) : (
+                <Body>
+                  Fill in the street, city, and state above and the location fills itself in.
+                </Body>
+              )}
+              <PinPicker
+                pin={pin}
+                onChange={(next) => {
+                  pinnedByHand.current = true;
+                  setPin(next);
+                }}
+              />
+              {addressQuery ? (
+                <Button
+                  label={
+                    lookup === 'searching' ? 'Looking up the address' : 'Use the address above'
+                  }
+                  kind="secondary"
+                  busy={lookup === 'searching'}
+                  onPress={findAddressAgain}
+                />
+              ) : null}
               <Button
                 label="Search existing venues instead"
                 kind="secondary"

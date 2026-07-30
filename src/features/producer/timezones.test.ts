@@ -1,9 +1,4 @@
-import {
-  FALLBACK_TIMEZONE,
-  TIMEZONE_CHOICES,
-  defaultTimezone,
-  timezoneOptions,
-} from './timezones';
+import { FALLBACK_TIMEZONE, TIMEZONE_CHOICES, defaultTimezone, timezoneOptions } from './timezones';
 
 describe('defaultTimezone', () => {
   it('uses the device zone when it is offered', () => {
