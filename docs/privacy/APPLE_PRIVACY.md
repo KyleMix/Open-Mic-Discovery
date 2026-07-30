@@ -18,7 +18,7 @@ API entries for its own modules; app-level declarations below).
 
 ## Not collected
 
-Browsing history, purchase history (StoreKit handles subscriptions), contacts, photos, health, financial info, search history outside the app, identifiers for tracking.
+Browsing history, purchase history (the app sells nothing), contacts, photos, health, financial info, search history outside the app, identifiers for tracking.
 
 ## Tracking
 

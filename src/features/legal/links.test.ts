@@ -1,4 +1,4 @@
-import { LEGAL_LINKS, openLegalLink } from './legal';
+import { LEGAL_LINKS, openLegalLink } from './links';
 
 describe('openLegalLink', () => {
   it('opens the page in the in-app browser when reachable', async () => {

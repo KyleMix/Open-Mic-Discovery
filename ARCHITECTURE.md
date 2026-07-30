@@ -4,20 +4,20 @@ Living document. Records the stack, the pinned version combination, and decision
 
 ## Stack
 
-| Layer         | Choice                                                                                                                                         |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Client        | Expo SDK 57, React Native 0.86, React 19, TypeScript strict                                                                                    |
-| Routing       | Expo Router (file based, typed routes enabled)                                                                                                 |
-| Server state  | TanStack Query v5 (all data from Supabase lives here)                                                                                          |
-| Client state  | Zustand v5 (UI-only state; server data never goes in Zustand)                                                                                  |
-| Backend       | Supabase: Postgres + PostGIS, Auth, Storage, Realtime, Edge Functions                                                                          |
-| Maps          | react-native-maps with supercluster-based clustering (Phase 2)                                                                                 |
-| Location      | expo-location, foreground only, requested in context                                                                                           |
-| Notifications | expo-notifications + Expo Push (Phase 4+)                                                                                                      |
-| Payments      | RevenueCat for Producer Pro subscription; paid slots use an external processor, never IAP (Apple 3.1.5(a), see docs/STEP0_PROPOSAL.md flag F4) |
-| Errors        | Sentry via @sentry/react-native config plugin (added Phase 1)                                                                                  |
-| Build/ship    | EAS Build, EAS Submit, EAS Update                                                                                                              |
-| Tests         | Jest + jest-expo + React Native Testing Library; Maestro for e2e; pgTAP for RLS                                                                |
+| Layer         | Choice                                                                                                    |
+| ------------- | --------------------------------------------------------------------------------------------------------- |
+| Client        | Expo SDK 57, React Native 0.86, React 19, TypeScript strict                                               |
+| Routing       | Expo Router (file based, typed routes enabled)                                                            |
+| Server state  | TanStack Query v5 (all data from Supabase lives here)                                                     |
+| Client state  | Zustand v5 (UI-only state; server data never goes in Zustand)                                             |
+| Backend       | Supabase: Postgres + PostGIS, Auth, Storage, Realtime, Edge Functions                                     |
+| Maps          | react-native-maps with supercluster-based clustering (Phase 2)                                            |
+| Location      | expo-location, foreground only, requested in context                                                      |
+| Notifications | expo-notifications + Expo Push (Phase 4+)                                                                 |
+| Payments      | None. No in-app purchase and no payment SDK. Venue slot fees are settled outside the app (Apple 3.1.5(a)) |
+| Errors        | Sentry via @sentry/react-native config plugin (added Phase 1)                                             |
+| Build/ship    | EAS Build, EAS Submit, EAS Update                                                                         |
+| Tests         | Jest + jest-expo + React Native Testing Library; Maestro for e2e; pgTAP for RLS                           |
 
 ## The architecture and animation combination (pinned)
 
@@ -54,7 +54,8 @@ Renovate/dependabot, when added, must be configured to exclude these from automa
 
 - **2026-07-28, notification outbox pattern.** Database triggers and scheduled queue functions write to notification_outbox; the push-sender Edge Function drains it via Expo Push under the service role. Notifications are decoupled from request paths and every enqueue is idempotent per subject.
 - **2026-07-28, list reorder without a drag dependency.** The producer list uses up/down controls instead of drag-to-reorder: the maintained drag-list libraries predate Reanimated 4 and the New Architecture. Revisit when a compatible library stabilizes; the set_slot_order RPC already accepts an arbitrary full ordering, so only the gesture layer would change.
-- **2026-07-28, monetization boundaries.** RevenueCat handles only the Producer Pro subscription. Freshness actions (create, confirm, cancel) are never paywalled; performer features are free permanently; paid reserved slots are settled outside the app (Apple 3.1.5(a)). Entitlement resolution is a tested pure function; unconfigured production builds fail closed.
+- **2026-07-28, monetization boundaries.** RevenueCat gated signup list management and listing analytics behind a Producer Pro subscription. Superseded by the 2026-07-30 entry below.
+- **2026-07-30, everything free, no payment SDK.** Owner decision for launch: every feature is free to every account, so the paywall, the entitlement resolver, and react-native-purchases are removed rather than left switched on. Gating was client-side only (no `is_pro` column, no entitlement in RLS), so nothing changed in the database. This also takes the app out of scope for Apple 3.1.2 entirely: no in-app purchase means no paywall requirements and no Restore Purchases. Charging later means adding a payment SDK back and gating the new features, not flipping a flag; that is deliberate, since a dormant paywall is a liability at review time. The privacy and terms links that lived on the paywall moved to Settings (`src/features/legal/links.ts`) so they did not disappear with it.
 - **2026-07-28, Sentry.** Initialized only when EXPO_PUBLIC_SENTRY_DSN is set; sendDefaultPii is off and no user identity is attached, matching the privacy declarations.
 
 - **2026-07-29, web deletion path shares the in-app deletion body.** Google Play requires deletion that works after uninstall. `private.delete_account_for(uuid)` holds the single deletion implementation; `delete_account()` (in-app) and `delete_account_web(uuid)` (service role, called by the deletion-request Edge Function after magic-link identity confirmation) both run it, so the two paths cannot drift. Accounts that never finished onboarding are deletable too. Static page: `web/delete-account/`; deployment: `docs/DEPLOY_WEB.md`.

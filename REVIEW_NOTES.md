@@ -20,10 +20,8 @@ Created by the database seed (`supabase/seed.sql`). Local development only; prod
 
 ## Payment model
 
-Producer Pro is a digital auto-renewable subscription sold through the
-platform store (StoreKit on iOS, Google Play Billing on Android, both via
-RevenueCat). It unlocks digital tools only: signup list management and
-listing analytics. It is the only purchase in the app.
+The app sells nothing. There is no in-app purchase, no subscription, and no
+payment SDK in the build. Every feature is free to every account.
 
 Some open mics in the real world charge performers for reserved stage
 slots. Those fees are payment for a real-world service at a physical venue,
@@ -33,8 +31,9 @@ states in plain copy that payment never happens inside the app. There is no
 in-app way to pay a producer or venue, and no such purchase will be added
 to IAP.
 
-Free forever: discovery, performing, signups, listing creation, one-tap
-freshness confirmation, and cancellations.
+Free for everyone: discovery, performing, signups, listing creation, one-tap
+freshness confirmation, cancellations, running the signup list on the night,
+and listing analytics.
 
 ## Dual-role walkthrough (performer and producer, one account)
 
@@ -53,10 +52,9 @@ created on the hosted project before submission and the table updated).
 5. Dual role on one account: the dual demo account holds both roles at
    once, or add the Producer role to any performer account from the My
    Mics tab. There are no separate account types.
-6. Producer Pro: Pro-gated actions route to the paywall
-   (`src/app/paywall.tsx`). In review builds with store credentials the
-   monthly price renders from StoreKit; Restore Purchases sits directly
-   under Subscribe.
+6. Nothing is locked: every producer tool, including running the signup
+   list on the night and listing analytics, is available to any account.
+   There is no purchase anywhere in the app.
 
 ## Account deletion, in two taps from Settings
 
@@ -65,12 +63,12 @@ sign-in removed, profile anonymized. The web path for uninstalled users is
 https://openmicfinder.app/delete-account (same server-side deletion,
 covered by `supabase/tests/deletion.test.sql`).
 
-## Where the paywall legal links live
+## Where the legal links live
 
-On the paywall itself (`src/features/pro/components/paywall-view.tsx`),
-below the fine print: Privacy Policy and Terms of Use (EULA), both
-tappable, opening in the in-app browser, with a friendly inline message
-when offline. The same EULA text is shown and accepted in-app at signup.
+Settings, under Legal (`src/features/legal/links.ts`): Privacy Policy and
+Terms of Use (EULA), both tappable, opening in the in-app browser, with a
+friendly inline message when offline. The same EULA text is shown and
+accepted in-app at signup.
 
 ## Walkthrough of every non-obvious flow
 
@@ -92,8 +90,7 @@ when offline. The same EULA text is shown and accepted in-app at signup.
 - **Add to calendar.** Every mic page with an upcoming night has "Add to my calendar": on iOS and Android it opens the system event sheet prefilled (Apple Calendar or Google Calendar, whichever the person uses); on web it opens the Google Calendar template. No calendar permission is requested; the system UI owns the write.
 - **Event posters.** Producers add or replace a poster from the Manage screen; it renders at the top of the public mic page and as a thumbnail on Discover list cards and Favorites, so every mic can show its own face. Posters live in a public storage bucket where each producer can only write inside their own folder (storage RLS). Posters are covered by the existing listing flag and report flows.
 - **Personalized discovery.** Discover opens in list view (map is one tap away), centered on the home area, with the discipline chips pre-selected to what the performer does (multiple supported). The list sorts by soonest upcoming night first, nearest first within the same day. Every default is one tap to override and never overrides a choice already made.
-- **Producer Pro paywall (Apple 3.1.2 walkthrough).** Open My Mics as a producer and tap any Pro-gated action (or Settings, Producer Pro) to reach the paywall. Inside the binary it shows: the subscription title (Producer Pro Monthly), the price as the largest text on the screen with "/ month" beside it, the billing period line (renews automatically every month until cancelled), a tappable Privacy Policy link, a tappable Terms of Use (EULA) link, and Restore Purchases. The legal links open in the in-app browser; offline they show a friendly inline message instead of a dead page. All of this is covered by Jest component tests in `src/features/pro/components/paywall-view.test.tsx`.
-- **Producer Pro.** Performing and discovery are free forever; listing creation, one-tap confirm, and cancellations are free for producers. Pro gates signup list management (draw, reorder, statuses, waitlist promotion; free producers see their roster read-only) and listing analytics. Restore Purchases is on the paywall and in Settings. In development builds without RevenueCat keys, Pro is unlocked for testing and labeled as such.
+- **Nothing is paid.** Every feature is free to every account: discovery, signups, listing creation, one-tap confirm, cancellations, running the signup list on the night (draw, reorder, statuses, waitlist promotion), and listing analytics. The app contains no in-app purchase and no payment SDK.
 - **Paid reserved slots.** Mics that charge performers state the cost with explicit copy that payment happens at the venue or with the host, never inside the app (Apple 3.1.5(a)).
 - **Offline.** Listing data is cached and readable without a connection; writes need connectivity and fail with clear messages.
 - **Simple filters.** Discover shows two plain rows: what kind of mic (single tap: All, Music, Comedy, Poetry, Other) and when (Any day, Today, Weekend), plus Free and an All filters sheet. The sheet asks one labeled question per section (days, time, cost, how you get on stage, distance) in plain language. Short option sets are big tappable chips; the signup-style question is a multi-select dropdown that reads "Any way" until something is picked. Distances read in miles; the server still works in km. Signup methods use plain names everywhere: Walk-in list, Name draw, Book ahead, Invite only.

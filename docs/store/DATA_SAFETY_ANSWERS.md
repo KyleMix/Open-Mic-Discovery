@@ -12,7 +12,7 @@ file noted. Update this sheet whenever collection changes;
 Yes.
 
 **Is all of the user data collected by your app encrypted in transit?**
-Yes. All traffic is HTTPS/TLS to Supabase, RevenueCat, Expo push, and
+Yes. All traffic is HTTPS/TLS to Supabase, Expo push, and
 Sentry (`src/lib/supabase.ts`, `src/lib/sentry.ts`).
 
 **Do you provide a way for users to request that their data is deleted?**
@@ -89,9 +89,8 @@ logs.
 functionality (notifications the user opts into). Optional. Deleted with
 the account.
 
-**Financial info.** Not collected. Producer Pro billing runs entirely
-inside Google Play Billing via RevenueCat; the app never sees payment
-instruments. Real-world paid slots are paid at the venue, outside the app.
+**Financial info.** Not collected. The app sells nothing and contains no
+payment SDK. Real-world paid slots are paid at the venue, outside the app.
 
 **Health and fitness, Messages, Contacts, Calendar, Audio, Files.** Not
 collected. "Add to my calendar" opens the system calendar UI without
@@ -108,6 +107,6 @@ calendar permission (`src/features/calendar`).
 
 - Contains ads: No.
 - Data used for advertising or marketing: None.
-- Data shared with third parties: None. Supabase, RevenueCat, Expo push,
-  and Sentry are service providers processing on our behalf, which the
-  form does not count as sharing when disclosed this way.
+- Data shared with third parties: None. Supabase, Expo push, and Sentry are
+  service providers processing on our behalf, which the form does not count
+  as sharing when disclosed this way.

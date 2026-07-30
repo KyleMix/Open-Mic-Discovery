@@ -31,10 +31,15 @@ Web path (Google Play requirement, works after uninstall): static page `web/dele
 - Remaining temporary screens tracked in `REVIEW_NOTES.md`; none may survive to submission.
 - Reviewer cold start never blank: `src/features/discovery/center.ts` (Seattle fallback with visible note), `e2e/reviewer-coldstart.yaml`.
 
-## Guideline 3.1.2 (subscriptions) and 3.1.5(a) (real-world services)
+## Guideline 3.1.2 (subscriptions): not applicable
 
-- Paywall with title, billing period, prominent price, in-app Privacy Policy and Terms links, Restore Purchases: `src/features/pro/components/paywall-view.tsx`, `src/features/pro/legal.ts`, tests in `src/features/pro/components/paywall-view.test.tsx`.
-- Payment model statement for reviewers (subscription via StoreKit; real-world paid slots outside IAP): `REVIEW_NOTES.md`, Payment model section.
+The app sells nothing. There is no in-app purchase, no subscription, and no
+payment SDK, so 3.1.2 does not apply and Restore Purchases is not required.
+
+## Guideline 3.1.5(a) (real-world services)
+
+- Some mics charge performers for a reserved stage slot. That is payment for a real-world service at a physical venue, settled at the venue or with the host, never in the app. The app only shows that a cost exists and says so in plain copy: `src/features/signups/components/signup-card.tsx`.
+- Payment model statement for reviewers: `REVIEW_NOTES.md`, Payment model section.
 
 ## Platform requirements map (July 2026 audit additions)
 

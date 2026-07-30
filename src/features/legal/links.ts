@@ -1,7 +1,7 @@
 import * as WebBrowser from 'expo-web-browser';
 
 /**
- * Legal links shown on the paywall (Apple 3.1.2 requires both). They open
+ * Privacy policy and terms, linked from Settings. They open
  * in the in-app browser, never an external tab.
  */
 export const LEGAL_LINKS = {

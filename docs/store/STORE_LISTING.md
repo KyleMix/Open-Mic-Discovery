@@ -6,6 +6,7 @@
 - iOS subtitle (30 chars max): Find a mic. Get on the list.
 - Bundle id / package: com.openmicexplorer.app
 - Category: Entertainment (primary), Music (secondary)
+- Monetization: none. No in-app purchases, no subscriptions, no ads.
 - Age rating: Apple 16+ under the current tier system (infrequent/mild mature themes, user generated content); Play: rate honestly through the questionnaire, UGC yes. The in-app age gate is 18 and is the stricter control.
 
 ## Short description (Play, 80 chars)
@@ -28,7 +29,7 @@ Producers list a mic in two minutes with a plain-language schedule builder, conf
 BUILT FOR THE SCENE
 One account covers both sides of the mic: perform on Tuesday, host on Wednesday. Dark interface that will not light up the room. Listings stay readable offline.
 
-Discovering and performing are free, forever. Producer Pro unlocks list management and analytics for the people running the night.
+Everything is free. Finding mics, getting on the list, listing your own night, running the signup list, and seeing how your nights are going: all of it, for everyone.
 
 ## Keywords (iOS, 100 chars)
 
@@ -49,9 +50,8 @@ Required sizes: iPhone 6.9" and 6.5"; Play phone plus 7" and 10" tablet. Dark ba
 
 1. Apple Developer Program and Play Console accounts; app records created with the identifiers above.
 2. Hosted Supabase project: apply migrations (`supabase db push`), deploy `push-sender`, create production demo accounts, replace seed credentials in REVIEW_NOTES.
-3. EAS project (`eas init`), secrets set: EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY, EXPO_PUBLIC_SENTRY_DSN, EXPO_PUBLIC_REVENUECAT_IOS_KEY, EXPO_PUBLIC_REVENUECAT_ANDROID_KEY.
-4. RevenueCat project with `producer_pro` entitlement and a monthly product in both stores; verify the buy, reinstall, restore cycle in TestFlight/internal testing.
-5. Google Maps API key for Android in app.json (android.config.googleMaps.apiKey).
-6. Sign in with Apple (Services ID) and Google OAuth credentials configured in Supabase Auth.
-7. Final art: app icon, adaptive icon set, splash (prompts ready in docs/ASSET_PROMPTS.md).
-8. `eas build --profile production`, TestFlight + Play internal testing pass, then `eas submit`.
+3. EAS project (`eas init`), secrets set: EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY, EXPO_PUBLIC_SENTRY_DSN.
+4. Google Maps API key for Android in app.json (android.config.googleMaps.apiKey).
+5. Sign in with Apple (Services ID) and Google OAuth credentials configured in Supabase Auth.
+6. Final art: app icon, adaptive icon set, splash (prompts ready in docs/ASSET_PROMPTS.md).
+7. `eas build --profile production`, TestFlight + Play internal testing pass, then `eas submit`.

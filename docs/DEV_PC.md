@@ -48,9 +48,6 @@ What is different in the browser:
   same mics as a distance-ordered list with a note saying so. Discover defaults
   to the list view anyway, so most flows are unaffected.
 - **No push notifications.** Test those on a device build.
-- **Purchases are not real.** RevenueCat runs in Browser Mode on web (the dev
-  server logs this), so Pro screens render but no store transaction happens.
-  Verify real purchase and restore flows on a device build.
 - **No Apple sign in.** iOS only. Use email and password.
 
 ## 2. GitHub Codespace
@@ -123,8 +120,8 @@ Scan the QR code with Expo Go. `--lan` writes your machine's LAN IP so the
 phone can reach Supabase. The phone and the PC must be on the same network, and
 Windows Firewall has to allow Node on a private network.
 
-Expo Go skips push (SDK 53 dropped it), `expo-age-range`, and RevenueCat's
-native module. The app handles all three explicitly, so it boots and runs.
+Expo Go skips push (SDK 53 dropped it) and `expo-age-range`. The app handles
+both explicitly, so it boots and runs.
 
 ## Picking the right Supabase host
 

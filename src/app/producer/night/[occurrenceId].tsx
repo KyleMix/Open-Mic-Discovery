@@ -1,11 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
-import { useSession } from '@/features/auth/session';
-import { useProStatus } from '@/features/pro/use-pro';
 import { ReportModal } from '@/features/safety/components/report-modal';
 import { STATUS_LABELS } from '@/features/signups/labels';
 import {
@@ -24,10 +22,7 @@ import { fonts, palette, spacing, type } from '@/theme';
  * Realtime keeps every open copy of this screen in sync.
  */
 export default function NightScreen() {
-  const router = useRouter();
   const { occurrenceId } = useLocalSearchParams<{ occurrenceId: string }>();
-  const { session } = useSession();
-  const pro = useProStatus(session?.user.id);
   const roster = useRoster(occurrenceId);
   const draw = useDrawLottery();
   const reorder = useSetSlotOrder();
@@ -65,41 +60,6 @@ export default function NightScreen() {
   );
   const pending = rows.filter((r) => r.status === 'requested');
   const waitlist = rows.filter((r) => r.status === 'waitlisted');
-  const canManage = pro.data?.entitled ?? false;
-
-  // Free producers see the list; running it (draw, order, statuses) is Pro.
-  if (pro.data && !canManage) {
-    return (
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <Stack.Screen
-          options={{
-            headerShown: true,
-            title: 'The list',
-            headerStyle: { backgroundColor: palette.bg },
-            headerTintColor: palette.text,
-          }}
-        />
-        <Text style={styles.sectionTitle}>
-          {rows.length} {rows.length === 1 ? 'performer' : 'performers'} signed up
-        </Text>
-        {rows.map((row) => (
-          <View key={row.id} style={styles.row}>
-            <Text style={styles.slot}>{row.slot_position ?? '·'}</Text>
-            <View style={styles.rowBody}>
-              <Text style={styles.name}>{row.display_name ?? row.handle ?? 'Performer'}</Text>
-              <Text style={styles.meta}>{row.status ? STATUS_LABELS[row.status] : ''}</Text>
-            </View>
-          </View>
-        ))}
-        <Body>
-          Running the list, drawing lotteries, reordering, and marking performed or no-show are part
-          of Producer Pro.
-        </Body>
-        <Button label="See Producer Pro" onPress={() => router.push('/paywall')} />
-      </ScrollView>
-    );
-  }
-
   function startDraw() {
     if (!occurrenceId || roster.data == null) {
       return;
