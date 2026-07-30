@@ -2,9 +2,9 @@
 
 ## Identity
 
-- Name: Open Mic Finder
+- Name: Open Mic Explorer
 - iOS subtitle (30 chars max): Find a mic. Get on the list.
-- Bundle id / package: com.openmicfinder.app
+- Bundle id / package: com.openmicexplorer.app
 - Category: Entertainment (primary), Music (secondary)
 - Age rating: 17+ (Apple: infrequent/mild mature themes, user generated content; Play: rate honestly through the questionnaire, UGC yes)
 
@@ -14,7 +14,7 @@ Find open mics for music, comedy, and poetry near you, and get on the list.
 
 ## Full description
 
-Open Mic Finder puts every open mic near you on one map: music, comedy, and poetry, together for the first time.
+Open Mic Explorer puts every open mic near you on one map: music, comedy, and poetry, together for the first time.
 
 FIND A MIC
 See what is happening tonight on a map built for scanning at a glance. Filter by discipline, day, distance, cost, signup method, and start time. Every listing shows when it was last confirmed by the person who runs it, so you know before you drive across town.

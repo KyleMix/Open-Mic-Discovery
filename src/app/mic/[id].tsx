@@ -123,7 +123,7 @@ function MicDetail({
         startsAt,
         endsAt,
         location: venue ? `${venue.name}, ${venue.address_line}, ${venue.city}` : series.title,
-        notes: `${SIGNUP_METHOD_LABELS[series.signup_method]} · ${costLabel(series.cost_cents)}. Added from Open Mic Finder.`,
+        notes: `${SIGNUP_METHOD_LABELS[series.signup_method]} · ${costLabel(series.cost_cents)}. Added from Open Mic Explorer.`,
       });
     } catch {
       // The person backed out of the system sheet or the platform refused;

@@ -1,4 +1,4 @@
-# Open Mic Finder
+# Open Mic Explorer
 
 Find local open mics for music, comedy, and poetry. Sign up for a slot without leaving the app. Producers keep listings fresh and manage the night.
 

@@ -10,13 +10,13 @@ Every screen is functional; there are no placeholder screens, dead links, or stu
 
 Created by the database seed (`supabase/seed.sql`). Local development only; production demo accounts will be created on the hosted project before store submission and updated here.
 
-| Role                             | Email                        | Password            |
-| -------------------------------- | ---------------------------- | ------------------- |
-| Performer                        | performer@demo.openmic.local | demo-pass-1234      |
-| Producer                         | producer@demo.openmic.local  | demo-pass-1234      |
-| Dual role                        | dual@demo.openmic.local      | demo-pass-1234      |
-| Admin (moderation)               | admin@demo.openmic.local     | demo-pass-1234      |
-| Owner/tester (all roles + admin) | kylewmixon@gmail.com         | openmic-tester-2026 |
+| Role                             | Email                                | Password                    |
+| -------------------------------- | ------------------------------------ | --------------------------- |
+| Performer                        | performer@demo.openmicexplorer.local | demo-pass-1234              |
+| Producer                         | producer@demo.openmicexplorer.local  | demo-pass-1234              |
+| Dual role                        | dual@demo.openmicexplorer.local      | demo-pass-1234              |
+| Admin (moderation)               | admin@demo.openmicexplorer.local     | demo-pass-1234              |
+| Owner/tester (all roles + admin) | kylewmixon@gmail.com                 | openmicexplorer-tester-2026 |
 
 ## Walkthrough of every non-obvious flow
 
