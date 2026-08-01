@@ -86,7 +86,7 @@
     "db:types": "supabase gen types typescript --local > src/types/database.types.ts",
     "db:types:local": "node scripts/dev/gen-types.mjs",
     "check:backend": "node scripts/check-backend.mjs",
-    "build:android": "eas build --profile preview --platform android"
+    "build:android": "npx eas-cli build --profile preview --platform android"
   },
   "jest": {
     "preset": "jest-expo",

@@ -66,8 +66,8 @@ never go near the app: it bypasses row level security entirely, and anything
 built into an APK can be read out of it.
 
 ```bash
-npx eas env:create --environment preview --name EXPO_PUBLIC_SUPABASE_URL --value https://<ref>.supabase.co
-npx eas env:create --environment preview --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value <anon-key>
+npx eas-cli env:create --environment preview --name EXPO_PUBLIC_SUPABASE_URL --value https://<ref>.supabase.co
+npx eas-cli env:create --environment preview --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value <anon-key>
 ```
 
 The `preview` build profile in `eas.json` declares `"environment": "preview"`,
@@ -89,11 +89,16 @@ consent screen), and an empty listings table. Do not build until it prints
 
 ### 5. Build
 
+The EAS CLI is published as `eas-cli` while its binary is called `eas`, so
+`npx eas ...` fails to resolve. Use the package name, or install it once with
+`npm install -g eas-cli` and drop the `npx eas-cli` prefix everywhere below.
+
 ```bash
+npx eas-cli login
 npm run build:android
 ```
 
-That runs `eas build --profile preview --platform android`, which produces an
+That runs `npx eas-cli build --profile preview --platform android`, which produces an
 **APK** (not an AAB, which cannot be sideloaded). EAS returns a build page with
 a QR code and a download link. That link is what you send.
 
@@ -101,7 +106,7 @@ Rebuild for native or config changes. For pure JavaScript changes you can push
 an update to installed copies instead, which is much faster:
 
 ```bash
-npx eas update --branch preview --message "what changed"
+npx eas-cli update --branch preview --message "what changed"
 ```
 
 ### 6. Before sending the link
@@ -110,7 +115,7 @@ npx eas update --branch preview --message "what changed"
   public repository, so it is in the git history and must be assumed exposed.
   Rotate it in Google Cloud Console, and restrict the new one to the Android
   package `com.openmicexplorer.app` plus your release signing certificate's
-  SHA-1 fingerprint (`npx eas credentials` shows it). An unrestricted Maps key
+  SHA-1 fingerprint (`npx eas-cli credentials` shows it). An unrestricted Maps key
   is billable by anyone who finds it.
 - **Check the deep links.** `app.json` still routes `openmicfinder.app/mic/`,
   which is the pre-rebrand domain. Links shared from the app will not open in
