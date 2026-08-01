@@ -23,14 +23,21 @@ migrations does not have them. That failure is confusing on its own terms: it
 answers 404 for a tool it has never seen and 400 for a scenario name it does
 not know, and neither of those says "run your migrations".
 
-So the kit reports its version and Testing tools compares it against the
-version the app was built for. If the database is behind, the screen says so
-at the top and names the fix:
+`supabase start` boots whatever database is already in the container and never
+looks at `supabase/migrations`, which is why this drifted in the first place.
+`npm run dev:up` now applies pending migrations as part of starting up, so it
+keeps step on its own:
 
 ```bash
-supabase db reset          # rebuild from every migration plus the seed
-npx supabase migration up  # or apply just the new ones, keeping your data
+npm run dev:up      # start the stack, apply migrations, write .env
+npm run db:migrate  # just the migrations, keeping your data
+npm run db:reset    # rebuild from every migration plus the seed, data discarded
+npm run dev:doctor  # reports a database that is behind, among other things
 ```
+
+Testing tools also checks: the kit reports its version, the app compares it
+against the version it was built for, and a database that is behind gets a
+banner at the top naming the fix.
 
 When a migration adds or changes a test kit entry point, bump
 `private.test_kit_version()` and `EXPECTED_KIT_VERSION` in

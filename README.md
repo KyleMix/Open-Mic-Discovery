@@ -22,6 +22,11 @@ Testing on an Android emulator or a phone needs a different Supabase host than
 the browser does. **docs/DEV_PC.md** covers all three, plus demo accounts, what
 degrades where, and the common failure symptoms.
 
+Pulled new migrations? `npm run dev:up` applies them as part of starting up
+(`npm run db:migrate` on its own keeps your data, `npm run db:reset` rebuilds
+from scratch). `supabase start` alone boots the database it already has, which
+leaves it behind the repo.
+
 ## Testing the app as the owner
 
 Sign in with the owner email and the account arrives complete: performer,

@@ -72,7 +72,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "dev:env": "node scripts/dev/sync-env.mjs",
-    "dev:up": "npm run db:start && npm run dev:env",
+    "dev:up": "npm run db:start && npm run db:migrate && npm run dev:env",
     "dev:doctor": "node scripts/dev/doctor.mjs",
     "lint": "expo lint",
     "format": "prettier --write .",
@@ -81,6 +81,7 @@
     "test": "jest",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
+    "db:migrate": "node scripts/dev/migrate.mjs",
     "db:reset": "supabase db reset",
     "db:types": "supabase gen types typescript --local > src/types/database.types.ts",
     "db:types:local": "node scripts/dev/gen-types.mjs"

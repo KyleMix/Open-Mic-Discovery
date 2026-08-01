@@ -15,6 +15,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import migrations from './migrations.js';
+
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const ENV = join(ROOT, '.env');
 
@@ -190,6 +192,22 @@ if (configured.loginPage) {
     'neither the auth nor the database endpoint answered like Supabase',
     'Check the stack is healthy: npx supabase status',
   );
+}
+
+// Migrations the database has not run yet. This one does not look like a
+// connection problem at all: the app signs in fine and then individual
+// features fail, because a function that does not exist yet answers 404 and
+// one that has not learned a new argument value answers 400.
+const pendingCheck = migrations.readPendingMigrations(ROOT);
+if (pendingCheck.error) {
+  warn('could not read the migration list (is the stack running?)');
+} else if (pendingCheck.pending.length > 0) {
+  bad(
+    `the database has not run ${pendingCheck.pending.length} migration(s) from supabase/migrations`,
+    'npm run db:migrate     (applies them and keeps your data)',
+  );
+} else {
+  ok('the database has run every migration in supabase/migrations');
 }
 
 report();
