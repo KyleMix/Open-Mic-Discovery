@@ -112,8 +112,17 @@ Screens are tested where they are reachable without fighting the router.
 
 ### End to end (Maestro)
 
-`e2e/signup.yaml` and `e2e/discovery.yaml` exist and are wired to no runner.
-They stay that way for now. See "Not tested" below.
+`.github/workflows/e2e.yml` builds the Android app and runs the Maestro flows
+on an emulator. That workflow is not this work's; it already existed. The CI
+added here is the complementary half: typecheck, lint, the unit suite, the
+unit suite again in a second timezone, and the pgTAP suite, none of which ran
+on push.
+
+The two are worth keeping separate. The e2e job takes a prebuild, a Gradle
+build and an emulator boot, so it is minutes per run and carries the flake
+profile that comes with a device. The checks in `ci.yml` finish in well under
+a minute and should gate every push; e2e answers a different question, which
+is whether the thing starts and can be driven.
 
 ## Fixtures and fakes
 
@@ -211,13 +220,19 @@ tests go red while the existing suites stay green.
 
 ## Not tested, and what that costs
 
-**Maestro end to end flows.** `e2e/signup.yaml` and `e2e/discovery.yaml` run
-nowhere. Wiring them means a device or emulator in CI, which is minutes per run
-and a class of flake that erodes trust in the signal. The cost of leaving them:
-nothing verifies that the app boots, that navigation between the real screens
-works, or that a signup works end to end against a real Supabase. Unit and
-pgTAP layers can both be green while the app fails to start. This is the
-largest remaining hole and the one worth closing next.
+**That the app starts, in the unit and SQL layers.** Both suites can be fully
+green while the app fails to boot. This is not hypothetical: a screen test
+placed under `src/app` became a real Expo Router route, shipped a Jest file
+into the bundle, and crashed the app on launch with "expect is not defined"
+while 121 tests reported success. `src/app-routes.test.ts` closes that
+specific hole, and `e2e.yml` covers booting in general, but nothing cheap and
+fast asserts that the bundle builds. `npx expo export --platform web` is the
+command that catches it in seconds and is worth adding to `ci.yml`.
+
+**`src/app` as a source directory.** Anything placed there becomes a route.
+Screen tests therefore live beside their feature and import the route module
+by path. The guard test enforces it, but the constraint is easy to forget and
+the failure mode is silent in Jest.
 
 **`AuthGate` in `src/app/_layout.tsx`.** Five distinct redirect outcomes, no
 coverage. Not covered because `initSentry()` runs at module import, before any

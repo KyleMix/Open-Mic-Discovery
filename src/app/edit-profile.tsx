@@ -2,28 +2,40 @@ import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { Body, Button, ErrorText, Field, LoadingView, Title } from '@/components/ui';
-import { validateDisplayName } from '@/features/auth/validation';
-import { useOwnProfile } from '@/features/auth/queries';
+import { disciplineGlyphs, Glyph } from '@/components/glyph';
+import { Body, Button, ErrorText, Field, LoadingView, Title, ToggleRow } from '@/components/ui';
+import { validateDisplayName, validateRoles } from '@/features/auth/validation';
+import { useOwnProfile, usePerformerDisciplines } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
 import { AvatarCircle } from '@/features/profile/avatar-circle';
 import { pickAndUploadAvatar } from '@/features/profile/avatar';
 import { geocodeHomeArea } from '@/features/profile/geocode';
 import { homeAreaError, homeAreaQuery, normalizeHomeArea } from '@/features/profile/home-area';
-import { useUpdateProfile } from '@/features/profile/queries';
-import {
-  handleError,
-  normalizeHandle,
-  normalizeUrl,
-  urlError,
-} from '@/features/profile/social';
-import { fonts, palette, spacing, type } from '@/theme';
+import { useUpdateProfile, useUpdateRoles } from '@/features/profile/queries';
+import { handleError, normalizeHandle, normalizeUrl, urlError } from '@/features/profile/social';
+import { disciplineAccents, fonts, palette, spacing, type, type Discipline } from '@/theme';
+
+const DISCIPLINES: Discipline[] = ['music', 'comedy', 'poetry', 'other'];
+
+function disciplineDescription(d: Discipline): string {
+  switch (d) {
+    case 'music':
+      return 'Songs, covers, originals, instrumentals.';
+    case 'comedy':
+      return 'Standup, sketch, improv.';
+    case 'poetry':
+      return 'Poems, spoken word, prose.';
+    case 'other':
+      return 'Storytelling, magic, anything else with a mic.';
+  }
+}
 
 export default function EditProfileScreen() {
   const { session } = useSession();
   const profile = useOwnProfile(session?.user.id);
+  const performerDisciplines = usePerformerDisciplines(session?.user.id);
 
-  if (profile.isPending) {
+  if (profile.isPending || performerDisciplines.isPending) {
     return <LoadingView label="Loading your profile" />;
   }
   if (profile.isError || !profile.data) {
@@ -36,7 +48,13 @@ export default function EditProfileScreen() {
       </ScrollView>
     );
   }
-  return <EditProfileForm profile={profile.data} userId={session!.user.id} />;
+  return (
+    <EditProfileForm
+      profile={profile.data}
+      initialDisciplines={(performerDisciplines.data ?? []) as Discipline[]}
+      userId={session!.user.id}
+    />
+  );
 }
 
 function ScreenHeader() {
@@ -54,11 +72,24 @@ function ScreenHeader() {
 
 type ProfileRow = NonNullable<ReturnType<typeof useOwnProfile>['data']>;
 
-function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: string }) {
+function EditProfileForm({
+  profile,
+  initialDisciplines,
+  userId,
+}: {
+  profile: ProfileRow;
+  initialDisciplines: Discipline[];
+  userId: string;
+}) {
   const router = useRouter();
   const update = useUpdateProfile(userId);
+  const updateRoles = useUpdateRoles(userId);
 
+  const [isPerformer, setIsPerformer] = useState(profile.is_performer);
+  const [isProducer, setIsProducer] = useState(profile.is_producer);
+  const [disciplines, setDisciplines] = useState<Discipline[]>(initialDisciplines);
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url);
+  const [stageName, setStageName] = useState(profile.stage_name);
   const [displayName, setDisplayName] = useState(profile.display_name);
   const [bio, setBio] = useState(profile.bio ?? '');
   const [homeCity, setHomeCity] = useState(profile.home_city ?? '');
@@ -96,8 +127,10 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
     const yt = normalizeUrl(youtube);
     const web = normalizeUrl(website);
     const nextErrors = {
+      stageName: validateDisplayName(stageName),
       displayName: validateDisplayName(displayName),
       homeArea: homeAreaError(area),
+      roles: validateRoles(isPerformer, isProducer),
       instagram: handleError(ig),
       tiktok: handleError(tt),
       youtube: urlError(yt),
@@ -109,6 +142,13 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
     }
     setError(null);
     try {
+      const rolesChanged =
+        isPerformer !== profile.is_performer ||
+        isProducer !== profile.is_producer ||
+        disciplines.join(',') !== initialDisciplines.join(',');
+      if (rolesChanged) {
+        await updateRoles.mutateAsync({ isPerformer, isProducer, disciplines });
+      }
       // Re-geocode only when the area actually changed, so a failed lookup
       // never wipes coordinates that were already good.
       const areaChanged =
@@ -117,14 +157,13 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
         area.postalCode !== (profile.home_postal_code ?? '');
       const coords = areaChanged ? await geocodeHomeArea(homeAreaQuery(area)) : null;
       await update.mutateAsync({
+        stage_name: stageName.trim(),
         display_name: displayName.trim(),
         bio: bio.trim() || null,
         home_city: area.city || null,
         home_region: area.region || null,
         home_postal_code: area.postalCode || null,
-        ...(areaChanged
-          ? { home_lat: coords?.lat ?? null, home_lng: coords?.lng ?? null }
-          : {}),
+        ...(areaChanged ? { home_lat: coords?.lat ?? null, home_lng: coords?.lng ?? null } : {}),
         link_instagram: ig || null,
         link_tiktok: tt || null,
         link_youtube: yt || null,
@@ -141,6 +180,7 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
       style={styles.scroll}
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
     >
       <ScreenHeader />
       <Pressable
@@ -150,16 +190,24 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
         disabled={photoBusy}
         style={styles.avatarWrap}
       >
-        <AvatarCircle url={avatarUrl} name={displayName} size={96} />
+        <AvatarCircle url={avatarUrl} name={stageName} size={96} />
         <Text style={styles.changePhoto}>{photoBusy ? 'Uploading...' : 'Change photo'}</Text>
       </Pressable>
 
       <Field
-        label="Name"
+        label="Stage name"
+        value={stageName}
+        onChangeText={setStageName}
+        error={errors.stageName}
+      />
+      <Body>This is the name on every signup list and public profile.</Body>
+      <Field
+        label="Name (private)"
         value={displayName}
         onChangeText={setDisplayName}
         error={errors.displayName}
       />
+      <Body>Only you see this. Nothing outside your own account ever shows it.</Body>
       <Field
         label="About you (optional)"
         value={bio}
@@ -168,10 +216,52 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
         numberOfLines={3}
         placeholder="What you play, your style, anything you want people to know."
       />
+
+      <Text style={styles.sectionTitle}>What you do</Text>
+      <Body>Pick everything that applies. Most people in a scene end up doing both.</Body>
+      <ToggleRow
+        label="Performer"
+        description="Find mics, sign up for slots, track where you have played."
+        value={isPerformer}
+        onToggle={setIsPerformer}
+      />
+      <ToggleRow
+        label="Producer"
+        description="Run listings, manage signup lists, post lineups."
+        value={isProducer}
+        onToggle={setIsProducer}
+      />
+      {errors.roles ? <ErrorText>{errors.roles}</ErrorText> : null}
+      {isPerformer ? (
+        <>
+          <Body>What do you perform?</Body>
+          {DISCIPLINES.map((d) => (
+            <ToggleRow
+              key={d}
+              label={d.charAt(0).toUpperCase() + d.slice(1)}
+              description={disciplineDescription(d)}
+              value={disciplines.includes(d)}
+              onToggle={() =>
+                setDisciplines((current) =>
+                  current.includes(d) ? current.filter((x) => x !== d) : [...current, d],
+                )
+              }
+              icon={
+                <Glyph
+                  name={disciplineGlyphs[d]}
+                  size={28}
+                  color={disciplines.includes(d) ? disciplineAccents[d] : palette.textDisabled}
+                />
+              }
+            />
+          ))}
+        </>
+      ) : null}
+
       <Text style={styles.sectionTitle}>Home area</Text>
       <Body>
-        Used only to show mics near you. Never shown on your profile. Enter city and state, or
-        a ZIP code.
+        Used only to show mics near you. Never shown on your profile. Enter city and state, or a ZIP
+        code.
       </Body>
       <View style={styles.areaRow}>
         <View style={styles.areaCity}>
@@ -236,7 +326,12 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
       />
 
       {error ? <ErrorText>{error}</ErrorText> : null}
-      <Button label="Save" busy={update.isPending} disabled={update.isPending} onPress={save} />
+      <Button
+        label="Save"
+        busy={update.isPending || updateRoles.isPending}
+        disabled={update.isPending || updateRoles.isPending}
+        onPress={save}
+      />
     </ScrollView>
   );
 }

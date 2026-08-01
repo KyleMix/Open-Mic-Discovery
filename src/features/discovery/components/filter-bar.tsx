@@ -106,11 +106,7 @@ export function FilterBar() {
         contentContainerStyle={styles.row}
         accessibilityLabel="When and more filters"
       >
-        <Chip
-          label="Any day"
-          active={quickPick === 'any'}
-          onPress={() => filters.setDays([])}
-        />
+        <Chip label="Any day" active={quickPick === 'any'} onPress={() => filters.setDays([])} />
         <Chip
           label="Today"
           active={quickPick === 'today'}

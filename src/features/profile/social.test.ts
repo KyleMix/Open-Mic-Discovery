@@ -1,10 +1,4 @@
-import {
-  buildSocialLinks,
-  handleError,
-  normalizeHandle,
-  normalizeUrl,
-  urlError,
-} from './social';
+import { buildSocialLinks, handleError, normalizeHandle, normalizeUrl, urlError } from './social';
 
 describe('normalizeHandle', () => {
   it('strips a leading @', () => {

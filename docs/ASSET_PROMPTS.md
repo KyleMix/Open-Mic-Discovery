@@ -5,7 +5,8 @@ Prompt pack for generating the app's visual assets with an image generator. Prep
 Status of delivered assets:
 
 - [x] UI glyph set (10 glyphs): delivered, lives in `assets/glyphs/`, rendered by `src/components/glyph.tsx` with runtime tinting.
-- [ ] App icon, adaptive icon (foreground, monochrome), splash icon
+- [x] Logo: delivered by the owner, lives in `assets/brand/`, see the Logo section below.
+- [x] App icon, adaptive icon (foreground, monochrome), splash icon, favicon: generated from the logo by `scripts/brand/generate-assets.py`.
 - [ ] Android notification small icon
 - [ ] Map markers (4 discipline pins, stale pin, cluster bubble)
 - [ ] Empty state illustrations (5)
@@ -16,21 +17,27 @@ Status of delivered assets:
 
 Flat minimalist vector graphic for a dark-themed mobile app about open mic nights (music, comedy, poetry). Near-black background #0B0B0F unless transparency is requested. Clean geometric shapes, 2px uniform stroke weight, rounded line caps, generous negative space. Strictly limited palette: white #F4F4F6, gray #A8A8B3, plus at most ONE accent color per image. Accent colors: music blue #4DA6FF, comedy amber #FFB84D, poetry purple #C084FC, neutral gray #8A8A96. No gradients, no shadows, no 3D, no photorealism, no texture, no text unless specified. Centered composition, crisp edges, suitable for SVG conversion.
 
-## App icon
+## App icon, adaptive icon, splash icon, favicon (generated, not prompted)
 
-App icon, 1024x1024, filled square, no rounded corners, no transparency. A single bold microphone glyph in white centered on near-black #0B0B0F, with three small sound-wave arcs radiating from it, one arc in blue #4DA6FF, one in amber #FFB84D, one in purple #C084FC, representing music, comedy, and poetry. Extremely simple, must stay readable at 40 pixels. No text, no border, no gloss.
+Do not prompt an image generator for these. They are derived from the logo so
+the icon set always matches the mark. Run:
 
-## Adaptive icon foreground (Android)
+```
+python3 scripts/brand/generate-assets.py
+```
 
-Same microphone glyph with three colored arcs as the app icon, but on a fully transparent background, glyph occupying only the center 60% of the canvas with empty margin all around. 1024x1024.
+That writes, all from `assets/brand/mark.svg`:
 
-## Adaptive icon monochrome (Android themed)
+| File                                        | Size | Notes                                                 |
+| ------------------------------------------- | ---- | ----------------------------------------------------- |
+| `assets/images/icon.png`                    | 1024 | Opaque #0B0B0F, mark at 80% height.                   |
+| `assets/images/splash-icon.png`             | 1024 | Transparent, mark at 88%. Paired with imageWidth 132. |
+| `assets/images/favicon.png`                 | 196  | Transparent.                                          |
+| `assets/images/android-icon-foreground.png` | 1024 | Transparent, mark inside the center 60% safe zone.    |
+| `assets/images/android-icon-monochrome.png` | 1024 | White silhouette for Android themed icons.            |
+| `assets/images/android-icon-background.png` | 1024 | Solid #0B0B0F.                                        |
 
-Same microphone glyph with three arcs, entirely in solid white #FFFFFF on a transparent background, single flat silhouette with no color and no shading. 1024x1024, glyph within the center 60%.
-
-## Splash icon
-
-The microphone-with-three-arcs glyph in pure white on a transparent background, 1024x1024, centered, simple enough to display alone on a near-black launch screen.
+To change a size or a margin, edit the script rather than the PNGs.
 
 ## Notification small icon (Android)
 
@@ -65,21 +72,33 @@ Small square minimal line illustration, white 2px strokes, one accent color, tra
 
 Icon sheet of ten minimal line icons, white 2px stroke on transparent background, all on the same grid, identical visual weight, 24x24 style, no fills, no text: 1) eighth note, 2) open laughing mouth, 3) quill pen, 4) four-point spark, 5) raffle ticket, 6) numbered list with three rows, 7) bookmark over a chair seat, 8) sealed envelope, 9) checkmark inside a circle, 10) map pin with a small pencil overlapping it.
 
-## Logo: "Open Mic Finder"
+## Logo: "Open Mic Explorer" (delivered, do not regenerate)
 
-Primary horizontal lockup:
+The logo is final artwork supplied by the owner, not a generated asset. It is a
+map pin whose interior is a microphone, with the pin point drawn as a downward
+arrow, in brand green `#0FFEA7`.
 
-Minimalist professional logo for a mobile app called "Open Mic Finder". Flat vector, dark background #0B0B0F. Logo mark on the left: a simple geometric microphone built from clean 2px white line strokes with rounded caps, where the microphone head doubles as a map pin (teardrop pin silhouette with a round mic-grille head), and three small radiating sound-wave arcs to its right, the arcs in blue #4DA6FF, amber #FFB84D, and purple #C084FC. Wordmark to the right of the mark: "Open Mic Finder" in a clean geometric sans-serif typeface, white #F4F4F6, medium weight, generous letter spacing, all on one line. Strictly flat: no gradients, no shadows, no 3D, no texture, no outline box. Generous negative space, balanced composition, crisp edges suitable for SVG conversion. The mark must remain legible at 32 pixels tall.
+Source files in `assets/brand/`:
 
-Mark only (square, avatars and small placements):
+| File                    | What it is                                                 |
+| ----------------------- | ---------------------------------------------------------- |
+| `mark.svg`              | Vector mark, single path, `currentColor`. Source of truth. |
+| `mark.png` (1x, 2x, 3x) | Rasterized mark for `src/components/logo.tsx`.             |
+| `logo-mark-dark.png`    | Delivered mark on black, 500x500.                          |
+| `logo-lockup.png`       | Delivered lockup, transparent background.                  |
+| `logo-lockup-dark.png`  | Delivered lockup on black.                                 |
 
-Standalone logo mark, square 1:1, transparent background. A geometric microphone drawn in clean 2px white line strokes with rounded caps, its head merged with a map pin teardrop silhouette, three small radiating arcs in blue #4DA6FF, amber #FFB84D, and purple #C084FC. No text. Flat vector, no gradients, no shadows, no 3D. Centered with generous margin, legible at 24 pixels.
+Every icon in `assets/images/` is derived from `mark.svg` by
+`scripts/brand/generate-assets.py`. Run that script rather than editing the
+PNGs, so the icon set cannot drift from the logo:
 
-Light-background variant:
+```
+pip install pillow cairosvg
+python3 scripts/brand/generate-assets.py
+```
 
-Same "Open Mic Finder" logo lockup, but for light backgrounds: the microphone-pin mark and wordmark in near-black #0B0B0F strokes instead of white, keeping the three arcs in blue #4DA6FF, amber #FFB84D, and purple #C084FC. Transparent background, flat vector, no gradients or shadows.
-
-Note: "Open Mic Finder" is a candidate final name; the app config still carries the working name "OPEN MIC" until the name is finalized before store submission. If the generator mangles the wordmark text, generate the mark alone and set the wordmark in a real typeface in SVG instead.
+The wordmark is set as live text in `src/components/logo.tsx` (Poppins Regular,
+all caps) rather than shipped as a bitmap, so it scales and recolors cleanly.
 
 ## Generation tips
 

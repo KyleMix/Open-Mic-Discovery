@@ -14,16 +14,31 @@ import {
 } from 'react-native';
 
 import { Glyph, disciplineGlyphs, signupMethodGlyphs } from '@/components/glyph';
-import { Body, Button, ErrorText, Field, LoadingView, Screen, Title } from '@/components/ui';
+import {
+  Body,
+  Button,
+  ErrorText,
+  Field,
+  KeyboardShift,
+  LoadingView,
+  Screen,
+  Title,
+} from '@/components/ui';
 import { useSession } from '@/features/auth/session';
 import { addToCalendar } from '@/features/calendar/calendar';
 import { SIGNUP_METHOD_LABELS, costLabel } from '@/features/discovery/components/mic-card';
 import { freshness } from '@/features/discovery/freshness';
 import { useFlagListing, useMicDetail } from '@/features/discovery/queries';
 import { useIsFavorite, useToggleFavorite } from '@/features/favorites/queries';
+import { PlanToggle } from '@/features/plans/components/plan-toggle';
 import { useSubmitClaim } from '@/features/producer/queries';
+import { SignUpPrompt } from '@/features/auth/components/sign-up-prompt';
+import { shareMic } from '@/features/discovery/share';
 import { ReportModal } from '@/features/safety/components/report-modal';
 import { SignupCard } from '@/features/signups/components/signup-card';
+import { signupOpensClockTime } from '@/features/signups/window';
+import { isWalkIn } from '@/features/producer/signup-opens';
+import { eventDate, eventDateShort, eventTime } from '@/features/discovery/local-time';
 import { describeRecurrence, formatLocalTime } from '@/features/discovery/recurrence';
 import { disciplineAccents, fonts, palette, spacing, type, type Discipline } from '@/theme';
 import type { Database } from '@/types/database.types';
@@ -98,6 +113,7 @@ function MicDetail({
   const [flagOpen, setFlagOpen] = useState(false);
   const [claimOpen, setClaimOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [savePrompt, setSavePrompt] = useState(false);
 
   function openDirections() {
     if (!venue) {
@@ -123,7 +139,7 @@ function MicDetail({
         startsAt,
         endsAt,
         location: venue ? `${venue.name}, ${venue.address_line}, ${venue.city}` : series.title,
-        notes: `${SIGNUP_METHOD_LABELS[series.signup_method]} · ${costLabel(series.cost_cents)}. Added from Open Mic Finder.`,
+        notes: `${SIGNUP_METHOD_LABELS[series.signup_method]} · ${costLabel(series.cost_cents)}. Added from Open Mic Explorer.`,
       });
     } catch {
       // The person backed out of the system sheet or the platform refused;
@@ -147,9 +163,37 @@ function MicDetail({
           {(series.disciplines as Discipline[]).map((d) => (
             <Glyph key={d} name={disciplineGlyphs[d]} size={20} color={disciplineAccents[d]} />
           ))}
-          <FavoriteStar seriesId={series.id} />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Share ${series.title}`}
+            onPress={() =>
+              shareMic({
+                series_id: series.id,
+                title: series.title,
+                venue_name: venue?.name ?? null,
+                next_starts_at: next?.starts_at ?? null,
+                timezone: series.timezone,
+              }).catch(() => null)
+            }
+            style={styles.iconTap}
+          >
+            <Ionicons name="share-outline" size={24} color={palette.textSecondary} />
+          </Pressable>
+          <FavoriteStar seriesId={series.id} onSignedOutPress={() => setSavePrompt(true)} />
         </View>
       </View>
+
+      {savePrompt ? (
+        <SignUpPrompt
+          title="Save this mic"
+          reason="Favorites live with your account, so they follow you to any device."
+          perks={[
+            'A nudge on the morning it happens',
+            'Told the moment signups open',
+            'Get on the list without leaving the app',
+          ]}
+        />
+      ) : null}
 
       <View style={styles.freshRow}>
         <Glyph name="freshness-badge" size={16} color={fresh.color} />
@@ -160,19 +204,20 @@ function MicDetail({
         <Text style={styles.when}>{recurrence ?? 'Schedule varies'}</Text>
         {next ? (
           <Text style={styles.nextDate}>
-            Next:{' '}
-            {new Date(next.starts_at).toLocaleDateString(undefined, {
-              weekday: 'long',
-              month: 'long',
-              day: 'numeric',
-            })}
-            {next.doors_at
-              ? ` · Doors ${new Date(next.doors_at).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`
-              : ''}
+            Next: {eventDate(next.starts_at, series.timezone)}
+            {next.doors_at ? ` · Doors ${eventTime(next.doors_at, series.timezone)}` : ''}
           </Text>
         ) : (
           <Text style={styles.nextDate}>No upcoming dates listed</Text>
         )}
+        {/* A guest is the reason to pick this night over the next one, so it
+            sits with the date rather than further down the page. */}
+        {next?.featured_name ? (
+          <>
+            <Text style={styles.featured}>Featuring {next.featured_name}</Text>
+            {next.featured_note ? <Text style={styles.costNote}>{next.featured_note}</Text> : null}
+          </>
+        ) : null}
         {next ? (
           <Button label="Add to my calendar" kind="secondary" onPress={addNightToCalendar} />
         ) : null}
@@ -182,16 +227,27 @@ function MicDetail({
               .filter((o) => o.status === 'cancelled')
               .map(
                 (o) =>
-                  `${new Date(o.starts_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} is cancelled${o.cancellation_note ? `: ${o.cancellation_note}` : ''}`,
+                  `${eventDateShort(o.starts_at, series.timezone)} is cancelled${o.cancellation_note ? `: ${o.cancellation_note}` : ''}`,
               )
               .join('\n')}
           </Text>
         ) : null}
       </Card>
 
+      {/* Saying you are coming is separate from signing up, and works on
+          nights where there is no list to sign at all. */}
+      {next ? (
+        <PlanToggle
+          occurrence={next}
+          timezone={series.timezone}
+          signupMethod={series.signup_method}
+        />
+      ) : null}
+
       {next ? (
         <SignupCard
           occurrence={next}
+          timezone={series.timezone}
           signupMethod={series.signup_method}
           signupOpens={series.signup_opens}
           signupCloses={series.signup_closes}
@@ -212,6 +268,21 @@ function MicDetail({
           ) : null}
           {series.capacity ? <Fact label="Spots" value={String(series.capacity)} /> : null}
           <Fact label="Starts" value={formatLocalTime(series.start_time)} />
+          {/* A walk-in list is signed at the venue, so when the sheet goes out
+              is the thing a performer plans around. Only shown for walk-in:
+              every other method opens days ahead, where a clock time alone
+              would be meaningless. */}
+          {isWalkIn(series.signup_method)
+            ? (() => {
+                const opens = signupOpensClockTime(series.start_time, series.signup_opens);
+                return (
+                  <Fact
+                    label="List opens"
+                    value={opens.dayBefore ? `${opens.time} prev day` : opens.time}
+                  />
+                );
+              })()
+            : null}
         </View>
         {series.cost_note ? <Text style={styles.costNote}>{series.cost_note}</Text> : null}
       </Card>
@@ -321,76 +392,95 @@ function ClaimModal({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={close}>
-      <View style={styles.modalBackdrop}>
-        <View style={styles.modalSheet}>
-          {done ? (
-            <>
-              <Text style={styles.modalTitle}>Claim submitted</Text>
-              <Body>
-                We review claims by hand to keep listings trustworthy. Once approved, this mic
-                appears in your My Mics tab with full control.
-              </Body>
-              <Button label="Done" onPress={close} />
-            </>
-          ) : !session ? (
-            <>
-              <Text style={styles.modalTitle}>Sign in to claim</Text>
-              <Body>Claiming a mic needs an account so we can hand you the keys.</Body>
-              <Button
-                label="Sign in"
-                onPress={() => {
-                  close();
-                  router.push('/(auth)/sign-in');
-                }}
-              />
-              <Button label="Cancel" kind="secondary" onPress={close} />
-            </>
-          ) : (
-            <>
-              <Text style={styles.modalTitle}>Claim this mic</Text>
-              <Body>
-                Tell us how we can verify you run this night: your role, socials, or who at the
-                venue can vouch for you.
-              </Body>
-              <Field
-                label="How can we verify you?"
-                value={evidence}
-                onChangeText={setEvidence}
-                multiline
-                numberOfLines={3}
-                placeholder="I host every week; the bar manager Sam can confirm."
-              />
-              {claim.isError ? (
-                <ErrorText>
-                  {claim.error instanceof Error ? claim.error.message : 'Could not submit.'}
-                </ErrorText>
-              ) : null}
-              <Button
-                label="Submit claim"
-                busy={claim.isPending}
-                disabled={evidence.trim().length < 10}
-                onPress={() =>
-                  claim.mutate(
-                    { seriesId, userId: session.user.id, evidence: evidence.trim() },
-                    { onSuccess: () => setDone(true) },
-                  )
-                }
-              />
-              <Button label="Cancel" kind="secondary" onPress={close} />
-            </>
-          )}
+      <KeyboardShift>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalSheet}>
+            {done ? (
+              <>
+                <Text style={styles.modalTitle}>Claim submitted</Text>
+                <Body>
+                  We review claims by hand to keep listings trustworthy. Once approved, this mic
+                  appears in your My Mics tab with full control.
+                </Body>
+                <Button label="Done" onPress={close} />
+              </>
+            ) : !session ? (
+              <>
+                <Text style={styles.modalTitle}>Sign in to claim</Text>
+                <Body>Claiming a mic needs an account so we can hand you the keys.</Body>
+                <Button
+                  label="Sign in"
+                  onPress={() => {
+                    close();
+                    router.push('/(auth)/sign-in');
+                  }}
+                />
+                <Button label="Cancel" kind="secondary" onPress={close} />
+              </>
+            ) : (
+              <>
+                <Text style={styles.modalTitle}>Claim this mic</Text>
+                <Body>
+                  Tell us how we can verify you run this night: your role, socials, or who at the
+                  venue can vouch for you.
+                </Body>
+                <Field
+                  label="How can we verify you?"
+                  value={evidence}
+                  onChangeText={setEvidence}
+                  multiline
+                  numberOfLines={3}
+                  placeholder="I host every week; the bar manager Sam can confirm."
+                />
+                {claim.isError ? (
+                  <ErrorText>
+                    {claim.error instanceof Error ? claim.error.message : 'Could not submit.'}
+                  </ErrorText>
+                ) : null}
+                <Button
+                  label="Submit claim"
+                  busy={claim.isPending}
+                  disabled={evidence.trim().length < 10}
+                  onPress={() =>
+                    claim.mutate(
+                      { seriesId, userId: session.user.id, evidence: evidence.trim() },
+                      { onSuccess: () => setDone(true) },
+                    )
+                  }
+                />
+                <Button label="Cancel" kind="secondary" onPress={close} />
+              </>
+            )}
+          </View>
         </View>
-      </View>
+      </KeyboardShift>
     </Modal>
   );
 }
 
-function FavoriteStar({ seriesId }: { seriesId: string }) {
+function FavoriteStar({
+  seriesId,
+  onSignedOutPress,
+}: {
+  seriesId: string;
+  onSignedOutPress: () => void;
+}) {
   const { session } = useSession();
   const isFavorite = useIsFavorite(session?.user.id, seriesId);
   const toggle = useToggleFavorite();
+  // Signed out the star still shows and still responds. Hiding it hid the
+  // reason to make an account; tapping it now says what saving would do.
   if (!session) {
-    return null;
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Save this mic"
+        onPress={onSignedOutPress}
+        style={{ minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
+      >
+        <Ionicons name="star-outline" size={24} color={palette.textSecondary} />
+      </Pressable>
+    );
   }
   const active = isFavorite.data ?? false;
   return (
@@ -460,63 +550,65 @@ function FlagModal({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={close}>
-      <View style={styles.modalBackdrop}>
-        <View style={styles.modalSheet}>
-          {done ? (
-            <>
-              <Text style={styles.modalTitle}>Thanks for keeping it fresh</Text>
-              <Body>Your flag is in. Flags like this are what keep listings accurate.</Body>
-              <Button label="Done" onPress={close} />
-            </>
-          ) : !session ? (
-            <>
-              <Text style={styles.modalTitle}>Sign in to flag</Text>
-              <Body>Flagging a listing needs an account so we can follow up on fixes.</Body>
-              <Button
-                label="Sign in"
-                onPress={() => {
-                  close();
-                  router.push('/(auth)/sign-in');
-                }}
-              />
-              <Button label="Cancel" kind="secondary" onPress={close} />
-            </>
-          ) : (
-            <>
-              <Text style={styles.modalTitle}>What is wrong?</Text>
-              {FLAG_REASONS.map((r) => (
-                <Pressable
-                  key={r.reason}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: reason === r.reason }}
-                  onPress={() => setReason(r.reason)}
-                  style={[styles.reasonRow, reason === r.reason && styles.reasonRowActive]}
-                >
-                  <Text style={styles.reasonText}>{r.label}</Text>
-                </Pressable>
-              ))}
-              <Field
-                label="Details (optional)"
-                value={details}
-                onChangeText={setDetails}
-                placeholder="What should it say instead?"
-              />
-              {flag.isError ? (
-                <ErrorText>
-                  {flag.error instanceof Error ? flag.error.message : 'Could not submit.'}
-                </ErrorText>
-              ) : null}
-              <Button
-                label="Submit flag"
-                busy={flag.isPending}
-                disabled={!reason}
-                onPress={submit}
-              />
-              <Button label="Cancel" kind="secondary" onPress={close} />
-            </>
-          )}
+      <KeyboardShift>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalSheet}>
+            {done ? (
+              <>
+                <Text style={styles.modalTitle}>Thanks for keeping it fresh</Text>
+                <Body>Your flag is in. Flags like this are what keep listings accurate.</Body>
+                <Button label="Done" onPress={close} />
+              </>
+            ) : !session ? (
+              <>
+                <Text style={styles.modalTitle}>Sign in to flag</Text>
+                <Body>Flagging a listing needs an account so we can follow up on fixes.</Body>
+                <Button
+                  label="Sign in"
+                  onPress={() => {
+                    close();
+                    router.push('/(auth)/sign-in');
+                  }}
+                />
+                <Button label="Cancel" kind="secondary" onPress={close} />
+              </>
+            ) : (
+              <>
+                <Text style={styles.modalTitle}>What is wrong?</Text>
+                {FLAG_REASONS.map((r) => (
+                  <Pressable
+                    key={r.reason}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: reason === r.reason }}
+                    onPress={() => setReason(r.reason)}
+                    style={[styles.reasonRow, reason === r.reason && styles.reasonRowActive]}
+                  >
+                    <Text style={styles.reasonText}>{r.label}</Text>
+                  </Pressable>
+                ))}
+                <Field
+                  label="Details (optional)"
+                  value={details}
+                  onChangeText={setDetails}
+                  placeholder="What should it say instead?"
+                />
+                {flag.isError ? (
+                  <ErrorText>
+                    {flag.error instanceof Error ? flag.error.message : 'Could not submit.'}
+                  </ErrorText>
+                ) : null}
+                <Button
+                  label="Submit flag"
+                  busy={flag.isPending}
+                  disabled={!reason}
+                  onPress={submit}
+                />
+                <Button label="Cancel" kind="secondary" onPress={close} />
+              </>
+            )}
+          </View>
         </View>
-      </View>
+      </KeyboardShift>
     </Modal>
   );
 }
@@ -550,6 +642,12 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
     fontSize: type.title.fontSize,
     lineHeight: type.title.lineHeight,
+  },
+  iconTap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+    minWidth: 44,
   },
   glyphRow: {
     flexDirection: 'row',
@@ -615,6 +713,11 @@ const styles = StyleSheet.create({
   costNote: {
     color: palette.textSecondary,
     fontSize: type.caption.fontSize,
+  },
+  featured: {
+    color: disciplineAccents.music,
+    fontFamily: fonts.medium,
+    fontSize: type.body.fontSize,
   },
   venueName: {
     color: palette.text,

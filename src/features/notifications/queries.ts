@@ -3,7 +3,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { getSupabase } from '@/lib/supabase';
 import type { Database } from '@/types/database.types';
 
-type Prefs = Database['public']['Tables']['notification_prefs']['Insert'];
+// Callers send preference fields only; the mutation owns profile_id and the
+// server owns updated_at (sending it is what used to break these writes).
+type Prefs = Omit<
+  Database['public']['Tables']['notification_prefs']['Insert'],
+  'profile_id' | 'updated_at'
+>;
 
 export function useUpdatePrefs() {
   const queryClient = useQueryClient();

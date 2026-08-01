@@ -34,6 +34,14 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      # A green unit suite does not mean the app starts. A test file placed
+      # under src/app once became a real Expo Router route and crashed the
+      # bundle on launch while every test still passed. Exporting is the cheap
+      # check that the thing actually builds; the emulator run in e2e.yml is
+      # the expensive one.
+      - name: Bundle
+        run: npx expo export --platform web --output-dir .expo-ci-export
+
   timezone:
     name: Unit tests under a second timezone
     runs-on: ubuntu-latest

@@ -47,6 +47,7 @@ type FiltersState = DiscoveryFilters & {
   setRadiusKm: (km: number) => void;
   setFreeOnly: (freeOnly: boolean) => void;
   toggleMethod: (m: SignupMethod) => void;
+  setMethods: (methods: SignupMethod[]) => void;
   setTimeOfDay: (t: TimeOfDay | null) => void;
   reset: () => void;
 };
@@ -76,6 +77,7 @@ export const useFiltersStore = create<FiltersState>((set) => ({
   setRadiusKm: (radiusKm) => set({ radiusKm }),
   setFreeOnly: (freeOnly) => set({ freeOnly }),
   toggleMethod: (m) => set((s) => ({ methods: toggle(s.methods, m) })),
+  setMethods: (methods) => set({ methods }),
   setTimeOfDay: (timeOfDay) => set({ timeOfDay }),
   reset: () => set({ ...DEFAULT_FILTERS }),
 }));
@@ -100,10 +102,7 @@ export function dayQuickPick(days: number[], todayIso: number): DayQuickPick {
     return 'today';
   }
   const sorted = [...days].sort();
-  if (
-    sorted.length === WEEKEND_DAYS.length &&
-    sorted.every((d, i) => d === WEEKEND_DAYS[i])
-  ) {
+  if (sorted.length === WEEKEND_DAYS.length && sorted.every((d, i) => d === WEEKEND_DAYS[i])) {
     return 'weekend';
   }
   return 'custom';

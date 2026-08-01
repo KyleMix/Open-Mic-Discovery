@@ -7,16 +7,23 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { DarkTheme, Stack, ThemeProvider, useRouter, useSegments } from 'expo-router';
+import {
+  DarkTheme,
+  Stack,
+  ThemeProvider,
+  useRouter,
+  useSegments,
+  type ErrorBoundaryProps,
+} from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, type ReactNode } from 'react';
+import { useCallback, useEffect, type ReactNode } from 'react';
 
-import { Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
+import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { SessionProvider, useSession } from '@/features/auth/session';
 import { useLatestEula, useOwnProfile } from '@/features/auth/queries';
-import { registerPushToken } from '@/lib/notifications';
-import { queryClient } from '@/lib/query-client';
-import { initSentry } from '@/lib/sentry';
+import { registerPushToken, useNotificationTaps } from '@/lib/notifications';
+import { CACHE_BUSTER, queryClient } from '@/lib/query-client';
+import { initSentry, reportError } from '@/lib/sentry';
 import { palette } from '@/theme';
 
 const appTheme = {
@@ -57,13 +64,26 @@ function AuthGate({ children }: { children: ReactNode }) {
     }
   }, [session?.user.id]);
 
+  // Tapping a push lands on the mic it is about, cold start included.
+  const routeFromTap = useCallback(
+    (path: string) => {
+      router.push(path as Parameters<typeof router.push>[0]);
+    },
+    [router],
+  );
+  useNotificationTaps(routeFromTap);
+
   useEffect(() => {
     if (waiting || profile.isError || eula.isError) {
       return;
     }
     if (!session) {
-      if (!inAuthGroup || authScreen === 'eula' || authScreen === 'onboarding') {
-        router.replace('/(auth)/sign-in');
+      // Browsing is open. Discovery, search, and mic pages all read fine
+      // signed out, and the account is pitched where it actually pays off
+      // (getting on a list, favorites, running a mic) rather than at the door.
+      // Only the two screens that assume a session bounce back out.
+      if (authScreen === 'eula' || authScreen === 'onboarding') {
+        router.replace('/(tabs)');
       }
       return;
     }
@@ -79,7 +99,9 @@ function AuthGate({ children }: { children: ReactNode }) {
       }
       return;
     }
-    if (inAuthGroup) {
+    // reset-password keeps its recovery session on screen until the new
+    // password is saved; every other auth screen bounces into the app.
+    if (inAuthGroup && authScreen !== 'reset-password') {
       router.replace('/(tabs)');
     }
   }, [
@@ -115,6 +137,33 @@ function AuthGate({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+/**
+ * Last line of defense (Guideline 2.1: no crash paths).
+ *
+ * Expo Router renders this instead of the tree when a render or an effect
+ * throws anywhere below the root. Retry remounts the segment, so a transient
+ * failure (a realtime channel, a bad response) costs a tap rather than a
+ * relaunch. The message is shown because the person seeing it is usually the
+ * one who can report it.
+ */
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  useEffect(() => {
+    reportError(error);
+  }, [error]);
+
+  return (
+    <Screen>
+      <Title>Something went wrong</Title>
+      <Body>
+        That screen could not load. Trying again usually fixes it. If it keeps happening, the
+        details below are worth sending on.
+      </Body>
+      <ErrorText>{error.message}</ErrorText>
+      <Button label="Try again" onPress={() => retry()} />
+    </Screen>
+  );
+}
+
 // Cached server data survives restarts so listings stay readable offline
 // (performers check this app in parking lots with one bar of signal).
 const persister = createAsyncStoragePersister({ storage: AsyncStorage });
@@ -127,13 +176,13 @@ export default function RootLayout() {
   return (
     <PersistQueryClientProvider
       client={queryClient}
-      persistOptions={{ persister, maxAge: 24 * 60 * 60 * 1000 }}
+      persistOptions={{ persister, maxAge: 24 * 60 * 60 * 1000, buster: CACHE_BUSTER }}
     >
       <SessionProvider>
         <ThemeProvider value={appTheme}>
           <StatusBar style="light" />
           <AuthGate>
-            <Stack screenOptions={{ headerShown: false }}>
+            <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="(auth)" />
             </Stack>

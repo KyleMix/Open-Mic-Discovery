@@ -7,7 +7,7 @@
 # Docker is available; this script exists for environments where it is not.
 set -euo pipefail
 
-DB=openmic_verify
+DB=openmicexplorer_verify
 cd "$(dirname "$0")/../.."
 
 run_psql() {

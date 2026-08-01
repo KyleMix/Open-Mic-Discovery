@@ -1,8 +1,12 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { Glyph, disciplineGlyphs, signupMethodGlyphs } from '@/components/glyph';
+import { PressableScale } from '@/components/pressable-scale';
 import { formatMilesFromMeters } from '@/features/discovery/distance';
+import { eventDateShort } from '@/features/discovery/local-time';
 import { freshness } from '@/features/discovery/freshness';
+import { spotsLabel } from '@/features/signups/capacity';
 import type { NearbyMic } from '@/features/discovery/queries';
 import { describeRecurrence } from '@/features/discovery/recurrence';
 import { disciplineAccents, fonts, palette, spacing, type, type Discipline } from '@/theme';
@@ -23,43 +27,74 @@ export const SIGNUP_METHOD_DESCRIPTIONS: Record<NearbyMic['signup_method'], stri
   host_booked: 'The host chooses the lineup.',
 };
 
-export function formatNextDate(startsAt: string | null): string {
+export function formatNextDate(startsAt: string | null, timezone?: string | null): string {
   if (!startsAt) {
     return 'No upcoming date';
   }
-  const date = new Date(startsAt);
-  return date.toLocaleDateString(undefined, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  });
+  return eventDateShort(startsAt, timezone);
 }
 
 export function costLabel(costCents: number): string {
   return costCents === 0 ? 'Free' : `$${(costCents / 100).toFixed(costCents % 100 === 0 ? 0 : 2)}`;
 }
 
+/**
+ * What the card actually draws, rather than a whole nearby row. Search returns
+ * a slightly different shape, and both satisfy this, so a searched mic and a
+ * nearby mic render as the same card instead of two different formats.
+ */
+export type MicCardMic = {
+  series_id: string;
+  title: string;
+  disciplines: NearbyMic['disciplines'];
+  signup_method: NearbyMic['signup_method'];
+  cost_cents: number;
+  rrule: string;
+  start_time: string;
+  timezone: string | null;
+  last_confirmed_at: string | null;
+  venue_name: string;
+  neighborhood: string | null;
+  distance_m: number | null;
+  next_starts_at: string | null;
+  poster_url: string | null;
+  /** Guest on the next night, if the producer named one. */
+  featured_name: string | null;
+  /** Spots left on the next night; null when the host set no cap. */
+  spots_left: number | null;
+};
+
 type Props = {
-  mic: NearbyMic;
+  mic: MicCardMic;
   onPress: () => void;
 };
 
 export function MicCard({ mic, onPress }: Props) {
   const fresh = freshness(mic.last_confirmed_at, new Date());
+  const spots = spotsLabel(mic.spots_left);
   const recurrence = describeRecurrence(mic.rrule, mic.start_time);
 
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
       accessibilityLabel={`${mic.title} at ${mic.venue_name}`}
       onPress={onPress}
-      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      style={styles.card}
     >
       <View style={styles.accents}>
         {(mic.disciplines as Discipline[]).map((d) => (
           <View key={d} style={[styles.accentBar, { backgroundColor: disciplineAccents[d] }]} />
         ))}
       </View>
+      {mic.poster_url ? (
+        <Image
+          source={{ uri: mic.poster_url }}
+          accessibilityLabel={`${mic.title} poster`}
+          style={styles.poster}
+          contentFit="cover"
+          transition={150}
+        />
+      ) : null}
       <View style={styles.body}>
         <View style={styles.titleRow}>
           <Text numberOfLines={1} style={styles.title}>
@@ -76,7 +111,16 @@ export function MicCard({ mic, onPress }: Props) {
           {mic.neighborhood ? `, ${mic.neighborhood}` : ''}
           {mic.distance_m != null ? ` (${formatMilesFromMeters(mic.distance_m)})` : ''}
         </Text>
-        <Text style={styles.when}>{recurrence ?? formatNextDate(mic.next_starts_at)}</Text>
+        <Text style={styles.when}>
+          {recurrence ?? formatNextDate(mic.next_starts_at, mic.timezone)}
+        </Text>
+        {/* A guest is the reason someone picks one night over another, so it
+            belongs on the card rather than only on the mic page. */}
+        {mic.featured_name ? (
+          <Text numberOfLines={1} style={styles.featured}>
+            Featuring {mic.featured_name}
+          </Text>
+        ) : null}
         <View style={styles.metaRow}>
           <View style={styles.metaItem}>
             <Glyph
@@ -91,9 +135,16 @@ export function MicCard({ mic, onPress }: Props) {
             <Glyph name="freshness-badge" size={14} color={fresh.color} />
             <Text style={[styles.metaText, { color: fresh.color }]}>{fresh.label}</Text>
           </View>
+          {/* Full is the one state worth interrupting the row for: it changes
+              whether signing up gets you a slot or a place in the queue. */}
+          {spots ? (
+            <Text style={[styles.metaText, spots.tone !== 'plain' && styles.spotsAlert]}>
+              {spots.label}
+            </Text>
+          ) : null}
         </View>
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -106,14 +157,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     overflow: 'hidden',
   },
-  cardPressed: {
-    backgroundColor: palette.bgPressed,
-  },
   accents: {
     width: 4,
   },
   accentBar: {
     flex: 1,
+  },
+  poster: {
+    alignSelf: 'stretch',
+    backgroundColor: palette.bgPressed,
+    width: 72,
   },
   body: {
     flex: 1,
@@ -142,6 +195,15 @@ const styles = StyleSheet.create({
   },
   when: {
     color: palette.text,
+    fontSize: type.caption.fontSize,
+  },
+  spotsAlert: {
+    color: palette.danger,
+    fontFamily: fonts.medium,
+  },
+  featured: {
+    color: disciplineAccents.music,
+    fontFamily: fonts.medium,
     fontSize: type.caption.fontSize,
   },
   metaRow: {

@@ -48,6 +48,9 @@ export default function SignInScreen() {
         onChangeText={setPassword}
       />
       {error ? <ErrorText>{error}</ErrorText> : null}
+      <Link href="/(auth)/forgot-password">
+        <Text style={{ color: palette.textSecondary }}>Forgot password?</Text>
+      </Link>
       <Button
         label="Sign in"
         busy={busy === 'email'}

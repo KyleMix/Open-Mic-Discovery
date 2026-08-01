@@ -88,10 +88,28 @@ export function parseRrule(rrule: string): RecurrenceChoice | null {
 }
 
 /**
+ * The calendar date a person is standing in, not the UTC one.
+ *
+ * toISOString() converts to UTC first, so any evening west of Greenwich
+ * reports tomorrow's date. For an anchor that is not a cosmetic difference:
+ * a Sunday evening in Seattle becomes Monday, which is a different ISO week,
+ * and the generator computes biweekly parity per ISO week.
+ */
+function localCalendarDate(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/**
  * The anchor date fixes biweekly parity: it must land on a matching weekday
  * in the week of the first real occurrence. For weekly/monthly rules any
  * recent date works; for biweekly the caller says whether the mic happens
  * this week or next.
+ *
+ * The date has to be the producer's local one. Read in UTC, a mic set up on
+ * a Sunday evening anywhere west of Greenwich anchored to Monday, landing in
+ * the next ISO week and inverting every alternate week of the schedule, for
+ * good and without saying so.
  */
 export function computeAnchorDate(
   choice: RecurrenceChoice,
@@ -102,5 +120,5 @@ export function computeAnchorDate(
   if (choice.kind === 'biweekly' && biweeklyStartsNextWeek) {
     anchor.setDate(anchor.getDate() + 7);
   }
-  return anchor.toISOString().slice(0, 10);
+  return localCalendarDate(anchor);
 }

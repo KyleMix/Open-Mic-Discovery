@@ -4,20 +4,20 @@ Living document. Records the stack, the pinned version combination, and decision
 
 ## Stack
 
-| Layer         | Choice                                                                                                                                         |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Client        | Expo SDK 57, React Native 0.86, React 19, TypeScript strict                                                                                    |
-| Routing       | Expo Router (file based, typed routes enabled)                                                                                                 |
-| Server state  | TanStack Query v5 (all data from Supabase lives here)                                                                                          |
-| Client state  | Zustand v5 (UI-only state; server data never goes in Zustand)                                                                                  |
-| Backend       | Supabase: Postgres + PostGIS, Auth, Storage, Realtime, Edge Functions                                                                          |
-| Maps          | react-native-maps with supercluster-based clustering (Phase 2)                                                                                 |
-| Location      | expo-location, foreground only, requested in context                                                                                           |
-| Notifications | expo-notifications + Expo Push (Phase 4+)                                                                                                      |
-| Payments      | RevenueCat for Producer Pro subscription; paid slots use an external processor, never IAP (Apple 3.1.5(a), see docs/STEP0_PROPOSAL.md flag F4) |
-| Errors        | Sentry via @sentry/react-native config plugin (added Phase 1)                                                                                  |
-| Build/ship    | EAS Build, EAS Submit, EAS Update                                                                                                              |
-| Tests         | Jest + jest-expo + React Native Testing Library; Maestro for e2e; pgTAP for RLS                                                                |
+| Layer         | Choice                                                                                                    |
+| ------------- | --------------------------------------------------------------------------------------------------------- |
+| Client        | Expo SDK 57, React Native 0.86, React 19, TypeScript strict                                               |
+| Routing       | Expo Router (file based, typed routes enabled)                                                            |
+| Server state  | TanStack Query v5 (all data from Supabase lives here)                                                     |
+| Client state  | Zustand v5 (UI-only state; server data never goes in Zustand)                                             |
+| Backend       | Supabase: Postgres + PostGIS, Auth, Storage, Realtime, Edge Functions                                     |
+| Maps          | react-native-maps with supercluster-based clustering (Phase 2)                                            |
+| Location      | expo-location, foreground only, requested in context                                                      |
+| Notifications | expo-notifications + Expo Push (Phase 4+)                                                                 |
+| Payments      | None. No in-app purchase and no payment SDK. Venue slot fees are settled outside the app (Apple 3.1.5(a)) |
+| Errors        | Sentry via @sentry/react-native config plugin (added Phase 1)                                             |
+| Build/ship    | EAS Build, EAS Submit, EAS Update                                                                         |
+| Tests         | Jest + jest-expo + React Native Testing Library; Maestro for e2e; pgTAP for RLS                           |
 
 ## The architecture and animation combination (pinned)
 
@@ -25,12 +25,14 @@ Living document. Records the stack, the pinned version combination, and decision
 
 Pinned pairs that must move together, never via a transitive bump:
 
-- `react-native-reanimated` 4.5.0 + `react-native-worklets` 0.10.0 (the SDK 57 template pairing; upgrade only both at once, only to a pairing Expo documents as SDK-compatible)
+- `react-native-reanimated` 4.5.1 + `react-native-worklets` 0.10.1 (upgrade only both at once, only to a pairing Expo documents as SDK-compatible; bumped together from 4.5.0/0.10.0 on 2026-07-30 because `npx expo install --check` named both for SDK 57)
 - All `expo-*` packages upgrade via `npx expo install`, never by hand, so they stay SDK-matched.
 
 Renovate/dependabot, when added, must be configured to exclude these from automatic major bumps.
 
 ## Decisions log
+
+- **2026-07-30, SDK 57 patch alignment.** `npx expo install --check` named fourteen packages behind the SDK, so all of them moved at once: expo 57.0.9, react-native 0.86.2, expo-router 57.0.9, and the rest. Reanimated and worklets moved together (4.5.0/0.10.0 to 4.5.1/0.10.1), which is the only way that pair is allowed to move, and Expo's own compatibility list is the authority that sanctions the new pairing. `@expo/vector-icons` and `@react-native-async-storage/async-storage` were tightened to the exact ranges the SDK pins, since a caret there lets a future install drift off the SDK unnoticed. All 37 SDK-managed dependencies now match `expo/bundledNativeModules.json` exactly. Applying this needs a clean install: `expo install --fix` against a populated node_modules fails with an ERESOLVE on react-native, because npm resolves the new peer set against the old tree.
 
 - **2026-07-28, TypeScript ~6.0.3.** Step 0 proposed ~5.9, but the SDK 57 template pins ~6.0 (still the standard TypeScript compiler). We follow the template pin. npm `latest` is now TypeScript 7 (the Go compiler); we do not adopt it until the Expo toolchain does.
 - **2026-07-28, React Compiler experiment stays on.** The SDK 57 template enables `experiments.reactCompiler`. Kept: it removes a class of manual memoization work. If it miscompiles anything we turn it off in app.json and note it here.
@@ -49,12 +51,21 @@ Renovate/dependabot, when added, must be configured to exclude these from automa
 - **2026-07-28, discovery queries live in SQL RPCs.** `mics_near` (ST_DWithin radius, `<->` KNN ordering, all filters server side) and `search_mics` are SECURITY INVOKER so RLS applies to anonymous discovery. The client never does distance math.
 - **2026-07-28, clustering via supercluster directly.** As planned in Step 0: a small in-house map component feeds `supercluster` and renders glyph markers, instead of depending on the unmaintained react-native-map-clustering wrapper.
 - **2026-07-28, offline reads via TanStack Query persistence.** PersistQueryClientProvider with an AsyncStorage persister (24 h maxAge) keeps listing data readable without a connection. This covers the offline-tolerance standard without a custom cache layer.
-- **2026-07-28, brand.** Official name: Open Mic Finder. Logo recreated as vector components (react-native-svg) in src/components/logo.tsx; wordmark typography is Poppins (loaded at the root layout). The three logo arcs are the discipline accents from src/theme/tokens.ts.
+- **2026-07-28, brand.** Working name Open Mic Finder, with the logo recreated as react-native-svg components. Superseded by the 2026-07-30 entry below.
+- **2026-07-30, rebrand to Open Mic Explorer.** Official name, identifiers, and artwork all changed together. The logo is owner-supplied artwork, not a recreation: a map pin whose interior is a microphone with a downward-arrow pin point, in brand green `#0FFEA7` (`palette.brand`). `assets/brand/mark.svg` is the single vector source; `scripts/brand/generate-assets.py` derives every app icon, the splash icon, and the favicon from it, so the icon set cannot drift from the mark. `src/components/logo.tsx` renders the rasterized mark through expo-image and keeps the wordmark as live Poppins text so it scales and recolors. The stock Expo `assets/expo.icon` bundle was removed along with the `ios.icon` override, so iOS builds from `icon.png`; an Icon Composer layered icon can be added later if wanted. Identifiers moved to `com.openmicexplorer.app`, slug and scheme `openmicexplorer`. EULA 1.2 (migration `20260730000100`) carries the new name forward from 1.1, including the 18+ age gate, and renames the `enforce_age_gate` error message; 1.0 and 1.1 are retained because `profiles.eula_version` references them. The `openmicfinder.app` domain is deliberately NOT renamed: it hosts the live delete-account page, the app association files, and the privacy and terms pages. Only the app id (`com.openmicexplorer.app`) and the URL scheme (`openmicexplorer://`) moved, so the association files and the Supabase Auth redirect allowlist both need updating. See docs/DEPLOY_WEB.md.
 
 - **2026-07-28, notification outbox pattern.** Database triggers and scheduled queue functions write to notification_outbox; the push-sender Edge Function drains it via Expo Push under the service role. Notifications are decoupled from request paths and every enqueue is idempotent per subject.
 - **2026-07-28, list reorder without a drag dependency.** The producer list uses up/down controls instead of drag-to-reorder: the maintained drag-list libraries predate Reanimated 4 and the New Architecture. Revisit when a compatible library stabilizes; the set_slot_order RPC already accepts an arbitrary full ordering, so only the gesture layer would change.
-- **2026-07-28, monetization boundaries.** RevenueCat handles only the Producer Pro subscription. Freshness actions (create, confirm, cancel) are never paywalled; performer features are free permanently; paid reserved slots are settled outside the app (Apple 3.1.5(a)). Entitlement resolution is a tested pure function; unconfigured production builds fail closed.
+- **2026-07-28, monetization boundaries.** RevenueCat gated signup list management and listing analytics behind a Producer Pro subscription. Superseded by the 2026-07-30 entry below.
+- **2026-07-30, everything free, no payment SDK.** Owner decision for launch: every feature is free to every account, so the paywall, the entitlement resolver, and react-native-purchases are removed rather than left switched on. Gating was client-side only (no `is_pro` column, no entitlement in RLS), so nothing changed in the database. This also takes the app out of scope for Apple 3.1.2 entirely: no in-app purchase means no paywall requirements and no Restore Purchases. Charging later means adding a payment SDK back and gating the new features, not flipping a flag; that is deliberate, since a dormant paywall is a liability at review time. The privacy and terms links that lived on the paywall moved to Settings (`src/features/legal/links.ts`) so they did not disappear with it.
 - **2026-07-28, Sentry.** Initialized only when EXPO_PUBLIC_SENTRY_DSN is set; sendDefaultPii is off and no user identity is attached, matching the privacy declarations.
+
+- **2026-07-29, web deletion path shares the in-app deletion body.** Google Play requires deletion that works after uninstall. `private.delete_account_for(uuid)` holds the single deletion implementation; `delete_account()` (in-app) and `delete_account_web(uuid)` (service role, called by the deletion-request Edge Function after magic-link identity confirmation) both run it, so the two paths cannot drift. Accounts that never finished onboarding are deletable too. Static page: `web/delete-account/`; deployment: `docs/DEPLOY_WEB.md`.
+- **2026-07-29, age gate is 18, enforced in the database.** The audit brief left IN_APP_AGE_GATE blank, so the stated default of 18 applies. A BEFORE trigger on profiles rejects missing or under-18 birth years for end-user writes; EULA 1.1 carries the matching clause. The store rating targets Apple's 16+ tier; the in-app gate is the stricter control.
+- **2026-07-29, rate limiting via fixed-window counters.** `private.rate_limit(key, max_calls, window, now)` backed by `private.rate_limit_counters`, with an injectable clock for tests. Applied by BEFORE INSERT triggers with these defaults: reports 5 per user per hour, listing flags 5 per user per hour, claim requests 3 per user per day, signups 30 per user per day. The deletion-request Edge Function enforces 3 per email per hour and 10 per IP per hour in code through the service-role RPC deletion_request_allowed (salted hashes only). Admins and service-role flows are exempt.
+- **2026-07-29, age signal plumbing behind a flag.** `src/features/auth/ageSignal.ts` wraps expo-age-range behind `AGE_SIGNAL_ENABLED` (default false, set via EXPO_PUBLIC_AGE_SIGNAL_ENABLED). When enabled, a platform age signal below the in-app gate routes into the existing block path at signup; only a boolean pass/fail is ever derived and nothing is stored. This exists so Texas-style age verification laws can be satisfied with a config flip, not a rebuild.
+
+- **2026-07-29, expo-calendar stays on the legacy entry point.** SDK 57 deprecates `createEventInCalendarAsync` from the main entry in favor of an object-oriented API, but the new API's event form requires at least write-only calendar permission, while the legacy function opens the system event sheet with no permission. Our declared privacy posture (no calendar permission, the system UI owns the write) depends on that, so `src/features/calendar/calendar.ts` imports from `expo-calendar/legacy` on purpose. Revisit only if the permissionless form is added to the new API.
 
 ## Repo layout
 

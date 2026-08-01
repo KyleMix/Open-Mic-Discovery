@@ -27,6 +27,13 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
 }));
 jest.mock('@/features/auth/session', () => ({ useSession: jest.fn() }));
+// OfflineBanner renders on the success path and calls Network.useNetworkState.
+// Without a native module that hook returns undefined, and offline-banner.tsx
+// reads `state.isInternetReachable` straight off it, so the whole screen
+// unmounts and renders null. Any screen test that reaches a list needs this.
+jest.mock('expo-network', () => ({
+  useNetworkState: () => ({ isConnected: true, isInternetReachable: true }),
+}));
 
 const mockedSession = jest.mocked(useSession);
 
@@ -48,6 +55,9 @@ function serverReplies(handler: FakeHandler): void {
   jest.mocked(getSupabase).mockReturnValue(createFakeSupabase(handler).client);
 }
 
+// Mirrors the select in useFavorites. The screen feeds these straight into
+// MicCard, so a field missing here renders an empty card rather than failing
+// loudly, which is why the success test asserts on the title it should draw.
 const ONE_FAVORITE = [
   {
     series_id: 'series-1',
@@ -56,10 +66,14 @@ const ONE_FAVORITE = [
       id: 'series-1',
       title: 'Tuesday Comedy Night',
       disciplines: ['comedy'],
+      signup_method: 'walk_in',
+      cost_cents: 0,
       rrule: 'FREQ=WEEKLY;BYDAY=TU',
       start_time: '20:00:00',
+      timezone: 'America/Los_Angeles',
       last_confirmed_at: '2026-07-27T00:00:00Z',
-      venue: { name: 'The Blue Room', city: 'Seattle' },
+      poster_url: null,
+      venue: { name: 'The Blue Room', city: 'Seattle', neighborhood: 'Capitol Hill' },
     },
   },
 ];
@@ -82,8 +96,13 @@ describe('the favorites screen', () => {
 
     await render(<FavoritesScreen />, { wrapper });
 
-    expect(await screen.findByText(/Sign in to save the mics you love/)).toBeTruthy();
-    expect(screen.getByLabelText('Sign in')).toBeTruthy();
+    // The reason to sign in, not a bare empty list. The wording is the
+    // product's, so this asserts the prompt is present and says why.
+    expect(await screen.findByText('Keep the mics you actually go to')).toBeTruthy();
+    expect(
+      screen.getByText(/Favorites live with your account, so they follow you to any device/),
+    ).toBeTruthy();
+    expect(screen.queryByText('No favorites yet')).toBeNull();
   });
 
   it('shows a loading state while the request is still open', async () => {
