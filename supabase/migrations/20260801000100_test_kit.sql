@@ -262,11 +262,14 @@ begin
   into v_home
   from public.profiles p where p.id = auth.uid();
 
+  -- stage_name is the public identity (display_name is private), so both are
+  -- set explicitly rather than leaning on any fallback.
   insert into public.profiles
-    (id, handle, display_name, bio, home_city, home_region, home_lat, home_lng,
-     birth_year, is_performer, is_producer, is_admin, eula_version, moderation_status)
+    (id, handle, display_name, stage_name, bio, home_city, home_region,
+     home_lat, home_lng, birth_year, is_performer, is_producer, is_admin,
+     eula_version, moderation_status)
   values
-    (v_id, v_handle::public.citext, v_name, 'Test account from the test kit.',
+    (v_id, v_handle::public.citext, v_name, v_name, 'Test account from the test kit.',
      coalesce(v_home.home_city, 'Seattle'), coalesce(v_home.home_region, 'WA'),
      coalesce(v_home.home_lat, 47.6062), coalesce(v_home.home_lng, -122.3321),
      1992, true, true, false,
@@ -742,7 +745,7 @@ begin
        from (select kind, count(*) as n from public.test_kit_objects group by kind) t),
       '{}'::jsonb),
     'logins', coalesce(
-      (select jsonb_agg(jsonb_build_object('email', u.email, 'name', p.display_name)
+      (select jsonb_agg(jsonb_build_object('email', u.email, 'name', p.stage_name)
                         order by u.email)
        from public.test_kit_objects o
        join auth.users u on u.id = o.row_id

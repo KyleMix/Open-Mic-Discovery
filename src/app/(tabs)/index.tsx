@@ -1,16 +1,26 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  FlatList,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
 import { Body, Button, ErrorText, LoadingView } from '@/components/ui';
 import { useOwnProfile, usePerformerDisciplines } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
 import { FilterBar } from '@/features/discovery/components/filter-bar';
-import { MicCard, formatNextDate } from '@/features/discovery/components/mic-card';
+import { OfflineBanner } from '@/components/offline-banner';
+import { MicCard } from '@/features/discovery/components/mic-card';
 import { MicMap } from '@/features/discovery/components/mic-map';
+import { resolveDiscoverCenter, SEATTLE_FALLBACK_NOTE } from '@/features/discovery/center';
 import { radiusLabel } from '@/features/discovery/distance';
-import { DEFAULT_CENTER, requestForegroundLocation } from '@/features/discovery/location';
+import { requestForegroundLocation } from '@/features/discovery/location';
 import { sortSoonestNearest } from '@/features/discovery/order';
 import { useNearbyMics, useSearchMics } from '@/features/discovery/queries';
 import { useFiltersStore } from '@/stores/filters';
@@ -34,7 +44,7 @@ export default function DiscoverScreen() {
     profile.data?.home_lat != null && profile.data?.home_lng != null
       ? { lat: profile.data.home_lat, lng: profile.data.home_lng }
       : null;
-  const center = manualCenter ?? profileCenter ?? DEFAULT_CENTER;
+  const center = resolveDiscoverCenter(manualCenter, profileCenter);
 
   // First open defaults the discipline chips to what this performer does.
   useEffect(() => {
@@ -48,7 +58,7 @@ export default function DiscoverScreen() {
   const [search, setSearch] = useState('');
 
   const nearby = useNearbyMics(filters, center);
-  const searchResults = useSearchMics(search);
+  const searchResults = useSearchMics(search, center);
   const searching = search.trim().length >= 2;
 
   // The list leads with what is happening soonest, closest first.
@@ -76,6 +86,7 @@ export default function DiscoverScreen() {
 
   return (
     <View style={styles.container}>
+      <OfflineBanner />
       <View style={styles.searchRow}>
         <TextInput
           accessibilityLabel="Search by city or venue"
@@ -111,6 +122,9 @@ export default function DiscoverScreen() {
         </Pressable>
       </View>
       {locationNote ? <Text style={styles.locationNote}>{locationNote}</Text> : null}
+      {center.source === 'seattle_fallback' && !searching ? (
+        <Text style={styles.locationNote}>{SEATTLE_FALLBACK_NOTE}</Text>
+      ) : null}
 
       {searching ? (
         <SearchResults state={searchResults} onSelect={openMic} />
@@ -128,8 +142,8 @@ export default function DiscoverScreen() {
             <View style={styles.stateWrap}>
               <Text style={styles.emptyTitle}>No mics here yet</Text>
               <Body>
-                Nothing within {radiusLabel(filters.radiusKm)} matches. Try a bigger distance or
-                tap Clear all. Know a mic we are missing? Add it from the My Mics tab.
+                Nothing within {radiusLabel(filters.radiusKm)} matches. Try a bigger distance or tap
+                Clear all. Know a mic we are missing? Add it from the My Mics tab.
               </Body>
               <Button label="Clear all filters" kind="secondary" onPress={filters.reset} />
             </View>
@@ -145,6 +159,15 @@ export default function DiscoverScreen() {
                 <MicCard mic={item} onPress={() => openMic(item.series_id)} />
               )}
               contentContainerStyle={styles.list}
+              // Freshness is the product, so a way to ask for it again is the
+              // first thing anyone reaches for on this screen.
+              refreshControl={
+                <RefreshControl
+                  refreshing={nearby.isFetching}
+                  onRefresh={nearby.refetch}
+                  tintColor={palette.textSecondary}
+                />
+              }
             />
           )}
         </>
@@ -184,22 +207,12 @@ function SearchResults({
       data={state.data}
       keyExtractor={(r) => r.series_id}
       contentContainerStyle={styles.list}
-      renderItem={({ item }) => (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`${item.title} in ${item.city}`}
-          onPress={() => onSelect(item.series_id)}
-          style={({ pressed }) => [
-            styles.searchResult,
-            pressed && { backgroundColor: palette.bgPressed },
-          ]}
-        >
-          <Text style={styles.searchResultTitle}>{item.title}</Text>
-          <Text style={styles.searchResultMeta}>
-            {item.venue_name}, {item.city} · {formatNextDate(item.next_starts_at)}
-          </Text>
-        </Pressable>
-      )}
+      ListHeaderComponent={
+        <Text style={styles.resultCount}>
+          {state.data.length === 1 ? '1 mic found' : `${state.data.length} mics found`}
+        </Text>
+      }
+      renderItem={({ item }) => <MicCard mic={item} onPress={() => onSelect(item.series_id)} />}
     />
   );
 }
@@ -261,21 +274,9 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
     fontSize: type.heading.fontSize,
   },
-  searchResult: {
-    backgroundColor: palette.bgElevated,
-    borderColor: palette.border,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: spacing.xs,
-    padding: spacing.md,
-  },
-  searchResultTitle: {
-    color: palette.text,
-    fontFamily: fonts.medium,
-    fontSize: type.body.fontSize,
-  },
-  searchResultMeta: {
+  resultCount: {
     color: palette.textSecondary,
     fontSize: type.caption.fontSize,
+    paddingBottom: spacing.xs,
   },
 });

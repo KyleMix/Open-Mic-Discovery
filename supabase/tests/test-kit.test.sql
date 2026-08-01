@@ -46,9 +46,11 @@ select set_config(
   '{"sub":"00000000-0000-4000-a000-0000000000ff","role":"authenticated"}',
   true
 );
-insert into profiles (id, handle, display_name, home_city, home_region, birth_year, eula_version)
-values ('00000000-0000-4000-a000-0000000000ff', 'owner_signup', 'Kyle',
-        'Seattle', 'WA', 1990, '1.0');
+insert into profiles (id, handle, display_name, stage_name, home_city, home_region,
+                      birth_year, eula_version)
+values ('00000000-0000-4000-a000-0000000000ff', 'owner_signup', 'Kyle', 'Kyle',
+        'Seattle', 'WA', 1990,
+        (select version from eula_versions order by published_at desc limit 1));
 reset role;
 
 select ok(

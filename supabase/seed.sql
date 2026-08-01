@@ -21,25 +21,25 @@ insert into auth.users
    reauthentication_token)
 values
   ('00000000-0000-4000-a000-000000000001', '00000000-0000-0000-0000-000000000000',
-   'authenticated', 'authenticated', 'performer@demo.openmic.local',
+   'authenticated', 'authenticated', 'performer@demo.openmicexplorer.local',
    crypt('demo-pass-1234', gen_salt('bf')), now(),
    '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', '', '', '', '', ''),
   ('00000000-0000-4000-a000-000000000002', '00000000-0000-0000-0000-000000000000',
-   'authenticated', 'authenticated', 'producer@demo.openmic.local',
+   'authenticated', 'authenticated', 'producer@demo.openmicexplorer.local',
    crypt('demo-pass-1234', gen_salt('bf')), now(),
    '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', '', '', '', '', ''),
   ('00000000-0000-4000-a000-000000000003', '00000000-0000-0000-0000-000000000000',
-   'authenticated', 'authenticated', 'dual@demo.openmic.local',
+   'authenticated', 'authenticated', 'dual@demo.openmicexplorer.local',
    crypt('demo-pass-1234', gen_salt('bf')), now(),
    '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', '', '', '', '', ''),
   ('00000000-0000-4000-a000-000000000004', '00000000-0000-0000-0000-000000000000',
-   'authenticated', 'authenticated', 'admin@demo.openmic.local',
+   'authenticated', 'authenticated', 'admin@demo.openmicexplorer.local',
    crypt('demo-pass-1234', gen_salt('bf')), now(),
    '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', '', '', '', '', ''),
   -- Owner/tester account: performer + producer + admin in one login.
   ('00000000-0000-4000-a000-000000000005', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated', 'kylewmixon@gmail.com',
-   crypt('openmic-tester-2026', gen_salt('bf')), now(),
+   crypt('openmicexplorer-tester-2026', gen_salt('bf')), now(),
    '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', '', '', '', '', '');
 
 insert into auth.identities
@@ -48,26 +48,29 @@ select gen_random_uuid(), u.id, u.id::text, 'email',
        jsonb_build_object('sub', u.id::text, 'email', u.email, 'email_verified', true),
        now(), now(), now()
 from auth.users u
-where u.email like '%@demo.openmic.local' or u.email = 'kylewmixon@gmail.com';
+where u.email like '%@demo.openmicexplorer.local' or u.email = 'kylewmixon@gmail.com';
 
-insert into profiles (id, handle, display_name, bio, home_city, home_region, home_lat, home_lng,
-                      birth_year, is_performer, is_producer, is_admin, eula_version, moderation_status)
+-- display_name is the private name; stage_name is what everyone else sees.
+-- The demo performers deliberately differ so the split is visible on a roster.
+insert into profiles (id, handle, display_name, stage_name, bio, home_city, home_region,
+                      home_lat, home_lng, birth_year, is_performer, is_producer, is_admin,
+                      eula_version, moderation_status)
 values
-  ('00000000-0000-4000-a000-000000000001', 'demo_performer', 'Demi Performer',
+  ('00000000-0000-4000-a000-000000000001', 'demo_performer', 'Demi Performer', 'Demi Delta',
    'Acoustic sets and the occasional poem.', 'Seattle', 'WA', 47.6062, -122.3321,
-   1994, true, false, false, '1.0', 'approved'),
-  ('00000000-0000-4000-a000-000000000002', 'demo_producer', 'Pat Producer',
+   1994, true, false, false, '1.2', 'approved'),
+  ('00000000-0000-4000-a000-000000000002', 'demo_producer', 'Pat Producer', 'Pat Producer',
    'I run rooms around Capitol Hill.', 'Seattle', 'WA', 47.6062, -122.3321,
-   1987, false, true, false, '1.0', 'approved'),
-  ('00000000-0000-4000-a000-000000000003', 'demo_dual', 'Dana Dual',
+   1987, false, true, false, '1.2', 'approved'),
+  ('00000000-0000-4000-a000-000000000003', 'demo_dual', 'Dana Dual', 'Dana Danger',
    'Comic who also hosts a weekly.', 'Portland', 'OR', 45.5152, -122.6784,
-   1991, true, true, false, '1.0', 'approved'),
-  ('00000000-0000-4000-a000-000000000004', 'demo_admin', 'Alex Admin',
+   1991, true, true, false, '1.2', 'approved'),
+  ('00000000-0000-4000-a000-000000000004', 'demo_admin', 'Alex Admin', 'Alex Admin',
    'Keeping listings fresh.', 'Seattle', 'WA', 47.6062, -122.3321,
-   1985, false, false, true, '1.0', 'approved'),
-  ('00000000-0000-4000-a000-000000000005', 'kyle', 'Kyle',
-   'Building Open Mic Finder.', 'Seattle', 'WA', 47.6062, -122.3321,
-   1990, true, true, true, '1.0', 'approved');
+   1985, false, false, true, '1.2', 'approved'),
+  ('00000000-0000-4000-a000-000000000005', 'kyle', 'Kyle', 'Kyle',
+   'Building Open Mic Explorer.', 'Seattle', 'WA', 47.6062, -122.3321,
+   1990, true, true, true, '1.2', 'approved');
 
 -- Social links on a couple of demo profiles so the profile screens have
 -- something to render.
@@ -76,8 +79,8 @@ set link_instagram = 'demi.performer',
     link_website = 'https://demiperformer.example.com'
 where id = '00000000-0000-4000-a000-000000000001';
 update profiles
-set link_instagram = 'openmicfinder',
-    link_youtube = 'https://youtube.com/@openmicfinder'
+set link_instagram = 'openmicexplorer',
+    link_youtube = 'https://youtube.com/@openmicexplorer'
 where id = '00000000-0000-4000-a000-000000000005';
 
 -- The owner account already has its performer and producer rows: the owner
@@ -93,8 +96,8 @@ set disciplines = excluded.disciplines,
     tags = excluded.tags;
 
 insert into producer_profiles (profile_id, contact_email, contact_phone, verified) values
-  ('00000000-0000-4000-a000-000000000002', 'pat@demo.openmic.local', '+12065550142', true),
-  ('00000000-0000-4000-a000-000000000003', 'dana@demo.openmic.local', null, false),
+  ('00000000-0000-4000-a000-000000000002', 'pat@demo.openmicexplorer.local', '+12065550142', true),
+  ('00000000-0000-4000-a000-000000000003', 'dana@demo.openmicexplorer.local', null, false),
   ('00000000-0000-4000-a000-000000000005', 'kylewmixon@gmail.com', null, true)
 on conflict (profile_id) do update
 set contact_email = excluded.contact_email,
@@ -255,6 +258,33 @@ where o.series_id = '20000000-0000-4000-c000-000000000001'
   and o.starts_at > now()
 order by o.starts_at
 limit 1;
+
+-- Plans on the next walk-in night at the mic demo_producer runs, so the
+-- producer screens have a headcount to show and the Going tab is not empty.
+-- One performer, one person coming to watch: the split the producer reads.
+insert into attendance_plans (occurrence_id, profile_id)
+select o.id, p.id
+from mic_occurrences o
+cross join (values
+  ('00000000-0000-4000-a000-000000000001'::uuid),
+  ('00000000-0000-4000-a000-000000000003'::uuid)
+) as p(id)
+where o.series_id = '20000000-0000-4000-c000-000000000001'
+  and o.starts_at > now()
+  and o.starts_at = (
+    select min(o2.starts_at) from mic_occurrences o2
+    where o2.series_id = o.series_id and o2.starts_at > now()
+  );
+
+-- A guest on one upcoming night, which is what the featured line renders from.
+update mic_occurrences
+set featured_name = 'Marisol Vega',
+    featured_note = 'Touring songwriter, playing a short set before the list starts.'
+where id = (
+  select o.id from mic_occurrences o
+  where o.series_id = '20000000-0000-4000-c000-000000000001' and o.starts_at > now()
+  order by o.starts_at limit 1
+);
 
 insert into favorites (profile_id, series_id) values
   ('00000000-0000-4000-a000-000000000001', '20000000-0000-4000-c000-000000000001'),

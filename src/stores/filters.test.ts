@@ -6,6 +6,7 @@ import {
   hasActiveFilters,
   isoWeekday,
   sheetFilterCount,
+  useFiltersStore,
 } from './filters';
 
 const CENTER = { lat: 47.6174, lng: -122.3199 };
@@ -90,5 +91,14 @@ describe('sheetFilterCount', () => {
         today,
       ),
     ).toBe(3);
+  });
+});
+
+describe('useFiltersStore setMethods', () => {
+  it('replaces the whole method selection at once', () => {
+    useFiltersStore.getState().setMethods(['lottery', 'reserved_slot']);
+    expect(useFiltersStore.getState().methods).toEqual(['lottery', 'reserved_slot']);
+    useFiltersStore.getState().setMethods([]);
+    expect(useFiltersStore.getState().methods).toEqual([]);
   });
 });

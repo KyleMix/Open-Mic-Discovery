@@ -20,7 +20,6 @@ import {
   shiftOffsets,
   type ScenarioKey,
 } from '@/features/testkit/scenarios';
-import { useTestOverridesStore, type ProOverride } from '@/stores/test-overrides';
 import { disciplineAccents, fonts, minTouchTarget, palette, spacing, type } from '@/theme';
 
 /**
@@ -44,9 +43,6 @@ export default function TestKitScreen() {
   const setRoles = useSetTestRoles();
   const setEnabled = useSetTestKitEnabled();
   const reset = useResetTestData();
-
-  const proOverride = useTestOverridesStore((s) => s.proOverride);
-  const setProOverride = useTestOverridesStore((s) => s.setProOverride);
 
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -265,35 +261,6 @@ export default function TestKitScreen() {
               )
             }
           />
-        </View>
-      </View>
-
-      {/* ----------------------------------------------------------------- */}
-      <Text style={styles.sectionTitle}>Producer Pro</Text>
-      <View style={styles.item}>
-        <Text style={styles.itemBody}>
-          Force the subscription gate either way, on this device only, without buying anything. It
-          clears when you restart the app.
-        </Text>
-        <View style={styles.chipRow}>
-          {(
-            [
-              { key: 'off', label: 'Normal' },
-              { key: 'entitled', label: 'Pro unlocked' },
-              { key: 'locked', label: 'Pro locked' },
-            ] as { key: ProOverride; label: string }[]
-          ).map((option) => (
-            <Chip
-              key={option.key}
-              label={option.label}
-              active={proOverride === option.key}
-              accent={disciplineAccents.poetry}
-              onPress={() => {
-                setProOverride(option.key);
-                setMessage(`Producer Pro: ${option.label.toLowerCase()}.`);
-              }}
-            />
-          ))}
         </View>
       </View>
 

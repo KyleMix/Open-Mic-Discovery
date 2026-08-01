@@ -51,9 +51,6 @@ now wherever you are.
 - **Your roles.** Turn performer or producer off to see the app the way
   somebody without that role sees it. Admin deliberately stays on, so you can
   always get back to this screen.
-- **Producer Pro.** Force the subscription gate open or closed on this device
-  only, with no purchase. It clears on app restart and grants nothing server
-  side.
 - **Test sign-ins.** Every generated account uses the password
   `openmic-test-1234` at an `@openmic.test` address. Sign in as one on a
   second device to watch a roster update live from both sides.
@@ -98,5 +95,5 @@ anyone.
 ## Local verification
 
 ```bash
-bash scripts/db/verify-local.sh   # migrations, seed, and 156 pgTAP assertions
+bash scripts/db/verify-local.sh   # migrations, seed, and 266 pgTAP assertions
 ```

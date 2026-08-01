@@ -10,7 +10,9 @@ export function useFavorites(userId: string | undefined) {
       const { data, error } = await getSupabase()
         .from('favorites')
         .select(
-          'series_id, created_at, series:mic_series(id, title, disciplines, rrule, start_time, last_confirmed_at, venue:venues(name, city))',
+          // Everything the discovery card draws, so a favorite renders as the same
+          // card as the mic it was saved from.
+          'series_id, created_at, series:mic_series(id, title, disciplines, signup_method, cost_cents, rrule, start_time, timezone, last_confirmed_at, poster_url, venue:venues(name, city, neighborhood))',
         )
         .eq('profile_id', userId!)
         .order('created_at', { ascending: false });

@@ -75,8 +75,8 @@ export default function EulaScreen() {
     <Screen>
       <Title>Before you continue</Title>
       <Body>
-        Open Mic Finder has zero tolerance for abusive behavior and objectionable content. Read and
-        accept the terms to continue.
+        Open Mic Explorer has zero tolerance for abusive behavior and objectionable content. Read
+        and accept the terms to continue.
       </Body>
       <ScrollView style={styles.terms} accessibilityLabel="Terms of use text">
         <Text style={styles.termsText}>{eula.data.body_md}</Text>

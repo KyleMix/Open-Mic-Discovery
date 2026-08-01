@@ -1,23 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
-import { useSession } from '@/features/auth/session';
-import { useProStatus } from '@/features/pro/use-pro';
 import { getSupabase } from '@/lib/supabase';
 import { fonts, palette, spacing, type } from '@/theme';
 
-/** Producer Pro: signups and turnout per night for one listing. */
+/** Signups and turnout per night for one listing. */
 export default function AnalyticsScreen() {
-  const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { session } = useSession();
-  const pro = useProStatus(session?.user.id);
 
   const stats = useQuery({
     queryKey: ['analytics', id],
-    enabled: !!id && (pro.data?.entitled ?? false),
+    enabled: !!id,
     queryFn: async () => {
       const supabase = getSupabase();
       const { data: occurrences, error } = await supabase
@@ -33,18 +28,6 @@ export default function AnalyticsScreen() {
     },
   });
 
-  if (pro.isPending) {
-    return <LoadingView label="Loading analytics" />;
-  }
-  if (pro.data && !pro.data.entitled) {
-    return (
-      <Screen>
-        <Title>Listing analytics</Title>
-        <Body>Signups and turnout per night are part of Producer Pro.</Body>
-        <Button label="See Producer Pro" onPress={() => router.push('/paywall')} />
-      </Screen>
-    );
-  }
   if (stats.isPending) {
     return <LoadingView label="Crunching the numbers" />;
   }

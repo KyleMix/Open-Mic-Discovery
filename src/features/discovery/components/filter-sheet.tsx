@@ -1,5 +1,6 @@
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { MultiSelectField } from '@/components/select';
 import { Button, ToggleRow } from '@/components/ui';
 import {
   SIGNUP_METHOD_DESCRIPTIONS,
@@ -50,7 +51,11 @@ function SheetChip({
   );
 }
 
-function Section({ title, caption, children }: {
+function Section({
+  title,
+  caption,
+  children,
+}: {
   title: string;
   caption?: string;
   children: React.ReactNode;
@@ -131,15 +136,17 @@ export function FilterSheet({ visible, onClose }: { visible: boolean; onClose: (
               title="How you get on stage"
               caption="Only show mics that sign people up this way."
             >
-              {METHODS.map((m) => (
-                <ToggleRow
-                  key={m}
-                  label={SIGNUP_METHOD_LABELS[m]}
-                  description={SIGNUP_METHOD_DESCRIPTIONS[m]}
-                  value={filters.methods.includes(m)}
-                  onToggle={() => filters.toggleMethod(m)}
-                />
-              ))}
+              <MultiSelectField
+                label="Signup style"
+                placeholder="Any way"
+                values={filters.methods}
+                options={METHODS.map((m) => ({
+                  value: m,
+                  label: SIGNUP_METHOD_LABELS[m],
+                  description: SIGNUP_METHOD_DESCRIPTIONS[m],
+                }))}
+                onChange={filters.setMethods}
+              />
             </Section>
 
             <Section title="How far will you go?">

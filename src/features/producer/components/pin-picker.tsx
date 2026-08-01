@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 
@@ -11,17 +12,36 @@ type Props = {
   onChange: (pin: Pin) => void;
 };
 
-/** Native venue pin-drop: tap the map to place the venue. */
+/** Native venue pin-drop: tap the map to place the venue, or drag it after the
+ * address lookup has placed it. */
 export function PinPicker({ pin, onChange }: Props) {
+  const map = useRef<MapView | null>(null);
+  const lat = pin?.lat;
+  const lng = pin?.lng;
+
+  // The address lookup sets the pin from outside, and the map opens on the
+  // default center, so without this the marker lands off screen and the
+  // producer sees an empty map as if nothing happened.
+  useEffect(() => {
+    if (lat === undefined || lng === undefined) {
+      return;
+    }
+    map.current?.animateToRegion(
+      { latitude: lat, longitude: lng, latitudeDelta: 0.01, longitudeDelta: 0.01 },
+      400,
+    );
+  }, [lat, lng]);
+
   return (
     <View style={styles.mapBox}>
       <MapView
+        ref={map}
         style={StyleSheet.absoluteFill}
         initialRegion={{
-          latitude: DEFAULT_CENTER.lat,
-          longitude: DEFAULT_CENTER.lng,
-          latitudeDelta: 0.2,
-          longitudeDelta: 0.2,
+          latitude: pin?.lat ?? DEFAULT_CENTER.lat,
+          longitude: pin?.lng ?? DEFAULT_CENTER.lng,
+          latitudeDelta: pin ? 0.01 : 0.2,
+          longitudeDelta: pin ? 0.01 : 0.2,
         }}
         onPress={(e) =>
           onChange({
@@ -31,7 +51,18 @@ export function PinPicker({ pin, onChange }: Props) {
         }
         accessibilityLabel="Map for placing the venue pin"
       >
-        {pin ? <Marker coordinate={{ latitude: pin.lat, longitude: pin.lng }} /> : null}
+        {pin ? (
+          <Marker
+            draggable
+            coordinate={{ latitude: pin.lat, longitude: pin.lng }}
+            onDragEnd={(e) =>
+              onChange({
+                lat: e.nativeEvent.coordinate.latitude,
+                lng: e.nativeEvent.coordinate.longitude,
+              })
+            }
+          />
+        ) : null}
       </MapView>
     </View>
   );

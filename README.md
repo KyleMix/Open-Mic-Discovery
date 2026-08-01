@@ -1,4 +1,4 @@
-# Open Mic Finder
+# Open Mic Explorer
 
 Find local open mics for music, comedy, and poetry. Sign up for a slot without leaving the app. Producers keep listings fresh and manage the night.
 
@@ -10,10 +10,17 @@ Prerequisites: Node 22+, Docker (for local Supabase).
 
 ```bash
 npm install
-cp .env.example .env
-npm run db:start        # local Supabase; copy the printed anon key into .env
-npm start               # Expo dev server
+npm run dev:up          # starts local Supabase and writes .env for you
+npm run web             # fastest loop: the app in a browser
 ```
+
+`npm run dev:up` reads the running Supabase stack and fills in
+`EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`, so the anon key
+never has to be copied by hand.
+
+Testing on an Android emulator or a phone needs a different Supabase host than
+the browser does. **docs/DEV_PC.md** covers all three, plus demo accounts, what
+degrades where, and the common failure symptoms.
 
 ## Testing the app as the owner
 

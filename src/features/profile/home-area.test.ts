@@ -40,14 +40,16 @@ describe('homeAreaQuery', () => {
 
 describe('homeAreaLabel', () => {
   it('renders city, state when present', () => {
-    expect(
-      homeAreaLabel({ home_city: 'Seattle', home_region: 'WA', home_postal_code: null }),
-    ).toBe('Seattle, WA');
+    expect(homeAreaLabel({ home_city: 'Seattle', home_region: 'WA', home_postal_code: null })).toBe(
+      'Seattle, WA',
+    );
   });
   it('falls back to the ZIP, then null', () => {
     expect(homeAreaLabel({ home_city: null, home_region: null, home_postal_code: '98101' })).toBe(
       '98101',
     );
-    expect(homeAreaLabel({ home_city: null, home_region: null, home_postal_code: null })).toBeNull();
+    expect(
+      homeAreaLabel({ home_city: null, home_region: null, home_postal_code: null }),
+    ).toBeNull();
   });
 });
