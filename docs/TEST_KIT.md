@@ -42,42 +42,52 @@ Profile tab, **Testing tools**. The button only appears for admins, and every
 function behind it is refused server side for anyone else, so a non-admin who
 guesses the route gets nothing.
 
-## What each scenario builds
+## The tests
 
-| Scenario                      | What lands                                                                                                                                    | What it is for                                                             |
-| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| A show already running        | Started 20 minutes ago: two performed, one no-show, somebody on stage, the next one on deck, two more to go, and a full list with two waiting | Live mode from the middle of a night, which is the only place it gets used |
-| A mic of mine, starting soon  | One listing you own starting in 90 minutes, 6 performers already on the list                                                                  | Night-of roster, reorder, on deck, realtime, mark performed                |
-| A lottery waiting to be drawn | Your lottery mic in 3 hours, 9 names for 5 slots, nothing drawn                                                                               | The draw, who gets in, who waitlists, the pushes that follow               |
-| A week of other people's mics | 6 listings over 7 days: every discipline, free and paid, 1 km out to 40 km                                                                    | Discovery filters, sorting, the map, distances, method labels              |
-| A listing to claim            | One unclaimed mic near you, plus a pending claim from somebody else                                                                           | Claiming with a verification note, and the admin claim queue               |
-| Three freshness states        | Listings confirmed 2 days ago, 30 days ago, and never                                                                                         | The last-confirmed badge in green, amber, and gray, side by side           |
-| A full moderation queue       | A held profile, a held listing, an abuse report, a data-quality flag                                                                          | The queue: approve, reject, resolve, dismiss                               |
-| Me, on three lists            | Signs you up for three mics (confirmed, waitlisted, requested) and follows all three                                                          | The performer side: signup cards, favorites, day-of reminders              |
+Each one is a lane: one button that builds the situation and then puts you
+inside it. Nothing asks you to set something up and then go find it, because
+that is the step where a test gets abandoned. Back out of the screen it lands
+on and you are in Testing tools again, ready for the next.
 
-Scenarios stack. Run them all and you have a populated city.
+| Test                | What it builds                                                                                  | Where it lands   |
+| ------------------- | ----------------------------------------------------------------------------------------------- | ---------------- |
+| Run a live show     | A night already running: 2 performed, 1 no-show, one on stage, next on deck, 2 to go, 2 waiting | Live             |
+| Work tonight's list | A mic you run, starting soon, with 6 performers signed up                                       | The night's list |
+| Draw a lottery      | 9 names in the hat for 5 slots, nothing drawn                                                   | The night's list |
+| Browse and filter   | 6 listings over a week: every discipline, free and paid, walking distance out to a drive        | Discover         |
+| Claim a listing     | An unclaimed mic near you, plus a pending claim from somebody else                              | The mic page     |
+| Compare freshness   | Three listings confirmed 2 days ago, 30 days ago, and never                                     | Discover         |
+| Work the queue      | A held profile, a held listing, an abuse report, a data-quality flag                            | Moderation queue |
+| Be a performer      | You on three lists (confirmed, waitlisted, requested), following all three                      | Going            |
+
+Each card says what to try once you are there, so read it before tapping.
+
+Tests stack: run them all and you have a populated city.
 
 Every mic is placed relative to **your** home area and scheduled relative to
 **your** device timezone, so "starting in 90 minutes" means 90 minutes from
 now wherever you are.
 
-## The other tools
+A lane that cannot reach its screen does not navigate. If a scenario returns
+without the ids the destination needs (which is what a stale database does),
+the screen says so instead of pushing a blank page.
 
-- **The time machine.** Move the next test night to 5, 15, 30, 60, or 180
-  minutes from now. This is how you watch a signup window close, the night-of
-  view open, and day-of reminders fire without waiting for the calendar. The
-  local date is recomputed in the series timezone, so nothing goes naive.
-- **Run it live.** Opens Live on the next test night. Live only opens an hour
-  before a night starts, so when the night is further out than that the button
-  says "Move it close and run it live" and does both. Whether the window is
-  open is answered by the database, which already knows the time.
-- **Rewind the show.** Puts everyone who went up back on the list, clears the
-  on-deck flags, and reopens the controls, so the same night can be run again
-  instead of rebuilt. Waitlisted names stay waitlisted: they never got on, so
-  promoting them would be a different night. A lottery night rewinds to drawn
-  rather than confirmed, because that is the state its list fills into.
-- **Add performers.** Puts test performers on any night, including a real
-  listing of your own. Useful for loading up a mic you actually run.
+## The tools
+
+Not tests: the adjustments a test needs. Each one acts on the night you last
+built and then opens it, so you can see what it did.
+
+- **Move it (5, 15, 30, 60, 180 minutes)** then opens the mic page, so a
+  signup window can be watched opening and closing without waiting for the
+  calendar. The local date is recomputed in the series timezone, so nothing
+  goes naive, and an ended show reopens.
+- **Add 3 performers and open the list.** Works on a real listing of yours
+  too, not only on test data.
+- **Rewind it and run it live.** Everyone who went up goes back on the list,
+  on-deck flags clear, the controls reopen, and it moves the night into the
+  live window first if it is further out than an hour. Waitlisted names stay
+  waitlisted: they never got on. A lottery night rewinds to drawn rather than
+  confirmed, because that is the state its list fills into.
 - **Your roles.** Turn performer or producer off to see the app the way
   somebody without that role sees it. Admin deliberately stays on, so you can
   always get back to this screen.

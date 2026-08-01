@@ -17,10 +17,11 @@ import {
   useTestKitStatus,
 } from '@/features/testkit/queries';
 import {
+  destinationPath,
   scenarios,
   shiftLabel,
   shiftOffsets,
-  type ScenarioKey,
+  type Scenario,
 } from '@/features/testkit/scenarios';
 import { disciplineAccents, fonts, minTouchTarget, palette, spacing, type } from '@/theme';
 
@@ -50,10 +51,6 @@ export default function TestKitScreen() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmingReset, setConfirmingReset] = useState(false);
-  const [lastResult, setLastResult] = useState<{
-    seriesId?: string;
-    occurrenceId?: string;
-  } | null>(null);
 
   if (profile.isPending) {
     return <LoadingView label="Loading" />;
@@ -91,25 +88,21 @@ export default function TestKitScreen() {
   const night = s.next_night;
   const stale = (s.kit_version ?? 0) < EXPECTED_KIT_VERSION;
 
-  // Live opens an hour before a night starts, so a scenario that builds one
-  // further out than that has to be moved before it can be run. The server
-  // answers this, which is the difference between "Run it live" working and
-  // landing on Not yet.
+  // Live only opens an hour before a night starts, so a night further out
+  // than that has to be moved before it can be run. Answered by the server,
+  // which already knows the time.
   const needsShift = !!night && night.live_open === false;
 
-  const goLive = (occurrenceId: string) => {
-    if (!needsShift) {
-      router.push(`/producer/live/${occurrenceId}`);
-      return;
-    }
+  /** Do the thing, then open the screen that shows what it did. */
+  const lane = (promise: Promise<unknown>, path: string, label: string) => {
     setError(null);
     setMessage(null);
-    shift
-      .mutateAsync({ occurrenceId, minutes: 30 })
-      .then(() => router.push(`/producer/live/${occurrenceId}`))
-      .catch((e: unknown) =>
-        setError(e instanceof Error ? e.message : 'Could not move that night.'),
-      );
+    promise
+      .then(() => {
+        setMessage(label);
+        router.push(path as Parameters<typeof router.push>[0]);
+      })
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'That did not work.'));
   };
 
   const run = (label: string, promise: Promise<unknown>) => {
@@ -120,14 +113,29 @@ export default function TestKitScreen() {
       .catch((e: unknown) => setError(e instanceof Error ? e.message : 'That did not work.'));
   };
 
-  const onSeed = (key: ScenarioKey) => {
+  /**
+   * One lane: build the situation, then walk straight into it. Setting
+   * something up and leaving the person to go find it is the step where a
+   * test gets abandoned, so there is no gap between the two here. Backing out
+   * of wherever this lands returns to this screen.
+   */
+  const startLane = (scenario: Scenario) => {
     setError(null);
     setMessage(null);
     seed
-      .mutateAsync(key)
+      .mutateAsync(scenario.key)
       .then((result) => {
+        const path = destinationPath(scenario.destination, {
+          seriesId: result.series_id,
+          occurrenceId: result.occurrence_id,
+        });
+        if (!path) {
+          // Better to say so than to push a screen with nothing in it.
+          setError('That scenario did not build what this test needs. Check the test kit version.');
+          return;
+        }
         setMessage(result.summary);
-        setLastResult({ seriesId: result.series_id, occurrenceId: result.occurrence_id });
+        router.push(path as Parameters<typeof router.push>[0]);
       })
       .catch((e: unknown) =>
         setError(e instanceof Error ? e.message : 'Could not build that scenario.'),
@@ -181,60 +189,44 @@ export default function TestKitScreen() {
       {message ? <Text style={styles.success}>{message}</Text> : null}
       {error ? <ErrorText>{error}</ErrorText> : null}
 
-      {lastResult?.occurrenceId || lastResult?.seriesId ? (
-        <View style={styles.actions}>
-          {lastResult.occurrenceId ? (
-            <Button
-              label={needsShift ? 'Move it close and run it live' : 'Run it live'}
-              busy={shift.isPending}
-              onPress={() => goLive(lastResult.occurrenceId!)}
-            />
-          ) : null}
-          {lastResult.occurrenceId ? (
-            <Button
-              label="Open the roster"
-              kind="secondary"
-              onPress={() => router.push(`/producer/night/${lastResult.occurrenceId}`)}
-            />
-          ) : null}
-          {lastResult.seriesId ? (
-            <Button
-              label="Open the listing"
-              kind="secondary"
-              onPress={() => router.push(`/mic/${lastResult.seriesId}`)}
-            />
-          ) : null}
-        </View>
-      ) : null}
-
       {/* ----------------------------------------------------------------- */}
-      <Text style={styles.sectionTitle}>Build a scenario</Text>
+      <Text style={styles.sectionTitle}>Tests</Text>
+      <Body>
+        Each one builds what it needs and takes you straight into it. Come back with the back arrow
+        when you are done.
+      </Body>
       {scenarios.map((scenario) => (
         <View key={scenario.key} style={styles.item}>
-          <Text style={styles.itemTitle}>{scenario.label}</Text>
-          <Text style={styles.itemBody}>{scenario.detail}</Text>
-          <Text style={styles.itemCaption}>Check: {scenario.checks}</Text>
+          {/* The button is the test, not a footnote under a heading that
+              repeats it. Everything below is what it builds and what to do
+              once you are there. */}
           <Button
-            label="Set it up"
+            label={scenario.label}
             busy={seed.isPending && seed.variables === scenario.key}
             disabled={busy || !s.enabled}
-            onPress={() => onSeed(scenario.key)}
+            onPress={() => startLane(scenario)}
           />
+          <Text style={styles.itemBody}>{scenario.detail}</Text>
+          <Text style={styles.itemCaption}>Try: {scenario.tryThis}</Text>
         </View>
       ))}
 
       {/* ----------------------------------------------------------------- */}
-      <Text style={styles.sectionTitle}>The next test night</Text>
+      <Text style={styles.sectionTitle}>Tools</Text>
+      <Body>
+        Not tests, but the adjustments a test needs. Each one acts on the night you last built and
+        then opens it, so you can see what it did.
+      </Body>
       {night ? (
         <View style={styles.item}>
           <Text style={styles.itemTitle}>{night.title}</Text>
           <Text style={styles.itemBody}>
             {new Date(night.starts_at).toLocaleString()} (in your device timezone)
           </Text>
+
           <Text style={styles.itemCaption}>
-            Move it closer to see signups close, the night-of view open, and day-of reminders fire
-            without waiting. Rewinding puts everyone who went up back on the list and reopens the
-            show, so the same night can be run again.
+            Move it and open the mic page, to watch the signup window open and close without waiting
+            for the calendar.
           </Text>
           <View style={styles.chipRow}>
             {shiftOffsets.map((minutes) => (
@@ -243,54 +235,49 @@ export default function TestKitScreen() {
                 label={shiftLabel(minutes)}
                 disabled={busy}
                 onPress={() =>
-                  run(
-                    `Moved to ${shiftLabel(minutes)} from now.`,
+                  lane(
                     shift.mutateAsync({ occurrenceId: night.occurrence_id, minutes }),
+                    `/mic/${night.series_id}`,
+                    `Moved to ${shiftLabel(minutes)} from now.`,
                   )
                 }
               />
             ))}
           </View>
-          <View style={styles.actions}>
-            <Button
-              label="Add 3 performers"
-              kind="secondary"
-              disabled={busy}
-              onPress={() =>
-                run(
-                  'Added performers to the list.',
-                  fillRoster.mutateAsync({ occurrenceId: night.occurrence_id, count: 3 }),
-                )
-              }
-            />
-            <Button
-              label="Rewind the show"
-              kind="secondary"
-              disabled={busy}
-              onPress={() =>
-                run(
-                  'Everyone is back on the list and the show is open again.',
-                  restart.mutateAsync(night.occurrence_id),
-                )
-              }
-            />
-          </View>
-          <View style={styles.actions}>
-            <Button
-              label={needsShift ? 'Move it close and run it live' : 'Run it live'}
-              busy={shift.isPending}
-              disabled={busy}
-              onPress={() => goLive(night.occurrence_id)}
-            />
-            <Button
-              label="Open the roster"
-              kind="secondary"
-              onPress={() => router.push(`/producer/night/${night.occurrence_id}`)}
-            />
-          </View>
+
+          <Button
+            label="Add 3 performers and open the list"
+            kind="secondary"
+            disabled={busy}
+            onPress={() =>
+              lane(
+                fillRoster.mutateAsync({ occurrenceId: night.occurrence_id, count: 3 }),
+                `/producer/night/${night.occurrence_id}`,
+                'Added performers to the list.',
+              )
+            }
+          />
+          <Button
+            label="Rewind it and run it live"
+            kind="secondary"
+            disabled={busy}
+            onPress={() =>
+              lane(
+                restart
+                  .mutateAsync(night.occurrence_id)
+                  .then(() =>
+                    needsShift
+                      ? shift.mutateAsync({ occurrenceId: night.occurrence_id, minutes: 30 })
+                      : null,
+                  ),
+                `/producer/live/${night.occurrence_id}`,
+                'Everyone is back on the list and the show is open again.',
+              )
+            }
+          />
         </View>
       ) : (
-        <Body>No test nights yet. Build a scenario above and this fills in.</Body>
+        <Body>No test nights yet. Run a test above and this fills in.</Body>
       )}
 
       {/* ----------------------------------------------------------------- */}
@@ -367,7 +354,6 @@ export default function TestKitScreen() {
               busy={reset.isPending}
               onPress={() => {
                 setConfirmingReset(false);
-                setLastResult(null);
                 run('Test data removed.', reset.mutateAsync());
               }}
             />
