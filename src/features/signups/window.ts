@@ -6,16 +6,38 @@
 export type WindowState =
   { state: 'not_yet'; opensAt: Date } | { state: 'open'; closesAt: Date } | { state: 'closed' };
 
-/** Parses a Postgres interval string: "7 days", "02:00:00", "1 day 02:30:00". */
+/**
+ * Parses a Postgres interval: "7 days", "02:00:00", "1 day 02:30:00".
+ *
+ * It also reads the written form this app produces before Postgres has
+ * normalized it ("90 minutes", "3 hours"). Reading from the database that
+ * never happens, because Postgres renders the clock form back. But this
+ * function decides whether the Sign up button appears, and an unrecognized
+ * interval here parses as zero, which reads as "signups open at showtime"
+ * and hides the button for the entire window. Silently agreeing with
+ * producer/signup-opens.ts, which writes the column, is cheaper than finding
+ * out which of the two a future caller reaches for.
+ */
 export function parseIntervalMs(interval: string): number {
   let ms = 0;
-  const dayMatch = interval.match(/(\d+)\s+day/);
-  if (dayMatch) {
-    ms += Number(dayMatch[1]) * 24 * 60 * 60 * 1000;
+  const days = interval.match(/(\d+)\s*days?/);
+  if (days) {
+    ms += Number(days[1]) * 24 * 60 * 60 * 1000;
   }
-  const timeMatch = interval.match(/(\d+):(\d{2}):(\d{2})/);
-  if (timeMatch) {
-    ms += (Number(timeMatch[1]) * 3600 + Number(timeMatch[2]) * 60 + Number(timeMatch[3])) * 1000;
+  // Only when there is no clock part, or "1 day 02:30:00" would count its
+  // hours twice.
+  const clock = interval.match(/(\d+):(\d{2}):(\d{2})/);
+  if (clock) {
+    ms += (Number(clock[1]) * 3600 + Number(clock[2]) * 60 + Number(clock[3])) * 1000;
+  } else {
+    const hours = interval.match(/(\d+)\s*hours?/);
+    if (hours) {
+      ms += Number(hours[1]) * 60 * 60 * 1000;
+    }
+    const minutes = interval.match(/(\d+)\s*min(?:ute)?s?/);
+    if (minutes) {
+      ms += Number(minutes[1]) * 60 * 1000;
+    }
   }
   return ms;
 }

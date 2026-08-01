@@ -1,11 +1,6 @@
 import { describeRecurrence } from '@/features/discovery/recurrence';
 
-import {
-  buildRrule,
-  computeAnchorDate,
-  parseRrule,
-  type RecurrenceChoice,
-} from './rrule-builder';
+import { buildRrule, computeAnchorDate, parseRrule, type RecurrenceChoice } from './rrule-builder';
 
 describe('buildRrule', () => {
   it('builds weekly rules with sorted days', () => {

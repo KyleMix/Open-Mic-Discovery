@@ -142,5 +142,5 @@ anyone.
 ## Local verification
 
 ```bash
-bash scripts/db/verify-local.sh   # migrations, seed, and 283 pgTAP assertions
+bash scripts/db/verify-local.sh   # migrations, seed, and 290 pgTAP assertions
 ```

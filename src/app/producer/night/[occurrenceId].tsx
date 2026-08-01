@@ -66,6 +66,11 @@ export default function NightScreen() {
   );
   const pending = rows.filter((r) => r.status === 'requested');
   const waitlist = rows.filter((r) => r.status === 'waitlisted');
+  // Once somebody has been called up, the draw is closed server side: it
+  // would renumber everyone still waiting on top of the positions the people
+  // who already went up are holding. Say so here rather than offering a
+  // button that only fails.
+  const showStarted = rows.some((r) => r.status === 'performed' || r.status === 'no_show');
   function startDraw() {
     if (!occurrenceId || roster.data == null) {
       return;
@@ -134,11 +139,18 @@ export default function NightScreen() {
               {draw.error instanceof Error ? draw.error.message : 'Draw failed.'}
             </ErrorText>
           ) : null}
-          <Button
-            label={shuffling ? 'Drawing...' : 'Draw the lottery'}
-            busy={!!shuffling || draw.isPending}
-            onPress={startDraw}
-          />
+          {showStarted ? (
+            <Body>
+              The show has started, so the draw is closed. Reorder the list or promote somebody off
+              the waitlist instead: both keep everyone else where they are.
+            </Body>
+          ) : (
+            <Button
+              label={shuffling ? 'Drawing...' : 'Draw the lottery'}
+              busy={!!shuffling || draw.isPending}
+              onPress={startDraw}
+            />
+          )}
         </View>
       ) : null}
 

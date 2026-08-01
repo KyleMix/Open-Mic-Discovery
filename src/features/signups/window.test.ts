@@ -1,3 +1,10 @@
+import {
+  BOOK_AHEAD_SIGNUP_OPENS_CHOICES,
+  parseSignupOpensMinutes,
+  signupOpensInterval,
+  WALK_IN_SIGNUP_OPENS_CHOICES,
+} from '@/features/producer/signup-opens';
+
 import { parseIntervalMs, signupOpensClockTime, signupWindow } from './window';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -72,5 +79,41 @@ describe('signupOpensClockTime', () => {
       time: '9:30 PM',
       dayBefore: true,
     });
+  });
+});
+
+describe('the two interval parsers agree on the same column', () => {
+  // signup_opens is written by producer/signup-opens.ts and read by both that
+  // module and this one. They had separate parsers, and this one returned 0
+  // for the minute literals the other one writes. Zero reads as "opens at
+  // showtime", which hides the Sign up button for the whole window. Reading
+  // from the database Postgres normalizes to the clock form so it never bit,
+  // but nothing stopped a caller handing over the written form.
+  const everyChoice = [...WALK_IN_SIGNUP_OPENS_CHOICES, ...BOOK_AHEAD_SIGNUP_OPENS_CHOICES];
+
+  it('reads back every lead time the producer form can write', () => {
+    for (const choice of everyChoice) {
+      const written = signupOpensInterval(choice.minutes);
+      expect(parseIntervalMs(written) / 60_000).toBe(choice.minutes);
+      // And the sibling parser, on the same string, reaches the same answer.
+      expect(parseSignupOpensMinutes(written, 'first_come')).toBe(choice.minutes);
+    }
+  });
+
+  it('reads the clock form Postgres renders back', () => {
+    expect(parseIntervalMs('00:15:00') / 60_000).toBe(15);
+    expect(parseIntervalMs('01:30:00') / 60_000).toBe(90);
+    expect(parseIntervalMs('03:00:00') / 60_000).toBe(180);
+    expect(parseIntervalMs('7 days') / 60_000).toBe(7 * 24 * 60);
+  });
+
+  it('does not count the hours twice on a mixed interval', () => {
+    // "1 day 02:30:00" carries both parts; reading the 02 as hours as well
+    // would add them on top of the clock part.
+    expect(parseIntervalMs('1 day 02:30:00') / 60_000).toBe(24 * 60 + 150);
+  });
+
+  it('treats zero as zero rather than as unparseable', () => {
+    expect(parseIntervalMs('00:00:00')).toBe(0);
   });
 });

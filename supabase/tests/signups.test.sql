@@ -1,6 +1,6 @@
 -- Signup lifecycle, lottery, reorder, and notification outbox tests.
 begin;
-select plan(14);
+select plan(18);
 
 -- Test fixture: a first-come night with capacity 2 and a lottery night,
 -- both owned by p2, happening within the open signup window.
@@ -168,6 +168,75 @@ select is(
   (select count(*)::int from notification_outbox n where n.sent_at is not null),
   0,
   'outbox rows start unsent'
+);
+
+
+-- ---------------------------------------------------------------------------
+-- The draw is a one-time act
+--
+-- Re-running it mid-show used to renumber everyone still waiting from 1,
+-- colliding with the positions the people who already performed were holding:
+-- two performers each told they were number one, and a running order that no
+-- longer meant anything. The draw button sits on the night screen for the
+-- whole show, so it was one stray tap away.
+-- ---------------------------------------------------------------------------
+-- Earlier assertions in this file already drew and marked people, so put the
+-- night back to before the draw.
+reset role;
+update signups set status = 'requested', slot_position = null
+where occurrence_id = (select id from lot_occ);
+
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-4000-a000-000000000002","role":"authenticated"}',
+  true
+);
+select lives_ok(
+  format('select count(*) from draw_lottery(%L)', (select id from lot_occ)),
+  'a first draw runs'
+);
+
+reset role;
+update signups set status = 'performed'
+where occurrence_id = (select id from lot_occ) and slot_position = 1;
+
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-4000-a000-000000000002","role":"authenticated"}',
+  true
+);
+select throws_ok(
+  format('select count(*) from draw_lottery(%L)', (select id from lot_occ)),
+  '23514', null,
+  'and it is refused once somebody has gone up'
+);
+
+reset role;
+select is(
+  (select count(*)::int from (
+     select slot_position from signups
+     where occurrence_id = (select id from lot_occ) and slot_position is not null
+     group by slot_position having count(*) > 1
+   ) dupes),
+  0,
+  'so no two performers ever hold the same slot number'
+);
+
+-- A no-show means the night is underway just as much as a performance does.
+update signups set status = 'no_show'
+where occurrence_id = (select id from lot_occ) and slot_position = 2;
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-4000-a000-000000000002","role":"authenticated"}',
+  true
+);
+select throws_ok(
+  format('select count(*) from draw_lottery(%L)', (select id from lot_occ)),
+  '23514', null,
+  'a no-show closes the draw too, because the night has started either way'
 );
 
 select * from finish();
