@@ -30,20 +30,29 @@ npx supabase db push
 ### 2. Give the project something to show
 
 A tester opening an empty Discover screen cannot tell a working empty state
-from a broken query. Load the seed so there is a city with mics in it:
+from a broken query, so the project needs listings in it before anyone else
+sees it. Use the in-app test kit, not the seed file.
 
-```bash
-psql "<your-connection-string>" -f supabase/seed.sql
-```
+**Do not run `supabase/seed.sql` against a hosted project.** It creates demo
+accounts with passwords that are committed to a public repository, including
+an admin account. That is fine for a database only your machine can reach and
+wrong for anything on the internet.
 
-The connection string is in the project's database settings.
+Instead:
 
-**Read this before you do.** `supabase/seed.sql` creates demo accounts with
-published passwords, including one for `kylewmixon@gmail.com` with admin
-rights. That is correct for a local database and wrong for anything reachable
-from the internet. Either change those passwords immediately after seeding, or
-seed only the listings and create your own account through the app. Treat this
-project as compromised-by-design and never point it at real user data.
+1. Run the app against the hosted project and sign up with the owner email
+   listed in `private.owner_emails()`. A trigger grants that account the
+   performer, producer and admin roles automatically, on any environment
+   (`20260801000100_test_kit.sql`). You choose the password, and it is never
+   written down anywhere.
+2. Profile tab, **Testing tools**.
+3. Build the situations you want testers to find: a week of listings across
+   every discipline and price, a night starting shortly with a roster on it, a
+   lottery waiting to be drawn, listings in each freshness state.
+
+Everything the kit creates is tracked in a registry so it can be removed again
+exactly, without touching anything else. The migrations already insert the
+EULA versions, so onboarding works on a project with no other data in it.
 
 ### 3. Point builds at it
 
