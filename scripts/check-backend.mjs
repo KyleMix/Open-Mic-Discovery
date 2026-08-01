@@ -125,30 +125,32 @@ async function get(path) {
 }
 
 try {
-  // 1. Is anything answering, and does it accept this key?
-  const root = await get('/rest/v1/');
-  if (root.status === 401 || root.status === 403) {
-    // The status alone says "rejected" without saying why, and the reasons
-    // are different fixes: a wrong key, a key format the Data API does not
-    // accept yet, or a project still enforcing the legacy JWT keys. The body
-    // distinguishes them, so it goes in the report verbatim.
+  // Connectivity, the key, and the migrations, in one probe against a real
+  // table.
+  //
+  // Deliberately not the PostgREST root (/rest/v1/). Under Supabase's newer
+  // key system that endpoint answers "Secret API key required", so a perfectly
+  // good publishable key gets a 401 there and the check condemns a working
+  // backend. What matters is whether the key can read a table, which is all
+  // the app ever does.
+  //
+  // eula_versions is the right table to ask for: sign-up gates on accepting a
+  // version, so if this is missing or empty nobody can finish onboarding.
+  const eula = await get('/rest/v1/eula_versions?select=version&limit=1');
+
+  if (eula.status === 401 || eula.status === 403) {
     fail(
-      `The key was rejected (HTTP ${root.status}). The server said: ` +
-        `${root.body.slice(0, 300) || '(empty response)'}`,
+      `The key was rejected (HTTP ${eula.status}). The server said: ` +
+        `${eula.body.slice(0, 300) || '(empty response)'}`,
       'If the key is definitely correct, try the legacy anon key instead: ' +
-        'Project Settings, API Keys, "Legacy anon, service_role API keys" tab. ' +
-        'It is the long eyJ... JWT and is always accepted by the Data API.',
+        'Project Settings, API Keys, "Legacy anon, service_role API keys" tab.',
     );
     report();
   }
-  if (root.status >= 500) {
-    fail(`The API returned HTTP ${root.status}.`, 'The project may be paused. Resume it.');
+  if (eula.status >= 500) {
+    fail(`The API returned HTTP ${eula.status}.`, 'The project may be paused. Resume it.');
     report();
   }
-
-  // 2. Did the migrations land? Every build gates on an EULA row existing, so
-  //    a project without this table strands testers on the EULA screen.
-  const eula = await get('/rest/v1/eula_versions?select=version&limit=1');
   if (eula.status === 404) {
     fail(
       'Table eula_versions does not exist, so the migrations were never applied.',
@@ -159,7 +161,7 @@ try {
   } else if (JSON.parse(eula.body).length === 0) {
     fail(
       'No EULA version exists. Sign-up gates on accepting one, so nobody can finish onboarding.',
-      'Apply the seed, or insert an eula_versions row.',
+      'Check that the migrations applied cleanly.',
     );
   }
 
