@@ -5,7 +5,7 @@
 --   ...0004 admin
 --   ...0005 owner (kylewmixon@gmail.com): performer + producer + admin
 begin;
-select plan(28);
+select plan(31);
 
 -- ---------------------------------------------------------------------------
 -- Owner bootstrap
@@ -234,6 +234,53 @@ select ok(
       and b.users = (select count(*) from auth.users)
    from baseline b),
   'reset puts every table back exactly where it started'
+);
+
+
+-- ---------------------------------------------------------------------------
+-- Reset does not strand data behind a failure it cannot control
+-- ---------------------------------------------------------------------------
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-4000-a000-000000000005","role":"authenticated"}',
+  true
+);
+select lives_ok(
+  $$select test_kit_seed_scenario('tonight')$$,
+  'a scenario to clean up'
+);
+
+-- Stand in for the auth schema refusing the delete, which is what a hosted
+-- project can do and the local shim cannot: a trigger that raises exactly
+-- the way a privilege or foreign key failure would.
+reset role;
+create or replace function private.test_kit_block_auth_delete()
+returns trigger language plpgsql as $fn$
+begin
+  raise exception 'permission denied for table users' using errcode = '42501';
+end;
+$fn$;
+create trigger test_kit_block_auth_delete before delete on auth.users
+  for each row execute function private.test_kit_block_auth_delete();
+
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-4000-a000-000000000005","role":"authenticated"}',
+  true
+);
+select ok(
+  (select test_kit_reset() ? 'warning'),
+  'reset reports the sign-ins it could not remove instead of failing outright'
+);
+
+reset role;
+drop trigger test_kit_block_auth_delete on auth.users;
+select is(
+  (select count(*)::int from mic_series where title = 'Tonight at the Test Room'),
+  0,
+  'the test listings still went, which is what was actually asked for'
 );
 
 select * from finish();

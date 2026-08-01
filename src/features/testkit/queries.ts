@@ -9,6 +9,31 @@ import type { ScenarioKey } from './scenarios';
  * needs to be defensive about who is calling.
  */
 
+/**
+ * Everything PostgREST knows about a failure, in one line.
+ *
+ * A bare message loses the parts that identify the cause: the SQLSTATE, and
+ * the details and hint Postgres attaches to constraint and permission errors.
+ * These are developer tools, so the person reading the screen is the person
+ * who can act on the code, and hiding it costs a round trip.
+ */
+function rpcError(
+  error: { message: string; details?: string | null; hint?: string | null; code?: string | null },
+  fallback: string,
+): Error {
+  const parts = [error.message || fallback];
+  if (error.details) {
+    parts.push(error.details);
+  }
+  if (error.hint) {
+    parts.push(error.hint);
+  }
+  if (error.code) {
+    parts.push(`(${error.code})`);
+  }
+  return new Error(parts.join(' '));
+}
+
 export type TestKitLogin = { email: string; name: string };
 
 export type TestKitNight = {
@@ -51,7 +76,7 @@ export function useTestKitStatus(isAdmin: boolean) {
     queryFn: async (): Promise<TestKitStatus> => {
       const { data, error } = await getSupabase().rpc('test_kit_status');
       if (error) {
-        throw new Error(error.message);
+        throw rpcError(error, 'Could not read test kit status.');
       }
       return data as unknown as TestKitStatus;
     },
@@ -75,7 +100,7 @@ export function useSeedScenario() {
         p_timezone: deviceTimezone(),
       });
       if (error) {
-        throw new Error(error.message);
+        throw rpcError(error, 'Could not build that scenario.');
       }
       return data as unknown as ScenarioResult;
     },
@@ -92,7 +117,7 @@ export function useFillRoster() {
         p_count: count,
       });
       if (error) {
-        throw new Error(error.message);
+        throw rpcError(error, 'Could not add performers.');
       }
       return data as unknown as { added: number };
     },
@@ -109,7 +134,7 @@ export function useShiftOccurrence() {
         p_minutes_from_now: minutes,
       });
       if (error) {
-        throw new Error(error.message);
+        throw rpcError(error, 'Could not move that night.');
       }
     },
     onSuccess: invalidate,
@@ -125,7 +150,7 @@ export function useSetTestRoles() {
         p_producer: producer,
       });
       if (error) {
-        throw new Error(error.message);
+        throw rpcError(error, 'Could not change your roles.');
       }
     },
     onSuccess: invalidate,
@@ -138,7 +163,7 @@ export function useSetTestKitEnabled() {
     mutationFn: async (enabled: boolean) => {
       const { error } = await getSupabase().rpc('test_kit_set_enabled', { p_enabled: enabled });
       if (error) {
-        throw new Error(error.message);
+        throw rpcError(error, 'Could not switch the test kit.');
       }
     },
     onSuccess: invalidate,
@@ -151,7 +176,7 @@ export function useResetTestData() {
     mutationFn: async () => {
       const { data, error } = await getSupabase().rpc('test_kit_reset');
       if (error) {
-        throw new Error(error.message);
+        throw rpcError(error, 'Could not remove the test data.');
       }
       return data as unknown as { removed: Record<string, number> };
     },

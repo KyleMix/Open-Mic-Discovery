@@ -32,11 +32,32 @@ export function timerTone(elapsedMs: number, setLengthMinutes: number | null): T
   return elapsedMs >= limit - NEARLY_MS ? 'nearly' : 'running';
 }
 
-/** How far past the agreed length, for the line under the clock. */
-export function overBy(elapsedMs: number, setLengthMinutes: number | null): string | null {
+/**
+ * The number on the clock.
+ *
+ * A host does not care how long someone has been on, they care how long is
+ * left of the slot the mic hands out. So the clock counts the allotment down
+ * and, once it runs out, counts the overrun up: both are the same question,
+ * "how much of the night is this set costing me".
+ *
+ * With no agreed set length there is nothing to count down from, so it falls
+ * back to a plain elapsed clock.
+ */
+export function clockFace(elapsedMs: number, setLengthMinutes: number | null): string {
   if (!setLengthMinutes) {
-    return null;
+    return formatClock(elapsedMs);
   }
-  const over = elapsedMs - setLengthMinutes * 60 * 1000;
-  return over > 0 ? `${formatClock(over)} over` : null;
+  const left = setLengthMinutes * 60 * 1000 - elapsedMs;
+  return formatClock(Math.abs(left));
+}
+
+/** The line under the clock, which says what the number means. */
+export function clockCaption(elapsedMs: number, setLengthMinutes: number | null): string {
+  if (!setLengthMinutes) {
+    return 'No set length on this mic, so this is just a clock';
+  }
+  const left = setLengthMinutes * 60 * 1000 - elapsedMs;
+  return left >= 0
+    ? `left of a ${setLengthMinutes} minute set`
+    : `over the ${setLengthMinutes} minute set`;
 }

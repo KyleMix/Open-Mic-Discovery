@@ -8,10 +8,16 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { eventDate, eventTime } from '@/features/discovery/local-time';
 import { liveOrder, performerName, type LiveRow } from '@/features/live/order';
-import { formatClock, overBy, timerTone } from '@/features/live/timer';
+import { liveCounts, spotsOpen } from '@/features/live/summary';
+import { clockCaption, clockFace, timerTone } from '@/features/live/timer';
 import { liveWindow } from '@/features/live/window';
 import { useEndShow, useNightContext, useReopenShow } from '@/features/producer/queries';
-import { useMarkOnDeck, useRoster, useSetSignupStatus } from '@/features/signups/queries';
+import {
+  useMarkOnDeck,
+  useNightSpots,
+  useRoster,
+  useSetSignupStatus,
+} from '@/features/signups/queries';
 import { fonts, palette, spacing, type } from '@/theme';
 
 /**
@@ -30,6 +36,7 @@ export default function LiveScreen() {
   const { occurrenceId } = useLocalSearchParams<{ occurrenceId: string }>();
   const night = useNightContext(occurrenceId);
   const roster = useRoster(occurrenceId);
+  const spots = useNightSpots(occurrenceId);
   const setStatus = useSetSignupStatus();
   const onDeck = useMarkOnDeck();
   const endShow = useEndShow();
@@ -142,9 +149,12 @@ export default function LiveScreen() {
     );
   }
 
-  const live = liveOrder(roster.data as LiveRow[]);
+  const rows = roster.data as LiveRow[];
+  const live = liveOrder(rows);
+  const counts = liveCounts(rows, live.order.length, live.done);
+  const room = spotsOpen(spots.data?.spots_left, spots.data?.capacity);
+  const waitlist = rows.filter((r) => r.status === 'waitlisted');
   const tone = timerTone(elapsed, setLength);
-  const over = overBy(elapsed, setLength);
 
   function resetTimer() {
     setRunning(false);
@@ -191,6 +201,31 @@ export default function LiveScreen() {
         }}
       />
 
+      {/* The three numbers a host is asked for all night, kept on screen in
+          every state. A finished list still needs them: "can I put one more
+          person up" is exactly the question at the end of the night. */}
+      <View style={styles.stats}>
+        <View style={styles.stat}>
+          <Text style={[styles.statValue, room.full && styles.statValueFull]}>{room.value}</Text>
+          <Text style={styles.statCaption}>{room.caption}</Text>
+        </View>
+        <View style={styles.stat}>
+          <Text style={styles.statValue}>
+            {counts.done}
+            <Text style={styles.statValueSoft}>/{counts.onList}</Text>
+          </Text>
+          <Text style={styles.statCaption}>
+            {counts.toGo > 0 ? `${counts.toGo} still to go` : 'all done'}
+          </Text>
+        </View>
+        <View style={styles.stat}>
+          <Text style={[styles.statValue, counts.waitlist > 0 && styles.statValueWaiting]}>
+            {counts.waitlist}
+          </Text>
+          <Text style={styles.statCaption}>on the waitlist</Text>
+        </View>
+      </View>
+
       {live.current ? (
         <>
           <Text style={styles.label}>On stage now</Text>
@@ -202,10 +237,10 @@ export default function LiveScreen() {
               tone === 'over' && styles.clockOver,
             ]}
           >
-            {formatClock(elapsed)}
+            {clockFace(elapsed, setLength)}
           </Text>
-          <Text style={styles.clockNote}>
-            {over ?? (setLength ? `${setLength} minute sets` : 'No set length agreed for this mic')}
+          <Text style={[styles.clockNote, tone === 'over' && styles.clockNoteOver]}>
+            {clockCaption(elapsed, setLength)}
           </Text>
 
           <View style={styles.buttonRow}>
@@ -252,10 +287,34 @@ export default function LiveScreen() {
           <Body>
             {live.done === 0
               ? 'Nobody is on the list for tonight yet. Names appear here as they sign up.'
-              : `${live.done} performed. Anyone you promote off the waitlist shows up here.`}
+              : waitlist.length > 0
+                ? `${live.done} performed, and ${waitlist.length === 1 ? 'one person is' : `${waitlist.length} people are`} still waiting. Add somebody below and they go straight to the stage.`
+                : `${live.done} performed. Nobody is waiting, so that is the night.`}
           </Body>
         </>
       )}
+
+      {/* Promoting off the waitlist is the one move a host makes over and
+          over once the room is running, so it belongs here rather than back
+          on the list screen. */}
+      {waitlist.length > 0 ? (
+        <>
+          <Text style={styles.label}>Waiting for a spot ({waitlist.length})</Text>
+          {waitlist.map((row) => (
+            <View key={row.id} style={styles.waitRow}>
+              <Text style={styles.waitName}>{performerName(row)}</Text>
+              <Button
+                label="Put them on"
+                kind="secondary"
+                busy={setStatus.isPending}
+                onPress={() =>
+                  row.id && setStatus.mutate({ signupId: row.id, status: 'confirmed' })
+                }
+              />
+            </View>
+          ))}
+        </>
+      ) : null}
 
       {setStatus.isError ? (
         <ErrorText>
@@ -363,6 +422,60 @@ const styles = StyleSheet.create({
     color: palette.textSecondary,
     fontSize: type.caption.fontSize,
     textAlign: 'center',
+  },
+  clockNoteOver: {
+    color: palette.danger,
+  },
+  stats: {
+    backgroundColor: palette.bgElevated,
+    borderColor: palette.border,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    paddingVertical: spacing.md,
+  },
+  stat: {
+    alignItems: 'center',
+    flex: 1,
+    gap: spacing.xs,
+  },
+  statValue: {
+    color: palette.text,
+    fontFamily: fonts.semibold,
+    fontSize: type.title.fontSize,
+  },
+  statValueSoft: {
+    color: palette.textSecondary,
+    fontFamily: fonts.regular,
+    fontSize: type.body.fontSize,
+  },
+  statValueFull: {
+    color: palette.warning,
+  },
+  statValueWaiting: {
+    color: palette.warning,
+  },
+  statCaption: {
+    color: palette.textSecondary,
+    fontSize: type.caption.fontSize,
+    textAlign: 'center',
+  },
+  waitRow: {
+    alignItems: 'center',
+    backgroundColor: palette.bgElevated,
+    borderColor: palette.border,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  waitName: {
+    color: palette.text,
+    flex: 1,
+    fontFamily: fonts.medium,
+    fontSize: type.body.fontSize,
   },
   buttonRow: {
     flexDirection: 'row',

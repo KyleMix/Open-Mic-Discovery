@@ -13,6 +13,11 @@ let mockEndedAt: string | null = null;
 // A night starting an hour from now, so the live window is open.
 let mockStartsAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 let mockRoster: unknown[] = [];
+let mockSpots: { capacity: number | null; taken: number; spots_left: number | null } | null = {
+  capacity: 12,
+  taken: 8,
+  spots_left: 4,
+};
 
 jest.mock('expo-keep-awake', () => ({ useKeepAwake: jest.fn() }));
 jest.mock('expo-router', () => ({
@@ -36,6 +41,7 @@ jest.mock('@/features/signups/queries', () => ({
   useRoster: () => ({ data: mockRoster, isPending: false, isError: false }),
   useSetSignupStatus: () => ({ mutate: mockSetStatus, isPending: false, isError: false }),
   useMarkOnDeck: () => ({ mutate: mockOnDeck, isPending: false, isError: false }),
+  useNightSpots: () => ({ data: mockSpots, isPending: false, isError: false }),
 }));
 
 const performer = (over: Record<string, unknown>) => ({
@@ -57,6 +63,7 @@ beforeEach(() => {
   mockReopen.mockClear();
   mockEndedAt = null;
   mockStartsAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+  mockSpots = { capacity: 12, taken: 8, spots_left: 4 };
   mockRoster = [
     performer({ id: 'sg-1', slot_position: 1, stage_name: 'First' }),
     performer({ id: 'sg-2', slot_position: 2, stage_name: 'Second' }),
@@ -64,12 +71,14 @@ beforeEach(() => {
 });
 
 describe('running the night', () => {
-  it('opens on whoever is up, with the clock at zero', async () => {
+  it('opens on whoever is up, with the full set on the clock', async () => {
     await render(<LiveScreen />);
     expect(screen.getByText('On stage now')).toBeTruthy();
     // Once at the top as the person on stage, once down in the running order.
     expect(screen.getAllByText('First')).toHaveLength(2);
-    expect(screen.getByText('0:00')).toBeTruthy();
+    // The mic hands out 10 minute sets, so that is what the clock starts at.
+    expect(screen.getByText('10:00')).toBeTruthy();
+    expect(screen.getByText('left of a 10 minute set')).toBeTruthy();
     expect(screen.getByText('Up next: Second')).toBeTruthy();
   });
 
@@ -205,5 +214,72 @@ describe('running the night', () => {
     await render(<LiveScreen />);
     fireEvent.press(screen.getByLabelText('Reopen the show'));
     expect(mockReopen).toHaveBeenCalledWith('occ-1');
+  });
+});
+
+describe('the numbers a host is asked for all night', () => {
+  it('shows spots open, progress, and the waitlist while a set is running', async () => {
+    await render(<LiveScreen />);
+    expect(screen.getByText('4')).toBeTruthy();
+    expect(screen.getByText('of 12 open')).toBeTruthy();
+    expect(screen.getByText('2 still to go')).toBeTruthy();
+  });
+
+  it('keeps them on screen once the whole list is done', async () => {
+    // The screenshot that started this: every name marked done, and the
+    // screen went blank apart from the list. "Can I put one more person up"
+    // is exactly the question at that moment.
+    mockRoster = [
+      performer({ id: 'sg-1', slot_position: 1, stage_name: 'First', status: 'performed' }),
+      performer({ id: 'sg-2', slot_position: 2, stage_name: 'Second', status: 'performed' }),
+    ];
+    mockSpots = { capacity: 12, taken: 2, spots_left: 10 };
+    await render(<LiveScreen />);
+    expect(screen.getByText('That is the whole list')).toBeTruthy();
+    expect(screen.getByText('10')).toBeTruthy();
+    expect(screen.getByText('of 12 open')).toBeTruthy();
+    expect(screen.getByText('all done')).toBeTruthy();
+  });
+
+  it('says Full rather than a number when every spot is taken', async () => {
+    mockSpots = { capacity: 8, taken: 8, spots_left: 0 };
+    await render(<LiveScreen />);
+    expect(screen.getByText('Full')).toBeTruthy();
+    expect(screen.getByText('all 8 taken')).toBeTruthy();
+  });
+
+  it('says nothing it cannot know when the host set no cap', async () => {
+    mockSpots = { capacity: null, taken: 4, spots_left: null };
+    await render(<LiveScreen />);
+    expect(screen.getByText('Open')).toBeTruthy();
+    expect(screen.getByText('no cap set')).toBeTruthy();
+  });
+});
+
+describe('the waitlist, from the room', () => {
+  it('puts a waiting performer on the list without leaving the screen', async () => {
+    mockRoster = [
+      performer({ id: 'sg-1', slot_position: 1, stage_name: 'First' }),
+      performer({ id: 'sg-9', slot_position: null, stage_name: 'Hopeful', status: 'waitlisted' }),
+    ];
+    await render(<LiveScreen />);
+    expect(screen.getByText('Waiting for a spot (1)')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Put them on'));
+    expect(mockSetStatus).toHaveBeenCalledWith({ signupId: 'sg-9', status: 'confirmed' });
+  });
+
+  it('tells a host with a finished list that somebody is still waiting', async () => {
+    mockRoster = [
+      performer({ id: 'sg-1', slot_position: 1, stage_name: 'First', status: 'performed' }),
+      performer({ id: 'sg-9', slot_position: null, stage_name: 'Hopeful', status: 'waitlisted' }),
+    ];
+    await render(<LiveScreen />);
+    expect(screen.getByText(/still waiting/)).toBeTruthy();
+    expect(screen.getByLabelText('Put them on')).toBeTruthy();
+  });
+
+  it('does not mention a waitlist that is empty', async () => {
+    await render(<LiveScreen />);
+    expect(screen.queryByText(/Waiting for a spot/)).toBeNull();
   });
 });

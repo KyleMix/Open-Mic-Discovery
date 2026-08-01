@@ -1,4 +1,4 @@
-import { formatClock, overBy, timerTone } from './timer';
+import { clockCaption, clockFace, formatClock, timerTone } from './timer';
 import { liveWindow } from './window';
 
 // 7:00 PM Pacific.
@@ -68,11 +68,23 @@ describe('the set timer', () => {
 
   it('is just a clock when no set length was agreed', () => {
     expect(timerTone(45 * 60_000, null)).toBe('running');
-    expect(overBy(45 * 60_000, null)).toBeNull();
+    expect(clockFace(45 * 60_000, null)).toBe('45:00');
+    expect(clockCaption(45 * 60_000, null)).toMatch(/just a clock/);
   });
 
-  it('says how far over, because that is what the host has to make up', () => {
-    expect(overBy(12 * 60_000 + 30_000, 10)).toBe('2:30 over');
-    expect(overBy(9 * 60_000, 10)).toBeNull();
+  it('counts the allotted set down, not the set up', () => {
+    // A host reads "how long is left of the slot", never "how long have they
+    // been on".
+    expect(clockFace(0, 10)).toBe('10:00');
+    expect(clockFace(60_000, 10)).toBe('9:00');
+    expect(clockFace(9 * 60_000 + 30_000, 10)).toBe('0:30');
+    expect(clockCaption(60_000, 10)).toBe('left of a 10 minute set');
+  });
+
+  it('counts the overrun up once the allotment is gone', () => {
+    // Which is the number the host has to make up over the rest of the night.
+    expect(clockFace(10 * 60_000, 10)).toBe('0:00');
+    expect(clockFace(12 * 60_000 + 30_000, 10)).toBe('2:30');
+    expect(clockCaption(12 * 60_000, 10)).toBe('over the 10 minute set');
   });
 });
