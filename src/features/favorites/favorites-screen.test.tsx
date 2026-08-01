@@ -16,7 +16,11 @@ import { getSupabase } from '@/lib/supabase';
 import { createTestQueryClient, createWrapper, type QueryWrapper } from '@/test/query-harness';
 import { createFakeSupabase, neverResolves, type FakeHandler } from '@/test/supabase-fake';
 
-import FavoritesScreen from './favorites';
+// Imported from outside src/app on purpose. Expo Router globs src/app and
+// turns every file it finds there into a route, including a test file, which
+// then ships to the bundle and blows up at runtime on `expect is not defined`.
+// See app-routes.test.ts, which fails if a test file reappears under src/app.
+import FavoritesScreen from '@/app/(tabs)/favorites';
 
 jest.mock('@/lib/supabase', () => ({ getSupabase: jest.fn() }));
 jest.mock('expo-router', () => ({

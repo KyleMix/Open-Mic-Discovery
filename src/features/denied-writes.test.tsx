@@ -12,7 +12,7 @@
  * true if the chain is rewritten and false if the guard is dropped.
  */
 import type { QueryClient } from '@tanstack/react-query';
-import { renderHook } from '@testing-library/react-native';
+import { act, renderHook } from '@testing-library/react-native';
 
 import { useUpdateProfile } from '@/features/profile/queries';
 import {
@@ -146,6 +146,23 @@ describe('a write refused by row level security', () => {
     jest.clearAllMocks();
   });
 
+  /**
+   * Renders the hook, runs the write, then lets the resulting state changes
+   * land. The settle step is what keeps React from warning about an update
+   * outside act() after the test has already moved on.
+   *
+   * The render deliberately happens outside act(): renderHook does its own
+   * rendering, and nesting it inside an outer act() stops the effect that
+   * populates `result.current` from flushing, leaving it null.
+   */
+  const runWrite = async (invoke: WriteCase['invoke']): Promise<void> => {
+    try {
+      await invoke(wrapper);
+    } finally {
+      await act(async () => {});
+    }
+  };
+
   // Asserting the exact message, not merely "it rejected". A bare
   // rejects.toThrow() passes on any rejection at all, including a TypeError
   // from the test's own setup, which makes it a test that cannot fail for the
@@ -154,7 +171,7 @@ describe('a write refused by row level security', () => {
     '$name rejects with a readable message when no row was changed',
     async ({ invoke, refusedMessage }) => {
       serverReplies(FILTERED_OUT);
-      await expect(invoke(wrapper)).rejects.toThrow(refusedMessage);
+      await expect(runWrite(invoke)).rejects.toThrow(refusedMessage);
     },
   );
 
@@ -162,6 +179,6 @@ describe('a write refused by row level security', () => {
     serverReplies(ONE_ROW_CHANGED);
     // No rejection is the assertion: a write that landed must not be reported
     // as a failure either.
-    await invoke(wrapper);
+    await runWrite(invoke);
   });
 });

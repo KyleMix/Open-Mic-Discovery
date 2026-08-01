@@ -22,7 +22,7 @@
  * the selector returns only the six `DiscoveryFilters` members, so `view` and
  * `disciplinesSeeded` never reach the key.
  */
-import { renderHook } from '@testing-library/react-native';
+import { renderHook, waitFor } from '@testing-library/react-native';
 
 import { getSupabase } from '@/lib/supabase';
 import { useFiltersStore, type DiscoveryFilters } from '@/stores/filters';
@@ -57,6 +57,9 @@ async function discoveryKey(filters: DiscoveryFilters): Promise<string> {
   const wrapper = createWrapper(client);
   await renderHook(() => useNearbyMics(filters, CENTER), { wrapper });
   const [query] = client.getQueryCache().getAll();
+  // Let the fetch settle before reading. Otherwise it resolves after the test
+  // has moved on, and React warns about a state update outside act().
+  await waitFor(() => expect(query.state.fetchStatus).toBe('idle'));
   const hash = query.queryHash;
   client.clear();
   return hash;
