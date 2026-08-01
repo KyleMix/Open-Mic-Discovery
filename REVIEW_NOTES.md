@@ -18,6 +18,10 @@ Created by the database seed (`supabase/seed.sql`). Local development only; prod
 | Admin (moderation)               | admin@demo.openmic.local     | demo-pass-1234      |
 | Owner/tester (all roles + admin) | kylewmixon@gmail.com         | openmic-tester-2026 |
 
+The owner email is bootstrapped by the database, not only by the seed: signing
+up with it on any environment lands a performer, producer, and admin account
+that is already approved. See docs/TEST_KIT.md.
+
 ## Walkthrough of every non-obvious flow
 
 - **EULA gate.** Every new account accepts the EULA before onboarding; the accepted version and a server-stamped timestamp are recorded. Publishing a newer EULA version routes existing users back to the gate on next launch.
@@ -42,6 +46,7 @@ Created by the database seed (`supabase/seed.sql`). Local development only; prod
 - **Paid reserved slots.** Mics that charge performers state the cost with explicit copy that payment happens at the venue or with the host, never inside the app (Apple 3.1.5(a)).
 - **Offline.** Listing data is cached and readable without a connection; writes need connectivity and fail with clear messages.
 - **Simple filters.** Discover shows two plain rows: what kind of mic (single tap: All, Music, Comedy, Poetry, Other) and when (Any day, Today, Weekend), plus Free and an All filters sheet. The sheet asks one labeled question per section (days, time, cost, how you get on stage, distance) in plain language, and everything is a big tappable chip. Distances read in miles; the server still works in km. Signup methods use plain names everywhere: Walk-in list, Name draw, Book ahead, Invite only.
+- **Testing tools (owner only).** Profile tab, Testing tools. Admin-only server functions that build a whole situation in one tap: a mic of yours starting in 90 minutes with a roster on it, a lottery waiting to be drawn, a week of listings across every discipline and price, an unclaimed listing plus a pending claim, three freshness states side by side, a full moderation queue, or your own account on three lists. Also a time machine that moves a night to minutes from now, a roster filler, role switches, and a device-only Producer Pro override. Everything created is tracked, so one tap removes exactly it and leaves real data untouched. The whole kit sits behind an admin check plus a kill switch that is switched off before store submission. Full detail in docs/TEST_KIT.md.
 - **Profile customization.** Profile tab, Edit profile: photo (square-cropped from the library, stored in the public avatars bucket under the user's own folder, enforced by storage RLS) plus Instagram, TikTok, YouTube, and website. Handle fields accept @names or pasted URLs and normalize; only https links are accepted (database check constraints back this). Links render as tappable chips on the profile. Editing display name or bio re-enters the moderation filter, same as onboarding.
 
 ## Build-time notes for reviewers and testers
@@ -57,4 +62,4 @@ None. All tabs and screens are functional (the Phase 0 PhaseShell component has 
 
 ## Running locally
 
-See README.md. With Docker: `npm run db:start`, copy the anon key into `.env`. Without Docker: `scripts/db/verify-local.sh` verifies the entire database layer (migrations, seed, 99 pgTAP tests) against system Postgres. Maestro smoke flows: `e2e/`.
+See README.md. With Docker: `npm run db:start`, copy the anon key into `.env`. Without Docker: `scripts/db/verify-local.sh` verifies the entire database layer (migrations, seed, 156 pgTAP tests) against system Postgres. Maestro smoke flows: `e2e/`.

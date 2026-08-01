@@ -80,15 +80,26 @@ set link_instagram = 'openmicfinder',
     link_youtube = 'https://youtube.com/@openmicfinder'
 where id = '00000000-0000-4000-a000-000000000005';
 
+-- The owner account already has its performer and producer rows: the owner
+-- bootstrap trigger creates them the moment the profile lands (see
+-- supabase/migrations/20260801000100_test_kit.sql), so these upsert.
 insert into performer_profiles (profile_id, disciplines, experience, tags) values
   ('00000000-0000-4000-a000-000000000001', '{music,poetry}', 'developing', '{acoustic,folk}'),
   ('00000000-0000-4000-a000-000000000003', '{comedy}', 'experienced', '{observational}'),
-  ('00000000-0000-4000-a000-000000000005', '{music,comedy,poetry}', 'experienced', '{}');
+  ('00000000-0000-4000-a000-000000000005', '{music,comedy,poetry}', 'experienced', '{}')
+on conflict (profile_id) do update
+set disciplines = excluded.disciplines,
+    experience = excluded.experience,
+    tags = excluded.tags;
 
 insert into producer_profiles (profile_id, contact_email, contact_phone, verified) values
   ('00000000-0000-4000-a000-000000000002', 'pat@demo.openmic.local', '+12065550142', true),
   ('00000000-0000-4000-a000-000000000003', 'dana@demo.openmic.local', null, false),
-  ('00000000-0000-4000-a000-000000000005', 'kylewmixon@gmail.com', null, true);
+  ('00000000-0000-4000-a000-000000000005', 'kylewmixon@gmail.com', null, true)
+on conflict (profile_id) do update
+set contact_email = excluded.contact_email,
+    contact_phone = excluded.contact_phone,
+    verified = excluded.verified;
 
 -- ---------------------------------------------------------------------------
 -- Venues. PostGIS points are (longitude latitude).

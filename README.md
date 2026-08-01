@@ -15,6 +15,14 @@ npm run db:start        # local Supabase; copy the printed anon key into .env
 npm start               # Expo dev server
 ```
 
+## Testing the app as the owner
+
+Sign in with the owner email and the account arrives complete: performer,
+producer, and admin. Profile tab, **Testing tools** then builds whole
+situations in one tap (a mic starting in 90 minutes with a roster on it, a
+lottery waiting to be drawn, a full moderation queue) and removes them again
+just as easily. See docs/TEST_KIT.md.
+
 ## Checks
 
 ```bash

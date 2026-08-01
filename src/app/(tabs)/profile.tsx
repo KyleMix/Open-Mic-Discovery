@@ -99,6 +99,9 @@ export default function ProfileScreen() {
       {p.is_admin ? (
         <Button label="Moderation queue" kind="secondary" onPress={() => router.push('/admin')} />
       ) : null}
+      {p.is_admin ? (
+        <Button label="Testing tools" kind="secondary" onPress={() => router.push('/test-kit')} />
+      ) : null}
       <Button
         label="Sign out"
         kind="secondary"

@@ -990,6 +990,59 @@ export type Database = {
         }
         Relationships: []
       }
+      test_kit_objects: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          row_id: string
+          scenario: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: string
+          row_id: string
+          scenario?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          row_id?: string
+          scenario?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_kit_objects_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_kit_settings: {
+        Row: {
+          enabled: boolean
+          id: boolean
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          id?: boolean
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          id?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       venues: {
         Row: {
           address_line: string
@@ -2481,6 +2534,25 @@ export type Database = {
         Args: { geom: unknown; move: number; wrap: number }
         Returns: unknown
       }
+      test_kit_fill_roster: {
+        Args: { p_count?: number; p_occurrence_id: string }
+        Returns: Json
+      }
+      test_kit_reset: { Args: never; Returns: Json }
+      test_kit_seed_scenario: {
+        Args: { p_scenario: string; p_timezone?: string }
+        Returns: Json
+      }
+      test_kit_set_enabled: { Args: { p_enabled: boolean }; Returns: Json }
+      test_kit_set_roles: {
+        Args: { p_performer: boolean; p_producer: boolean }
+        Returns: Json
+      }
+      test_kit_shift_occurrence: {
+        Args: { p_minutes_from_now?: number; p_occurrence_id: string }
+        Returns: Json
+      }
+      test_kit_status: { Args: never; Returns: Json }
       throws_ok: { Args: { "": string }; Returns: string }
       todo:
         | { Args: { how_many: number }; Returns: boolean[] }
