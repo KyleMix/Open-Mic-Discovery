@@ -3,11 +3,12 @@
  *
  * Each entry is one tap in Testing tools and one call to the
  * test_kit_seed_scenario RPC. Keys must match the scenario names the
- * migration understands (supabase/migrations/20260801000100_test_kit.sql).
+ * migration understands (the newest definition of test_kit_seed_scenario,
+ * in supabase/migrations/20260801000300_on_deck_and_live_testing.sql).
  */
 
 export type ScenarioKey =
-  'tonight' | 'lottery' | 'week' | 'unclaimed' | 'stale' | 'moderation' | 'performer';
+  'live' | 'tonight' | 'lottery' | 'week' | 'unclaimed' | 'stale' | 'moderation' | 'performer';
 
 export type Scenario = {
   key: ScenarioKey;
@@ -19,6 +20,13 @@ export type Scenario = {
 };
 
 export const scenarios: Scenario[] = [
+  {
+    key: 'live',
+    label: 'A show already running',
+    detail:
+      'Started 20 minutes ago: two performed, one no-show, somebody on stage, the next one on deck, two more to go, and a full list with two waiting.',
+    checks: 'Live mode from the middle of a night, which is the only place it gets used.',
+  },
   {
     key: 'tonight',
     label: 'A mic of mine, starting soon',

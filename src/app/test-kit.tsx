@@ -8,6 +8,7 @@ import { useSession } from '@/features/auth/session';
 import {
   useFillRoster,
   useResetTestData,
+  useRestartNight,
   useSeedScenario,
   useSetTestKitEnabled,
   useSetTestRoles,
@@ -42,6 +43,7 @@ export default function TestKitScreen() {
   const shift = useShiftOccurrence();
   const setRoles = useSetTestRoles();
   const setEnabled = useSetTestKitEnabled();
+  const restart = useRestartNight();
   const reset = useResetTestData();
 
   const [message, setMessage] = useState<string | null>(null);
@@ -82,6 +84,7 @@ export default function TestKitScreen() {
     fillRoster.isPending ||
     shift.isPending ||
     setRoles.isPending ||
+    restart.isPending ||
     reset.isPending;
   const totalObjects = Object.values(s.counts).reduce((sum, n) => sum + n, 0);
   const night = s.next_night;
@@ -144,7 +147,14 @@ export default function TestKitScreen() {
         <View style={styles.actions}>
           {lastResult.occurrenceId ? (
             <Button
+              label="Run it live"
+              onPress={() => router.push(`/producer/live/${lastResult.occurrenceId}`)}
+            />
+          ) : null}
+          {lastResult.occurrenceId ? (
+            <Button
               label="Open the roster"
+              kind="secondary"
               onPress={() => router.push(`/producer/night/${lastResult.occurrenceId}`)}
             />
           ) : null}
@@ -184,7 +194,8 @@ export default function TestKitScreen() {
           </Text>
           <Text style={styles.itemCaption}>
             Move it closer to see signups close, the night-of view open, and day-of reminders fire
-            without waiting.
+            without waiting. Rewinding puts everyone who went up back on the list and reopens the
+            show, so the same night can be run again.
           </Text>
           <View style={styles.chipRow}>
             {shiftOffsets.map((minutes) => (
@@ -214,7 +225,25 @@ export default function TestKitScreen() {
               }
             />
             <Button
+              label="Rewind the show"
+              kind="secondary"
+              disabled={busy}
+              onPress={() =>
+                run(
+                  'Everyone is back on the list and the show is open again.',
+                  restart.mutateAsync(night.occurrence_id),
+                )
+              }
+            />
+          </View>
+          <View style={styles.actions}>
+            <Button
+              label="Run it live"
+              onPress={() => router.push(`/producer/live/${night.occurrence_id}`)}
+            />
+            <Button
               label="Open the roster"
+              kind="secondary"
               onPress={() => router.push(`/producer/night/${night.occurrence_id}`)}
             />
           </View>

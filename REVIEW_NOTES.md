@@ -126,4 +126,4 @@ None. All tabs and screens are functional (the Phase 0 PhaseShell component has 
 
 ## Running locally
 
-See README.md. With Docker: `npm run db:start`, copy the anon key into `.env`. Without Docker: `scripts/db/verify-local.sh` verifies the entire database layer (migrations, seed, 266 pgTAP tests) against system Postgres. Maestro smoke flows: `e2e/`.
+See README.md. With Docker: `npm run db:start`, copy the anon key into `.env`. Without Docker: `scripts/db/verify-local.sh` verifies the entire database layer (migrations, seed, 279 pgTAP tests) against system Postgres. Maestro smoke flows: `e2e/`.

@@ -2848,6 +2848,10 @@ export type Database = {
         Returns: Json;
       };
       test_kit_reset: { Args: never; Returns: Json };
+      test_kit_restart_night: {
+        Args: { p_occurrence_id: string };
+        Returns: Json;
+      };
       test_kit_seed_scenario: {
         Args: { p_scenario: string; p_timezone?: string };
         Returns: Json;

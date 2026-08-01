@@ -24,17 +24,18 @@ guesses the route gets nothing.
 
 ## What each scenario builds
 
-| Scenario                      | What lands                                                                           | What it is for                                                   |
-| ----------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
-| A mic of mine, starting soon  | One listing you own starting in 90 minutes, 6 performers already on the list         | Night-of roster, reorder, on deck, realtime, mark performed      |
-| A lottery waiting to be drawn | Your lottery mic in 3 hours, 9 names for 5 slots, nothing drawn                      | The draw, who gets in, who waitlists, the pushes that follow     |
-| A week of other people's mics | 6 listings over 7 days: every discipline, free and paid, 1 km out to 40 km           | Discovery filters, sorting, the map, distances, method labels    |
-| A listing to claim            | One unclaimed mic near you, plus a pending claim from somebody else                  | Claiming with a verification note, and the admin claim queue     |
-| Three freshness states        | Listings confirmed 2 days ago, 30 days ago, and never                                | The last-confirmed badge in green, amber, and gray, side by side |
-| A full moderation queue       | A held profile, a held listing, an abuse report, a data-quality flag                 | The queue: approve, reject, resolve, dismiss                     |
-| Me, on three lists            | Signs you up for three mics (confirmed, waitlisted, requested) and follows all three | The performer side: signup cards, favorites, day-of reminders    |
+| Scenario                      | What lands                                                                                                                                    | What it is for                                                             |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| A show already running        | Started 20 minutes ago: two performed, one no-show, somebody on stage, the next one on deck, two more to go, and a full list with two waiting | Live mode from the middle of a night, which is the only place it gets used |
+| A mic of mine, starting soon  | One listing you own starting in 90 minutes, 6 performers already on the list                                                                  | Night-of roster, reorder, on deck, realtime, mark performed                |
+| A lottery waiting to be drawn | Your lottery mic in 3 hours, 9 names for 5 slots, nothing drawn                                                                               | The draw, who gets in, who waitlists, the pushes that follow               |
+| A week of other people's mics | 6 listings over 7 days: every discipline, free and paid, 1 km out to 40 km                                                                    | Discovery filters, sorting, the map, distances, method labels              |
+| A listing to claim            | One unclaimed mic near you, plus a pending claim from somebody else                                                                           | Claiming with a verification note, and the admin claim queue               |
+| Three freshness states        | Listings confirmed 2 days ago, 30 days ago, and never                                                                                         | The last-confirmed badge in green, amber, and gray, side by side           |
+| A full moderation queue       | A held profile, a held listing, an abuse report, a data-quality flag                                                                          | The queue: approve, reject, resolve, dismiss                               |
+| Me, on three lists            | Signs you up for three mics (confirmed, waitlisted, requested) and follows all three                                                          | The performer side: signup cards, favorites, day-of reminders              |
 
-Scenarios stack. Run all seven and you have a populated city.
+Scenarios stack. Run them all and you have a populated city.
 
 Every mic is placed relative to **your** home area and scheduled relative to
 **your** device timezone, so "starting in 90 minutes" means 90 minutes from
@@ -46,6 +47,11 @@ now wherever you are.
   minutes from now. This is how you watch a signup window close, the night-of
   view open, and day-of reminders fire without waiting for the calendar. The
   local date is recomputed in the series timezone, so nothing goes naive.
+- **Rewind the show.** Puts everyone who went up back on the list, clears the
+  on-deck flags, and reopens the controls, so the same night can be run again
+  instead of rebuilt. Waitlisted names stay waitlisted: they never got on, so
+  promoting them would be a different night. A lottery night rewinds to drawn
+  rather than confirmed, because that is the state its list fills into.
 - **Add performers.** Puts test performers on any night, including a real
   listing of your own. Useful for loading up a mic you actually run.
 - **Your roles.** Turn performer or producer off to see the app the way
@@ -95,5 +101,5 @@ anyone.
 ## Local verification
 
 ```bash
-bash scripts/db/verify-local.sh   # migrations, seed, and 266 pgTAP assertions
+bash scripts/db/verify-local.sh   # migrations, seed, and 279 pgTAP assertions
 ```

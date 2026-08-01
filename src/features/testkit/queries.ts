@@ -141,6 +141,27 @@ export function useShiftOccurrence() {
   });
 }
 
+/**
+ * Rewind a night so the same show can be run again. Everyone who went up
+ * goes back on the list and the controls reopen, so testing Live does not
+ * mean building a fresh night after every pass.
+ */
+export function useRestartNight() {
+  const invalidate = useInvalidateEverything();
+  return useMutation({
+    mutationFn: async (occurrenceId: string) => {
+      const { data, error } = await getSupabase().rpc('test_kit_restart_night', {
+        p_occurrence_id: occurrenceId,
+      });
+      if (error) {
+        throw rpcError(error, 'Could not restart that night.');
+      }
+      return data as unknown as { back_on_the_list: number };
+    },
+    onSuccess: invalidate,
+  });
+}
+
 export function useSetTestRoles() {
   const invalidate = useInvalidateEverything();
   return useMutation({

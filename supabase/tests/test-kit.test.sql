@@ -5,7 +5,7 @@
 --   ...0004 admin
 --   ...0005 owner (kylewmixon@gmail.com): performer + producer + admin
 begin;
-select plan(31);
+select plan(41);
 
 -- ---------------------------------------------------------------------------
 -- Owner bootstrap
@@ -281,6 +281,97 @@ select is(
   (select count(*)::int from mic_series where title = 'Tonight at the Test Room'),
   0,
   'the test listings still went, which is what was actually asked for'
+);
+
+
+-- ---------------------------------------------------------------------------
+-- On deck cannot outlive the set
+-- ---------------------------------------------------------------------------
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-4000-a000-000000000005","role":"authenticated"}',
+  true
+);
+select lives_ok(
+  $$select test_kit_seed_scenario('live')$$,
+  'the live scenario runs'
+);
+
+reset role;
+create temp table live_night as
+  select o.id
+  from mic_occurrences o join mic_series s on s.id = o.series_id
+  where s.title = 'Test Kit Live Room'
+  order by o.starts_at limit 1;
+grant select on live_night to anon, authenticated;
+
+select is(
+  (select count(*)::int from signups
+   where occurrence_id = (select id from live_night) and status = 'performed'),
+  2,
+  'the live scenario starts mid-show, with sets already done'
+);
+select is(
+  (select slot_position::int from signups
+   where occurrence_id = (select id from live_night) and on_deck_at is not null),
+  5,
+  'on deck sits one behind whoever is on stage, not on the person walking up'
+);
+select is(
+  (select count(*)::int from signups
+   where occurrence_id = (select id from live_night) and status = 'waitlisted'),
+  2,
+  'the list is full, so the last two land on the waitlist through the lifecycle'
+);
+
+-- The bug this trigger exists for: marked done while still flagged on deck.
+update signups set status = 'performed'
+where occurrence_id = (select id from live_night) and slot_position = 5;
+select ok(
+  (select on_deck_at is null from signups
+   where occurrence_id = (select id from live_night) and slot_position = 5),
+  'marking a performer done takes them off deck, whatever route marked them'
+);
+
+-- And the mirror still holds: it cannot be set on someone already finished.
+select throws_ok(
+  format('select mark_on_deck(%L)',
+    (select id from signups
+     where occurrence_id = (select id from live_night) and slot_position = 5)),
+  '23514', null,
+  'and it cannot be put back on somebody who has already been up'
+);
+
+-- ---------------------------------------------------------------------------
+-- Rewinding a night
+-- ---------------------------------------------------------------------------
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-4000-a000-000000000005","role":"authenticated"}',
+  true
+);
+select lives_ok(
+  format('select end_show(%L)', (select id from live_night)),
+  'the host ends the show'
+);
+select lives_ok(
+  format('select test_kit_restart_night(%L)', (select id from live_night)),
+  'and the night can be rewound to run again'
+);
+
+reset role;
+select is(
+  (select count(*)::int from signups
+   where occurrence_id = (select id from live_night)
+     and status in ('performed', 'no_show')),
+  0,
+  'everyone who went up is back on the list'
+);
+select ok(
+  (select live_ended_at is null from mic_occurrences where id = (select id from live_night)),
+  'and the controls are open again'
 );
 
 select * from finish();
