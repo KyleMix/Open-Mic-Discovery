@@ -59,12 +59,50 @@ if (!url.startsWith('https://')) {
   );
 }
 
-const headers = { apikey: anonKey, Authorization: `Bearer ${anonKey}` };
+if (anonKey.startsWith('sb_secret_') || anonKey.startsWith('service_role')) {
+  fail(
+    'That is a secret key, not a publishable one.',
+    'A secret key bypasses row level security. It must never be built into an app. ' +
+      'Use the publishable key (sb_publishable_...) or the legacy anon key.',
+  );
+  report();
+}
+
+/**
+ * Supabase has two key formats in play. The legacy anon key is a JWT and is
+ * accepted in both the apikey and Authorization headers. The newer
+ * sb_publishable_ key is not a JWT, so some deployments accept it as apikey
+ * but reject it as a bearer token. Trying both means a working key is never
+ * reported as a broken one.
+ */
+let authStyle = 'apikey+bearer';
 
 async function get(path) {
-  const response = await fetch(`${url}${path}`, { headers });
-  const body = await response.text();
-  return { status: response.status, body };
+  const attempt = async (style) => {
+    const headers =
+      style === 'apikey+bearer'
+        ? { apikey: anonKey, Authorization: `Bearer ${anonKey}` }
+        : { apikey: anonKey };
+    const response = await fetch(`${url}${path}`, { headers });
+    return { status: response.status, body: await response.text() };
+  };
+
+  const first = await attempt(authStyle);
+  if (first.status !== 401 && first.status !== 403) {
+    return first;
+  }
+  if (authStyle === 'apikey+bearer') {
+    const second = await attempt('apikey');
+    if (second.status !== 401 && second.status !== 403) {
+      authStyle = 'apikey';
+      notes.push(
+        'The key is accepted in the apikey header but rejected as a bearer token. ' +
+          'That is normal for the newer sb_publishable_ keys and does not affect the app.',
+      );
+      return second;
+    }
+  }
+  return first;
 }
 
 try {

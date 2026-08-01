@@ -57,7 +57,13 @@ EULA versions, so onboarding works on a project with no other data in it.
 ### 3. Point builds at it
 
 The two values the app needs are public by design (see `ARCHITECTURE.md`), but
-they still belong in EAS rather than in git:
+they still belong in EAS rather than in git.
+
+Take the key from Project Settings, API Keys, **Publishable key**. On newer
+projects it starts `sb_publishable_`; on older ones it is a long `eyJ...` JWT
+under the legacy tab. Either works. The **secret key** on the same page must
+never go near the app: it bypasses row level security entirely, and anything
+built into an APK can be read out of it.
 
 ```bash
 npx eas env:create --environment preview --name EXPO_PUBLIC_SUPABASE_URL --value https://<ref>.supabase.co
