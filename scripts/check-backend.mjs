@@ -128,9 +128,16 @@ try {
   // 1. Is anything answering, and does it accept this key?
   const root = await get('/rest/v1/');
   if (root.status === 401 || root.status === 403) {
+    // The status alone says "rejected" without saying why, and the reasons
+    // are different fixes: a wrong key, a key format the Data API does not
+    // accept yet, or a project still enforcing the legacy JWT keys. The body
+    // distinguishes them, so it goes in the report verbatim.
     fail(
-      `The anon key was rejected (HTTP ${root.status}).`,
-      'Copy the anon/publishable key from the project API settings.',
+      `The key was rejected (HTTP ${root.status}). The server said: ` +
+        `${root.body.slice(0, 300) || '(empty response)'}`,
+      'If the key is definitely correct, try the legacy anon key instead: ' +
+        'Project Settings, API Keys, "Legacy anon, service_role API keys" tab. ' +
+        'It is the long eyJ... JWT and is always accepted by the Data API.',
     );
     report();
   }
