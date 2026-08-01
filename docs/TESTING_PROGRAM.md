@@ -175,6 +175,64 @@ npx eas-cli update --branch preview --message "what changed"
 
 ---
 
+## Part 3: iPhone, when you want it
+
+There is no free route onto someone else's iPhone. Apple requires a Developer
+Program membership (99 USD a year) for any install on a device you do not
+physically hold, and Expo Go is not a way round it: this app depends on
+Sentry, react-native-maps and expo-apple-authentication, none of which Expo Go
+carries.
+
+Two routes exist once you are enrolled.
+
+**TestFlight** is the one to use. Testers install Apple's TestFlight app and
+your build appears in it, with updates arriving the same way. Up to 10,000
+external testers. Each build for external testers goes through a Beta App
+Review, which is lighter than App Store review and usually clears within a
+day. Internal testers (up to 100, each needing an App Store Connect account)
+skip review entirely.
+
+**Ad hoc internal distribution** works like the Android APK: a link, no
+review. It is not worth it here. You must collect the UDID of every tester's
+device, you are capped at 100 devices a year, and adding one person means a
+rebuild. Asking a comedian to find their device UDID is a good way to lose
+them before they open the app.
+
+### Steps
+
+1. Enrol at developer.apple.com/programs. Approval can take a day or two, so
+   start here.
+2. In App Store Connect, create an app record using the bundle identifier
+   already in `app.json`: `com.openmicexplorer.app`.
+3. Build and submit:
+
+```bash
+npm run build:ios
+npm run submit:ios
+```
+
+4. App Store Connect, TestFlight tab: add testers by email, or create a public
+   link that anyone can use.
+
+The `testflight` profile extends `preview`, so iOS builds take the same
+Supabase environment variables and the same `preview` update channel as the
+Android testers. One `eas update --branch preview` reaches both.
+
+### Before the first iOS build
+
+- **Sign in with Apple has to work.** Apple requires it wherever you offer
+  Google sign-in (Guideline 4.8). It is already implemented; it needs the
+  capability enabled on the App ID, which EAS does when it creates the
+  credentials.
+- **`associatedDomains` still points at `applinks:openmicfinder.app`**, the
+  pre-rebrand domain, the same staleness the Android `intentFilters` carry.
+  Universal links will not work until that domain is one you own and serve an
+  apple-app-site-association file from.
+- iOS uses Apple Maps and needs no map key, so the Google Maps key problem is
+  Android-only.
+
+---
+
 ## Part 2: the page to send testers
 
 Copy everything below into an email, a message, or a page.
