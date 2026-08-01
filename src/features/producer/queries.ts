@@ -44,12 +44,18 @@ export function useConfirmSeries() {
   const invalidate = useInvalidateSeries();
   return useMutation({
     mutationFn: async (seriesId: string) => {
-      const { error } = await getSupabase()
+      const { data, error } = await getSupabase()
         .from('mic_series')
         .update({ last_confirmed_at: new Date().toISOString() })
-        .eq('id', seriesId);
+        .eq('id', seriesId)
+        .select('id');
       if (error) {
         throw new Error(error.message);
+      }
+      // Row level security filters denied rows out of an update rather than
+      // raising, so zero rows back means the write was refused, not applied.
+      if (!data || data.length === 0) {
+        throw new Error('Could not confirm this mic. You may no longer manage it.');
       }
     },
     onSuccess: (_d, seriesId) => invalidate(seriesId),
@@ -60,9 +66,16 @@ export function useUpdateSeries() {
   const invalidate = useInvalidateSeries();
   return useMutation({
     mutationFn: async ({ seriesId, patch }: { seriesId: string; patch: SeriesUpdate }) => {
-      const { error } = await getSupabase().from('mic_series').update(patch).eq('id', seriesId);
+      const { data, error } = await getSupabase()
+        .from('mic_series')
+        .update(patch)
+        .eq('id', seriesId)
+        .select('id');
       if (error) {
         throw new Error(error.message);
+      }
+      if (!data || data.length === 0) {
+        throw new Error('Could not save these changes. You may no longer manage this mic.');
       }
     },
     onSuccess: (_d, { seriesId }) => invalidate(seriesId),
@@ -81,12 +94,16 @@ export function useUpdateOccurrence() {
       seriesId: string;
       patch: OccurrenceUpdate;
     }) => {
-      const { error } = await getSupabase()
+      const { data, error } = await getSupabase()
         .from('mic_occurrences')
         .update(patch)
-        .eq('id', occurrenceId);
+        .eq('id', occurrenceId)
+        .select('id');
       if (error) {
         throw new Error(error.message);
+      }
+      if (!data || data.length === 0) {
+        throw new Error('Could not save this night. You may no longer manage this mic.');
       }
       return seriesId;
     },
@@ -255,12 +272,16 @@ export function useEnableProducerRole() {
   return useMutation({
     mutationFn: async (userId: string) => {
       const supabase = getSupabase();
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .update({ is_producer: true })
-        .eq('id', userId);
+        .eq('id', userId)
+        .select('id');
       if (error) {
         throw new Error(error.message);
+      }
+      if (!data || data.length === 0) {
+        throw new Error('Could not enable producer tools on this account.');
       }
       const { error: ppError } = await supabase
         .from('producer_profiles')

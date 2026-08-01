@@ -171,9 +171,18 @@ export function useSetSignupStatus() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ signupId, status }: { signupId: string; status: SignupStatus }) => {
-      const { error } = await getSupabase().from('signups').update({ status }).eq('id', signupId);
+      const { data, error } = await getSupabase()
+        .from('signups')
+        .update({ status })
+        .eq('id', signupId)
+        .select('id');
       if (error) {
         throw new Error(error.message);
+      }
+      // Row level security filters denied rows out of an update rather than
+      // raising, so zero rows back means the write was refused, not applied.
+      if (!data || data.length === 0) {
+        throw new Error('Could not update this signup. You may no longer manage this night.');
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['signup'] }),

@@ -157,16 +157,22 @@ export function useResolveReport() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: { reportId: string; adminId: string; actioned: boolean }) => {
-      const { error } = await getSupabase()
+      const { data, error } = await getSupabase()
         .from('reports')
         .update({
           status: input.actioned ? 'actioned' : 'dismissed',
           resolved_by: input.adminId,
           resolved_at: new Date().toISOString(),
         })
-        .eq('id', input.reportId);
+        .eq('id', input.reportId)
+        .select('id');
       if (error) {
         throw new Error(error.message);
+      }
+      // Row level security filters denied rows out of an update rather than
+      // raising, so zero rows back means the write was refused, not applied.
+      if (!data || data.length === 0) {
+        throw new Error('Could not resolve this report. It may already be resolved.');
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['moderation'] }),
@@ -177,16 +183,20 @@ export function useResolveFlag() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: { flagId: string; adminId: string; confirmed: boolean }) => {
-      const { error } = await getSupabase()
+      const { data, error } = await getSupabase()
         .from('listing_flags')
         .update({
           status: input.confirmed ? 'confirmed' : 'dismissed',
           resolved_by: input.adminId,
           resolved_at: new Date().toISOString(),
         })
-        .eq('id', input.flagId);
+        .eq('id', input.flagId)
+        .select('id');
       if (error) {
         throw new Error(error.message);
+      }
+      if (!data || data.length === 0) {
+        throw new Error('Could not resolve this flag. It may already be resolved.');
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['moderation'] }),

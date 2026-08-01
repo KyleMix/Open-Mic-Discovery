@@ -24,9 +24,18 @@ export function useUpdateProfile(userId: string | undefined) {
       if (!userId) {
         throw new Error('Not signed in.');
       }
-      const { error } = await getSupabase().from('profiles').update(patch).eq('id', userId);
+      const { data, error } = await getSupabase()
+        .from('profiles')
+        .update(patch)
+        .eq('id', userId)
+        .select('id');
       if (error) {
         throw new Error(error.message);
+      }
+      // Row level security filters denied rows out of an update rather than
+      // raising, so zero rows back means the write was refused, not applied.
+      if (!data || data.length === 0) {
+        throw new Error('Could not save your profile changes.');
       }
     },
     onSuccess: () => {
