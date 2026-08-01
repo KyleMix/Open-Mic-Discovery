@@ -6,6 +6,7 @@ import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/component
 import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
 import {
+  EXPECTED_KIT_VERSION,
   useFillRoster,
   useResetTestData,
   useRestartNight,
@@ -88,6 +89,28 @@ export default function TestKitScreen() {
     reset.isPending;
   const totalObjects = Object.values(s.counts).reduce((sum, n) => sum + n, 0);
   const night = s.next_night;
+  const stale = (s.kit_version ?? 0) < EXPECTED_KIT_VERSION;
+
+  // Live opens an hour before a night starts, so a scenario that builds one
+  // further out than that has to be moved before it can be run. The server
+  // answers this, which is the difference between "Run it live" working and
+  // landing on Not yet.
+  const needsShift = !!night && night.live_open === false;
+
+  const goLive = (occurrenceId: string) => {
+    if (!needsShift) {
+      router.push(`/producer/live/${occurrenceId}`);
+      return;
+    }
+    setError(null);
+    setMessage(null);
+    shift
+      .mutateAsync({ occurrenceId, minutes: 30 })
+      .then(() => router.push(`/producer/live/${occurrenceId}`))
+      .catch((e: unknown) =>
+        setError(e instanceof Error ? e.message : 'Could not move that night.'),
+      );
+  };
 
   const run = (label: string, promise: Promise<unknown>) => {
     setError(null);
@@ -127,6 +150,21 @@ export default function TestKitScreen() {
         listing, and everything it creates can be undone at the bottom of this screen.
       </Body>
 
+      {/* The one failure that looks like a broken kit but is not. Without
+          this, a database missing the newest migrations answers 404 for the
+          tools it does not have and 400 for scenario names it has never
+          heard of, and the screen looks broken instead of behind. */}
+      {stale ? (
+        <View style={styles.notice}>
+          <Text style={styles.noticeText}>
+            This database is running an older test kit (version {s.kit_version ?? 'unknown'}, this
+            build expects {EXPECTED_KIT_VERSION}). Newer scenarios and tools will fail until the
+            migrations are applied. Run supabase db reset, or npx supabase migration up to keep the
+            data you have.
+          </Text>
+        </View>
+      ) : null}
+
       {!s.enabled ? (
         <View style={styles.notice}>
           <Text style={styles.noticeText}>
@@ -147,8 +185,9 @@ export default function TestKitScreen() {
         <View style={styles.actions}>
           {lastResult.occurrenceId ? (
             <Button
-              label="Run it live"
-              onPress={() => router.push(`/producer/live/${lastResult.occurrenceId}`)}
+              label={needsShift ? 'Move it close and run it live' : 'Run it live'}
+              busy={shift.isPending}
+              onPress={() => goLive(lastResult.occurrenceId!)}
             />
           ) : null}
           {lastResult.occurrenceId ? (
@@ -238,8 +277,10 @@ export default function TestKitScreen() {
           </View>
           <View style={styles.actions}>
             <Button
-              label="Run it live"
-              onPress={() => router.push(`/producer/live/${night.occurrence_id}`)}
+              label={needsShift ? 'Move it close and run it live' : 'Run it live'}
+              busy={shift.isPending}
+              disabled={busy}
+              onPress={() => goLive(night.occurrence_id)}
             />
             <Button
               label="Open the roster"

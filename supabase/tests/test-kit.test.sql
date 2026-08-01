@@ -5,7 +5,7 @@
 --   ...0004 admin
 --   ...0005 owner (kylewmixon@gmail.com): performer + producer + admin
 begin;
-select plan(41);
+select plan(45);
 
 -- ---------------------------------------------------------------------------
 -- Owner bootstrap
@@ -372,6 +372,40 @@ select is(
 select ok(
   (select live_ended_at is null from mic_occurrences where id = (select id from live_night)),
   'and the controls are open again'
+);
+
+
+-- ---------------------------------------------------------------------------
+-- The kit reports its own version, so a stale database can say so
+-- ---------------------------------------------------------------------------
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-4000-a000-000000000005","role":"authenticated"}',
+  true
+);
+select is(
+  (select (test_kit_status() ->> 'kit_version')::int),
+  4,
+  'status carries the kit version the app checks against'
+);
+
+-- Moving a night has to undo an ended show too, or the time machine drops
+-- the host straight onto "Show ended", which is the dead end it exists to
+-- avoid.
+select lives_ok(
+  format('select end_show(%L)', (select id from live_night)),
+  'a show that was ended'
+);
+select lives_ok(
+  format('select test_kit_shift_occurrence(%L, 30)', (select id from live_night)),
+  'can be moved into the live window'
+);
+reset role;
+select ok(
+  (select live_ended_at is null and starts_at > now()
+   from mic_occurrences where id = (select id from live_night)),
+  'and it reopens rather than staying ended'
 );
 
 select * from finish();

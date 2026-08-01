@@ -16,6 +16,26 @@ Two pieces:
 Both live in `supabase/migrations/20260801000100_test_kit.sql`, with the
 pgTAP suite in `supabase/tests/test-kit.test.sql`.
 
+## Keeping the database in step
+
+The tools **are** database functions, so a database without the newest
+migrations does not have them. That failure is confusing on its own terms: it
+answers 404 for a tool it has never seen and 400 for a scenario name it does
+not know, and neither of those says "run your migrations".
+
+So the kit reports its version and Testing tools compares it against the
+version the app was built for. If the database is behind, the screen says so
+at the top and names the fix:
+
+```bash
+supabase db reset          # rebuild from every migration plus the seed
+npx supabase migration up  # or apply just the new ones, keeping your data
+```
+
+When a migration adds or changes a test kit entry point, bump
+`private.test_kit_version()` and `EXPECTED_KIT_VERSION` in
+`src/features/testkit/queries.ts` together.
+
 ## Getting in
 
 Profile tab, **Testing tools**. The button only appears for admins, and every
@@ -47,6 +67,10 @@ now wherever you are.
   minutes from now. This is how you watch a signup window close, the night-of
   view open, and day-of reminders fire without waiting for the calendar. The
   local date is recomputed in the series timezone, so nothing goes naive.
+- **Run it live.** Opens Live on the next test night. Live only opens an hour
+  before a night starts, so when the night is further out than that the button
+  says "Move it close and run it live" and does both. Whether the window is
+  open is answered by the database, which already knows the time.
 - **Rewind the show.** Puts everyone who went up back on the list, clears the
   on-deck flags, and reopens the controls, so the same night can be run again
   instead of rebuilt. Waitlisted names stay waitlisted: they never got on, so
@@ -101,5 +125,5 @@ anyone.
 ## Local verification
 
 ```bash
-bash scripts/db/verify-local.sh   # migrations, seed, and 279 pgTAP assertions
+bash scripts/db/verify-local.sh   # migrations, seed, and 283 pgTAP assertions
 ```

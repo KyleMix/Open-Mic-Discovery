@@ -34,6 +34,17 @@ function rpcError(
   return new Error(parts.join(' '));
 }
 
+/**
+ * The test kit version this build expects the database to be running.
+ *
+ * Bump this together with private.test_kit_version() whenever a migration
+ * adds or changes an entry point. A database behind this number answers 404
+ * for tools it does not have yet and 400 for scenario names it has never
+ * heard of, and neither of those says "run your migrations", so the screen
+ * says it instead.
+ */
+export const EXPECTED_KIT_VERSION = 4;
+
 export type TestKitLogin = { email: string; name: string };
 
 export type TestKitNight = {
@@ -41,9 +52,17 @@ export type TestKitNight = {
   series_id: string;
   title: string;
   starts_at: string;
+  /**
+   * Whether Live would open on this night right now. Answered by the
+   * database, which already knows the time, so the screen needs no clock.
+   * Absent on a database older than the version that added it.
+   */
+  live_open?: boolean;
 };
 
 export type TestKitStatus = {
+  /** Absent on any database older than the version that introduced it. */
+  kit_version?: number;
   enabled: boolean;
   password: string;
   counts: Record<string, number>;
