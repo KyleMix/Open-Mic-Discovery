@@ -13,7 +13,7 @@
 -- an environment without it cannot run this product correctly, and a test
 -- that skipped itself there would report success for a broken deployment.
 begin;
-select plan(9);
+select plan(12);
 
 -- cron.job does not exist at all when the extension failed to install, and a
 -- missing relation would abort the file rather than fail a test. This keeps
@@ -93,10 +93,32 @@ select is(
   'the weekly digest queue is scheduled'
 );
 
+-- ---------------------------------------------------------------------------
+-- Draining the outbox. Ten migrations write notification rows and the
+-- push-sender Edge Function drains them, but for a long time nothing called
+-- it, so every queued notification sat unsent while the feature looked built.
+-- These assertions are what makes that impossible to repeat.
+-- ---------------------------------------------------------------------------
+select is(
+  (select count(*)::int from pg_extension where extname = 'pg_net'),
+  1,
+  'pg_net is installed, without it nothing can call the push-sender function'
+);
+select is(
+  pg_temp.job_count('drain-notification-outbox'), 1,
+  'the outbox drain is scheduled, so queued notifications actually send'
+);
+select is(
+  pg_temp.job_schedule('drain-notification-outbox'), '* * * * *',
+  'the drain runs every minute, because an on-deck notice is worthless late'
+);
+
 -- The functions the jobs name must actually exist, so a rename cannot leave a
 -- job scheduled against a dead target.
 select has_function('private', 'generate_occurrences',
   'the function the nightly job calls exists');
+select has_function('private', 'drain_notification_outbox',
+  'the function the drain job calls exists');
 select is(
   (select count(*)::int from pg_proc p
    join pg_namespace n on n.oid = p.pronamespace

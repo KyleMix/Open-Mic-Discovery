@@ -39,10 +39,10 @@ su postgres -c "psql -q -d $DB -c 'create extension if not exists pgtap'"
 # file is enforced in CI, where the full Supabase stack does have pg_cron, and
 # a machine that skips it has not verified that the nightly occurrence
 # generation and the three retention queues are scheduled at all.
-HAS_CRON=$(su postgres -c "psql -qtAX -d $DB -c \"select count(*) from pg_extension where extname = 'pg_cron'\"")
+HAS_CRON=$(su postgres -c "psql -qtAX -d $DB -c \"select count(*) from pg_extension where extname in ('pg_cron','pg_net')\"")
 TESTS=(supabase/tests/*.test.sql)
-if [ "$HAS_CRON" != "1" ]; then
-  echo "SKIPPING supabase/tests/scheduled-jobs.test.sql: pg_cron is not installed here."
+if [ "$HAS_CRON" != "2" ]; then
+  echo "SKIPPING supabase/tests/scheduled-jobs.test.sql: pg_cron and pg_net are not both installed here."
   echo "  The scheduled job assertions run in CI against the full Supabase stack."
   TESTS=("${TESTS[@]/supabase\/tests\/scheduled-jobs.test.sql}")
 fi

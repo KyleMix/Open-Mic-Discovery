@@ -93,6 +93,28 @@ a link. `sendPasswordReset` asks Supabase to redirect to
 the allow-list entry, every tester who forgets their password lands on a dead
 localhost page instead.
 
+### 3c. Let the notification outbox drain
+
+Notifications are queued by the database and sent by the push-sender Edge
+Function, and a scheduled job calls it every minute. That job needs the
+function's URL and the service role key, which are read from Vault so neither
+ends up in the schema or in git. Run once, in the SQL editor:
+
+```sql
+select vault.create_secret(
+  'https://<ref>.supabase.co/functions/v1/push-sender', 'push_sender_url');
+select vault.create_secret('<service-role-key>', 'push_sender_key');
+```
+
+The service role key is on the API Keys page under Secret keys. It bypasses
+row level security completely, so it belongs here and nowhere near the app.
+
+Deploy the function itself with `npx supabase functions deploy push-sender`.
+
+Until both secrets exist the job raises on every run rather than returning
+quietly, which is deliberate: a drain that failed silently would look exactly
+like the bug it was written to fix.
+
 ### 4. Point builds at it
 
 The two values the app needs are public by design (see `ARCHITECTURE.md`), but
