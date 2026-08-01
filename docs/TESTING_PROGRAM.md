@@ -66,9 +66,18 @@ never go near the app: it bypasses row level security entirely, and anything
 built into an APK can be read out of it.
 
 ```bash
-npx eas-cli env:create --environment preview --name EXPO_PUBLIC_SUPABASE_URL --value https://<ref>.supabase.co
-npx eas-cli env:create --environment preview --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value <anon-key>
+npx eas-cli env:set --environment preview --name EXPO_PUBLIC_SUPABASE_URL --value https://<ref>.supabase.co
+npx eas-cli env:set --environment preview --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value <anon-key>
 ```
+
+If EAS refuses with "Slug for project identified by extra.eas.projectId does
+not match the slug field", the project on expo.dev still carries its
+pre-rebrand slug. Rename it in the project settings there to match `slug` in
+`app.json`. Renaming keeps the build history, the credentials, and the
+`updates.url`, all of which are keyed to the project id rather than the name.
+Do not run `eas init --force` to get past it: that mints a new project id and
+orphans the signing key, which means installed copies can no longer be
+upgraded in place.
 
 The `preview` build profile in `eas.json` declares `"environment": "preview"`,
 which is what binds those variables to the build. If your EAS CLI rejects that
