@@ -33,7 +33,17 @@ export type FakeOp = {
   single: boolean;
 };
 
-export type FakeHandler = (op: FakeOp) => FakeResult;
+/**
+ * Returning a promise lets a test hold a request open, which is the only way
+ * to observe a screen's loading state: a handler that answers immediately has
+ * already resolved by the time render returns.
+ */
+export type FakeHandler = (op: FakeOp) => FakeResult | Promise<FakeResult>;
+
+/** A request that never answers, for asserting on loading states. */
+export function neverResolves(): Promise<FakeResult> {
+  return new Promise<FakeResult>(() => {});
+}
 
 /** Rows a successful write returns, for the common "it landed" case. */
 export function affectedRows(count: number): { id: string }[] {
@@ -48,14 +58,14 @@ const SINGLE_METHODS = new Set(['single', 'maybeSingle']);
  * so one permissive chainable object covers the whole surface the app uses.
  */
 function makeBuilder(op: FakeOp, handler: FakeHandler): unknown {
-  const settle = (): Promise<FakeResult> => {
-    const result = handler(op);
+  const settle = async (): Promise<FakeResult> => {
+    const result = await handler(op);
     if (!op.single) {
-      return Promise.resolve(result);
+      return result;
     }
     // single()/maybeSingle() collapse the row set to one row or null.
     const data = Array.isArray(result.data) ? (result.data[0] ?? null) : result.data;
-    return Promise.resolve({ data, error: result.error });
+    return { data, error: result.error };
   };
 
   const proxy: unknown = new Proxy(
