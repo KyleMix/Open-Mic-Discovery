@@ -32,4 +32,24 @@ describe('pathFromNotificationData', () => {
     await expect(pathFromNotificationData({})).resolves.toBeNull();
     await expect(pathFromNotificationData({ occurrence_id: 'gone' })).resolves.toBeNull();
   });
+
+  it('prefers the series it was handed over a lookup', async () => {
+    getSupabase().maybeSingle.mockClear();
+    await expect(
+      pathFromNotificationData({ series_id: 'abc', occurrence_id: 'occ-1' }),
+    ).resolves.toBe('/mic/abc');
+    expect(getSupabase().maybeSingle).not.toHaveBeenCalled();
+  });
+
+  it('ignores ids that are not strings', async () => {
+    // Payloads arrive from outside the app. A number here would otherwise
+    // build "/mic/123" and land on a page that cannot exist.
+    await expect(pathFromNotificationData({ series_id: 123 })).resolves.toBeNull();
+    await expect(pathFromNotificationData({ series_id: null })).resolves.toBeNull();
+    await expect(pathFromNotificationData({ occurrence_id: 123 })).resolves.toBeNull();
+  });
+
+  it('survives an array, which is an object carrying no ids', async () => {
+    await expect(pathFromNotificationData([])).resolves.toBeNull();
+  });
 });

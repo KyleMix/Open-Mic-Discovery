@@ -1,4 +1,8 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
+// The suite runs in America/Los_Angeles, not UTC: see scripts/dev/test.mjs
+// for why, and note that TZ must be set before Node starts, so it cannot be
+// done from here.
+
 // Reanimated test support: registers the worklet-free jest implementation
 // so components using useAnimatedStyle render in unit tests.
 require('react-native-reanimated').setUpTests();
