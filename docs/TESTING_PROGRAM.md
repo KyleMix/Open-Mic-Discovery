@@ -71,13 +71,17 @@ npx eas-cli env:set --environment preview --name EXPO_PUBLIC_SUPABASE_ANON_KEY -
 ```
 
 If EAS refuses with "Slug for project identified by extra.eas.projectId does
-not match the slug field", the project on expo.dev still carries its
-pre-rebrand slug. Rename it in the project settings there to match `slug` in
-`app.json`. Renaming keeps the build history, the credentials, and the
-`updates.url`, all of which are keyed to the project id rather than the name.
-Do not run `eas init --force` to get past it: that mints a new project id and
-orphans the signing key, which means installed copies can no longer be
-upgraded in place.
+not match the slug field", `slug` in `app.json` has drifted from the project
+the id points at. Change `app.json` to match the server, not the other way
+round: an Expo project's slug is fixed when the project is created and the
+dashboard only lets you edit the display name, which is a different field.
+
+The slug is an Expo-side identifier. It is not the app's name, its scheme, or
+its bundle id, so aligning it changes nothing a user sees.
+
+Do not run `eas init --force` to get past this: it mints a new project id and
+orphans the Android signing key, so already-installed copies can no longer be
+upgraded in place and every tester has to uninstall and reinstall.
 
 The `preview` build profile in `eas.json` declares `"environment": "preview"`,
 which is what binds those variables to the build. If your EAS CLI rejects that

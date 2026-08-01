@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Open Mic Explorer",
-    "slug": "openmicexplorer",
+    "slug": "openmic",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
