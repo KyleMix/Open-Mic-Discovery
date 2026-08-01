@@ -59,6 +59,25 @@ if (!url.startsWith('https://')) {
   );
 }
 
+// The dashboard shows keys elided in the middle or the end. Selecting that
+// text copies the ellipsis with it, and the result is a key that looks right
+// and fails as an ordinary 401, which sends you checking the wrong things.
+if (/(\.\.\.|…)/.test(anonKey)) {
+  fail(
+    'The key contains an ellipsis, so it is the shortened version the dashboard displays.',
+    'Use the copy button next to the key rather than selecting the text on screen.',
+  );
+  report();
+}
+
+if (anonKey.length < 40) {
+  fail(
+    `The key is only ${anonKey.length} characters, which is too short to be a real one.`,
+    'Copy the full value with the copy button in Project Settings, API Keys.',
+  );
+  report();
+}
+
 if (anonKey.startsWith('sb_secret_') || anonKey.startsWith('service_role')) {
   fail(
     'That is a secret key, not a publishable one.',
