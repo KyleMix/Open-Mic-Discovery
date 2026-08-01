@@ -7,16 +7,23 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { DarkTheme, Stack, ThemeProvider, useRouter, useSegments } from 'expo-router';
+import {
+  DarkTheme,
+  Stack,
+  ThemeProvider,
+  useRouter,
+  useSegments,
+  type ErrorBoundaryProps,
+} from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, type ReactNode } from 'react';
 
-import { Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
+import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { SessionProvider, useSession } from '@/features/auth/session';
 import { useLatestEula, useOwnProfile } from '@/features/auth/queries';
 import { registerPushToken, useNotificationTaps } from '@/lib/notifications';
 import { CACHE_BUSTER, queryClient } from '@/lib/query-client';
-import { initSentry } from '@/lib/sentry';
+import { initSentry, reportError } from '@/lib/sentry';
 import { palette } from '@/theme';
 
 const appTheme = {
@@ -128,6 +135,33 @@ function AuthGate({ children }: { children: ReactNode }) {
     );
   }
   return <>{children}</>;
+}
+
+/**
+ * Last line of defense (Guideline 2.1: no crash paths).
+ *
+ * Expo Router renders this instead of the tree when a render or an effect
+ * throws anywhere below the root. Retry remounts the segment, so a transient
+ * failure (a realtime channel, a bad response) costs a tap rather than a
+ * relaunch. The message is shown because the person seeing it is usually the
+ * one who can report it.
+ */
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  useEffect(() => {
+    reportError(error);
+  }, [error]);
+
+  return (
+    <Screen>
+      <Title>Something went wrong</Title>
+      <Body>
+        That screen could not load. Trying again usually fixes it. If it keeps happening, the
+        details below are worth sending on.
+      </Body>
+      <ErrorText>{error.message}</ErrorText>
+      <Button label="Try again" onPress={() => retry()} />
+    </Screen>
+  );
 }
 
 // Cached server data survives restarts so listings stay readable offline

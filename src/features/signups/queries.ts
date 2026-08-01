@@ -2,6 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
+import { uniqueChannelTopic } from '@/lib/realtime';
 import { getSupabase } from '@/lib/supabase';
 import type { Database } from '@/types/database.types';
 
@@ -122,8 +123,12 @@ export function useRoster(occurrenceId: string | undefined) {
     if (!occurrenceId) {
       return;
     }
-    const channel = getSupabase()
-      .channel(`signups-${occurrenceId}`)
+    const supabase = getSupabase();
+    // Own topic per subscription: a shared one would be handed back already
+    // joined after a remount, and adding the callback would throw. See
+    // src/lib/realtime.ts.
+    const channel = supabase
+      .channel(uniqueChannelTopic('signups', occurrenceId))
       .on(
         'postgres_changes',
         {
@@ -139,7 +144,7 @@ export function useRoster(occurrenceId: string | undefined) {
       )
       .subscribe();
     return () => {
-      getSupabase().removeChannel(channel);
+      supabase.removeChannel(channel);
     };
   }, [occurrenceId, queryClient]);
 

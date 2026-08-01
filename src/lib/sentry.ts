@@ -16,3 +16,14 @@ export function initSentry(): void {
     tracesSampleRate: 0.1,
   });
 }
+
+/**
+ * Report a render error caught by the router error boundary. Inert without a
+ * DSN, same as init, so local development stays quiet.
+ */
+export function reportError(error: Error): void {
+  if (!process.env.EXPO_PUBLIC_SENTRY_DSN) {
+    return;
+  }
+  Sentry.captureException(error);
+}
