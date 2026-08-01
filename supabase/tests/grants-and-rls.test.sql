@@ -12,7 +12,36 @@
 -- from the moment it exists, and nothing in the schema objects. These tests
 -- are that objection.
 begin;
-select plan(8);
+select plan(12);
+
+-- ---------------------------------------------------------------------------
+-- The exception that proves the rule: spatial_ref_sys.
+--
+-- Every RLS assertion in this file and in rls.test.sql excludes this table,
+-- because it belongs to PostGIS and cannot carry our policies. That exclusion
+-- is exactly where the blanket grant bites: no row level security, and until
+-- 20260801000700 the API roles held every privilege on it. Deleting from it
+-- breaks ST_DWithin and the <-> ordering the whole product runs on.
+--
+-- So it gets checked by privilege instead of by policy. Nothing else in the
+-- schema is allowed to rely on being skipped.
+-- ---------------------------------------------------------------------------
+select ok(
+  has_table_privilege('anon', 'public.spatial_ref_sys', 'SELECT'),
+  'anon can still read spatial_ref_sys, which PostGIS needs for transforms'
+);
+select ok(
+  not has_table_privilege('anon', 'public.spatial_ref_sys', 'DELETE'),
+  'anon cannot delete from spatial_ref_sys and break every distance query'
+);
+select ok(
+  not has_table_privilege('anon', 'public.spatial_ref_sys', 'INSERT'),
+  'anon cannot insert into spatial_ref_sys'
+);
+select ok(
+  not has_table_privilege('authenticated', 'public.spatial_ref_sys', 'UPDATE'),
+  'a signed-in user cannot rewrite a coordinate system definition'
+);
 
 -- ---------------------------------------------------------------------------
 -- The guard: no table without row level security.
