@@ -73,6 +73,26 @@ Leaving it on is not an option either way: the built-in email sender on the
 free tier is rate limited to a handful of messages an hour and is not intended
 for real delivery, so most testers would never receive the message.
 
+Anyone who already signed up before this was turned off is stuck. Disabling
+confirmation does not retroactively confirm an existing account, so delete
+those users under Authentication, Users, and have them sign up again.
+
+### 3b. Allow the app's own redirect URLs
+
+Authentication, URL Configuration, Redirect URLs: add `openmicexplorer://**`.
+
+Supabase ships with a Site URL of `http://localhost:3000` and rejects any
+redirect not on the allow list, falling back to that default. On a phone
+`localhost:3000` is the phone itself, so the browser opens to a connection
+refused page.
+
+This matters even with confirmation off, because password reset always emails
+a link. `sendPasswordReset` asks Supabase to redirect to
+`Linking.createURL('reset-password')`, which resolves to
+`openmicexplorer://reset-password` and deep-links back into the app. Without
+the allow-list entry, every tester who forgets their password lands on a dead
+localhost page instead.
+
 ### 4. Point builds at it
 
 The two values the app needs are public by design (see `ARCHITECTURE.md`), but
