@@ -54,7 +54,26 @@ Everything the kit creates is tracked in a registry so it can be removed again
 exactly, without touching anything else. The migrations already insert the
 EULA versions, so onboarding works on a project with no other data in it.
 
-### 3. Point builds at it
+### 3. Turn off email confirmation
+
+Dashboard, Authentication, Sign In / Providers, Email: turn **Confirm email**
+off.
+
+Hosted projects enable it by default, and the app cannot cope with it.
+`signUpWithEmail` calls `auth.signUp` and the sign-up screen assumes a session
+exists as soon as it returns, because the root gate routes on the session. With
+confirmation on, Supabase returns a user, a null session and no error, so the
+screen finds nothing wrong and routes nowhere. The tester taps Create account,
+sees no error and no progress, and reasonably concludes the app is broken.
+
+`supabase/config.toml` sets `enable_confirmations = false`, but that file
+configures the local stack only and has no effect on a hosted project.
+
+Leaving it on is not an option either way: the built-in email sender on the
+free tier is rate limited to a handful of messages an hour and is not intended
+for real delivery, so most testers would never receive the message.
+
+### 4. Point builds at it
 
 The two values the app needs are public by design (see `ARCHITECTURE.md`), but
 they still belong in EAS rather than in git.
@@ -88,7 +107,7 @@ which is what binds those variables to the build. If your EAS CLI rejects that
 field, upgrade the CLI; failing that, move the two values into an `env` block
 on the profile instead.
 
-### 4. Verify before you build
+### 5. Verify before you build
 
 ```bash
 npm run check:backend https://<ref>.supabase.co <anon-key>
@@ -100,7 +119,7 @@ key, missing migrations, a missing EULA row (which strands everyone on the
 consent screen), and an empty listings table. Do not build until it prints
 `Backend ready`.
 
-### 5. Build
+### 6. Build
 
 The EAS CLI is published as `eas-cli` while its binary is called `eas`, so
 `npx eas ...` fails to resolve. Use the package name, or install it once with
@@ -122,7 +141,7 @@ an update to installed copies instead, which is much faster:
 npx eas-cli update --branch preview --message "what changed"
 ```
 
-### 6. Before sending the link
+### 7. Before sending the link
 
 - **Rotate the Google Maps API key.** `app.json` has a live key committed to a
   public repository, so it is in the git history and must be assumed exposed.
