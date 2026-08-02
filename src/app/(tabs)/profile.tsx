@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { signOut } from '@/features/auth/api';
 import { useOwnProfile } from '@/features/auth/queries';
@@ -9,8 +9,9 @@ import { useSession } from '@/features/auth/session';
 import { AvatarCircle } from '@/features/profile/avatar-circle';
 import { homeAreaLabel } from '@/features/profile/home-area';
 import { buildSocialLinks } from '@/features/profile/social';
+import { SocialLinkRow } from '@/components/social-links';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
-import { disciplineAccents, fonts, minTouchTarget, palette, spacing, type } from '@/theme';
+import { disciplineAccents, palette, spacing, type } from '@/theme';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -96,21 +97,7 @@ export default function ProfileScreen() {
           Home area: {homeAreaLabel(p)} (only you can see this)
         </Text>
       ) : null}
-      {links.length > 0 ? (
-        <View style={styles.linkRow}>
-          {links.map((link) => (
-            <Pressable
-              key={link.key}
-              accessibilityRole="link"
-              accessibilityLabel={`Open ${link.label}`}
-              onPress={() => Linking.openURL(link.url).catch(() => null)}
-              style={({ pressed }) => [styles.linkChip, pressed && styles.linkChipPressed]}
-            >
-              <Text style={styles.linkChipLabel}>{link.label}</Text>
-            </Pressable>
-          ))}
-        </View>
-      ) : null}
+      <SocialLinkRow links={links} />
       {error ? <ErrorText>{error}</ErrorText> : null}
       <Button label="Edit profile" onPress={() => router.push('/edit-profile')} />
       <Button label="Settings" kind="secondary" onPress={() => router.push('/settings')} />
@@ -161,29 +148,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-  },
-  linkRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  linkChip: {
-    alignItems: 'center',
-    backgroundColor: palette.bgElevated,
-    borderColor: palette.border,
-    borderRadius: 22,
-    borderWidth: 1,
-    justifyContent: 'center',
-    minHeight: minTouchTarget - 8,
-    paddingHorizontal: spacing.md,
-  },
-  linkChipPressed: {
-    backgroundColor: palette.bgPressed,
-  },
-  linkChipLabel: {
-    color: palette.text,
-    fontFamily: fonts.medium,
-    fontSize: type.caption.fontSize,
   },
   privateNote: {
     color: palette.textSecondary,

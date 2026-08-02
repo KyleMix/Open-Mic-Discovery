@@ -898,6 +898,8 @@ export type Database = {
           link_instagram: string | null;
           link_tiktok: string | null;
           link_website: string | null;
+          link_spotify: string | null;
+          link_apple_music: string | null;
           link_youtube: string | null;
           moderation_status: Database['public']['Enums']['moderation_status'];
           stage_name: string;
@@ -926,6 +928,8 @@ export type Database = {
           link_instagram?: string | null;
           link_tiktok?: string | null;
           link_website?: string | null;
+          link_spotify?: string | null;
+          link_apple_music?: string | null;
           link_youtube?: string | null;
           moderation_status?: Database['public']['Enums']['moderation_status'];
           stage_name: string;
@@ -954,6 +958,8 @@ export type Database = {
           link_instagram?: string | null;
           link_tiktok?: string | null;
           link_website?: string | null;
+          link_spotify?: string | null;
+          link_apple_music?: string | null;
           link_youtube?: string | null;
           moderation_status?: Database['public']['Enums']['moderation_status'];
           stage_name?: string;
@@ -1554,6 +1560,8 @@ export type Database = {
           link_instagram: string | null;
           link_tiktok: string | null;
           link_website: string | null;
+          link_spotify: string | null;
+          link_apple_music: string | null;
           link_youtube: string | null;
           stage_name: string | null;
         };
@@ -1568,6 +1576,8 @@ export type Database = {
           link_instagram?: string | null;
           link_tiktok?: string | null;
           link_website?: string | null;
+          link_spotify?: string | null;
+          link_apple_music?: string | null;
           link_youtube?: string | null;
           stage_name?: string | null;
         };
@@ -1582,6 +1592,8 @@ export type Database = {
           link_instagram?: string | null;
           link_tiktok?: string | null;
           link_website?: string | null;
+          link_spotify?: string | null;
+          link_apple_music?: string | null;
           link_youtube?: string | null;
           stage_name?: string | null;
         };

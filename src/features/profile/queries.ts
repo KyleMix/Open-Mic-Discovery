@@ -19,6 +19,8 @@ export type ProfilePatch = {
   link_tiktok: string | null;
   link_youtube: string | null;
   link_website: string | null;
+  link_spotify: string | null;
+  link_apple_music: string | null;
 };
 
 export function useUpdateProfile(userId: string | undefined) {

@@ -99,6 +99,8 @@ function EditProfileForm({
   const [tiktok, setTiktok] = useState(profile.link_tiktok ?? '');
   const [youtube, setYoutube] = useState(profile.link_youtube ?? '');
   const [website, setWebsite] = useState(profile.link_website ?? '');
+  const [spotify, setSpotify] = useState(profile.link_spotify ?? '');
+  const [appleMusic, setAppleMusic] = useState(profile.link_apple_music ?? '');
 
   const [errors, setErrors] = useState<Record<string, string | null>>({});
   const [photoBusy, setPhotoBusy] = useState(false);
@@ -126,6 +128,8 @@ function EditProfileForm({
     const tt = normalizeHandle(tiktok);
     const yt = normalizeUrl(youtube);
     const web = normalizeUrl(website);
+    const spot = normalizeUrl(spotify);
+    const apple = normalizeUrl(appleMusic);
     const nextErrors = {
       stageName: validateDisplayName(stageName),
       displayName: validateDisplayName(displayName),
@@ -134,6 +138,8 @@ function EditProfileForm({
       instagram: handleError(ig),
       tiktok: handleError(tt),
       youtube: urlError(yt),
+      spotify: urlError(spot),
+      appleMusic: urlError(apple),
       website: urlError(web),
     };
     setErrors(nextErrors);
@@ -168,6 +174,8 @@ function EditProfileForm({
         link_tiktok: tt || null,
         link_youtube: yt || null,
         link_website: web || null,
+        link_spotify: spot || null,
+        link_apple_music: apple || null,
       });
       router.back();
     } catch (e) {
@@ -314,6 +322,24 @@ function EditProfileForm({
         onChangeText={setYoutube}
         error={errors.youtube}
         placeholder="youtube.com/@yourname"
+      />
+      <Field
+        label="Spotify"
+        autoCapitalize="none"
+        autoCorrect={false}
+        value={spotify}
+        onChangeText={setSpotify}
+        error={errors.spotify}
+        placeholder="open.spotify.com/artist/..."
+      />
+      <Field
+        label="Apple Music"
+        autoCapitalize="none"
+        autoCorrect={false}
+        value={appleMusic}
+        onChangeText={setAppleMusic}
+        error={errors.appleMusic}
+        placeholder="music.apple.com/..."
       />
       <Field
         label="Website"
