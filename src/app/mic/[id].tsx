@@ -29,6 +29,9 @@ import { addToCalendar } from '@/features/calendar/calendar';
 import { SIGNUP_METHOD_LABELS, costLabel } from '@/features/discovery/components/mic-card';
 import { freshness } from '@/features/discovery/freshness';
 import { useFlagListing, useMicDetail } from '@/features/discovery/queries';
+import { CreditCard } from '@/features/credits/components/credit-card';
+import { useSeriesCredits } from '@/features/credits/queries';
+import { creditFor, isOverridden } from '@/features/credits/resolve';
 import { useIsFavorite, useToggleFavorite } from '@/features/favorites/queries';
 import { PlanToggle } from '@/features/plans/components/plan-toggle';
 import { useSubmitClaim } from '@/features/producer/queries';
@@ -194,6 +197,8 @@ function MicDetail({
           ]}
         />
       ) : null}
+
+      <MicCredits seriesId={series.id} occurrenceId={next?.id ?? null} />
 
       <View style={styles.freshRow}>
         <Glyph name="freshness-badge" size={16} color={fresh.color} />
@@ -614,6 +619,9 @@ function FlagModal({
 }
 
 const styles = StyleSheet.create({
+  creditStack: {
+    gap: spacing.sm,
+  },
   scroll: {
     backgroundColor: palette.bg,
     flex: 1,
@@ -771,3 +779,47 @@ const styles = StyleSheet.create({
     fontSize: type.body.fontSize,
   },
 });
+
+/**
+ * Who is on the next night. Resolved against that occurrence, so a one-off
+ * guest host shows instead of the regular one, and says so.
+ *
+ * Renders nothing at all while loading or on failure: credits are an addition
+ * to a listing that already stands on its own, and a spinner or an error
+ * banner here would interrupt the thing someone actually came to read.
+ */
+function MicCredits({
+  seriesId,
+  occurrenceId,
+}: {
+  seriesId: string;
+  occurrenceId: string | null;
+}) {
+  const credits = useSeriesCredits(seriesId);
+  if (!credits.data || credits.data.length === 0) {
+    return null;
+  }
+  const host = creditFor(credits.data, 'host', occurrenceId);
+  const featured = creditFor(credits.data, 'featured', occurrenceId);
+  if (!host && !featured) {
+    return null;
+  }
+  return (
+    <View style={styles.creditStack}>
+      {featured ? (
+        <CreditCard
+          credit={featured}
+          role="featured"
+          overridden={isOverridden(credits.data, 'featured', occurrenceId)}
+        />
+      ) : null}
+      {host ? (
+        <CreditCard
+          credit={host}
+          role="host"
+          overridden={isOverridden(credits.data, 'host', occurrenceId)}
+        />
+      ) : null}
+    </View>
+  );
+}

@@ -202,6 +202,13 @@ export default function ManageSeriesScreen() {
           </View>
         </View>
 
+        <Text style={styles.sectionTitle}>Lineup</Text>
+        <Button
+          label="Host and featured artist"
+          kind="secondary"
+          onPress={() => router.push(`/producer/credits/${series.id}`)}
+        />
+
         <Text style={styles.sectionTitle}>Poster</Text>
         {series.poster_url ? (
           <Image
@@ -323,6 +330,13 @@ export default function ManageSeriesScreen() {
                     label="This night"
                     kind="secondary"
                     onPress={() => setNightAction({ occurrence: occ, mode: 'edit' })}
+                  />
+                  <Button
+                    label="Lineup"
+                    kind="secondary"
+                    onPress={() =>
+                      router.push(`/producer/credits/${series.id}?occurrence=${occ.id}`)
+                    }
                   />
                   <Button
                     label="Cancel"

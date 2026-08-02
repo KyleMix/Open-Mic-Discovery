@@ -475,6 +475,63 @@ export type Database = {
           },
         ];
       };
+      mic_credits: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          link_instagram: string | null;
+          link_tiktok: string | null;
+          link_youtube: string | null;
+          link_website: string | null;
+          link_spotify: string | null;
+          link_apple_music: string | null;
+          moderation_status: Database['public']['Enums']['moderation_status'];
+          name: string | null;
+          occurrence_id: string | null;
+          profile_id: string | null;
+          role: Database['public']['Enums']['credit_role'];
+          series_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          link_instagram?: string | null;
+          link_tiktok?: string | null;
+          link_youtube?: string | null;
+          link_website?: string | null;
+          link_spotify?: string | null;
+          link_apple_music?: string | null;
+          moderation_status?: Database['public']['Enums']['moderation_status'];
+          name?: string | null;
+          occurrence_id?: string | null;
+          profile_id?: string | null;
+          role: Database['public']['Enums']['credit_role'];
+          series_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          link_instagram?: string | null;
+          link_tiktok?: string | null;
+          link_youtube?: string | null;
+          link_website?: string | null;
+          link_spotify?: string | null;
+          link_apple_music?: string | null;
+          moderation_status?: Database['public']['Enums']['moderation_status'];
+          name?: string | null;
+          occurrence_id?: string | null;
+          profile_id?: string | null;
+          role?: Database['public']['Enums']['credit_role'];
+          series_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       mic_occurrences: {
         Row: {
           cancellation_note: string | null;
@@ -1282,6 +1339,25 @@ export type Database = {
       };
     };
     Views: {
+      mic_credit_public: {
+        Row: {
+          avatar_url: string | null;
+          handle: string | null;
+          id: string | null;
+          link_instagram: string | null;
+          link_tiktok: string | null;
+          link_youtube: string | null;
+          link_website: string | null;
+          link_spotify: string | null;
+          link_apple_music: string | null;
+          name: string | null;
+          occurrence_id: string | null;
+          profile_id: string | null;
+          role: Database['public']['Enums']['credit_role'] | null;
+          series_id: string | null;
+        };
+        Relationships: [];
+      };
       geography_columns: {
         Row: {
           coord_dimension: number | null;
@@ -2902,6 +2978,7 @@ export type Database = {
     Enums: {
       age_restriction: 'all_ages' | 'eighteen_plus' | 'twenty_one_plus';
       claim_status: 'pending' | 'approved' | 'rejected';
+      credit_role: 'host' | 'featured';
       discipline: 'music' | 'comedy' | 'poetry' | 'other';
       experience_level: 'new' | 'developing' | 'experienced' | 'professional';
       flag_reason:

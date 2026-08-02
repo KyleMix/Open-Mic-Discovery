@@ -218,6 +218,23 @@ the source**, which is the prompt to delete the marker.
 Both were verified by temporarily applying the fix and confirming the marked
 tests go red while the existing suites stay green.
 
+## Known flake
+
+The Jest suite has failed exactly one test on two separate occasions and
+passed on every other run, twelve consecutive times after the second sighting.
+Neither failure was captured with the test name attached, so it is not yet
+known which one it is.
+
+It is worth naming rather than ignoring. The candidates are the tests that
+wait on asynchronous state: the roster Realtime test, the query key test, and
+the favorites screen test all use `waitFor`, and the module-scope singletons
+this repo has (the memoized `getSupabase()`, the zustand filters store) are the
+usual reason a test passes alone and fails alongside others.
+
+CI prints the failing test name, so the next occurrence identifies it. Do not
+paper over it with retries: a suite that passes on the second attempt is a
+suite nobody reads the first result of.
+
 ## Not tested, and what that costs
 
 **That the app starts, in the unit and SQL layers.** Both suites can be fully
