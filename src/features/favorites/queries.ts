@@ -1,14 +1,33 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
+import { useEffect, useRef } from 'react';
 
+import { useToast } from '@/components/toast';
 import { registerPushToken } from '@/lib/notifications';
 import { getSupabase } from '@/lib/supabase';
 import { userError } from '@/lib/user-error';
+
+export type FavoriteItem = {
+  series_id: string;
+  created_at: string;
+  next_starts_at: string | null;
+  /** Null on the optimistic stub row until the settled refetch fills it in. */
+  series: {
+    id: string;
+    title: string;
+    disciplines: string[];
+    rrule: string;
+    start_time: string;
+    timezone: string;
+    last_confirmed_at: string | null;
+    venue: { name: string; city: string } | null;
+  } | null;
+};
 
 export function useFavorites(userId: string | undefined) {
   return useQuery({
     queryKey: ['favorites', userId],
     enabled: !!userId,
-    queryFn: async () => {
+    queryFn: async (): Promise<FavoriteItem[]> => {
       const supabase = getSupabase();
       const { data, error } = await supabase
         .from('favorites')
@@ -78,18 +97,21 @@ export function useIsFavorite(userId: string | undefined, seriesId: string | und
   });
 }
 
+type FavoritesList = FavoriteItem[];
+type ToggleVars = { userId: string; seriesId: string; favorite: boolean };
+type ToggleContext = {
+  prevList: FavoritesList | undefined;
+  prevFlag: boolean | undefined;
+};
+
 export function useToggleFavorite() {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({
-      userId,
-      seriesId,
-      favorite,
-    }: {
-      userId: string;
-      seriesId: string;
-      favorite: boolean;
-    }) => {
+  const toast = useToast();
+  // The Undo action needs mutate, which does not exist while the options
+  // object is being built; a ref closes the loop.
+  const self = useRef<UseMutationResult<void, Error, ToggleVars, ToggleContext> | null>(null);
+  const mutation = useMutation<void, Error, ToggleVars, ToggleContext>({
+    mutationFn: async ({ userId, seriesId, favorite }) => {
       const supabase = getSupabase();
       if (favorite) {
         const { error } = await supabase
@@ -112,13 +134,59 @@ export function useToggleFavorite() {
         }
       }
     },
-    onSuccess: (_d, { userId, favorite }) => {
-      queryClient.invalidateQueries({ queryKey: ['favorites'] });
-      if (favorite) {
+    // Optimistic: the star flips the moment it is tapped and rolls back on
+    // failure, instead of freezing for the whole round trip.
+    onMutate: async ({ userId, seriesId, favorite }) => {
+      const listKey = ['favorites', userId];
+      const flagKey = ['favorites', userId, seriesId];
+      await queryClient.cancelQueries({ queryKey: listKey });
+      const prevList = queryClient.getQueryData<FavoritesList>(listKey);
+      const prevFlag = queryClient.getQueryData<boolean>(flagKey);
+      queryClient.setQueryData<boolean>(flagKey, favorite);
+      queryClient.setQueryData<FavoritesList>(listKey, (old) => {
+        if (!old) {
+          return old;
+        }
+        if (!favorite) {
+          return old.filter((f) => f.series_id !== seriesId);
+        }
+        if (old.some((f) => f.series_id === seriesId)) {
+          return old;
+        }
+        // A stub row keeps every star in sync instantly; the settled
+        // refetch fills in the joined series details.
+        return [
+          { series_id: seriesId, created_at: new Date().toISOString(), series: null, next_starts_at: null },
+          ...old,
+        ];
+      });
+      return { prevList, prevFlag };
+    },
+    onError: (_e, { userId, seriesId }, context) => {
+      if (!context) {
+        return;
+      }
+      queryClient.setQueryData(['favorites', userId], context.prevList);
+      queryClient.setQueryData(['favorites', userId, seriesId], context.prevFlag);
+    },
+    onSuccess: (_d, vars) => {
+      if (vars.favorite) {
         // Favoriting implies wanting the day-of reminder; a natural moment
         // to ask for push permission.
-        registerPushToken(userId, { promptIfNeeded: true });
+        registerPushToken(vars.userId, { promptIfNeeded: true });
+      } else {
+        toast.show('Removed from favorites', {
+          label: 'Undo',
+          onPress: () => self.current?.mutate({ ...vars, favorite: true }),
+        });
       }
     },
+    onSettled: (_d, _e, { userId }) => {
+      queryClient.invalidateQueries({ queryKey: ['favorites', userId] });
+    },
   });
+  useEffect(() => {
+    self.current = mutation;
+  });
+  return mutation;
 }

@@ -2,6 +2,7 @@ import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { useToast } from '@/components/toast';
 import { Body, Button, ErrorText, Field, KeyboardShift, LoadingView, Title } from '@/components/ui';
 import { validateDisplayName } from '@/features/auth/validation';
 import { useOwnProfile } from '@/features/auth/queries';
@@ -51,6 +52,7 @@ type ProfileRow = NonNullable<ReturnType<typeof useOwnProfile>['data']>;
 
 function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: string }) {
   const router = useRouter();
+  const toast = useToast();
   const update = useUpdateProfile(userId);
 
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url);
@@ -123,6 +125,7 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
         link_youtube: yt || null,
         link_website: web || null,
       });
+      toast.show('Profile saved.');
       router.back();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save. Try again.');

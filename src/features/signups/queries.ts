@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
+import { useToast } from '@/components/toast';
 import { registerPushToken } from '@/lib/notifications';
 import { getSupabase } from '@/lib/supabase';
 import { userError } from '@/lib/user-error';
@@ -123,6 +124,7 @@ export function useJoinList() {
 
 export function useWithdraw() {
   const queryClient = useQueryClient();
+  const toast = useToast();
   return useMutation({
     mutationFn: async ({ occurrenceId, userId }: { occurrenceId: string; userId: string }) => {
       const { error } = await getSupabase()
@@ -134,7 +136,12 @@ export function useWithdraw() {
         throw userError(error, 'Could not withdraw. Try again.');
       }
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['signup'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['signup'] });
+      // The card reverting to "Sign me up" alone reads as a glitch, not a
+      // confirmation that the spot was given up.
+      toast.show('You are off the list.');
+    },
   });
 }
 

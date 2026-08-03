@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { useToast } from '@/components/toast';
 import { getSupabase } from '@/lib/supabase';
 import { userError } from '@/lib/user-error';
 import type { Database } from '@/types/database.types';
@@ -43,6 +44,7 @@ function useInvalidateSeries() {
 /** One-tap confirm. The server stamps the time and identity; the value sent is ignored. */
 export function useConfirmSeries() {
   const invalidate = useInvalidateSeries();
+  const toast = useToast();
   return useMutation({
     mutationFn: async (seriesId: string) => {
       const { error } = await getSupabase()
@@ -53,7 +55,12 @@ export function useConfirmSeries() {
         throw userError(error, 'Could not confirm the listing. Check your connection and try again.');
       }
     },
-    onSuccess: (_d, seriesId) => invalidate(seriesId),
+    onSuccess: (_d, seriesId) => {
+      invalidate(seriesId);
+      // This is the core producer loop; a chip quietly turning green is
+      // too easy to miss to count as confirmation.
+      toast.show('Confirmed. Performers now see this listing as checked today.');
+    },
   });
 }
 

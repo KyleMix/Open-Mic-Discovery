@@ -11,6 +11,7 @@ import { DarkTheme, Stack, ThemeProvider, useRouter, useSegments } from 'expo-ro
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, type ReactNode } from 'react';
 
+import { ToastProvider } from '@/components/toast';
 import { Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { SessionProvider, useSession } from '@/features/auth/session';
 import { useLatestEula, useOwnProfile } from '@/features/auth/queries';
@@ -148,12 +149,14 @@ export default function RootLayout() {
       <SessionProvider>
         <ThemeProvider value={appTheme}>
           <StatusBar style="light" />
-          <AuthGate>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="(auth)" />
-            </Stack>
-          </AuthGate>
+          <ToastProvider>
+            <AuthGate>
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="(auth)" />
+              </Stack>
+            </AuthGate>
+          </ToastProvider>
         </ThemeProvider>
       </SessionProvider>
     </PersistQueryClientProvider>
