@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Platform, Text, View } from 'react-native';
 
@@ -8,6 +8,7 @@ import { Body, Button, ErrorText, Field, Screen } from '@/components/ui';
 import { palette, spacing } from '@/theme';
 
 export default function SignInScreen() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState<'email' | 'apple' | 'google' | null>(null);
@@ -75,6 +76,12 @@ export default function SignInScreen() {
           <Text style={{ color: palette.text }}>New here? Create an account</Text>
         </Link>
       </View>
+      <Button
+        label="Browse mics without an account"
+        kind="secondary"
+        disabled={busy !== null}
+        onPress={() => router.replace('/(tabs)')}
+      />
     </Screen>
   );
 }

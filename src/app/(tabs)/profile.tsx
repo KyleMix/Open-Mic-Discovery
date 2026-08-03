@@ -17,6 +17,17 @@ export default function ProfileScreen() {
   const profile = useOwnProfile(session?.user.id);
   const [error, setError] = useState<string | null>(null);
 
+  if (!session) {
+    return (
+      <Screen>
+        <Title>Profile</Title>
+        <Body>
+          Sign in to set up your profile, save favorites, and sign up for slots.
+        </Body>
+        <Button label="Sign in" onPress={() => router.push('/(auth)/sign-in')} />
+      </Screen>
+    );
+  }
   if (profile.isPending) {
     return <LoadingView label="Loading your profile" />;
   }

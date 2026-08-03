@@ -32,7 +32,8 @@ const appTheme = {
 
 /**
  * Routes by auth state:
- *   no session                -> sign-in / sign-up
+ *   no session                -> browse Discover and listings as a guest;
+ *                                everything else routes to sign-in
  *   session, no profile      -> EULA gate, then onboarding
  *   profile on old EULA      -> EULA gate (re-accept)
  *   fully onboarded          -> the app
@@ -46,7 +47,8 @@ function AuthGate({ children }: { children: ReactNode }) {
   const segments: string[] = useSegments();
   const router = useRouter();
 
-  const inAuthGroup = segments[0] === '(auth)';
+  const topSegment = segments[0];
+  const inAuthGroup = topSegment === '(auth)';
   const authScreen = inAuthGroup ? segments[1] : undefined;
   const waiting = !ready || (session != null && (profile.isPending || eula.isPending));
 
@@ -62,7 +64,11 @@ function AuthGate({ children }: { children: ReactNode }) {
       return;
     }
     if (!session) {
-      if (!inAuthGroup || authScreen === 'eula' || authScreen === 'onboarding') {
+      // Discovery is the wedge: guests can browse the tabs and open listings.
+      // Actions that need an account (favorite, sign up, flag, claim, report)
+      // prompt for sign-in where they happen.
+      const inGuestArea = topSegment === '(tabs)' || topSegment === 'mic';
+      if (!inGuestArea && (!inAuthGroup || authScreen === 'eula' || authScreen === 'onboarding')) {
         router.replace('/(auth)/sign-in');
       }
       return;
@@ -89,6 +95,7 @@ function AuthGate({ children }: { children: ReactNode }) {
     profile.isError,
     eula.data,
     eula.isError,
+    topSegment,
     inAuthGroup,
     authScreen,
     router,

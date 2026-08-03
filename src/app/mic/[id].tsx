@@ -386,11 +386,22 @@ function ClaimModal({
 }
 
 function FavoriteStar({ seriesId }: { seriesId: string }) {
+  const router = useRouter();
   const { session } = useSession();
   const isFavorite = useIsFavorite(session?.user.id, seriesId);
   const toggle = useToggleFavorite();
   if (!session) {
-    return null;
+    // Guests get the same star; tapping it routes to sign-in.
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Sign in to add to favorites"
+        onPress={() => router.push('/(auth)/sign-in')}
+        style={{ minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
+      >
+        <Ionicons name="star-outline" size={24} color={palette.textSecondary} />
+      </Pressable>
+    );
   }
   const active = isFavorite.data ?? false;
   return (
