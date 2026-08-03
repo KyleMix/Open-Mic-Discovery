@@ -76,9 +76,12 @@ export default function SignInScreen() {
         disabled={busy !== null}
         onPress={() => run('google', signInWithGoogle)}
       />
-      <View style={{ marginTop: spacing.md }}>
+      <View style={{ marginTop: spacing.md, gap: spacing.md }}>
         <Link href="/(auth)/sign-up">
           <Text style={{ color: palette.text }}>New here? Create an account</Text>
+        </Link>
+        <Link href="/(auth)/forgot-password">
+          <Text style={{ color: palette.textSecondary }}>Forgot your password?</Text>
         </Link>
       </View>
       <Button

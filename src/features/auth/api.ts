@@ -37,6 +37,33 @@ export async function signUpWithEmail(
   return { needsEmailConfirmation: data.session === null };
 }
 
+/**
+ * Password recovery. The email link redirects into the app via the custom
+ * scheme; the reset screen exchanges the code and sets the new password.
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  const { error } = await getSupabase().auth.resetPasswordForEmail(email, {
+    redirectTo: Linking.createURL('reset-password'),
+  });
+  if (error) {
+    throw new Error(authMessage(error, 'Could not reach the server. Check your connection.'));
+  }
+}
+
+export async function exchangeRecoveryCode(code: string): Promise<void> {
+  const { error } = await getSupabase().auth.exchangeCodeForSession(code);
+  if (error) {
+    throw new Error(authMessage(error, 'That reset link is invalid or expired.'));
+  }
+}
+
+export async function updatePassword(newPassword: string): Promise<void> {
+  const { error } = await getSupabase().auth.updateUser({ password: newPassword });
+  if (error) {
+    throw new Error(authMessage(error, 'Could not update the password. Try again.'));
+  }
+}
+
 export async function signOut(): Promise<void> {
   const { error } = await getSupabase().auth.signOut();
   if (error) {

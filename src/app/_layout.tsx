@@ -92,7 +92,9 @@ function AuthGate({ children }: { children: ReactNode }) {
       }
       return;
     }
-    if (inAuthGroup) {
+    if (inAuthGroup && authScreen !== 'reset-password') {
+      // The reset screen holds a fresh recovery session on purpose; yanking
+      // the person into the tabs before they set a new password breaks it.
       router.replace('/(tabs)');
     }
   }, [
