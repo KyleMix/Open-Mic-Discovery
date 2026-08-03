@@ -38,13 +38,32 @@ Branch `ux-fixes`, one commit per fix or tightly related group. Every commit pas
 - Paused listings drop out of discovery client-side and explain themselves when opened directly.
 - Status copy: hints for "In the draw", "Waitlisted", and "no-show"; clearer "drawn" and slot labels; card accessibility labels now speak the day, cost, method, and freshness.
 
-## Skipped, with reasons
+## Decision batch (added 2026-08-03, after owner sign-off)
 
-- Roster/spot-count visibility for performers, walk-in signups, cancellation pushes, blocked-user names, trust loop, push-sender scheduling, forgot password, attendance_log trigger, server-side is_active/freshness ranking: all need migrations, infra, or a product call; see DECISIONS_NEEDED.md.
+All ten DECISIONS_NEEDED items were decided and implemented in a second pass
+(see DECISIONS_NEEDED.md for the record): cancellation notifications, walk-in
+guest signups with roster UI, anonymous spot counts on the signup card,
+blocked-user names in Settings, the full trust loop (flag dedupe, dead flags
+pausing listings, confirm nudges, 90-day auto-pause), scheduled push sending
+with receipt handling, forgot-password recovery, pin-derived timezones, and
+server-side is_active filtering plus freshness-aware ranking in mics_near
+(mirrored client-side). The attendance_log trigger was deferred by choice.
+Migrations verified with 150 passing pgTAP tests on a local Postgres.
+
+Owner setup required to activate two of them in production: vault secrets
+`push_sender_url` and `push_sender_token` for the push schedule, and
+`openmic://reset-password` in the hosted auth redirect list.
+
+## Skipped, with reasons
 - Map callouts, marker accessibility labels, and region-driven refetch: a map-view rework beyond a per-fix change; the list is the primary surface. Recommend as its own task.
 - Drag-to-reorder: blocked on New Architecture-compatible drag libraries per ARCHITECTURE.md; the chevrons remain.
 - Poster remove action, duplicated screen headings, keyboard avoiding views on auth forms, claims queue relocation into /admin: low-severity polish left untouched to keep the diff reviewable; none is riskier than a small follow-up.
 
 ## Follow-up recommendations
 
-Highest leverage next, in order: cancellation notifications (1), push-sender scheduling (7), walk-in signups (2), spot counts (3), then the trust loop (6). Items 1 and 7 make the notification system real end to end; 2 and 3 close the two remaining night-of gaps; 6 is the product thesis.
+With the decision batch landed, the remaining follow-ups are: the map-view
+rework (callouts, marker accessibility, region-driven refetch), drag
+reorder when a New Architecture-compatible library stabilizes, the deferred
+attendance_log trigger with manual backfill, shareable listing pages (the
+top item on the feature roadmap in docs/UX_REVIEW.md), and the two owner
+setup steps listed above.
