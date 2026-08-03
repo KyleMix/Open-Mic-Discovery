@@ -8,7 +8,8 @@ export type SignupStatus = Database['public']['Enums']['signup_status'];
 export type RosterRow = Database['public']['Views']['signup_roster']['Row'];
 
 export function useMySignup(occurrenceId: string | undefined, userId: string | undefined) {
-  return useQuery({
+  const queryClient = useQueryClient();
+  const query = useQuery({
     queryKey: ['signup', 'mine', occurrenceId, userId],
     enabled: !!occurrenceId && !!userId,
     queryFn: async () => {
@@ -24,6 +25,34 @@ export function useMySignup(occurrenceId: string | undefined, userId: string | u
       return data;
     },
   });
+
+  // Draw results, waitlist promotion, and on-deck land while the performer
+  // is staring at this screen; without realtime they only see it on re-entry.
+  useEffect(() => {
+    if (!userId) {
+      return;
+    }
+    const channel = getSupabase()
+      .channel(`signups-mine-${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'signups',
+          filter: `performer_id=eq.${userId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['signup', 'mine'] });
+        },
+      )
+      .subscribe();
+    return () => {
+      getSupabase().removeChannel(channel);
+    };
+  }, [userId, queryClient]);
+
+  return query;
 }
 
 export function useJoinList() {

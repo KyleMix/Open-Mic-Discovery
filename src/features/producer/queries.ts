@@ -304,6 +304,32 @@ export function useReviewClaim() {
   });
 }
 
+/** Enables the performer role on an existing account (dual roles are normal). */
+export function useEnablePerformerRole() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const supabase = getSupabase();
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_performer: true })
+        .eq('id', userId);
+      if (error) {
+        throw new Error(error.message);
+      }
+      const { error: ppError } = await supabase
+        .from('performer_profiles')
+        .upsert({ profile_id: userId }, { onConflict: 'profile_id', ignoreDuplicates: true });
+      if (ppError) {
+        throw new Error(ppError.message);
+      }
+    },
+    onSuccess: (_d, userId) => {
+      queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+    },
+  });
+}
+
 /** Enables the producer role on an existing account (dual roles are normal). */
 export function useEnableProducerRole() {
   const queryClient = useQueryClient();
