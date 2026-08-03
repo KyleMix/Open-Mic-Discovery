@@ -137,6 +137,7 @@ function MicDetail({
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <Stack.Screen options={{ title: series.title }} />
       {series.poster_url ? (
         <Image
           source={{ uri: series.poster_url }}
@@ -221,7 +222,7 @@ function MicDetail({
           {series.set_length_minutes ? (
             <Fact label="Set" value={`${series.set_length_minutes} min`} />
           ) : null}
-          {series.capacity ? <Fact label="Spots" value={String(series.capacity)} /> : null}
+          {series.capacity ? <Fact label="Spots" value={`${series.capacity} total`} /> : null}
           <Fact label="Starts" value={formatLocalTime(series.start_time)} />
         </View>
         {series.cost_note ? <Text style={styles.costNote}>{series.cost_note}</Text> : null}
@@ -249,16 +250,34 @@ function MicDetail({
                 }
               />
             ) : null}
-            {venue.has_pa != null ? <Fact label="PA" value={venue.has_pa ? 'Yes' : 'No'} /> : null}
+            {venue.has_pa != null ? (
+              <Fact label="Sound system" value={venue.has_pa ? 'Yes' : 'No'} />
+            ) : null}
             {venue.has_stage != null ? (
               <Fact label="Stage" value={venue.has_stage ? 'Yes' : 'No'} />
             ) : null}
             {venue.wheelchair_accessible != null ? (
-              <Fact label="Accessible" value={venue.wheelchair_accessible ? 'Yes' : 'No'} />
+              <Fact label="Wheelchair access" value={venue.wheelchair_accessible ? 'Yes' : 'No'} />
             ) : null}
           </View>
-          {venue.parking_notes ? <Text style={styles.costNote}>{venue.parking_notes}</Text> : null}
+          {venue.parking_notes ? (
+            <Text style={styles.costNote}>Parking: {venue.parking_notes}</Text>
+          ) : null}
           <Button label="Get directions" kind="secondary" onPress={openDirections} />
+          {venue.phone ? (
+            <Button
+              label={`Call the venue (${venue.phone})`}
+              kind="secondary"
+              onPress={() => Linking.openURL(`tel:${venue.phone}`).catch(() => null)}
+            />
+          ) : null}
+          {venue.website ? (
+            <Button
+              label="Venue website"
+              kind="secondary"
+              onPress={() => Linking.openURL(venue.website as string).catch(() => null)}
+            />
+          ) : null}
         </Card>
       ) : null}
 
