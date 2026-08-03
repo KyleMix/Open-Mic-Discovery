@@ -42,6 +42,26 @@ const METHODS: SignupMethod[] = ['first_come', 'lottery', 'reserved_slot', 'host
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
 const MINUTES = [0, 15, 30, 45];
 
+// Launch-region zones. The device zone is offered too when it is not one of
+// these, so a listing created anywhere gets an honest local time.
+const TIMEZONE_CHOICES: { id: string; label: string }[] = [
+  { id: 'America/Los_Angeles', label: 'Pacific' },
+  { id: 'America/Denver', label: 'Mountain' },
+  { id: 'America/Phoenix', label: 'Arizona' },
+  { id: 'America/Chicago', label: 'Central' },
+  { id: 'America/New_York', label: 'Eastern' },
+  { id: 'America/Anchorage', label: 'Alaska' },
+  { id: 'Pacific/Honolulu', label: 'Hawaii' },
+];
+
+function deviceTimezone(): string | null {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export type SeriesFormValues = {
   title: string;
   description: string;
@@ -50,6 +70,7 @@ export type SeriesFormValues = {
   rrule: string;
   anchorDate: string;
   startTime: string;
+  timezone: string;
   signupOpensDays: number;
   costDollars: string;
   costNote: string;
@@ -74,6 +95,7 @@ type ExistingSeries = {
   signup_method: SignupMethod;
   rrule: string;
   start_time: string;
+  timezone: string;
   cost_cents: number;
   cost_note: string | null;
   set_length_minutes: number | null;
@@ -105,6 +127,9 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
   const existingTime = existing?.start_time?.slice(0, 5).split(':');
   const [hour, setHour] = useState<number>(existingTime ? Number(existingTime[0]) : 19);
   const [minute, setMinute] = useState<number>(existingTime ? Number(existingTime[1]) : 0);
+  const [timezone, setTimezone] = useState<string>(
+    existing?.timezone ?? deviceTimezone() ?? 'America/Los_Angeles',
+  );
   const [signupOpensDays, setSignupOpensDays] = useState(7);
   const [costDollars, setCostDollars] = useState(
     existing ? String(existing.cost_cents / 100) : '0',
@@ -180,6 +205,7 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
       rrule,
       anchorDate: computeAnchorDate(recurrence, new Date(), biweeklyNextWeek),
       startTime,
+      timezone,
       signupOpensDays,
       costDollars,
       costNote: costNote.trim(),
@@ -365,6 +391,26 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
           </Pressable>
         ))}
       </View>
+
+      <Text style={styles.sectionLabel}>Timezone</Text>
+      <View style={styles.chipRow}>
+        {(TIMEZONE_CHOICES.some((t) => t.id === timezone)
+          ? TIMEZONE_CHOICES
+          : [...TIMEZONE_CHOICES, { id: timezone, label: timezone }]
+        ).map((t) => (
+          <Pressable
+            key={t.id}
+            accessibilityRole="button"
+            accessibilityState={{ selected: timezone === t.id }}
+            accessibilityLabel={`${t.label} time`}
+            onPress={() => setTimezone(t.id)}
+            style={chipStyle(timezone === t.id)}
+          >
+            <Text style={styles.chipText}>{t.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+      <Body>The start time is local time at the venue, in this timezone.</Body>
 
       {preview ? <Text style={styles.preview}>{preview}</Text> : null}
 
