@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
+import { registerPushToken } from '@/lib/notifications';
 import { getSupabase } from '@/lib/supabase';
 import type { Database } from '@/types/database.types';
 
@@ -109,7 +110,12 @@ export function useJoinList() {
         throw new Error(error.message);
       }
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['signup'] }),
+    onSuccess: (_d, { userId }) => {
+      queryClient.invalidateQueries({ queryKey: ['signup'] });
+      // First signup is the moment push starts mattering (status changes,
+      // on deck); ask for permission here, not at app launch.
+      registerPushToken(userId, { promptIfNeeded: true });
+    },
   });
 }
 

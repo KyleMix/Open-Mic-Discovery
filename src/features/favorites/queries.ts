@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { registerPushToken } from '@/lib/notifications';
 import { getSupabase } from '@/lib/supabase';
 
 export function useFavorites(userId: string | undefined) {
@@ -110,6 +111,13 @@ export function useToggleFavorite() {
         }
       }
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['favorites'] }),
+    onSuccess: (_d, { userId, favorite }) => {
+      queryClient.invalidateQueries({ queryKey: ['favorites'] });
+      if (favorite) {
+        // Favoriting implies wanting the day-of reminder; a natural moment
+        // to ask for push permission.
+        registerPushToken(userId, { promptIfNeeded: true });
+      }
+    },
   });
 }

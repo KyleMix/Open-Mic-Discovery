@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text } from 'react-native';
 
+import { parseEulaMarkdown } from '@/features/auth/eula-markdown';
 import { useLatestEula, useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
 import { getSupabase } from '@/lib/supabase';
@@ -79,10 +80,28 @@ export default function EulaScreen() {
         accept the terms to continue.
       </Body>
       <ScrollView style={styles.terms} accessibilityLabel="Terms of use text">
-        <Text style={styles.termsText}>{eula.data.body_md}</Text>
+        {parseEulaMarkdown(eula.data.body_md).map((block, i) =>
+          block.kind === 'title' ? (
+            <Text key={i} style={styles.termsTitle}>
+              {block.text}
+            </Text>
+          ) : block.kind === 'heading' ? (
+            <Text key={i} style={styles.termsHeading}>
+              {block.text}
+            </Text>
+          ) : block.kind === 'bullet' ? (
+            <Text key={i} style={styles.termsText}>
+              {'•'} {block.text}
+            </Text>
+          ) : (
+            <Text key={i} style={styles.termsText}>
+              {block.text}
+            </Text>
+          ),
+        )}
       </ScrollView>
       {acceptError ? <ErrorText>{acceptError}</ErrorText> : null}
-      <Button label={`I accept (version ${eula.data.version})`} busy={busy} onPress={accept} />
+      <Button label="I accept the terms" busy={busy} onPress={accept} />
     </Screen>
   );
 }
@@ -100,5 +119,19 @@ const styles = StyleSheet.create({
     color: palette.textSecondary,
     fontSize: type.caption.fontSize,
     lineHeight: type.caption.lineHeight + 4,
+    marginBottom: spacing.sm,
+  },
+  termsTitle: {
+    color: palette.text,
+    fontSize: type.body.fontSize,
+    fontWeight: '600',
+    marginBottom: spacing.sm,
+  },
+  termsHeading: {
+    color: palette.text,
+    fontSize: type.caption.fontSize,
+    fontWeight: '600',
+    marginBottom: spacing.xs,
+    marginTop: spacing.sm,
   },
 });

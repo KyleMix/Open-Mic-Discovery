@@ -8,6 +8,7 @@ import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
 import { requestForegroundLocation } from '@/features/discovery/location';
 import { useUpdatePrefs } from '@/features/notifications/queries';
+import { registerPushToken } from '@/lib/notifications';
 import { getSupabase } from '@/lib/supabase';
 import { fonts, palette, spacing, type } from '@/theme';
 
@@ -55,8 +56,14 @@ export default function NotificationPrefsScreen() {
     updated_at: '',
   };
 
-  const set = (patch: Partial<typeof p>) =>
+  const set = (patch: Partial<typeof p>) => {
     update.mutate({ userId: session.user.id, patch: { ...p, ...patch } });
+    // Turning any preference on is an explicit ask for pushes; make sure the
+    // OS permission and token actually exist.
+    if (Object.values(patch).some((v) => v === true)) {
+      registerPushToken(session.user.id, { promptIfNeeded: true });
+    }
+  };
 
   async function enableNearby() {
     setLocationNote(null);

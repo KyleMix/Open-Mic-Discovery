@@ -4,16 +4,26 @@ import { Platform } from 'react-native';
 import { getSupabase } from './supabase';
 
 /**
- * Registers this device for push after sign-in. Fails quietly: simulators,
- * denied permission, and missing EAS project config are all normal states,
- * and notifications are never required to use the app.
+ * Registers this device for push. Fails quietly: simulators, denied
+ * permission, and missing EAS project config are all normal states, and
+ * notifications are never required to use the app.
+ *
+ * The OS permission prompt fires only when `promptIfNeeded` is set, from a
+ * moment where notifications obviously matter (first signup, first
+ * favorite, turning on a notification preference). Sign-in only refreshes
+ * the token for people who already granted permission; ambushing a brand
+ * new user with the dialog before they have seen a single mic tanked the
+ * grant rate and was flagged in the UX review.
  *
  * Expo Go dropped remote push support in SDK 53, and importing
  * expo-notifications there throws at module load, so the import stays lazy
  * and Expo Go is skipped outright. Development and production builds keep
  * full push.
  */
-export async function registerPushToken(userId: string): Promise<void> {
+export async function registerPushToken(
+  userId: string,
+  { promptIfNeeded = false }: { promptIfNeeded?: boolean } = {},
+): Promise<void> {
   if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) {
     return;
   }
@@ -21,7 +31,7 @@ export async function registerPushToken(userId: string): Promise<void> {
     const Notifications = await import('expo-notifications');
     const { status } = await Notifications.getPermissionsAsync();
     let granted = status === 'granted';
-    if (!granted) {
+    if (!granted && promptIfNeeded) {
       const request = await Notifications.requestPermissionsAsync();
       granted = request.status === 'granted';
     }
