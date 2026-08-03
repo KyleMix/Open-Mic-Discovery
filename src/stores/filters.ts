@@ -35,13 +35,22 @@ export const DEFAULT_FILTERS: DiscoveryFilters = {
   timeOfDay: null,
 };
 
+/**
+ * The Today and Weekend quick picks promise actual dates, not weekdays.
+ * The server matches weekdays over a 14 day window, so the quick picks also
+ * carry a date bound that the client applies to next_starts_at.
+ */
+export type DateBound = 'today' | 'weekend' | null;
+
 type FiltersState = DiscoveryFilters & {
   view: 'map' | 'list';
   disciplinesSeeded: boolean;
+  dateBound: DateBound;
   setView: (view: 'map' | 'list') => void;
   seedDisciplines: (ds: Discipline[]) => void;
   toggleDiscipline: (d: Discipline) => void;
   selectDiscipline: (d: Discipline | null) => void;
+  setQuickPick: (pick: 'any' | 'today' | 'weekend', todayIso: number) => void;
   toggleDay: (day: number) => void;
   setDays: (days: number[]) => void;
   setRadiusKm: (km: number) => void;
@@ -60,6 +69,7 @@ export const useFiltersStore = create<FiltersState>((set) => ({
   ...DEFAULT_FILTERS,
   view: 'list',
   disciplinesSeeded: false,
+  dateBound: null,
   setView: (view) => set({ view }),
   // One-time default from the performer's own disciplines: what you do is
   // what you see first. Never overrides a selection the person already made.
@@ -71,13 +81,23 @@ export const useFiltersStore = create<FiltersState>((set) => ({
     ),
   toggleDiscipline: (d) => set((s) => ({ disciplines: toggle(s.disciplines, d) })),
   selectDiscipline: (d) => set({ disciplines: d === null ? [] : [d] }),
-  toggleDay: (day) => set((s) => ({ days: toggle(s.days, day) })),
-  setDays: (days) => set({ days }),
+  setQuickPick: (pick, todayIso) =>
+    set(
+      pick === 'today'
+        ? { days: [todayIso], dateBound: 'today' }
+        : pick === 'weekend'
+          ? { days: WEEKEND_DAYS, dateBound: 'weekend' }
+          : { days: [], dateBound: null },
+    ),
+  // Hand-picked weekdays from the sheet mean the weekday pattern, so the
+  // quick-pick date bound no longer applies.
+  toggleDay: (day) => set((s) => ({ days: toggle(s.days, day), dateBound: null })),
+  setDays: (days) => set({ days, dateBound: null }),
   setRadiusKm: (radiusKm) => set({ radiusKm }),
   setFreeOnly: (freeOnly) => set({ freeOnly }),
   toggleMethod: (m) => set((s) => ({ methods: toggle(s.methods, m) })),
   setTimeOfDay: (timeOfDay) => set({ timeOfDay }),
-  reset: () => set({ ...DEFAULT_FILTERS }),
+  reset: () => set({ ...DEFAULT_FILTERS, dateBound: null }),
 }));
 
 /** ISO weekday for a local date, 1 Monday .. 7 Sunday. */

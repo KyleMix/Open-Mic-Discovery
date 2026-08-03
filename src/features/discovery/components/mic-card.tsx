@@ -47,11 +47,17 @@ type Props = {
 export function MicCard({ mic, onPress }: Props) {
   const fresh = freshness(mic.last_confirmed_at, new Date());
   const recurrence = describeRecurrence(mic.rrule, mic.start_time);
+  // Pattern and concrete date together: "Every Tuesday, 8:00 PM" alone hides
+  // whether the next night is tomorrow or twelve days out.
+  const nextDate = formatNextDate(mic.next_starts_at);
+  const when = recurrence ? `${recurrence} · ${nextDate}` : nextDate;
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${mic.title} at ${mic.venue_name}`}
+      accessibilityLabel={`${mic.title} at ${mic.venue_name}. ${when}. ${
+        SIGNUP_METHOD_LABELS[mic.signup_method]
+      }. ${costLabel(mic.cost_cents)}. ${fresh.label}.`}
       onPress={onPress}
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
     >
@@ -76,7 +82,7 @@ export function MicCard({ mic, onPress }: Props) {
           {mic.neighborhood ? `, ${mic.neighborhood}` : ''}
           {mic.distance_m != null ? ` (${formatMilesFromMeters(mic.distance_m)})` : ''}
         </Text>
-        <Text style={styles.when}>{recurrence ?? formatNextDate(mic.next_starts_at)}</Text>
+        <Text style={styles.when}>{when}</Text>
         <View style={styles.metaRow}>
           <View style={styles.metaItem}>
             <Glyph

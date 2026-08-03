@@ -7,6 +7,7 @@ import { Body, Button, ErrorText, LoadingView } from '@/components/ui';
 import { useOwnProfile, usePerformerDisciplines } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
 import { FilterBar } from '@/features/discovery/components/filter-bar';
+import { boundByDate } from '@/features/discovery/date-window';
 import { MicCard, formatNextDate } from '@/features/discovery/components/mic-card';
 import { MicMap } from '@/features/discovery/components/mic-map';
 import { radiusLabel } from '@/features/discovery/distance';
@@ -51,8 +52,13 @@ export default function DiscoverScreen() {
   const searchResults = useSearchMics(search);
   const searching = search.trim().length >= 2;
 
-  // The list leads with what is happening soonest, closest first.
-  const listData = useMemo(() => sortSoonestNearest(nearby.data ?? []), [nearby.data]);
+  // The list leads with what is happening soonest, closest first. The
+  // Tonight and This weekend quick picks additionally bound results to
+  // their actual dates, not just their weekdays.
+  const visibleMics = useMemo(
+    () => boundByDate(sortSoonestNearest(nearby.data ?? []), filters.dateBound, new Date()),
+    [nearby.data, filters.dateBound],
+  );
 
   async function locateMe() {
     // In-context explanation lives right on the button and note below;
@@ -124,22 +130,28 @@ export default function DiscoverScreen() {
               <ErrorText>Could not load mics. Check your connection.</ErrorText>
               <Button label="Try again" onPress={() => nearby.refetch()} />
             </View>
-          ) : nearby.data.length === 0 ? (
+          ) : visibleMics.length === 0 ? (
             <View style={styles.stateWrap}>
-              <Text style={styles.emptyTitle}>No mics here yet</Text>
+              <Text style={styles.emptyTitle}>
+                {filters.dateBound === 'today'
+                  ? 'Nothing on tonight'
+                  : filters.dateBound === 'weekend'
+                    ? 'Nothing on this weekend'
+                    : 'No mics here yet'}
+              </Text>
               <Body>
                 Nothing within {radiusLabel(filters.radiusKm)} matches. Try a bigger distance or
-                tap Clear all. Know a mic we are missing? Add it from the My Mics tab.
+                clear the filters. Know a mic we are missing? Add it from the My Mics tab.
               </Body>
               <Button label="Clear all filters" kind="secondary" onPress={filters.reset} />
             </View>
           ) : view === 'map' ? (
             <View style={styles.mapWrap}>
-              <MicMap mics={nearby.data} center={center} onSelect={openMic} />
+              <MicMap mics={visibleMics} center={center} onSelect={openMic} />
             </View>
           ) : (
             <FlatList
-              data={listData}
+              data={visibleMics}
               keyExtractor={(mic) => mic.series_id}
               renderItem={({ item }) => (
                 <MicCard mic={item} onPress={() => openMic(item.series_id)} />
