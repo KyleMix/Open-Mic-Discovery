@@ -48,11 +48,16 @@ Deno.serve(async (req) => {
   );
 
   if (messages.length > 0) {
-    await fetch(EXPO_PUSH_URL, {
+    const res = await fetch(EXPO_PUSH_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(messages),
     });
+    if (!res.ok) {
+      // Leave the rows unsent so the next scheduled run retries them.
+      // Marking a failed batch as sent silently drops notifications.
+      return new Response(`expo push failed: ${res.status}`, { status: 502 });
+    }
   }
 
   // Mark processed even when a profile has no registered device: the outbox
