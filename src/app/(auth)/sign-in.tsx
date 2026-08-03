@@ -21,7 +21,12 @@ export default function SignInScreen() {
       await action();
       // Navigation happens in the root gate once the session lands.
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Sign in failed. Try again.');
+      const message = e instanceof Error ? e.message : 'Sign in failed. Try again.';
+      // Backing out of the Apple or Google sheet is a choice, not a failure;
+      // showing it in red reads as something going wrong.
+      if (!message.toLowerCase().includes('cancel')) {
+        setError(message);
+      }
     } finally {
       setBusy(null);
     }

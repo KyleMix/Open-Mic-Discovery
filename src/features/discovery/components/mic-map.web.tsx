@@ -1,5 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { formatMilesFromMeters } from '@/features/discovery/distance';
 import type { NearbyMic } from '@/features/discovery/queries';
 import { fonts, palette, spacing, type } from '@/theme';
 
@@ -33,7 +34,7 @@ export function MicMap({ mics, onSelect }: Props) {
           <Text style={styles.title}>{mic.title}</Text>
           <Text style={styles.meta}>
             {mic.venue_name}, {mic.city}
-            {mic.distance_m != null ? ` · ${(mic.distance_m / 1000).toFixed(1)} km` : ''}
+            {mic.distance_m != null ? ` · ${formatMilesFromMeters(mic.distance_m)}` : ''}
           </Text>
         </Pressable>
       ))}
