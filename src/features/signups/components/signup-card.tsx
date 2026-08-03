@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Body, Button, ErrorText } from '@/components/ui';
 import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
+import { formatInZone } from '@/features/discovery/timezone';
 import { useEnablePerformerRole } from '@/features/producer/queries';
 import { useJoinList, useMySignup, useWithdraw } from '@/features/signups/queries';
 import { signupWindow } from '@/features/signups/window';
@@ -36,6 +37,8 @@ type Props = {
   signupOpens: string;
   signupCloses: string;
   costCents?: number;
+  /** Series IANA timezone so the night label is venue-local, not device-local. */
+  timezone?: string;
 };
 
 /** The "I am on the list" moment: signup state and actions for a night. */
@@ -45,6 +48,7 @@ export function SignupCard({
   signupOpens,
   signupCloses,
   costCents = 0,
+  timezone,
 }: Props) {
   const router = useRouter();
   const { session } = useSession();
@@ -60,7 +64,7 @@ export function SignupCard({
   }
 
   const window = signupWindow(occurrence.starts_at, signupOpens, signupCloses, new Date());
-  const nightLabel = new Date(occurrence.starts_at).toLocaleDateString(undefined, {
+  const nightLabel = formatInZone(occurrence.starts_at, timezone, {
     weekday: 'long',
     month: 'short',
     day: 'numeric',

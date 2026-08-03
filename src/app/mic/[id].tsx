@@ -25,6 +25,7 @@ import { useSubmitClaim } from '@/features/producer/queries';
 import { ReportModal } from '@/features/safety/components/report-modal';
 import { SignupCard } from '@/features/signups/components/signup-card';
 import { describeRecurrence, formatLocalTime } from '@/features/discovery/recurrence';
+import { formatInZone, zoneDiffersFromDevice } from '@/features/discovery/timezone';
 import { disciplineAccents, fonts, palette, spacing, type, type Discipline } from '@/theme';
 import type { Database } from '@/types/database.types';
 
@@ -166,18 +167,21 @@ function MicDetail({
         {next ? (
           <Text style={styles.nextDate}>
             Next:{' '}
-            {new Date(next.starts_at).toLocaleDateString(undefined, {
+            {formatInZone(next.starts_at, series.timezone, {
               weekday: 'long',
               month: 'long',
               day: 'numeric',
             })}
             {next.doors_at
-              ? ` · Doors ${new Date(next.doors_at).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`
+              ? ` · Doors ${formatInZone(next.doors_at, series.timezone, { hour: 'numeric', minute: '2-digit' })}`
               : ''}
           </Text>
         ) : (
           <Text style={styles.nextDate}>No upcoming dates listed</Text>
         )}
+        {zoneDiffersFromDevice(series.timezone) ? (
+          <Text style={styles.nextDate}>Times shown are local to the venue.</Text>
+        ) : null}
         {nextTitle ? <Text style={styles.overrideNote}>Special night: {nextTitle}</Text> : null}
         {next && next.override_cost_cents != null ? (
           <Text style={styles.overrideNote}>
@@ -194,7 +198,7 @@ function MicDetail({
               .filter((o) => o.status === 'cancelled')
               .map(
                 (o) =>
-                  `${new Date(o.starts_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} is cancelled${o.cancellation_note ? `: ${o.cancellation_note}` : ''}`,
+                  `${formatInZone(o.starts_at, series.timezone, { month: 'short', day: 'numeric' })} is cancelled${o.cancellation_note ? `: ${o.cancellation_note}` : ''}`,
               )
               .join('\n')}
           </Text>
@@ -208,6 +212,7 @@ function MicDetail({
           signupOpens={series.signup_opens}
           signupCloses={series.signup_closes}
           costCents={nextCostCents}
+          timezone={series.timezone}
         />
       ) : null}
 
