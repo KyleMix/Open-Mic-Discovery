@@ -14,7 +14,7 @@ import { useEffect, type ReactNode } from 'react';
 import { Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { SessionProvider, useSession } from '@/features/auth/session';
 import { useLatestEula, useOwnProfile } from '@/features/auth/queries';
-import { registerPushToken } from '@/lib/notifications';
+import { observeNotificationTaps, registerPushToken } from '@/lib/notifications';
 import { queryClient } from '@/lib/query-client';
 import { initSentry } from '@/lib/sentry';
 import { palette } from '@/theme';
@@ -32,7 +32,8 @@ const appTheme = {
 
 /**
  * Routes by auth state:
- *   no session                -> sign-in / sign-up
+ *   no session                -> browse Discover and listings as a guest;
+ *                                everything else routes to sign-in
  *   session, no profile      -> EULA gate, then onboarding
  *   profile on old EULA      -> EULA gate (re-accept)
  *   fully onboarded          -> the app
@@ -46,7 +47,8 @@ function AuthGate({ children }: { children: ReactNode }) {
   const segments: string[] = useSegments();
   const router = useRouter();
 
-  const inAuthGroup = segments[0] === '(auth)';
+  const topSegment = segments[0];
+  const inAuthGroup = topSegment === '(auth)';
   const authScreen = inAuthGroup ? segments[1] : undefined;
   const waiting = !ready || (session != null && (profile.isPending || eula.isPending));
 
@@ -57,12 +59,23 @@ function AuthGate({ children }: { children: ReactNode }) {
     }
   }, [session?.user.id]);
 
+  // Tapping a push opens the mic it is about instead of the last screen.
+  useEffect(() => {
+    return observeNotificationTaps((path) => {
+      router.push(path as Parameters<typeof router.push>[0]);
+    });
+  }, [router]);
+
   useEffect(() => {
     if (waiting || profile.isError || eula.isError) {
       return;
     }
     if (!session) {
-      if (!inAuthGroup || authScreen === 'eula' || authScreen === 'onboarding') {
+      // Discovery is the wedge: guests can browse the tabs and open listings.
+      // Actions that need an account (favorite, sign up, flag, claim, report)
+      // prompt for sign-in where they happen.
+      const inGuestArea = topSegment === '(tabs)' || topSegment === 'mic';
+      if (!inGuestArea && (!inAuthGroup || authScreen === 'eula' || authScreen === 'onboarding')) {
         router.replace('/(auth)/sign-in');
       }
       return;
@@ -79,7 +92,9 @@ function AuthGate({ children }: { children: ReactNode }) {
       }
       return;
     }
-    if (inAuthGroup) {
+    if (inAuthGroup && authScreen !== 'reset-password') {
+      // The reset screen holds a fresh recovery session on purpose; yanking
+      // the person into the tabs before they set a new password breaks it.
       router.replace('/(tabs)');
     }
   }, [
@@ -89,6 +104,7 @@ function AuthGate({ children }: { children: ReactNode }) {
     profile.isError,
     eula.data,
     eula.isError,
+    topSegment,
     inAuthGroup,
     authScreen,
     router,

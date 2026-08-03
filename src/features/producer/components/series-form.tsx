@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import tzLookup from 'tz-lookup';
 
 import { Glyph, disciplineGlyphs } from '@/components/glyph';
 import { Body, Button, ErrorText, Field } from '@/components/ui';
@@ -42,6 +43,35 @@ const METHODS: SignupMethod[] = ['first_come', 'lottery', 'reserved_slot', 'host
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
 const MINUTES = [0, 15, 30, 45];
 
+// Launch-region zones. The device zone is offered too when it is not one of
+// these, so a listing created anywhere gets an honest local time.
+const TIMEZONE_CHOICES: { id: string; label: string }[] = [
+  { id: 'America/Los_Angeles', label: 'Pacific' },
+  { id: 'America/Denver', label: 'Mountain' },
+  { id: 'America/Phoenix', label: 'Arizona' },
+  { id: 'America/Chicago', label: 'Central' },
+  { id: 'America/New_York', label: 'Eastern' },
+  { id: 'America/Anchorage', label: 'Alaska' },
+  { id: 'Pacific/Honolulu', label: 'Hawaii' },
+];
+
+function deviceTimezone(): string | null {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Days from a Postgres interval like "7 days"; null for any other shape. */
+function parseIntervalDays(interval: string | null | undefined): number | null {
+  if (!interval) {
+    return null;
+  }
+  const match = /^(\d+)\s+days?$/.exec(interval.trim());
+  return match ? Number(match[1]) : null;
+}
+
 export type SeriesFormValues = {
   title: string;
   description: string;
@@ -50,6 +80,7 @@ export type SeriesFormValues = {
   rrule: string;
   anchorDate: string;
   startTime: string;
+  timezone: string;
   signupOpensDays: number;
   costDollars: string;
   costNote: string;
@@ -74,6 +105,10 @@ type ExistingSeries = {
   signup_method: SignupMethod;
   rrule: string;
   start_time: string;
+  timezone: string;
+  signup_opens: string | null;
+  /** Current venue, shown so the venue can be changed to another listed one. */
+  venue_label: string | null;
   cost_cents: number;
   cost_note: string | null;
   set_length_minutes: number | null;
@@ -105,7 +140,14 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
   const existingTime = existing?.start_time?.slice(0, 5).split(':');
   const [hour, setHour] = useState<number>(existingTime ? Number(existingTime[0]) : 19);
   const [minute, setMinute] = useState<number>(existingTime ? Number(existingTime[1]) : 0);
-  const [signupOpensDays, setSignupOpensDays] = useState(7);
+  const [timezone, setTimezone] = useState<string>(
+    existing?.timezone ?? deviceTimezone() ?? 'America/Los_Angeles',
+  );
+  // A hand-picked timezone always wins; otherwise the venue pin decides.
+  const [timezoneTouched, setTimezoneTouched] = useState(false);
+  const [signupOpensDays, setSignupOpensDays] = useState(
+    existing ? (parseIntervalDays(existing.signup_opens) ?? 7) : 7,
+  );
   const [costDollars, setCostDollars] = useState(
     existing ? String(existing.cost_cents / 100) : '0',
   );
@@ -116,11 +158,13 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
   const [capacity, setCapacity] = useState(existing?.capacity ? String(existing.capacity) : '');
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Venue (create mode only)
+  // Venue. In edit mode the current venue shows with a Change action;
+  // picking another listed venue moves the whole series there. Adding a
+  // brand-new venue is create-mode only.
   const [venueQuery, setVenueQuery] = useState('');
   const venueResults = useVenueSearch(venueQuery);
   const [venueId, setVenueId] = useState<string | undefined>();
-  const [venueLabel, setVenueLabel] = useState<string | null>(null);
+  const [venueLabel, setVenueLabel] = useState<string | null>(existing?.venue_label ?? null);
   const [addingVenue, setAddingVenue] = useState(false);
   const [venueName, setVenueName] = useState('');
   const [venueAddress, setVenueAddress] = useState('');
@@ -128,6 +172,19 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
   const [venueCity, setVenueCity] = useState('');
   const [venueRegion, setVenueRegion] = useState('');
   const [pin, setPin] = useState<{ lat: number; lng: number } | null>(null);
+
+  function placePin(next: { lat: number; lng: number } | null) {
+    setPin(next);
+    // The venue's coordinates know their own timezone; a producer placing
+    // a Chicago pin should not have to know their bar is Central time.
+    if (next && !timezoneTouched) {
+      try {
+        setTimezone(tzLookup(next.lat, next.lng));
+      } catch {
+        // Out-of-range coordinates; keep the current choice.
+      }
+    }
+  }
 
   const startTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
   const rrule = buildRrule(recurrence);
@@ -156,6 +213,13 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
       setFormError('Cost must be a number.');
       return;
     }
+    if (existing) {
+      // Editing: a cleared venue must be re-picked before saving.
+      if (!venueId && !venueLabel) {
+        setFormError('Pick the venue for this mic.');
+        return;
+      }
+    }
     if (!existing) {
       if (!venueId && !addingVenue) {
         setFormError('Pick the venue, or add a new one.');
@@ -180,6 +244,7 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
       rrule,
       anchorDate: computeAnchorDate(recurrence, new Date(), biweeklyNextWeek),
       startTime,
+      timezone,
       signupOpensDays,
       costDollars,
       costNote: costNote.trim(),
@@ -366,6 +431,29 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
         ))}
       </View>
 
+      <Text style={styles.sectionLabel}>Timezone</Text>
+      <View style={styles.chipRow}>
+        {(TIMEZONE_CHOICES.some((t) => t.id === timezone)
+          ? TIMEZONE_CHOICES
+          : [...TIMEZONE_CHOICES, { id: timezone, label: timezone }]
+        ).map((t) => (
+          <Pressable
+            key={t.id}
+            accessibilityRole="button"
+            accessibilityState={{ selected: timezone === t.id }}
+            accessibilityLabel={`${t.label} time`}
+            onPress={() => {
+              setTimezone(t.id);
+              setTimezoneTouched(true);
+            }}
+            style={chipStyle(timezone === t.id)}
+          >
+            <Text style={styles.chipText}>{t.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+      <Body>The start time is local time at the venue, in this timezone.</Body>
+
       {preview ? <Text style={styles.preview}>{preview}</Text> : null}
 
       <Text style={styles.sectionLabel}>Signups</Text>
@@ -383,7 +471,10 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
         ))}
       </View>
       <View style={styles.chipRow}>
-        {[1, 3, 7, 14, 30].map((days) => (
+        {([1, 3, 7, 14, 30].includes(signupOpensDays)
+          ? [1, 3, 7, 14, 30]
+          : [1, 3, 7, 14, 30, signupOpensDays].sort((a, b) => a - b)
+        ).map((days) => (
           <Pressable
             key={days}
             accessibilityRole="button"
@@ -434,10 +525,12 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
         placeholder="What should performers know before they show up?"
       />
 
-      {!existing ? (
-        <>
-          <Text style={styles.sectionLabel}>Venue</Text>
-          {venueLabel ? (
+      <>
+        <Text style={styles.sectionLabel}>Venue</Text>
+        {existing ? (
+          <Body>Changing the venue moves this and all future nights there.</Body>
+        ) : null}
+        {venueLabel ? (
             <View style={styles.venuePicked}>
               <Text style={styles.chipText}>{venueLabel}</Text>
               <Button
@@ -472,7 +565,7 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
                 </View>
               </View>
               <Body>Place the venue so performers can find it.</Body>
-              <PinPicker pin={pin} onChange={setPin} />
+              <PinPicker pin={pin} onChange={placePin} />
               <Button
                 label="Search existing venues instead"
                 kind="secondary"
@@ -504,15 +597,16 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
                   </Text>
                 </Pressable>
               ))}
-              <Button
-                label="Venue is not listed: add it"
-                kind="secondary"
-                onPress={() => setAddingVenue(true)}
-              />
+              {!existing ? (
+                <Button
+                  label="Venue is not listed: add it"
+                  kind="secondary"
+                  onPress={() => setAddingVenue(true)}
+                />
+              ) : null}
             </>
           )}
-        </>
-      ) : null}
+      </>
 
       {formError ? <ErrorText>{formError}</ErrorText> : null}
       {error ? <ErrorText>{error}</ErrorText> : null}

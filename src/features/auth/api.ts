@@ -21,10 +21,46 @@ export async function signInWithEmail(email: string, password: string): Promise<
   }
 }
 
-export async function signUpWithEmail(email: string, password: string): Promise<void> {
-  const { error } = await getSupabase().auth.signUp({ email, password });
+/**
+ * Creates the account. When the project requires email confirmation,
+ * signUp succeeds with no session; the caller must tell the user to go
+ * check their inbox instead of silently doing nothing.
+ */
+export async function signUpWithEmail(
+  email: string,
+  password: string,
+): Promise<{ needsEmailConfirmation: boolean }> {
+  const { data, error } = await getSupabase().auth.signUp({ email, password });
   if (error) {
     throw new Error(authMessage(error, 'Could not reach the server. Check your connection.'));
+  }
+  return { needsEmailConfirmation: data.session === null };
+}
+
+/**
+ * Password recovery. The email link redirects into the app via the custom
+ * scheme; the reset screen exchanges the code and sets the new password.
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  const { error } = await getSupabase().auth.resetPasswordForEmail(email, {
+    redirectTo: Linking.createURL('reset-password'),
+  });
+  if (error) {
+    throw new Error(authMessage(error, 'Could not reach the server. Check your connection.'));
+  }
+}
+
+export async function exchangeRecoveryCode(code: string): Promise<void> {
+  const { error } = await getSupabase().auth.exchangeCodeForSession(code);
+  if (error) {
+    throw new Error(authMessage(error, 'That reset link is invalid or expired.'));
+  }
+}
+
+export async function updatePassword(newPassword: string): Promise<void> {
+  const { error } = await getSupabase().auth.updateUser({ password: newPassword });
+  if (error) {
+    throw new Error(authMessage(error, 'Could not update the password. Try again.'));
   }
 }
 

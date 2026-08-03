@@ -50,21 +50,26 @@ export default function SettingsScreen() {
       ) : blocked.isError ? (
         <ErrorText>Could not load blocked users.</ErrorText>
       ) : blocked.data.length === 0 ? (
-        <Body>Nobody is blocked. Blocking hides a user from you everywhere, server side.</Body>
+        <Body>Nobody is blocked. Blocking hides that user from you everywhere in the app.</Body>
       ) : (
-        blocked.data.map((b) => (
-          <View key={b.blocked_id} style={styles.blockRow}>
-            <Text style={styles.blockText}>Blocked user</Text>
-            <Button
-              label="Unblock"
-              kind="secondary"
-              busy={unblock.isPending}
-              onPress={() =>
-                unblock.mutate({ blockerId: session.user.id, blockedId: b.blocked_id })
-              }
-            />
-          </View>
-        ))
+        blocked.data
+          .filter((b): b is typeof b & { blocked_id: string } => b.blocked_id != null)
+          .map((b) => (
+            <View key={b.blocked_id} style={styles.blockRow}>
+              <Text style={styles.blockText}>
+                {b.display_name ?? 'Blocked user'}
+                {b.handle ? ` (@${b.handle})` : ''}
+              </Text>
+              <Button
+                label="Unblock"
+                kind="secondary"
+                busy={unblock.isPending}
+                onPress={() =>
+                  unblock.mutate({ blockerId: session.user.id, blockedId: b.blocked_id })
+                }
+              />
+            </View>
+          ))
       )}
 
       <Text style={styles.sectionTitle}>Account</Text>

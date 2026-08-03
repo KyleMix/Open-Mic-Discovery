@@ -1,23 +1,39 @@
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Body, Button, ErrorText } from '@/components/ui';
 import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
-import { useJoinList, useMySignup, useWithdraw } from '@/features/signups/queries';
+import { formatInZone } from '@/features/discovery/timezone';
+import { useEnablePerformerRole } from '@/features/producer/queries';
+import {
+  useJoinList,
+  useMySignup,
+  useSignupCounts,
+  useWithdraw,
+} from '@/features/signups/queries';
 import { signupWindow } from '@/features/signups/window';
 import { fonts, palette, spacing, type } from '@/theme';
 import type { Database } from '@/types/database.types';
 
 type Occurrence = Database['public']['Tables']['mic_occurrences']['Row'];
 
-const STATUS_LABELS: Record<Database['public']['Enums']['signup_status'], string> = {
+export const STATUS_LABELS: Record<Database['public']['Enums']['signup_status'], string> = {
   requested: 'In the draw',
   confirmed: 'On the list',
   waitlisted: 'Waitlisted',
-  drawn: 'Drawn: on the list',
+  drawn: 'You are in: drawn for a spot',
   performed: 'Performed',
   no_show: 'Marked no-show',
+};
+
+/** What happens next, for the statuses where that is not obvious. */
+const STATUS_HINTS: Partial<Record<Database['public']['Enums']['signup_status'], string>> = {
+  requested: 'The host runs the draw before the show. You get a notification with the result.',
+  waitlisted:
+    'If a spot opens, the host promotes people from the waitlist and you get a notification.',
+  no_show: 'Think this is a mistake? Talk to the host at the venue.',
 };
 
 type Props = {
@@ -26,6 +42,8 @@ type Props = {
   signupOpens: string;
   signupCloses: string;
   costCents?: number;
+  /** Series IANA timezone so the night label is venue-local, not device-local. */
+  timezone?: string;
 };
 
 /** The "I am on the list" moment: signup state and actions for a night. */
@@ -35,6 +53,7 @@ export function SignupCard({
   signupOpens,
   signupCloses,
   costCents = 0,
+  timezone,
 }: Props) {
   const router = useRouter();
   const { session } = useSession();
@@ -42,13 +61,16 @@ export function SignupCard({
   const mySignup = useMySignup(occurrence.id, session?.user.id);
   const join = useJoinList();
   const withdraw = useWithdraw();
+  const enablePerformer = useEnablePerformerRole();
+  const counts = useSignupCounts(occurrence.id);
+  const [confirmingWithdraw, setConfirmingWithdraw] = useState(false);
 
   if (signupMethod === 'host_booked' || occurrence.status !== 'scheduled') {
     return null;
   }
 
   const window = signupWindow(occurrence.starts_at, signupOpens, signupCloses, new Date());
-  const nightLabel = new Date(occurrence.starts_at).toLocaleDateString(undefined, {
+  const nightLabel = formatInZone(occurrence.starts_at, timezone, {
     weekday: 'long',
     month: 'short',
     day: 'numeric',
@@ -63,7 +85,23 @@ export function SignupCard({
       </>
     );
   } else if (profile.data && !profile.data.is_performer) {
-    content = <Body>Enable the performer role on your profile to sign up for slots.</Body>;
+    content = (
+      <>
+        <Body>Signing up for slots needs the performer role on your account.</Body>
+        {enablePerformer.isError ? (
+          <ErrorText>
+            {enablePerformer.error instanceof Error
+              ? enablePerformer.error.message
+              : 'Could not turn on performing.'}
+          </ErrorText>
+        ) : null}
+        <Button
+          label="I perform: turn it on"
+          busy={enablePerformer.isPending}
+          onPress={() => enablePerformer.mutate(session.user.id)}
+        />
+      </>
+    );
   } else if (mySignup.isPending) {
     content = <Body>Checking your signup...</Body>;
   } else if (mySignup.data) {
@@ -74,17 +112,51 @@ export function SignupCard({
         ) : null}
         <Text style={styles.status}>
           {STATUS_LABELS[mySignup.data.status]}
-          {mySignup.data.slot_position != null ? ` · Slot ${mySignup.data.slot_position}` : ''}
+          {mySignup.data.slot_position != null
+            ? ` · Slot ${mySignup.data.slot_position} in the running order`
+            : ''}
         </Text>
+        {STATUS_HINTS[mySignup.data.status] ? (
+          <Body>{STATUS_HINTS[mySignup.data.status]}</Body>
+        ) : null}
+        {withdraw.isError ? (
+          <ErrorText>
+            {withdraw.error instanceof Error ? withdraw.error.message : 'Could not withdraw.'}
+          </ErrorText>
+        ) : null}
         {['requested', 'confirmed', 'waitlisted', 'drawn'].includes(mySignup.data.status) ? (
-          <Button
-            label="Withdraw"
-            kind="secondary"
-            busy={withdraw.isPending}
-            onPress={() =>
-              withdraw.mutate({ occurrenceId: occurrence.id, userId: session.user.id })
-            }
-          />
+          confirmingWithdraw ? (
+            <>
+              <Body>
+                Withdrawing gives up your spot
+                {mySignup.data.slot_position != null
+                  ? ` (Slot ${mySignup.data.slot_position})`
+                  : ''}
+                . Re-signing up later puts you at the end of the list.
+              </Body>
+              <Button
+                label="Yes, withdraw"
+                busy={withdraw.isPending}
+                onPress={() =>
+                  withdraw.mutate(
+                    { occurrenceId: occurrence.id, userId: session.user.id },
+                    { onSettled: () => setConfirmingWithdraw(false) },
+                  )
+                }
+              />
+              <Button
+                label="Keep my spot"
+                kind="secondary"
+                onPress={() => setConfirmingWithdraw(false)}
+              />
+            </>
+          ) : (
+            <Button
+              label="Withdraw"
+              kind="secondary"
+              onPress={() => setConfirmingWithdraw(true)}
+            />
+          )
         ) : null}
       </>
     );
@@ -112,6 +184,17 @@ export function SignupCard({
             ? `Enter the draw for ${nightLabel}. The host draws the order.`
             : `Signups for ${nightLabel} are open.`}
         </Body>
+        {counts.data && signupMethod !== 'lottery' ? (
+          <Body>
+            {counts.data.capacity != null
+              ? `${counts.data.taken} of ${counts.data.capacity} spots taken${
+                  counts.data.taken >= counts.data.capacity
+                    ? '. Signing up now joins the waitlist.'
+                    : '.'
+                }`
+              : `${counts.data.taken} signed up so far.`}
+          </Body>
+        ) : null}
         {join.isError ? (
           <ErrorText>
             {join.error instanceof Error ? join.error.message : 'Could not sign up.'}

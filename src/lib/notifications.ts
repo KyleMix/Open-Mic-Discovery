@@ -4,16 +4,26 @@ import { Platform } from 'react-native';
 import { getSupabase } from './supabase';
 
 /**
- * Registers this device for push after sign-in. Fails quietly: simulators,
- * denied permission, and missing EAS project config are all normal states,
- * and notifications are never required to use the app.
+ * Registers this device for push. Fails quietly: simulators, denied
+ * permission, and missing EAS project config are all normal states, and
+ * notifications are never required to use the app.
+ *
+ * The OS permission prompt fires only when `promptIfNeeded` is set, from a
+ * moment where notifications obviously matter (first signup, first
+ * favorite, turning on a notification preference). Sign-in only refreshes
+ * the token for people who already granted permission; ambushing a brand
+ * new user with the dialog before they have seen a single mic tanked the
+ * grant rate and was flagged in the UX review.
  *
  * Expo Go dropped remote push support in SDK 53, and importing
  * expo-notifications there throws at module load, so the import stays lazy
  * and Expo Go is skipped outright. Development and production builds keep
  * full push.
  */
-export async function registerPushToken(userId: string): Promise<void> {
+export async function registerPushToken(
+  userId: string,
+  { promptIfNeeded = false }: { promptIfNeeded?: boolean } = {},
+): Promise<void> {
   if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) {
     return;
   }
@@ -21,7 +31,7 @@ export async function registerPushToken(userId: string): Promise<void> {
     const Notifications = await import('expo-notifications');
     const { status } = await Notifications.getPermissionsAsync();
     let granted = status === 'granted';
-    if (!granted) {
+    if (!granted && promptIfNeeded) {
       const request = await Notifications.requestPermissionsAsync();
       granted = request.status === 'granted';
     }
@@ -42,4 +52,91 @@ export async function registerPushToken(userId: string): Promise<void> {
   } catch {
     // No push in this environment; nothing to do.
   }
+}
+
+type PushPayload = {
+  occurrence_id?: string;
+  series_id?: string;
+};
+
+function asPushPayload(data: unknown): PushPayload | null {
+  if (typeof data !== 'object' || data === null) {
+    return null;
+  }
+  const d = data as Record<string, unknown>;
+  const occurrence = typeof d.occurrence_id === 'string' ? d.occurrence_id : undefined;
+  const series = typeof d.series_id === 'string' ? d.series_id : undefined;
+  return occurrence || series ? { occurrence_id: occurrence, series_id: series } : null;
+}
+
+/** The mic page a push payload points at, or null when it points nowhere. */
+export async function routeForPushPayload(data: unknown): Promise<string | null> {
+  const payload = asPushPayload(data);
+  if (!payload) {
+    return null;
+  }
+  if (payload.series_id) {
+    return `/mic/${payload.series_id}`;
+  }
+  if (payload.occurrence_id) {
+    try {
+      const { data: occurrence } = await getSupabase()
+        .from('mic_occurrences')
+        .select('series_id')
+        .eq('id', payload.occurrence_id)
+        .maybeSingle();
+      if (occurrence?.series_id) {
+        return `/mic/${occurrence.series_id}`;
+      }
+    } catch {
+      // Offline or gone; landing on the last screen beats crashing the tap.
+    }
+  }
+  return null;
+}
+
+type NotificationResponseLike = {
+  notification: { request: { content: { data?: unknown } } };
+};
+
+/**
+ * Makes push notifications tappable: signup updates, on-deck alerts,
+ * reminders, and new-mic alerts open the mic they are about, both from a
+ * cold start and while the app is running. Returns an unsubscribe.
+ */
+export function observeNotificationTaps(onRoute: (path: string) => void): () => void {
+  if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) {
+    return () => undefined;
+  }
+  let removed = false;
+  let subscription: { remove: () => void } | null = null;
+  (async () => {
+    try {
+      const Notifications = await import('expo-notifications');
+      const respond = async (response: NotificationResponseLike | null) => {
+        if (!response) {
+          return;
+        }
+        const path = await routeForPushPayload(response.notification.request.content.data);
+        if (path && !removed) {
+          onRoute(path);
+        }
+      };
+      await respond(await Notifications.getLastNotificationResponseAsync());
+      const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+        void respond(response);
+      });
+      if (removed) {
+        sub.remove();
+      } else {
+        subscription = sub;
+      }
+    } catch {
+      // No notifications in this environment; nothing to observe.
+    }
+  })();
+  return () => {
+    removed = true;
+    subscription?.remove();
+  };
 }

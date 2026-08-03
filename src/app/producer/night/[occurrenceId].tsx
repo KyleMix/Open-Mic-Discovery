@@ -1,13 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
+import { Body, Button, ErrorText, Field, LoadingView, Screen, Title } from '@/components/ui';
 import { useSession } from '@/features/auth/session';
+import { useOccurrenceContext } from '@/features/producer/queries';
 import { useProStatus } from '@/features/pro/use-pro';
 import { ReportModal } from '@/features/safety/components/report-modal';
 import {
+  useAddWalkIn,
   useDrawLottery,
   useMarkOnDeck,
   useRoster,
@@ -28,14 +30,19 @@ export default function NightScreen() {
   const { session } = useSession();
   const pro = useProStatus(session?.user.id);
   const roster = useRoster(occurrenceId);
+  const context = useOccurrenceContext(occurrenceId);
   const draw = useDrawLottery();
   const reorder = useSetSlotOrder();
   const setStatus = useSetSignupStatus();
   const onDeck = useMarkOnDeck();
+  const addWalkIn = useAddWalkIn();
+  const [walkInName, setWalkInName] = useState('');
 
   // Visible randomization: shuffle names on screen while the server draws.
   const [shuffling, setShuffling] = useState<RosterRow[] | null>(null);
   const [reporting, setReporting] = useState<RosterRow | null>(null);
+  const [confirmNoShow, setConfirmNoShow] = useState<RosterRow | null>(null);
+  const [confirmRedraw, setConfirmRedraw] = useState(false);
   const shuffleTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   useEffect(() => {
     return () => {
@@ -45,7 +52,16 @@ export default function NightScreen() {
     };
   }, []);
 
-  if (roster.isPending) {
+  // A host running two mics needs the screen to say which night this is.
+  const headerTitle = context.data?.series
+    ? `${context.data.override_title ?? context.data.series.title} · ${new Date(
+        context.data.starts_at,
+      ).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}`
+    : 'The list';
+
+  // Waiting for the entitlement too: rendering the paid controls to a free
+  // producer for a beat, then yanking them, reads as a broken screen.
+  if (roster.isPending || pro.isPending) {
     return <LoadingView label="Loading the list" />;
   }
   if (roster.isError) {
@@ -73,7 +89,7 @@ export default function NightScreen() {
         <Stack.Screen
           options={{
             headerShown: true,
-            title: 'The list',
+            title: headerTitle,
             headerStyle: { backgroundColor: palette.bg },
             headerTintColor: palette.text,
           }}
@@ -85,7 +101,10 @@ export default function NightScreen() {
           <View key={row.id} style={styles.row}>
             <Text style={styles.slot}>{row.slot_position ?? '·'}</Text>
             <View style={styles.rowBody}>
-              <Text style={styles.name}>{row.display_name ?? row.handle ?? 'Performer'}</Text>
+              <Text style={styles.name}>
+                {row.display_name ?? row.handle ?? row.guest_name ?? 'Performer'}
+                {row.guest_name ? ' (walk-in)' : ''}
+              </Text>
               <Text style={styles.meta}>{row.status}</Text>
             </View>
           </View>
@@ -100,6 +119,19 @@ export default function NightScreen() {
   }
 
   function startDraw() {
+    if (!occurrenceId || roster.data == null) {
+      return;
+    }
+    // Re-drawing shuffles people who were already told they are on; that
+    // deserves a deliberate confirmation, not a second tap.
+    if (roster.data.some((r) => r.status === 'drawn' || r.status === 'waitlisted')) {
+      setConfirmRedraw(true);
+      return;
+    }
+    runDraw();
+  }
+
+  function runDraw() {
     if (!occurrenceId || roster.data == null) {
       return;
     }
@@ -176,7 +208,10 @@ export default function NightScreen() {
           <View key={row.id} style={styles.row}>
             <Text style={styles.slot}>{row.slot_position ?? '·'}</Text>
             <View style={styles.rowBody}>
-              <Text style={styles.name}>{row.display_name ?? row.handle ?? 'Performer'}</Text>
+              <Text style={styles.name}>
+                {row.display_name ?? row.handle ?? row.guest_name ?? 'Performer'}
+                {row.guest_name ? ' (walk-in)' : ''}
+              </Text>
               <Text style={row.on_deck_at ? styles.onDeckMeta : styles.meta}>
                 {row.on_deck_at ? 'On deck' : row.status}
               </Text>
@@ -205,18 +240,47 @@ export default function NightScreen() {
                   label="Mark no-show"
                   icon="close-circle"
                   color={palette.danger}
-                  onPress={() => setStatus.mutate({ signupId: row.id!, status: 'no_show' })}
+                  onPress={() => setConfirmNoShow(row)}
                 />
-                <IconAction
-                  label={`Report or block ${row.display_name ?? 'performer'}`}
-                  icon="flag-outline"
-                  onPress={() => setReporting(row)}
-                />
+                {row.performer_id ? (
+                  <IconAction
+                    label={`Report or block ${row.display_name ?? 'performer'}`}
+                    icon="flag-outline"
+                    onPress={() => setReporting(row)}
+                  />
+                ) : null}
               </View>
             ) : null}
           </View>
         ))
       )}
+
+      <View style={styles.walkInRow}>
+        <View style={styles.walkInField}>
+          <Field
+            label="Add a walk-in"
+            value={walkInName}
+            onChangeText={setWalkInName}
+            placeholder="Name at the door"
+          />
+        </View>
+        <Button
+          label="Add"
+          busy={addWalkIn.isPending}
+          disabled={!walkInName.trim() || !occurrenceId}
+          onPress={() =>
+            addWalkIn.mutate(
+              { occurrenceId: occurrenceId!, guestName: walkInName.trim() },
+              { onSuccess: () => setWalkInName('') },
+            )
+          }
+        />
+      </View>
+      {addWalkIn.isError ? (
+        <ErrorText>
+          {addWalkIn.error instanceof Error ? addWalkIn.error.message : 'Could not add them.'}
+        </ErrorText>
+      ) : null}
 
       {waitlist.length > 0 ? (
         <>
@@ -225,7 +289,10 @@ export default function NightScreen() {
             <View key={row.id} style={styles.row}>
               <Text style={styles.slot}>·</Text>
               <View style={styles.rowBody}>
-                <Text style={styles.name}>{row.display_name ?? row.handle ?? 'Performer'}</Text>
+                <Text style={styles.name}>
+                  {row.display_name ?? row.handle ?? row.guest_name ?? 'Performer'}
+                  {row.guest_name ? ' (walk-in)' : ''}
+                </Text>
               </View>
               <Button
                 label="Promote"
@@ -247,6 +314,35 @@ export default function NightScreen() {
           {onDeck.error instanceof Error ? onDeck.error.message : 'Could not update on deck.'}
         </ErrorText>
       ) : null}
+      {reorder.isError ? (
+        <ErrorText>
+          {reorder.error instanceof Error ? reorder.error.message : 'Could not reorder the list.'}
+        </ErrorText>
+      ) : null}
+      {confirmNoShow ? (
+        <ConfirmSheet
+          title={`Mark ${confirmNoShow.display_name ?? confirmNoShow.handle ?? 'this performer'} as a no-show?`}
+          body="They are notified immediately and the mark stays on this night."
+          confirmLabel="Mark no-show"
+          onConfirm={() => {
+            setStatus.mutate({ signupId: confirmNoShow.id!, status: 'no_show' });
+            setConfirmNoShow(null);
+          }}
+          onClose={() => setConfirmNoShow(null)}
+        />
+      ) : null}
+      {confirmRedraw ? (
+        <ConfirmSheet
+          title="Draw again?"
+          body="A new draw reshuffles everyone, including performers already told they are on. The current order is replaced."
+          confirmLabel="Re-draw the lottery"
+          onConfirm={() => {
+            setConfirmRedraw(false);
+            runDraw();
+          }}
+          onClose={() => setConfirmRedraw(false)}
+        />
+      ) : null}
       {reporting?.performer_id ? (
         <ReportModal
           visible
@@ -258,6 +354,33 @@ export default function NightScreen() {
         />
       ) : null}
     </ScrollView>
+  );
+}
+
+function ConfirmSheet({
+  title,
+  body,
+  confirmLabel,
+  onConfirm,
+  onClose,
+}: {
+  title: string;
+  body: string;
+  confirmLabel: string;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.modalBackdrop}>
+        <View style={styles.modalSheet}>
+          <Text style={styles.sectionTitle}>{title}</Text>
+          <Body>{body}</Body>
+          <Button label={confirmLabel} onPress={onConfirm} />
+          <Button label="Back" kind="secondary" onPress={onClose} />
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -351,10 +474,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.xs,
   },
+  walkInRow: {
+    alignItems: 'flex-end',
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  walkInField: {
+    flex: 1,
+  },
   iconAction: {
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 44,
     minWidth: 40,
+  },
+  modalBackdrop: {
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: palette.bgElevated,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    gap: spacing.sm,
+    padding: spacing.lg,
+    paddingBottom: spacing.xl,
   },
 });

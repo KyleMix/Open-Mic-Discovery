@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Platform, Text, View } from 'react-native';
 
@@ -8,6 +8,7 @@ import { Body, Button, ErrorText, Field, Screen } from '@/components/ui';
 import { palette, spacing } from '@/theme';
 
 export default function SignInScreen() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState<'email' | 'apple' | 'google' | null>(null);
@@ -20,7 +21,12 @@ export default function SignInScreen() {
       await action();
       // Navigation happens in the root gate once the session lands.
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Sign in failed. Try again.');
+      const message = e instanceof Error ? e.message : 'Sign in failed. Try again.';
+      // Backing out of the Apple or Google sheet is a choice, not a failure;
+      // showing it in red reads as something going wrong.
+      if (!message.toLowerCase().includes('cancel')) {
+        setError(message);
+      }
     } finally {
       setBusy(null);
     }
@@ -70,11 +76,20 @@ export default function SignInScreen() {
         disabled={busy !== null}
         onPress={() => run('google', signInWithGoogle)}
       />
-      <View style={{ marginTop: spacing.md }}>
+      <View style={{ marginTop: spacing.md, gap: spacing.md }}>
         <Link href="/(auth)/sign-up">
           <Text style={{ color: palette.text }}>New here? Create an account</Text>
         </Link>
+        <Link href="/(auth)/forgot-password">
+          <Text style={{ color: palette.textSecondary }}>Forgot your password?</Text>
+        </Link>
       </View>
+      <Button
+        label="Browse mics without an account"
+        kind="secondary"
+        disabled={busy !== null}
+        onPress={() => router.replace('/(tabs)')}
+      />
     </Screen>
   );
 }

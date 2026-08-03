@@ -4,6 +4,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Glyph } from '@/components/glyph';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { useSession } from '@/features/auth/session';
+import { formatNextDate } from '@/features/discovery/components/mic-card';
 import { freshness } from '@/features/discovery/freshness';
 import { describeRecurrence } from '@/features/discovery/recurrence';
 import { useFavorites, useToggleFavorite } from '@/features/favorites/queries';
@@ -55,6 +56,11 @@ export default function FavoritesScreen() {
         data={favorites.data}
         keyExtractor={(f) => f.series_id}
         contentContainerStyle={styles.list}
+        ListHeaderComponent={
+          toggle.isError ? (
+            <ErrorText>Could not update that favorite. Try again.</ErrorText>
+          ) : null
+        }
         renderItem={({ item }) => {
           const s = item.series;
           if (!s) {
@@ -79,6 +85,7 @@ export default function FavoritesScreen() {
                   {s.venue?.name}, {s.venue?.city} ·{' '}
                   {describeRecurrence(s.rrule, s.start_time) ?? 'Schedule varies'}
                 </Text>
+                <Text style={styles.nextDate}>Next: {formatNextDate(item.next_starts_at)}</Text>
                 <View style={styles.freshRow}>
                   <Glyph name="freshness-badge" size={14} color={fresh.color} />
                   <Text style={[styles.cardMeta, { color: fresh.color }]}>{fresh.label}</Text>
@@ -87,6 +94,7 @@ export default function FavoritesScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`Remove ${s.title} from favorites`}
+                disabled={toggle.isPending}
                 onPress={() =>
                   toggle.mutate({ userId: session.user.id, seriesId: s.id, favorite: false })
                 }
@@ -131,6 +139,11 @@ const styles = StyleSheet.create({
   },
   cardMeta: {
     color: palette.textSecondary,
+    fontSize: type.caption.fontSize,
+  },
+  nextDate: {
+    color: palette.text,
+    fontFamily: fonts.medium,
     fontSize: type.caption.fontSize,
   },
   freshRow: {

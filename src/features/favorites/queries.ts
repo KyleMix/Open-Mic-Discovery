@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { registerPushToken } from '@/lib/notifications';
 import { getSupabase } from '@/lib/supabase';
 
 export function useFavorites(userId: string | undefined) {
@@ -7,7 +8,8 @@ export function useFavorites(userId: string | undefined) {
     queryKey: ['favorites', userId],
     enabled: !!userId,
     queryFn: async () => {
-      const { data, error } = await getSupabase()
+      const supabase = getSupabase();
+      const { data, error } = await supabase
         .from('favorites')
         .select(
           'series_id, created_at, series:mic_series(id, title, disciplines, rrule, start_time, last_confirmed_at, venue:venues(name, city))',
@@ -17,7 +19,41 @@ export function useFavorites(userId: string | undefined) {
       if (error) {
         throw new Error(error.message);
       }
-      return data;
+      // A favorites list that cannot say what is on tonight is a bookmark
+      // graveyard: fetch each mic's next night and lead with the soonest.
+      const seriesIds = data.map((f) => f.series_id);
+      const nextBySeries: Record<string, string> = {};
+      if (seriesIds.length > 0) {
+        const { data: occurrences, error: occError } = await supabase
+          .from('mic_occurrences')
+          .select('series_id, starts_at')
+          .in('series_id', seriesIds)
+          .gte('starts_at', new Date().toISOString())
+          .neq('status', 'cancelled')
+          .order('starts_at');
+        if (occError) {
+          throw new Error(occError.message);
+        }
+        for (const occ of occurrences) {
+          if (!nextBySeries[occ.series_id]) {
+            nextBySeries[occ.series_id] = occ.starts_at;
+          }
+        }
+      }
+      return data
+        .map((f) => ({ ...f, next_starts_at: nextBySeries[f.series_id] ?? null }))
+        .sort((a, b) => {
+          if (a.next_starts_at === b.next_starts_at) {
+            return 0;
+          }
+          if (a.next_starts_at === null) {
+            return 1;
+          }
+          if (b.next_starts_at === null) {
+            return -1;
+          }
+          return a.next_starts_at < b.next_starts_at ? -1 : 1;
+        });
     },
   });
 }
@@ -75,6 +111,13 @@ export function useToggleFavorite() {
         }
       }
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['favorites'] }),
+    onSuccess: (_d, { userId, favorite }) => {
+      queryClient.invalidateQueries({ queryKey: ['favorites'] });
+      if (favorite) {
+        // Favoriting implies wanting the day-of reminder; a natural moment
+        // to ask for push permission.
+        registerPushToken(userId, { promptIfNeeded: true });
+      }
+    },
   });
 }

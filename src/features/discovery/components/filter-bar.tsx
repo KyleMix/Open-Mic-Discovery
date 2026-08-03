@@ -4,7 +4,6 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Glyph, disciplineGlyphs } from '@/components/glyph';
 import { FilterSheet } from '@/features/discovery/components/filter-sheet';
 import {
-  WEEKEND_DAYS,
   dayQuickPick,
   hasActiveFilters,
   isoWeekday,
@@ -108,20 +107,24 @@ export function FilterBar() {
       >
         <Chip
           label="Any day"
-          active={quickPick === 'any'}
-          onPress={() => filters.setDays([])}
+          active={quickPick === 'any' && filters.dateBound === null}
+          onPress={() => filters.setQuickPick('any', todayIso)}
         />
         <Chip
-          label="Today"
-          active={quickPick === 'today'}
+          label="Tonight"
+          active={filters.dateBound === 'today'}
           activeColor={disciplineAccents.music}
-          onPress={() => filters.setDays(quickPick === 'today' ? [] : [todayIso])}
+          onPress={() =>
+            filters.setQuickPick(filters.dateBound === 'today' ? 'any' : 'today', todayIso)
+          }
         />
         <Chip
-          label="Weekend"
-          active={quickPick === 'weekend'}
+          label="This weekend"
+          active={filters.dateBound === 'weekend'}
           activeColor={disciplineAccents.music}
-          onPress={() => filters.setDays(quickPick === 'weekend' ? [] : WEEKEND_DAYS)}
+          onPress={() =>
+            filters.setQuickPick(filters.dateBound === 'weekend' ? 'any' : 'weekend', todayIso)
+          }
         />
         <Chip
           label="Free"
@@ -135,8 +138,8 @@ export function FilterBar() {
           activeColor={disciplineAccents.poetry}
           onPress={() => setSheetOpen(true)}
         />
-        {hasActiveFilters(filters) ? (
-          <Chip label="Clear all" active={false} onPress={filters.reset} />
+        {hasActiveFilters(filters) || filters.dateBound !== null ? (
+          <Chip label="Clear all filters" active={false} onPress={filters.reset} />
         ) : null}
       </ScrollView>
       <FilterSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} />

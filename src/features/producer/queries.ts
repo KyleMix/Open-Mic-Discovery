@@ -186,6 +186,61 @@ export function useSeriesOccurrences(seriesId: string | undefined) {
   });
 }
 
+/** One night with its mic, for screens that need to say which night they manage. */
+export function useOccurrenceContext(occurrenceId: string | undefined) {
+  return useQuery({
+    queryKey: ['producer', 'occurrence', occurrenceId],
+    enabled: !!occurrenceId,
+    queryFn: async () => {
+      const { data, error } = await getSupabase()
+        .from('mic_occurrences')
+        .select('id, starts_at, status, override_title, series:mic_series(id, title)')
+        .eq('id', occurrenceId!)
+        .maybeSingle();
+      if (error) {
+        throw new Error(error.message);
+      }
+      return data;
+    },
+  });
+}
+
+export type NextNight = { occurrenceId: string; startsAt: string; signupCount: number };
+
+/**
+ * The next scheduled night and its signup count per series, so the producer
+ * dashboard can lead with what is coming instead of an undated card.
+ */
+export function useNextNights(seriesIds: string[]) {
+  return useQuery({
+    queryKey: ['producer', 'next-nights', [...seriesIds].sort()],
+    enabled: seriesIds.length > 0,
+    queryFn: async (): Promise<Record<string, NextNight>> => {
+      const { data, error } = await getSupabase()
+        .from('mic_occurrences')
+        .select('id, series_id, starts_at, signups(count)')
+        .in('series_id', seriesIds)
+        .eq('status', 'scheduled')
+        .gte('starts_at', new Date().toISOString())
+        .order('starts_at');
+      if (error) {
+        throw new Error(error.message);
+      }
+      const bySeries: Record<string, NextNight> = {};
+      for (const row of data) {
+        if (!bySeries[row.series_id]) {
+          bySeries[row.series_id] = {
+            occurrenceId: row.id,
+            startsAt: row.starts_at,
+            signupCount: row.signups[0]?.count ?? 0,
+          };
+        }
+      }
+      return bySeries;
+    },
+  });
+}
+
 export function useSubmitClaim() {
   const invalidate = useInvalidateSeries();
   return useMutation({
@@ -246,6 +301,32 @@ export function useReviewClaim() {
       }
     },
     onSuccess: () => invalidate(),
+  });
+}
+
+/** Enables the performer role on an existing account (dual roles are normal). */
+export function useEnablePerformerRole() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const supabase = getSupabase();
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_performer: true })
+        .eq('id', userId);
+      if (error) {
+        throw new Error(error.message);
+      }
+      const { error: ppError } = await supabase
+        .from('performer_profiles')
+        .upsert({ profile_id: userId }, { onConflict: 'profile_id', ignoreDuplicates: true });
+      if (ppError) {
+        throw new Error(ppError.message);
+      }
+    },
+    onSuccess: (_d, userId) => {
+      queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+    },
   });
 }
 

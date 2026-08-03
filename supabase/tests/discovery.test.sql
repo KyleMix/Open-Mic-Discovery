@@ -24,22 +24,23 @@ select is(
   'a 400 km radius reaches the Portland mics'
 );
 
--- Nearest-neighbor ordering: the first result from the Velvet Antler's own
--- doorstep is the Velvet Antler.
+-- Ranking leads with the soonest night (freshness and distance break ties),
+-- so the row cap keeps what is happening next, not whatever is closest.
 select is(
-  (select title from mics_near(47.6139, -122.3195, 5000) limit 1),
-  'Velvet Antler Comedy Open Mic',
-  'results are ordered nearest first'
+  (select next_local_date from mics_near(47.6139, -122.3195, 5000) limit 1),
+  (select min(next_local_date) from mics_near(47.6139, -122.3195, 5000)),
+  'results lead with the soonest night'
 );
 
--- Distance is reported in meters and grows monotonically.
+-- Listings with no upcoming date sort after every dated listing.
 select is(
   (select count(*)::int from (
-     select distance_m - lag(distance_m) over () as d
+     select (next_local_date is null)::int
+            - lag((next_local_date is null)::int) over () as d
      from mics_near(47.6174, -122.3199, 400000)
    ) x where d < 0),
   0,
-  'distance_m is monotonically non-decreasing'
+  'undated listings sort after dated ones'
 );
 
 -- Filters.

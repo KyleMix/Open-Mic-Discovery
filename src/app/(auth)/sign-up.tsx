@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
 import { signUpWithEmail } from '@/features/auth/api';
@@ -5,6 +6,7 @@ import { validateEmail, validatePassword } from '@/features/auth/validation';
 import { Body, Button, ErrorText, Field, Screen, Title } from '@/components/ui';
 
 export default function SignUpScreen() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fieldErrors, setFieldErrors] = useState<{
@@ -13,6 +15,7 @@ export default function SignUpScreen() {
   }>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
 
   async function submit() {
     const emailError = validateEmail(email);
@@ -24,13 +27,28 @@ export default function SignUpScreen() {
     setBusy(true);
     setError(null);
     try {
-      await signUpWithEmail(email.trim(), password);
-      // The root gate routes new sessions to the EULA and onboarding.
+      const { needsEmailConfirmation } = await signUpWithEmail(email.trim(), password);
+      if (needsEmailConfirmation) {
+        setAwaitingConfirmation(true);
+      }
+      // Otherwise the root gate routes the new session to the EULA and onboarding.
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not create the account.');
     } finally {
       setBusy(false);
     }
+  }
+
+  if (awaitingConfirmation) {
+    return (
+      <Screen>
+        <Title>Check your email</Title>
+        <Body>
+          We sent a confirmation link to {email.trim()}. Open it, then come back and sign in.
+        </Body>
+        <Button label="Go to sign in" onPress={() => router.replace('/(auth)/sign-in')} />
+      </Screen>
+    );
   }
 
   return (
@@ -57,6 +75,7 @@ export default function SignUpScreen() {
         onChangeText={setPassword}
         error={fieldErrors.password}
       />
+      <Body>Passwords are at least 10 characters.</Body>
       {error ? <ErrorText>{error}</ErrorText> : null}
       <Button label="Create account" busy={busy} disabled={busy} onPress={submit} />
     </Screen>

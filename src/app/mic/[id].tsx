@@ -25,6 +25,7 @@ import { useSubmitClaim } from '@/features/producer/queries';
 import { ReportModal } from '@/features/safety/components/report-modal';
 import { SignupCard } from '@/features/signups/components/signup-card';
 import { describeRecurrence, formatLocalTime } from '@/features/discovery/recurrence';
+import { formatInZone, zoneDiffersFromDevice } from '@/features/discovery/timezone';
 import { disciplineAccents, fonts, palette, spacing, type, type Discipline } from '@/theme';
 import type { Database } from '@/types/database.types';
 
@@ -95,6 +96,10 @@ function MicDetail({
   const fresh = freshness(series.last_confirmed_at, new Date());
   const recurrence = describeRecurrence(series.rrule, series.start_time);
   const next = occurrences.find((o) => o.status !== 'cancelled');
+  // A producer can rename or reprice a single night; the next night must
+  // show those overrides or performers see the wrong show and price.
+  const nextTitle = next?.override_title ?? null;
+  const nextCostCents = next?.override_cost_cents ?? series.cost_cents;
   const [flagOpen, setFlagOpen] = useState(false);
   const [claimOpen, setClaimOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -119,11 +124,11 @@ function MicDetail({
     const endsAt = new Date(startsAt.getTime() + 3 * 60 * 60 * 1000);
     try {
       await addToCalendar({
-        title: series.title,
+        title: next.override_title ?? series.title,
         startsAt,
         endsAt,
         location: venue ? `${venue.name}, ${venue.address_line}, ${venue.city}` : series.title,
-        notes: `${SIGNUP_METHOD_LABELS[series.signup_method]} · ${costLabel(series.cost_cents)}. Added from Open Mic Finder.`,
+        notes: `${SIGNUP_METHOD_LABELS[series.signup_method]} · ${costLabel(nextCostCents)}. Added from Open Mic Finder.`,
       });
     } catch {
       // The person backed out of the system sheet or the platform refused;
@@ -133,6 +138,7 @@ function MicDetail({
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <Stack.Screen options={{ title: series.title }} />
       {series.poster_url ? (
         <Image
           source={{ uri: series.poster_url }}
@@ -161,18 +167,32 @@ function MicDetail({
         {next ? (
           <Text style={styles.nextDate}>
             Next:{' '}
-            {new Date(next.starts_at).toLocaleDateString(undefined, {
+            {formatInZone(next.starts_at, series.timezone, {
               weekday: 'long',
               month: 'long',
               day: 'numeric',
             })}
             {next.doors_at
-              ? ` · Doors ${new Date(next.doors_at).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`
+              ? ` · Doors ${formatInZone(next.doors_at, series.timezone, { hour: 'numeric', minute: '2-digit' })}`
               : ''}
           </Text>
         ) : (
-          <Text style={styles.nextDate}>No upcoming dates listed</Text>
+          <Text style={styles.nextDate}>
+            {series.is_active
+              ? 'No upcoming dates listed'
+              : 'This mic is paused right now. Check back, or flag it if you think it is gone.'}
+          </Text>
         )}
+        {zoneDiffersFromDevice(series.timezone) ? (
+          <Text style={styles.nextDate}>Times shown are local to the venue.</Text>
+        ) : null}
+        {nextTitle ? <Text style={styles.overrideNote}>Special night: {nextTitle}</Text> : null}
+        {next && next.override_cost_cents != null ? (
+          <Text style={styles.overrideNote}>
+            This night: {costLabel(next.override_cost_cents)} (usually{' '}
+            {costLabel(series.cost_cents)})
+          </Text>
+        ) : null}
         {next ? (
           <Button label="Add to my calendar" kind="secondary" onPress={addNightToCalendar} />
         ) : null}
@@ -182,7 +202,7 @@ function MicDetail({
               .filter((o) => o.status === 'cancelled')
               .map(
                 (o) =>
-                  `${new Date(o.starts_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} is cancelled${o.cancellation_note ? `: ${o.cancellation_note}` : ''}`,
+                  `${formatInZone(o.starts_at, series.timezone, { month: 'short', day: 'numeric' })} is cancelled${o.cancellation_note ? `: ${o.cancellation_note}` : ''}`,
               )
               .join('\n')}
           </Text>
@@ -195,7 +215,8 @@ function MicDetail({
           signupMethod={series.signup_method}
           signupOpens={series.signup_opens}
           signupCloses={series.signup_closes}
-          costCents={series.cost_cents}
+          costCents={nextCostCents}
+          timezone={series.timezone}
         />
       ) : null}
 
@@ -210,7 +231,7 @@ function MicDetail({
           {series.set_length_minutes ? (
             <Fact label="Set" value={`${series.set_length_minutes} min`} />
           ) : null}
-          {series.capacity ? <Fact label="Spots" value={String(series.capacity)} /> : null}
+          {series.capacity ? <Fact label="Spots" value={`${series.capacity} total`} /> : null}
           <Fact label="Starts" value={formatLocalTime(series.start_time)} />
         </View>
         {series.cost_note ? <Text style={styles.costNote}>{series.cost_note}</Text> : null}
@@ -238,16 +259,34 @@ function MicDetail({
                 }
               />
             ) : null}
-            {venue.has_pa != null ? <Fact label="PA" value={venue.has_pa ? 'Yes' : 'No'} /> : null}
+            {venue.has_pa != null ? (
+              <Fact label="Sound system" value={venue.has_pa ? 'Yes' : 'No'} />
+            ) : null}
             {venue.has_stage != null ? (
               <Fact label="Stage" value={venue.has_stage ? 'Yes' : 'No'} />
             ) : null}
             {venue.wheelchair_accessible != null ? (
-              <Fact label="Accessible" value={venue.wheelchair_accessible ? 'Yes' : 'No'} />
+              <Fact label="Wheelchair access" value={venue.wheelchair_accessible ? 'Yes' : 'No'} />
             ) : null}
           </View>
-          {venue.parking_notes ? <Text style={styles.costNote}>{venue.parking_notes}</Text> : null}
+          {venue.parking_notes ? (
+            <Text style={styles.costNote}>Parking: {venue.parking_notes}</Text>
+          ) : null}
           <Button label="Get directions" kind="secondary" onPress={openDirections} />
+          {venue.phone ? (
+            <Button
+              label={`Call the venue (${venue.phone})`}
+              kind="secondary"
+              onPress={() => Linking.openURL(`tel:${venue.phone}`).catch(() => null)}
+            />
+          ) : null}
+          {venue.website ? (
+            <Button
+              label="Venue website"
+              kind="secondary"
+              onPress={() => Linking.openURL(venue.website as string).catch(() => null)}
+            />
+          ) : null}
         </Card>
       ) : null}
 
@@ -386,11 +425,22 @@ function ClaimModal({
 }
 
 function FavoriteStar({ seriesId }: { seriesId: string }) {
+  const router = useRouter();
   const { session } = useSession();
   const isFavorite = useIsFavorite(session?.user.id, seriesId);
   const toggle = useToggleFavorite();
   if (!session) {
-    return null;
+    // Guests get the same star; tapping it routes to sign-in.
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Sign in to add to favorites"
+        onPress={() => router.push('/(auth)/sign-in')}
+        style={{ minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
+      >
+        <Ionicons name="star-outline" size={24} color={palette.textSecondary} />
+      </Pressable>
+    );
   }
   const active = isFavorite.data ?? false;
   return (
@@ -579,6 +629,11 @@ const styles = StyleSheet.create({
   },
   nextDate: {
     color: palette.textSecondary,
+    fontSize: type.body.fontSize,
+  },
+  overrideNote: {
+    color: palette.warning,
+    fontFamily: fonts.medium,
     fontSize: type.body.fontSize,
   },
   cancelNote: {

@@ -914,30 +914,33 @@ export type Database = {
       signups: {
         Row: {
           created_at: string
+          guest_name: string | null
           id: string
           occurrence_id: string
           on_deck_at: string | null
-          performer_id: string
+          performer_id: string | null
           slot_position: number | null
           status: Database["public"]["Enums"]["signup_status"]
           updated_at: string
         }
         Insert: {
           created_at?: string
+          guest_name?: string | null
           id?: string
           occurrence_id: string
           on_deck_at?: string | null
-          performer_id: string
+          performer_id?: string | null
           slot_position?: number | null
           status?: Database["public"]["Enums"]["signup_status"]
           updated_at?: string
         }
         Update: {
           created_at?: string
+          guest_name?: string | null
           id?: string
           occurrence_id?: string
           on_deck_at?: string | null
-          performer_id?: string
+          performer_id?: string | null
           slot_position?: number | null
           status?: Database["public"]["Enums"]["signup_status"]
           updated_at?: string
@@ -1078,6 +1081,15 @@ export type Database = {
       }
     }
     Views: {
+      blocked_profiles: {
+        Row: {
+          blocked_at: string | null
+          blocked_id: string | null
+          display_name: string | null
+          handle: string | null
+        }
+        Relationships: []
+      }
       geography_columns: {
         Row: {
           coord_dimension: number | null
@@ -1262,6 +1274,7 @@ export type Database = {
         Row: {
           created_at: string | null
           display_name: string | null
+          guest_name: string | null
           handle: string | null
           id: string | null
           occurrence_id: string | null
@@ -1832,6 +1845,10 @@ export type Database = {
       }
       postgis_version: { Args: never; Returns: string }
       postgis_wagyu_version: { Args: never; Returns: string }
+      resolve_flag: {
+        Args: { p_confirm: boolean; p_flag_id: string }
+        Returns: undefined
+      }
       review_claim: {
         Args: { p_approve: boolean; p_claim_id: string }
         Returns: undefined
@@ -1863,6 +1880,13 @@ export type Database = {
       set_slot_order: {
         Args: { p_occurrence_id: string; p_signup_ids: string[] }
         Returns: undefined
+      }
+      signup_counts: {
+        Args: { p_occurrence_id: string }
+        Returns: {
+          capacity: number | null
+          taken: number
+        }[]
       }
       skip:
         | { Args: { "": string }; Returns: string }
