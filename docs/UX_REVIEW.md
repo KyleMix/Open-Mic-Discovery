@@ -1,0 +1,214 @@
+# UX Review: Open Mic Finder
+
+Date: 2026-08-03. Scope: full codebase review of every user-facing flow, evaluated against five personas, comparable apps, and the trust/liveness requirements that motivated the product. No code was changed for this review; every finding cites the file and line it was read from.
+
+---
+
+## Executive summary
+
+The engineering underneath this app is genuinely strong: RLS on every table, DST-safe idempotent occurrence generation, an unforgeable server-stamped confirmation trigger (supabase/migrations/20260728000800_producer.sql:9-26), plain-language signup vocabulary, and consistent loading/empty/error states on almost every screen. The problems are not craft problems. They are five systemic gaps where the product contradicts its own thesis:
+
+1. **The front door contradicts the wedge.** PROJECT.md says discovery is the product and STEP0_PROPOSAL.md:41 says "do not put a signup wall in front of it." The database agrees: `mics_near` and `search_mics` are granted to `anon` (20260728000700_discovery.sql:166-167) and every public table has an `anon` select policy. But the client's AuthGate (src/app/_layout.tsx:64-68) hard-redirects every sessionless user to sign-in. A new user must complete roughly 13 taps and 7 typed fields (account, EULA, handle, display name, home city, birth year, role) before seeing a single mic. Several "Sign in to..." branches deeper in the app are unreachable dead code, which suggests this drifted rather than being decided.
+
+2. **Freshness is measured but never enforced.** The badge exists everywhere, but nothing decays, downranks, hides, nudges, or escalates. `mics_near` never references `last_confirmed_at` or `is_active` in a predicate (20260728000700_discovery.sql:88-102). Flags land in an admin queue where "Confirmed" is a bookkeeping stamp with zero effect on the listing (src/features/safety/queries.ts:176-194). A mic flagged dead, confirmed dead by an admin, stays fully discoverable and keeps generating dated future nights forever. This is the exact failure mode ("data rot") the brief says killed the incumbent.
+
+3. **The app has no outward-facing surface at all.** No share action anywhere (no `Share` import in the codebase), no deep links beyond the OAuth callback, no universal/app links in app.json, no public web page, no audience concept, and push notifications carry payloads but there is no notification-response handler (src/lib/notifications.ts), so every push is a dead tap. Word of mouth, the only growth channel an open mic app has, is structurally unsupported: telling a friend about a mic requires a screenshot.
+
+4. **The performer loop is one-way.** Performers can sign up, but they cannot see the lineup, their position relative to others, or how many spots are taken ("Spots 15" is capacity, not availability). They get no realtime updates while the host runs the draw (realtime exists only on the producer roster, src/features/signups/queries.ts:87-110). Once a night passes, their `performed` status becomes unreachable (the detail query filters to future occurrences), and `attendance_log`, a table purpose-built for history with RLS and indexes, has zero references in app code. There is no history, no streaks, no "you've done 12 mics this month."
+
+5. **The producer's weekly grind is untouched.** Creating a mic works, but the night-of tools miss the realities of running a room: no walk-in add (every open mic has them), a 3-screen path to tonight's list, 9 taps to move someone from slot 10 to slot 1, unconfirmed adjacent tap targets for "performed" vs "no-show" that instantly push the performer, and cancelling a night notifies nobody, including people already confirmed for it. Promotion tooling is one poster upload. Two screens promise "post lineups," which does not exist.
+
+One correctness bug deserves headline status: **every listing created anywhere in the world is stamped `timezone: 'America/Los_Angeles'`** (src/app/producer/new.tsx:32) with no picker and no warning, and **per-night title/cost overrides are never rendered on the performer-facing detail screen** (src/app/mic/[id].tsx:145,209 read only the series values), so a special-priced holiday show displays the wrong name and wrong price.
+
+The good news: a disproportionate share of the fixes are small. The schema already contains most of what is missing (attendance_log, override_venue_id, verified, completed status, anon policies); the app is under-using its own database.
+
+---
+
+## Phase 1: the actual current experience, flow by flow
+
+### First launch to first mic
+
+Sign-in screen (no guest path, no "Forgot password" anywhere in the codebase) > Create account (10-char password rule revealed only on failure; Apple/Google buttons exist only on sign-in, not sign-up) > an unprimed OS push-permission dialog fired by the root layout the instant a session exists (src/app/_layout.tsx:54-58), before the user knows what the app does > EULA rendered as raw markdown with visible `#` characters in a caption-size box, no decline, no back button (src/app/(auth)/eula.tsx:82) > a single long onboarding form: two role toggles, optional disciplines, handle, display name, city/state or ZIP, birth year (age gate 17, checked last, by year only) > Discover.
+
+Notable dead ends found in this flow:
+- If email confirmations are enabled on hosted Supabase (the default), `signUp` returns no session, the screen sets no error and navigates nowhere: the button spinner stops and nothing happens (src/app/(auth)/sign-up.tsx:26-33, src/features/auth/api.ts:24-29). There is no "check your email" state and no resend.
+- Geocoding failure (guaranteed on web, possible anywhere) silently writes null home coordinates; Discover then centers on hardcoded downtown Seattle with no message (src/features/profile/geocode.ts:17-19, src/features/discovery/location.ts:31).
+- Killing the app between EULA and onboarding loses the in-memory acceptance and strands the user on a screen whose only error is the incorrect "Session expired. Sign in again." with no sign-out button anywhere in the auth group (src/app/(auth)/onboarding.tsx:60-63, src/stores/onboarding.ts).
+- `completeOnboarding` is four un-transacted inserts; a partial failure makes retry report "That handle is taken. Try another." about the user's own handle (src/features/auth/api.ts:107-149).
+
+### Browsing and search
+
+Discover defaults to list view centered on the home area, sorted soonest-then-nearest, with the performer's own disciplines silently pre-selected as filters on every cold start (src/app/(tabs)/index.tsx:40-44). Nothing on screen says where the list is centered or that it is filtered. Filters, radius, and the list/map preference are all non-persisted (src/stores/filters.ts has no persist middleware) and reset every launch.
+
+The "Today" and "Weekend" chips do not mean what they say: the RPC matches "has an occurrence on this weekday within the next 14 days" (20260728000700_discovery.sql:94-100), so "Today" can return a card dated eight days out. There is no date picker, no tonight view, and no way to browse by actual date; 76 of the 90 generated days are unreachable through the UI.
+
+Search (title, venue, city) is a separate universe from filters: no radius, no distance, no day, no discipline, one RPC per keystroke with no debounce, and no freshness badge on results even though the RPC returns it. "Comedy in Austin this Friday" is not expressible in this app. Map view has no callouts (tapping a pin navigates immediately), no empty state of its own, marker a11y labels are the literal string "Open mic," and the web "map" shows distances in km while everything else uses miles.
+
+### Mic detail and signup
+
+The detail screen is genuinely rich (recurrence in plain English, freshness badge, method explainers, cancellations in red, calendar handoff, flag/claim/report). But: venue phone and website exist in the DB and are never shown, which turns "Invite only" mics into a dead end ("Reach out through the venue or host" with no contact); the venue card silently vanishes entirely when the venue is unapproved; "Spots" shows capacity with no relation to how many are taken; times render in device-local timezone with no label; only one upcoming date is shown though six are fetched; and the producer is never named. Per-night overrides (title, cost) are applied by the DB and honored by notifications but never rendered here.
+
+Signup works and copy is friendly, but the signed-in non-performer branch is a text-only dead end (src/features/signups/components/signup-card.tsx:66), withdraw has no confirmation and no error surface, waitlist/no-show statuses have no explanation or next step, and performers get no realtime: the "on deck" banner can only appear after a 60-second stale window plus a screen re-entry, while the push that announces it deep-links nowhere.
+
+### Producer flows
+
+Creation is a single scroll of roughly 20 decisions and 65 tap targets; workable, but new-venue entry is the weak point: no address geocoding, a tap-to-place map that starts at a hardcoded regional center, and a web fallback that asks for raw latitude/longitude. Venue amenity fields the public page displays (ages, PA, stage, accessibility, parking) cannot be entered at all, so every new venue ships blank. Editing cannot ever change the venue (the edit form omits the venue section), the signup-window chips render in the editor but the value is silently discarded on save (src/app/producer/[id].tsx:80-93 omits `signup_opens`), and pausing a listing deletes future nights with no confirmation. Listings held by the moderation filter look normal to their creator, who is never told nobody else can see them.
+
+Night-of: the roster screen is titled "The list" with no mic name or date, reached only via Manage > night row > "List". It has realtime, a fun lottery shuffle animation, on-deck pushes, and waitlist promotion, but no walk-in add, chevron-only reordering, no undo on performed/no-show, raw enum strings shown to the producer, and a flash of the full Pro UI for free users while the entitlement query resolves.
+
+### Notifications, audience, admin
+
+Four notification kinds exist (signup status, day-of favorite reminder, new mic nearby, weekly digest), all push-only, none tappable-to-destination, and nothing schedules the push-sender Edge Function (no cron entry anywhere; docs/store/STORE_LISTING.md lists deployment as a manual step with no cadence). No cancellation notification exists. No email or SMS exists. There is no audience-facing anything: no RSVP, no public page, no share. Admin tooling is split across two surfaces (moderation queue on /admin, claims queue inexplicably on the My Mics tab), flags resolve to nothing, claim decisions notify nobody, `banned_terms` has no admin UI, and the bulk-import path the brief called for ("build it early so seeding is not painful") was never built: supabase/seed/ contains only .gitkeep.
+
+---
+
+## Phase 2: per-persona findings
+
+Severity: **B** = blocker (persona fails their goal), **M** = major (goal succeeds with significant friction or mistrust), **m** = minor.
+
+### Persona 1: first-time performer, nervous, tonight or this week
+
+| # | Sev | Finding | Where | Fix |
+|---|-----|---------|-------|-----|
+| 1.1 | B | Cannot see a single mic without account + EULA + 7-field onboarding; the nervous first-timer bounces at the wall. DB already supports anon reads. | src/app/_layout.tsx:64-68 vs 20260728000700_discovery.sql:166-167 | Let AuthGate pass sessionless users into Discover and mic detail read-only; gate favorite/signup/flag at the action (those "Sign in to..." branches already exist, currently dead). |
+| 1.2 | B | No "tonight" concept. "Today" chip actually means "runs on this weekday within 14 days," so a beginner planning tonight can be shown next week. | 20260728000700_discovery.sql:94-100 | Add a date-bounded variant (`starts_at` between now and end of local day) behind the Today chip; show the real date prominently on cards. |
+| 1.3 | M | Their real questions go unanswered: how early to arrive, parking, drink minimum, crowd vibe. Venue amenity fields exist in schema but producers cannot enter them, so listings are blank; parking notes render as an unlabeled gray line; "PA" is never expanded; "Accessible" unexplained. | series-form.tsx (no venue amenity inputs), src/app/mic/[id].tsx:241-249 | Add amenity inputs to the venue sub-form; label the parking line "Parking"; spell out "Sound system (PA)". Add optional series fields for "arrive by" guidance, or a producer tips free-text rendered under a "Good to know" heading. |
+| 1.4 | M | Signup vocabulary has three parallel wordings: card labels ("Walk-in list"), detail explainers ("Sign up early, show up, you are on"), and a third unused constant (`SIGNUP_METHOD_DESCRIPTIONS` is defined but never rendered). "In the draw" vs "Drawn: on the list" are near-identical strings with opposite meanings. | src/features/discovery/components/mic-card.tsx:12-24, signup-card.tsx:14-21 | Pick one vocabulary, delete the unused constant, rename `drawn` display to "You're in! Drawn for a spot". |
+| 1.5 | M | "Confirmed 12 days ago" is the core trust signal and is never explained anywhere; green/amber/gray must be inferred. | src/features/discovery/freshness.ts, src/app/mic/[id].tsx:154-157 | One-line tooltip/sheet on badge tap: "The host confirmed this listing is accurate N days ago." |
+| 1.6 | M | Invite-only (host_booked) mics are a dead end: no signup card, and the explainer says to contact the venue/host while venue phone/website (in the DB) and host identity are never displayed. | signup-card.tsx:46-48, mic/[id].tsx (venue card) | Render venue phone/website buttons; name the host on claimed listings. |
+| 1.7 | m | "Spots 15" reads as availability but is capacity. | mic/[id].tsx:213 | Show "15 spots" plus taken count, or drop it for first_come. |
+| 1.8 | m | No beginner signal at all (no "newcomer friendly" tag, no etiquette content). | schema + UI | Add a producer-set boolean chip "First-timers welcome" and a one-screen etiquette explainer linked from the signup card. |
+| 1.9 | m | Password rule (10 chars) revealed only on failure; no forgot-password flow exists at all, which for a nervous first-timer is a hard exit at the door. | sign-up.tsx:52-59; no resetPasswordForEmail in src/ | State the rule as helper text; add "Forgot password?" using supabase resetPasswordForEmail + deep link. |
+
+### Persona 2: experienced performer, 3-5 mics a week
+
+| # | Sev | Finding | Where | Fix |
+|---|-----|---------|-------|-----|
+| 2.1 | B | No history. `attendance_log` is fully built (RLS, indexes, delete cascade) and referenced by zero lines of app code; `performed` statuses become unreachable once the night passes because the detail query filters to future occurrences. Profile tab has no history, count, or upcoming-signups list. | 20260728000400_occurrences_signups.sql:306-320; src/features/discovery/queries.ts:52; src/app/(tabs)/profile.tsx | Add a "My nights" section on Profile: upcoming signups (query signups joined to occurrences) and past nights (write attendance_log on performed, allow manual add). Table and statuses already exist. |
+| 2.2 | M | Nothing at a glance for tonight: no tonight view (1.2), favorites sorted by when-favorited with no next date or distance shown, no star on discovery cards (favoriting costs 2 taps + back navigation per mic). | src/app/(tabs)/favorites.tsx, favorites/queries.ts:12-16, mic-card.tsx | Add next-occurrence to the favorites query, sort by soonest, add the star to cards. |
+| 2.3 | M | Every session resets their setup: filters, radius, map/list preference, cleared discipline chips (re-seeded each cold start), and the locate-based center are all non-persisted. A 5-night-a-week user re-does this daily. | src/stores/filters.ts:59, index.tsx:32,40-44 | Add zustand persist middleware for the filter store; only seed disciplines once (persist `disciplinesSeeded`). |
+| 2.4 | M | No list visibility: cannot see who else is on, their own position relative to capacity ("Slot 3" of what?), or spots remaining, so they cannot decide between two mics tonight. The roster view exists but RLS restricts it to self + producer. | signups.sql:154-167, occurrences_signups.sql:261-265 | Add a policy letting confirmed signups of the same occurrence read the roster (or expose an aggregate count RPC: "7 of 15 spots taken"). |
+| 2.5 | M | No realtime on the performer side; lottery results, waitlist promotion, and on-deck reach them only via a push that deep-links nowhere. | queries.ts:10-27 (no subscription), src/lib/notifications.ts | Subscribe useMySignup to the same channel; add a notification-response handler routing on the payload's series/occurrence id. |
+| 2.6 | m | Card shows recurrence or next date, never both; a weekly card shows a time with no date, a fallback card a date with no time. | mic-card.tsx:79 | Render both lines. |
+| 2.7 | m | 100-row RPC cap applies by distance before the soonest-first re-sort; in a dense scene tonight's mic #101-by-distance silently disappears. | 20260728000700_discovery.sql:102 | Sort or filter server-side by next occurrence, or raise the cap and paginate. |
+
+### Persona 3: traveling performer, two nights in an unknown town
+
+| # | Sev | Finding | Where | Fix |
+|---|-----|---------|-------|-----|
+| 3.1 | B | Cannot search by place + date. City search (search_mics) takes only a text query: no radius, day, discipline, or cost; filtered browsing (mics_near) requires a lat/lng center that can only be the home area or device GPS. "Mics in Austin this Friday" is inexpressible; the workaround is editing your profile home city. | 20260728000700_discovery.sql:105-108, index.tsx:37 | Geocode city searches into a temporary center feeding mics_near with the existing filters ("Searching near Austin, TX" chip with a clear action). |
+| 3.2 | M | The screen never says where it is centered, and cards omit the city, so a traveler quietly sees home-town results with wrong-looking distances. The tapped-locate center lives in component state and dies on remount. | index.tsx:32-37, mic-card.tsx:74-78 | Show a location chip ("Near Seattle, WA · change"); persist manualCenter; add city to cards when it differs from the center city. |
+| 3.3 | M | Trust: staleness has no consequence (not downranked, not hidden, unbounded "Confirmed 730 days ago", stale and never-confirmed share one gray), and search results omit the freshness badge entirely. A stranger cannot tell live scenes from dead ones. | freshness.ts:17-35, order.ts:18-29, index.tsx:186-201 | See Phase 4 loop; add badge to search rows; downrank stale in sort. |
+| 3.4 | M | All times render in device-local timezone with no label; combined with the America/Los_Angeles hardcode on every listing (4.1) an out-of-region traveler can see genuinely wrong wall-clock times. | mic/[id].tsx date formatting; new.tsx:32 | Format in the series timezone, label it when it differs from device. |
+| 3.5 | m | Hardcoded Seattle fallback is silently reachable in production (failed/web geocode) with zero on-screen signal. | location.ts:31, geocode.ts:17-19 | If home coords are null, show a banner: "We could not place {city}. Tap to retry or use your location." |
+
+### Persona 4: producer / host
+
+| # | Sev | Finding | Where | Fix |
+|---|-----|---------|-------|-----|
+| 4.1 | B | Every listing is created with `timezone: 'America/Los_Angeles'` hardcoded; no picker, no warning. Occurrence generation is timezone-correct by construction, so a Chicago mic generates at Pacific wall-clock. | src/app/producer/new.tsx:32 | Derive from the venue pin (a lat/lng-to-IANA lookup) with a visible override. Blocks any expansion past the launch region. |
+| 4.2 | B | Night-of screen fails the at-the-venue test: no walk-in add (the dominant real-world case), 3 screens + a scroll to reach tonight, header is "The list" with no mic/date, reorder is chevrons (slot 10 to 1 = 9 round-trips), performed/no-show are adjacent unconfirmed 22pt icons that instantly push the performer with no undo. | night/[occurrenceId].tsx | Add a "Tonight" card at the top of My Mics linking straight to the list; add a name-only walk-in row (nullable performer_id on signups, or a guest_name column); confirm no-show; drag handle or long-press reorder; put title + date in the header. |
+| 4.3 | M | Cancelling a night notifies nobody, including confirmed signups; their signup card for that night also becomes unreachable because the screen promotes the next non-cancelled date. | signups.sql:176 (no cancellation kind), mic/[id].tsx:97 | Add an `occurrence_cancelled` outbox kind + trigger on status change; render the user's own cancelled-night signup with the note. |
+| 4.4 | M | Silent data loss and lies in the editor: signup-window chips render in edit mode but the value is discarded on save (patch omits signup_opens) and always displays 7 days; venue can never be changed (edit form drops the venue section; override_venue_id has no UI); biweekly parity is uneditable. | producer/[id].tsx:80-93, series-form.tsx:312,437 | Include signup_opens in the patch and initialize from the row; add venue change (all-future) and one-night venue override using the existing column. |
+| 4.5 | M | Moderation shadow-hold: a banned-substring match (naive `like '%term%'`, so "beckys" trips "kys") silently makes the listing invisible to everyone but the creator, who is never told and will keep confirming a listing nobody can see. | 20260728001000_moderation.sql:33-39,96-101 | Show a "Held for review" banner on own pending listings; word-boundary matching. |
+| 4.6 | M | Promotion tooling is a single poster upload. No share link, no lineup posting (promised in two onboarding strings), no message blast to signed-up performers, no export. The weekly grind the brief targets is untouched. | producer.tsx:63, poster.ts | See roadmap: share pages, lineup share sheet, blast-to-tonight's-list. |
+| 4.7 | M | Dashboard shows no dates or counts: My Mics cards omit the next night and signup count; Manage lists nights without per-night counts; analytics sorts descending with no upper bound so it opens on ~13 future zero-signup nights and caps history at ~7 past nights. | producer.tsx:128-168, analytics/[id].tsx:23-33 | Add next-night + tonight's count to cards; split analytics into past (bounded) and upcoming. |
+| 4.8 | m | Confirm-accurate, the product's keystone tap, has no error surface on either screen (a failed confirm spins and silently does nothing); reorder failures are also never rendered. | producer.tsx / producer/[id].tsx (no confirm.isError), night screen | Add error text + retry; optimistic update with rollback. |
+| 4.9 | m | Pause silently deletes future nights with no confirmation; there is no delete/archive at all; claims queue lives on the My Mics tab with no requester identity shown; claim decisions notify nobody. | producer/[id].tsx:143-153, producer.tsx:91-116 | Confirm dialog on pause; move claims into /admin with claimant identity; add claim-decision notification kind. |
+| 4.10 | m | Sub-5-minute creation is achievable only when the venue exists; new-venue entry (no geocoding, pan-a-tiny-map pin placement, raw lat/lng on web) is the bottleneck. | series-form.tsx:454-480, pin-picker.tsx | Geocode the typed address to pre-place the pin; keep tap-to-adjust. |
+
+### Persona 5: audience member
+
+| # | Sev | Finding | Where | Fix |
+|---|-----|---------|-------|-----|
+| 5.1 | B | There is no audience surface, period. No account-free view (1.1), no share links, no public web page, no RSVP or "I'm going," no headcount for social proof. The brief's "driving audience attendance" side has zero implementation. | whole app; app.json (no associatedDomains/intentFilters) | Minimum viable: anonymous read access (1.1) + a shareable web listing page + an "I'm going" count. See roadmap. |
+| 5.2 | M | Even in-app, everything assumes you perform: onboarding requires choosing performer or producer with no third option, "My Mics" reads as producer recruiting, and signups are performer-gated at RLS. | onboarding.tsx:100-111, signups.sql:68-71 | Allow zero-role or "Just watching" onboarding; treat favorites + reminders as the audience loop. |
+
+---
+
+## Phase 3: prioritized fix list
+
+Quick wins first: each of these is small, self-contained, and repairs something actively misleading.
+
+1. **Render per-night overrides on the mic page** (title, cost). Correctness bug; the data and even the notification copy already honor them. (mic/[id].tsx:145,209)
+2. **Include `signup_opens` in the series edit patch** and initialize the chips from the row. Removes a silent lie in the editor. (producer/[id].tsx:80-93, series-form.tsx:108)
+3. **Add a notification-response handler** that routes pushes to `/mic/[id]` or the night screen from the payload already being sent. Turns four dead notification types into live ones. (src/lib/notifications.ts)
+4. **Persist the filter store** (zustand persist) including view mode and the disciplines-seeded flag. (src/stores/filters.ts)
+5. **Cancellation notifications**: new outbox kind + trigger on occurrence status change, targeting signups of that occurrence. (signups.sql)
+6. **Confirm/withdraw/reorder error surfaces + no-show confirmation dialog.** Four missing isError branches and one Alert. (producer.tsx, producer/[id].tsx, night/[occurrenceId].tsx, signup-card.tsx)
+7. **Show venue phone/website on the detail screen**; label parking; expand "PA". Un-dead-ends invite-only mics. (mic/[id].tsx venue card)
+8. **Favorite star on discovery cards; next date + soonest sort on Favorites.** (mic-card.tsx, favorites/queries.ts)
+9. **Fix "Today"/"Weekend"** to bound by actual date; show the real date on every card (both recurrence and date lines).
+10. **Debounce search** (300ms) and add the freshness badge to search rows. (index.tsx:86,197)
+11. **Route the signed-in non-performer signup branch to Edit profile** instead of a text dead end, and add an "also performer" toggle there. (signup-card.tsx:66, edit-profile.tsx)
+12. **Handle the email-confirmation signup path**: show "check your email" when signUp returns no session. (sign-up.tsx)
+13. **Blocked-users list: show handle/name**; drop "server side" from user copy. (settings.tsx:53-66)
+14. **Render the EULA markdown** (or strip the hashes) and move the push-permission prompt to a primed moment (first favorite or first signup). (eula.tsx:82, _layout.tsx:54-58)
+
+Structural (ordered by leverage):
+
+15. **Anonymous browse mode** (persona 1.1/5.1): AuthGate passes guests to Discover/detail; the existing signed-out branches on favorite/flag/claim/report become reachable exactly as written.
+16. **Tonight near me**: date-bounded RPC variant + a real Tonight chip + a location label chip with "change city" (persona 3.1/3.2 and 1.2 together).
+17. **Producer "Tonight" fast path + walk-in add + drag reorder** (4.2). This is the retention feature for the supply side.
+18. **Timezone from venue location** (4.1). Required before seeding city #2.
+19. **My nights / history on Profile** using signups + attendance_log (2.1).
+20. **Roster visibility or spot counts for performers** (2.4) plus performer-side realtime (2.5).
+21. **Trust loop** (Phase 4 below).
+22. **Schedule the push-sender** (cron or Supabase scheduled function) and handle Expo receipts; today nothing invokes it and failures are marked sent. (supabase/functions/push-sender/index.ts:58-66)
+
+---
+
+## Phase 4: trust and liveness
+
+### What exists today
+
+- `last_confirmed_at` is server-stamped and unforgeable (excellent), surfaced as a three-tier badge, set by a genuinely one-tap action in two places. Nothing ever resets it, and editing a listing does not disturb it.
+- Recurring exceptions are handled well at the data layer: cancel-with-note, restore, this-night-only title/cost, and a reconciler that never clobbers touched nights and recomputes DST correctly. Gaps: no one-night venue or time change reaches the UI (override_venue_id is schema-only), occurrences are never marked `completed`/`moved` (two dead enum values), and cancellations notify nobody.
+- Producer-verified vs community-submitted exists in the schema (`created_by` vs `owner_id`, `producer_profiles.verified`) and in the seed (14 of 20 seeded mics are unclaimed), but the UI never distinguishes them: no "community-listed" vs "host-managed" label, `verified` is displayed nowhere and has no admin grant path.
+- Abandonment: nothing happens. No nudge to the producer, no decay, no escalation from flags, and a dead mic keeps generating dated future occurrences forever. The seed even ships listings showing "Confirmed 65 days ago" where `last_confirmed_by` is null, so the badge asserts confirmations that never happened.
+
+### The lightest-weight verification loop that would work
+
+Everything below reuses existing machinery (outbox, freshness tiers, flags, RLS) and adds no new moderation burden:
+
+1. **Close the loop on confirmation (S).** New outbox kind `confirm_nudge`: when a listing crosses 30 days unconfirmed and has an owner, queue one push per tier transition ("Is The Basement Open Mic still running Tuesdays? One tap keeps it live."). The push deep-links to Manage where the one-tap confirm already exists. One cron query, one new kind.
+2. **Make staleness cost something (S).** Downrank stale listings in `sortSoonestNearest` (freshness tier as the final sort key) and render an explicit "Not recently confirmed, call ahead" line on stale detail pages. No hiding yet, just honest friction.
+3. **Let performers confirm, not just flag (M).** A "Still running? I was there" one-tap on the detail page writing a `community_confirmations` row (or reusing listing_flags with a positive reason). N distinct confirmers within 14 days renders "Confirmed by performers" and can refresh an *unclaimed* listing's badge. This is the Mic Finder crowd-verification pattern, and it is the only mechanism that works for the 14/20 unclaimed listings that have no producer to nudge.
+4. **Give flags teeth, gently (S/M).** Two distinct `permanently_dead` or `not_happening` flaggers: banner on the listing ("Performers reported this mic may not be running") + push to the owner. Admin "Confirmed" on a dead flag should pause the listing (one extra update in useResolveFlag), not just stamp the row. Add a unique (series_id, flagger_id, reason, open) index to stop repeat-flag spam.
+5. **Auto-pause as the last resort (S).** Owned listing unconfirmed for 90 days after two nudges, or unclaimed listing with a standing dead-flag banner and no community confirmation for 30 days: set `is_active = false` (which already stops occurrence generation) and notify the owner that one tap resurrects it. Also: actually filter or label `is_active = false` in discovery; today a paused mic still appears with an unexplained "No upcoming dates listed."
+6. **Tell people what their reports did (S).** Claim decisions, flag resolutions: one outbox kind each. Contributors who hear back contribute again; today both are write-only.
+
+Ordering: 1, 2, and the flag dedupe are a week of work and would already put this app ahead of every incumbent on the axis the brief says matters most.
+
+---
+
+## Phase 3 (continued): feature roadmap from comparable apps
+
+Sorted by impact-to-effort. Effort S/M/L; impact low/med/high. Only features that fit the v1 scope rules (no feed, no DMs, no AI, no setlist tools; note that private set-tracking notes are explicitly out per "no setlist builder", so item 10 stays minimal and optional).
+
+| # | Feature (comparable) | Effort | Impact | Implementation notes for this stack |
+|---|---------------------|--------|--------|-------------------------------------|
+| 1 | Verification loop + "last confirmed" enforcement (Mic Finder / Open Mic America) | S | high | Phase 4 items 1-4. Outbox kinds + one cron query + sort tweak. The schema needs almost nothing. |
+| 2 | Push deep-linking + "tonight near me" push (Bandsintown) | S | high | Response handler on the existing payloads; the favorite day-of reminder already exists and becomes far more valuable once tappable. |
+| 3 | Shareable listing pages (Eventbrite) | M | high | Expo Router web output already builds the route. Add a public /mic/[id] page outside AuthGate with OG tags, associatedDomains/intentFilters in app.json, and a Share button on detail + Manage. This unlocks Instagram-bio and group-chat distribution, the actual promotion channel for mics. |
+| 4 | "I'm going" RSVP count visible to all (Meetup/Luma) | M | high | New `rsvps` table (occurrence_id, profile_id) open to any authenticated role, count shown on detail + cards ("14 going"). Doubles as the producer's "who's coming" and the audience feature in one. Skip guest RSVP in v1. |
+| 5 | Producer message blast to a night's list (Discord/GroupMe pattern) | M | high | One RPC (owner-gated, rate-limited to 1/night) fanning a new outbox kind to that occurrence's signups + RSVPs. Kills the manual-texting grind; a natural Producer Pro feature. |
+| 6 | Performer history + streaks (ClassPass) | M | med-high | attendance_log is already built; write on `performed`, allow manual backfill, show "12 mics this month" on Profile. Aggregates feed producer analytics later. |
+| 7 | Calendar sync upgrade (Meetup) | S | med | "Add to calendar" exists for one night; add the RRULE to the event so the series recurs, and offer it post-signup, not just on detail. |
+| 8 | Follow venue/host: "you're on a lineup" alert (Bandsintown/Songkick) | M | med | Favorites already approximate following a series. Add favorite-a-venue and notify favoriters when a new series appears there. Defer artist-following (adjacent to a follower graph, which v1 excludes). |
+| 9 | Venue/stage photos (Yelp/Google Maps) | M | med | Posters bucket pattern generalizes: venue_photos with owner+admin write. Answers the first-timer's "what am I walking into." |
+| 10 | Private per-night note (setlist-adjacent, minimal) | S | low-med | attendance_log.note already exists (500 chars, owner-only RLS). One optional field on the history entry. Stop there; anything more is the excluded setlist-builder category. |
+| 11 | QR code at the door (Eventbrite) | M | low-med | QR encoding the night's deep link so walk-ins can self-add once walk-in signup exists (fix 4.2 first). Defer check-in scanning. |
+| 12 | Map-first browsing polish (Google Maps) | M | low-med | Callout/bottom-sheet previews on marker tap, real a11y labels, region-driven re-fetch on pan. Worth doing only after the list-side fixes; list is demonstrably the primary surface here. |
+
+Explicitly not recommended now: reminder email/SMS (no email infrastructure exists; push covers it), audience accounts as a third role (zero-role browsing + RSVP covers it), and any social feed mechanics.
+
+---
+
+## Appendix: cross-cutting quality notes
+
+- **Accessibility**: the component kit is consistently labeled, but discovery is effectively silent for screen readers: card labels carry only title + venue while every glyph (day, cost, method, freshness) is hidden from AT (mic-card.tsx:54, glyph.tsx:55-56), and map markers are all "Open mic". Flag-reason radios communicate selection by border color only.
+- **Keyboard/safe area**: no KeyboardAvoidingView or SafeAreaView anywhere in src/; auth forms can be covered by the keyboard on small devices.
+- **Raw errors**: raw Postgres/Supabase messages reach users in at least six places (sign-in, signup card, series form overflow, flag/claim modals, bio overflow).
+- **Copy consistency**: "More filters" vs "All filters" (docs), "Clear all" vs "Clear all filters" vs "tap Clear all", header/body duplicate titles on Settings/Paywall/Edit profile, "Notifications" screen reached from a button called "Notification preferences", and developer-facing strings shipped in the paywall.
+- **Unused machinery inventory** (build nothing new before wiring these): attendance_log, override_venue_id, producer_profiles.verified, occurrence statuses completed/moved, venues.phone/website, SIGNUP_METHOD_DESCRIPTIONS, anon RLS policies, signup_closes, doors_offset (no producer input despite public display), banned_terms admin surface.
