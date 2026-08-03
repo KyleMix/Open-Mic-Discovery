@@ -10,7 +10,7 @@ import {
 import { AccessibilityInfo, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { fonts, minTouchTarget, palette, spacing, type } from '@/theme';
+import { fonts, maxFontScale, minTouchTarget, palette, spacing, type } from '@/theme';
 
 type ToastAction = { label: string; onPress: () => void };
 type ToastState = { message: string; action?: ToastAction } | null;
@@ -55,13 +55,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   );
 }
 
-function ToastBar({
-  toast,
-  onDone,
-}: {
-  toast: NonNullable<ToastState>;
-  onDone: () => void;
-}) {
+function ToastBar({ toast, onDone }: { toast: NonNullable<ToastState>; onDone: () => void }) {
   const insets = useSafeAreaInsets();
   return (
     <View
@@ -69,7 +63,7 @@ function ToastBar({
       style={[styles.wrap, { bottom: insets.bottom + spacing.xl + minTouchTarget }]}
     >
       <View style={styles.bar} accessibilityLiveRegion="polite">
-        <Text style={styles.message} numberOfLines={2}>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.message} numberOfLines={2}>
           {toast.message}
         </Text>
         {toast.action ? (
@@ -82,7 +76,9 @@ function ToastBar({
             }}
             style={styles.action}
           >
-            <Text style={styles.actionLabel}>{toast.action.label}</Text>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.actionLabel}>
+              {toast.action.label}
+            </Text>
           </Pressable>
         ) : null}
       </View>

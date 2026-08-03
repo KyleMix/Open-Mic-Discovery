@@ -17,7 +17,15 @@ import {
   type WeekdayCode,
 } from '@/features/producer/rrule-builder';
 import { useVenueSearch } from '@/features/producer/queries';
-import { disciplineAccents, fonts, palette, spacing, type, type Discipline } from '@/theme';
+import {
+  disciplineAccents,
+  fonts,
+  minTouchTarget,
+  palette,
+  spacing,
+  type,
+  type Discipline,
+} from '@/theme';
 import type { Database } from '@/types/database.types';
 
 type SignupMethod = Database['public']['Enums']['signup_method'];
@@ -527,85 +535,83 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
 
       <>
         <Text style={styles.sectionLabel}>Venue</Text>
-        {existing ? (
-          <Body>Changing the venue moves this and all future nights there.</Body>
-        ) : null}
+        {existing ? <Body>Changing the venue moves this and all future nights there.</Body> : null}
         {venueLabel ? (
-            <View style={styles.venuePicked}>
-              <Text style={styles.chipText}>{venueLabel}</Text>
-              <Button
-                label="Change"
-                kind="secondary"
-                onPress={() => {
-                  setVenueId(undefined);
-                  setVenueLabel(null);
-                }}
-              />
-            </View>
-          ) : addingVenue ? (
-            <>
-              <Field label="Venue name" value={venueName} onChangeText={setVenueName} />
-              <Field label="Street address" value={venueAddress} onChangeText={setVenueAddress} />
-              <Field
-                label="Neighborhood (optional)"
-                value={venueNeighborhood}
-                onChangeText={setVenueNeighborhood}
-              />
-              <View style={styles.pairRow}>
-                <View style={[styles.pairItem, { flex: 2 }]}>
-                  <Field label="City" value={venueCity} onChangeText={setVenueCity} />
-                </View>
-                <View style={styles.pairItem}>
-                  <Field
-                    label="State"
-                    value={venueRegion}
-                    onChangeText={setVenueRegion}
-                    autoCapitalize="characters"
-                  />
-                </View>
+          <View style={styles.venuePicked}>
+            <Text style={styles.chipText}>{venueLabel}</Text>
+            <Button
+              label="Change"
+              kind="secondary"
+              onPress={() => {
+                setVenueId(undefined);
+                setVenueLabel(null);
+              }}
+            />
+          </View>
+        ) : addingVenue ? (
+          <>
+            <Field label="Venue name" value={venueName} onChangeText={setVenueName} />
+            <Field label="Street address" value={venueAddress} onChangeText={setVenueAddress} />
+            <Field
+              label="Neighborhood (optional)"
+              value={venueNeighborhood}
+              onChangeText={setVenueNeighborhood}
+            />
+            <View style={styles.pairRow}>
+              <View style={[styles.pairItem, { flex: 2 }]}>
+                <Field label="City" value={venueCity} onChangeText={setVenueCity} />
               </View>
-              <Body>Place the venue so performers can find it.</Body>
-              <PinPicker pin={pin} onChange={placePin} />
-              <Button
-                label="Search existing venues instead"
-                kind="secondary"
-                onPress={() => setAddingVenue(false)}
-              />
-            </>
-          ) : (
-            <>
-              <Field
-                label="Search venues"
-                value={venueQuery}
-                onChangeText={setVenueQuery}
-                placeholder="Venue name or city"
-              />
-              {venueResults.data?.map((v) => (
-                <Pressable
-                  key={v.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Choose ${v.name}`}
-                  onPress={() => {
-                    setVenueId(v.id);
-                    setVenueLabel(`${v.name}, ${v.city}`);
-                  }}
-                  style={styles.venueResult}
-                >
-                  <Text style={styles.chipText}>{v.name}</Text>
-                  <Text style={styles.venueMeta}>
-                    {v.address_line}, {v.city}, {v.region}
-                  </Text>
-                </Pressable>
-              ))}
-              {!existing ? (
-                <Button
-                  label="Venue is not listed: add it"
-                  kind="secondary"
-                  onPress={() => setAddingVenue(true)}
+              <View style={styles.pairItem}>
+                <Field
+                  label="State"
+                  value={venueRegion}
+                  onChangeText={setVenueRegion}
+                  autoCapitalize="characters"
                 />
-              ) : null}
-            </>
-          )}
+              </View>
+            </View>
+            <Body>Place the venue so performers can find it.</Body>
+            <PinPicker pin={pin} onChange={placePin} />
+            <Button
+              label="Search existing venues instead"
+              kind="secondary"
+              onPress={() => setAddingVenue(false)}
+            />
+          </>
+        ) : (
+          <>
+            <Field
+              label="Search venues"
+              value={venueQuery}
+              onChangeText={setVenueQuery}
+              placeholder="Venue name or city"
+            />
+            {venueResults.data?.map((v) => (
+              <Pressable
+                key={v.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Choose ${v.name}`}
+                onPress={() => {
+                  setVenueId(v.id);
+                  setVenueLabel(`${v.name}, ${v.city}`);
+                }}
+                style={styles.venueResult}
+              >
+                <Text style={styles.chipText}>{v.name}</Text>
+                <Text style={styles.venueMeta}>
+                  {v.address_line}, {v.city}, {v.region}
+                </Text>
+              </Pressable>
+            ))}
+            {!existing ? (
+              <Button
+                label="Venue is not listed: add it"
+                kind="secondary"
+                onPress={() => setAddingVenue(true)}
+              />
+            ) : null}
+          </>
+        )}
       </>
 
       {formError ? <ErrorText>{formError}</ErrorText> : null}
@@ -640,7 +646,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.xs,
-    minHeight: 36,
+    minHeight: minTouchTarget,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
   },

@@ -12,7 +12,7 @@ import {
   type TextInputProps,
 } from 'react-native';
 
-import { fonts, minTouchTarget, palette, spacing, type } from '@/theme';
+import { fonts, maxFontScale, minTouchTarget, palette, spacing, type } from '@/theme';
 
 export function Screen({ children }: { children: ReactNode }) {
   return <View style={styles.screen}>{children}</View>;
@@ -56,19 +56,23 @@ export function KeyboardShift({ children, grow }: { children: ReactNode; grow?: 
 
 export function Title({ children }: { children: ReactNode }) {
   return (
-    <Text accessibilityRole="header" style={styles.title}>
+    <Text accessibilityRole="header" maxFontSizeMultiplier={maxFontScale} style={styles.title}>
       {children}
     </Text>
   );
 }
 
 export function Body({ children }: { children: ReactNode }) {
-  return <Text style={styles.body}>{children}</Text>;
+  return (
+    <Text maxFontSizeMultiplier={maxFontScale} style={styles.body}>
+      {children}
+    </Text>
+  );
 }
 
 export function ErrorText({ children }: { children: ReactNode }) {
   return (
-    <Text accessibilityRole="alert" style={styles.error}>
+    <Text accessibilityRole="alert" maxFontSizeMultiplier={maxFontScale} style={styles.error}>
       {children}
     </Text>
   );
@@ -78,7 +82,9 @@ export function LoadingView({ label }: { label: string }) {
   return (
     <View style={styles.center} accessibilityLabel={label}>
       <ActivityIndicator color={palette.text} size="large" />
-      <Text style={styles.body}>{label}</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.body}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -88,9 +94,12 @@ type FieldProps = TextInputProps & { label: string; error?: string | null };
 export function Field({ label, error, ...inputProps }: FieldProps) {
   return (
     <View style={styles.field}>
-      <Text style={styles.fieldLabel}>{label}</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.fieldLabel}>
+        {label}
+      </Text>
       <TextInput
         accessibilityLabel={label}
+        maxFontSizeMultiplier={maxFontScale}
         placeholderTextColor={palette.textFaint}
         style={styles.input}
         {...inputProps}
@@ -127,7 +136,10 @@ export function Button({ label, onPress, disabled, busy, kind = 'primary' }: But
       {busy ? (
         <ActivityIndicator color={kind === 'primary' ? palette.bg : palette.text} />
       ) : (
-        <Text style={[styles.buttonLabel, kind === 'secondary' && styles.buttonLabelSecondary]}>
+        <Text
+          maxFontSizeMultiplier={maxFontScale}
+          style={[styles.buttonLabel, kind === 'secondary' && styles.buttonLabelSecondary]}
+        >
           {label}
         </Text>
       )}
@@ -155,8 +167,12 @@ export function ToggleRow({ label, description, value, onToggle, icon }: ToggleR
     >
       {icon}
       <View style={styles.toggleText}>
-        <Text style={styles.fieldLabel}>{label}</Text>
-        <Text style={styles.caption}>{description}</Text>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.fieldLabel}>
+          {label}
+        </Text>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.caption}>
+          {description}
+        </Text>
       </View>
       <View style={[styles.toggleDot, value && styles.toggleDotActive]} />
     </Pressable>

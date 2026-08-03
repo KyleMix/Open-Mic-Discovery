@@ -24,9 +24,7 @@ export default function ProfileScreen() {
     return (
       <Screen>
         <Title>Profile</Title>
-        <Body>
-          Sign in to set up your profile, save favorites, and sign up for slots.
-        </Body>
+        <Body>Sign in to set up your profile, save favorites, and sign up for slots.</Body>
         <Button label="Sign in" onPress={() => router.push('/(auth)/sign-in')} />
       </Screen>
     );
@@ -107,7 +105,9 @@ export default function ProfileScreen() {
           ))}
         </View>
       ) : null}
-      {p.is_performer ? <MyNights userId={p.id} onOpenMic={(id) => router.push(`/mic/${id}`)} /> : null}
+      {p.is_performer ? (
+        <MyNights userId={p.id} onOpenMic={(id) => router.push(`/mic/${id}`)} />
+      ) : null}
       {error ? <ErrorText>{error}</ErrorText> : null}
       <Button label="Edit profile" onPress={() => router.push('/edit-profile')} />
       <Button label="Settings" kind="secondary" onPress={() => router.push('/settings')} />
@@ -209,7 +209,8 @@ function NightRow({
       })
     : formatRelativeDay(night.occurrence.starts_at, night.occurrence.series?.timezone);
   const title = night.occurrence.series?.title ?? 'Listing unavailable';
-  const label = past && night.status === 'confirmed' ? 'Was on the list' : STATUS_LABELS[night.status];
+  const label =
+    past && night.status === 'confirmed' ? 'Was on the list' : STATUS_LABELS[night.status];
   return (
     <Pressable
       accessibilityRole="button"
@@ -269,7 +270,7 @@ const styles = StyleSheet.create({
   nightDate: {
     color: palette.textSecondary,
     fontSize: type.caption.fontSize,
-    width: 90,
+    minWidth: 90,
   },
   nightBody: {
     flex: 1,
@@ -324,7 +325,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     borderWidth: 1,
     justifyContent: 'center',
-    minHeight: minTouchTarget - 8,
+    minHeight: minTouchTarget,
     paddingHorizontal: spacing.md,
   },
   linkChipPressed: {

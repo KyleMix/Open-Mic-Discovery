@@ -65,3 +65,10 @@ export const type = {
 
 /** Minimum touch target size per accessibility standards. */
 export const minTouchTarget = 44;
+
+/**
+ * Dynamic type policy: text scales with the system setting, capped so
+ * fixed chrome (buttons, chips, tight rows) grows without breaking.
+ * Applied via maxFontSizeMultiplier on the shared primitives.
+ */
+export const maxFontScale = 1.6;

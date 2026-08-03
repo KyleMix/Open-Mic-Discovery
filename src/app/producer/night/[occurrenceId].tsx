@@ -27,7 +27,7 @@ import {
   useSetSlotOrder,
   type RosterRow,
 } from '@/features/signups/queries';
-import { fonts, palette, spacing, type } from '@/theme';
+import { fonts, minTouchTarget, palette, spacing, type } from '@/theme';
 
 /**
  * The producer's live list for one night: running order, lottery draw with
@@ -182,7 +182,7 @@ export default function NightScreen() {
         <Stack.Screen
           options={{
             headerShown: true,
-            title: 'The list',
+            title: headerTitle,
             headerStyle: { backgroundColor: palette.bg },
             headerTintColor: palette.text,
           }}
@@ -216,16 +216,22 @@ export default function NightScreen() {
           <Body>Nobody on the list yet. Signups appear here in real time.</Body>
         ) : (
           listed.map((row) => (
-            <View key={row.id} style={styles.row}>
-              <Text style={styles.slot}>{row.slot_position ?? '·'}</Text>
-              <View style={styles.rowBody}>
-                <Text style={styles.name}>
-                  {row.display_name ?? row.handle ?? row.guest_name ?? 'Performer'}
-                  {row.guest_name ? ' (walk-in)' : ''}
-                </Text>
-                <Text style={row.on_deck_at ? styles.onDeckMeta : styles.meta}>
-                  {row.on_deck_at ? 'On deck' : row.status ? ROSTER_STATUS_LABELS[row.status] : ''}
-                </Text>
+            <View key={row.id} style={styles.rowStacked}>
+              <View style={styles.rowTop}>
+                <Text style={styles.slot}>{row.slot_position ?? '·'}</Text>
+                <View style={styles.rowBody}>
+                  <Text style={styles.name}>
+                    {row.display_name ?? row.handle ?? row.guest_name ?? 'Performer'}
+                    {row.guest_name ? ' (walk-in)' : ''}
+                  </Text>
+                  <Text style={row.on_deck_at ? styles.onDeckMeta : styles.meta}>
+                    {row.on_deck_at
+                      ? 'On deck'
+                      : row.status
+                        ? ROSTER_STATUS_LABELS[row.status]
+                        : ''}
+                  </Text>
+                </View>
               </View>
               {row.status === 'confirmed' || row.status === 'drawn' ? (
                 <View style={styles.actions}>
@@ -458,11 +464,31 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     paddingHorizontal: spacing.md,
   },
+  // Running-order rows stack identity over actions so all six controls
+  // keep full-size touch targets on a small phone.
+  rowStacked: {
+    backgroundColor: palette.bgElevated,
+    borderColor: palette.border,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: spacing.xs,
+    padding: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  rowTop: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  // The slot number is the fact a host checks at a glance in a dark bar;
+  // it reads bigger and brighter than the name, in a column that grows
+  // instead of clipping two digits or scaled type.
   slot: {
-    color: palette.textSecondary,
+    color: palette.text,
     fontFamily: fonts.semibold,
-    fontSize: type.body.fontSize,
-    width: 22,
+    fontSize: type.heading.fontSize,
+    minWidth: 28,
+    textAlign: 'center',
   },
   rowBody: {
     flex: 1,
@@ -484,6 +510,7 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.xs,
   },
   walkInRow: {
@@ -497,8 +524,8 @@ const styles = StyleSheet.create({
   iconAction: {
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 44,
-    minWidth: 40,
+    minHeight: minTouchTarget,
+    minWidth: minTouchTarget,
   },
   modalBackdrop: {
     backgroundColor: 'rgba(0,0,0,0.6)',

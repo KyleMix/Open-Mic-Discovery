@@ -113,7 +113,7 @@ export default function ManageSeriesScreen() {
       <Stack.Screen
         options={{
           headerShown: true,
-          title: 'Manage',
+          title: series.title,
           headerStyle: { backgroundColor: palette.bg },
           headerTintColor: palette.text,
         }}
