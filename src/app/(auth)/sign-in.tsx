@@ -4,7 +4,7 @@ import { Platform, Text, View } from 'react-native';
 
 import { signInWithApple, signInWithEmail, signInWithGoogle } from '@/features/auth/api';
 import { Logo } from '@/components/logo';
-import { Body, Button, ErrorText, Field, Screen } from '@/components/ui';
+import { Body, Button, ErrorText, Field, FormScreen } from '@/components/ui';
 import { palette, spacing } from '@/theme';
 
 export default function SignInScreen() {
@@ -33,7 +33,7 @@ export default function SignInScreen() {
   }
 
   return (
-    <Screen>
+    <FormScreen>
       <View style={{ alignItems: 'center', marginVertical: spacing.lg }}>
         <Logo markSize={48} />
       </View>
@@ -90,6 +90,6 @@ export default function SignInScreen() {
         disabled={busy !== null}
         onPress={() => router.replace('/(tabs)')}
       />
-    </Screen>
+    </FormScreen>
   );
 }

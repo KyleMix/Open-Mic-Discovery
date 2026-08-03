@@ -3,7 +3,16 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { Body, Button, ErrorText, Field, LoadingView, Screen, Title } from '@/components/ui';
+import {
+  Body,
+  Button,
+  ErrorText,
+  Field,
+  KeyboardShift,
+  LoadingView,
+  Screen,
+  Title,
+} from '@/components/ui';
 import { useSession } from '@/features/auth/session';
 import { useOccurrenceContext } from '@/features/producer/queries';
 import { useProStatus } from '@/features/pro/use-pro';
@@ -106,9 +115,7 @@ export default function NightScreen() {
                 {row.display_name ?? row.handle ?? row.guest_name ?? 'Performer'}
                 {row.guest_name ? ' (walk-in)' : ''}
               </Text>
-              <Text style={styles.meta}>
-                {row.status ? ROSTER_STATUS_LABELS[row.status] : ''}
-              </Text>
+              <Text style={styles.meta}>{row.status ? ROSTER_STATUS_LABELS[row.status] : ''}</Text>
             </View>
           </View>
         ))}
@@ -170,193 +177,195 @@ export default function NightScreen() {
   }
 
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          title: 'The list',
-          headerStyle: { backgroundColor: palette.bg },
-          headerTintColor: palette.text,
-        }}
-      />
-
-      {pending.length > 0 ? (
-        <View style={styles.drawBox}>
-          <Text style={styles.sectionTitle}>
-            {pending.length} in the draw{shuffling ? ': drawing...' : ''}
-          </Text>
-          {pending.map((r) => (
-            <Text key={r.id} style={styles.pendingName}>
-              {r.display_name ?? r.handle ?? 'Performer'}
-            </Text>
-          ))}
-          {draw.isError ? (
-            <ErrorText>
-              {draw.error instanceof Error ? draw.error.message : 'Draw failed.'}
-            </ErrorText>
-          ) : null}
-          <Button
-            label={shuffling ? 'Drawing...' : 'Draw the lottery'}
-            busy={!!shuffling || draw.isPending}
-            onPress={startDraw}
-          />
-        </View>
-      ) : null}
-
-      <Text style={styles.sectionTitle}>Running order</Text>
-      {listed.length === 0 ? (
-        <Body>Nobody on the list yet. Signups appear here in real time.</Body>
-      ) : (
-        listed.map((row) => (
-          <View key={row.id} style={styles.row}>
-            <Text style={styles.slot}>{row.slot_position ?? '·'}</Text>
-            <View style={styles.rowBody}>
-              <Text style={styles.name}>
-                {row.display_name ?? row.handle ?? row.guest_name ?? 'Performer'}
-                {row.guest_name ? ' (walk-in)' : ''}
-              </Text>
-              <Text style={row.on_deck_at ? styles.onDeckMeta : styles.meta}>
-                {row.on_deck_at ? 'On deck' : row.status ? ROSTER_STATUS_LABELS[row.status] : ''}
-              </Text>
-            </View>
-            {row.status === 'confirmed' || row.status === 'drawn' ? (
-              <View style={styles.actions}>
-                <IconAction
-                  label={
-                    row.on_deck_at
-                      ? `Take ${row.display_name ?? 'performer'} off deck`
-                      : `Put ${row.display_name ?? 'performer'} on deck and notify them`
-                  }
-                  icon={row.on_deck_at ? 'megaphone' : 'megaphone-outline'}
-                  color={row.on_deck_at ? palette.warning : palette.text}
-                  onPress={() => onDeck.mutate({ signupId: row.id!, onDeck: !row.on_deck_at })}
-                />
-                <IconAction label="Move up" icon="chevron-up" onPress={() => move(row, -1)} />
-                <IconAction label="Move down" icon="chevron-down" onPress={() => move(row, 1)} />
-                <IconAction
-                  label="Mark performed"
-                  icon="checkmark-circle"
-                  color={palette.success}
-                  onPress={() => setStatus.mutate({ signupId: row.id!, status: 'performed' })}
-                />
-                <IconAction
-                  label="Mark no-show"
-                  icon="close-circle"
-                  color={palette.danger}
-                  onPress={() => setConfirmNoShow(row)}
-                />
-                {row.performer_id ? (
-                  <IconAction
-                    label={`Report or block ${row.display_name ?? 'performer'}`}
-                    icon="flag-outline"
-                    onPress={() => setReporting(row)}
-                  />
-                ) : null}
-              </View>
-            ) : null}
-          </View>
-        ))
-      )}
-
-      <View style={styles.walkInRow}>
-        <View style={styles.walkInField}>
-          <Field
-            label="Add a walk-in"
-            value={walkInName}
-            onChangeText={setWalkInName}
-            placeholder="Name at the door"
-          />
-        </View>
-        <Button
-          label="Add"
-          busy={addWalkIn.isPending}
-          disabled={!walkInName.trim() || !occurrenceId}
-          onPress={() =>
-            addWalkIn.mutate(
-              { occurrenceId: occurrenceId!, guestName: walkInName.trim() },
-              { onSuccess: () => setWalkInName('') },
-            )
-          }
+    <KeyboardShift grow>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+        <Stack.Screen
+          options={{
+            headerShown: true,
+            title: 'The list',
+            headerStyle: { backgroundColor: palette.bg },
+            headerTintColor: palette.text,
+          }}
         />
-      </View>
-      {addWalkIn.isError ? (
-        <ErrorText>
-          {addWalkIn.error instanceof Error ? addWalkIn.error.message : 'Could not add them.'}
-        </ErrorText>
-      ) : null}
 
-      {waitlist.length > 0 ? (
-        <>
-          <Text style={styles.sectionTitle}>Waitlist</Text>
-          {waitlist.map((row) => (
+        {pending.length > 0 ? (
+          <View style={styles.drawBox}>
+            <Text style={styles.sectionTitle}>
+              {pending.length} in the draw{shuffling ? ': drawing...' : ''}
+            </Text>
+            {pending.map((r) => (
+              <Text key={r.id} style={styles.pendingName}>
+                {r.display_name ?? r.handle ?? 'Performer'}
+              </Text>
+            ))}
+            {draw.isError ? (
+              <ErrorText>
+                {draw.error instanceof Error ? draw.error.message : 'Draw failed.'}
+              </ErrorText>
+            ) : null}
+            <Button
+              label={shuffling ? 'Drawing...' : 'Draw the lottery'}
+              busy={!!shuffling || draw.isPending}
+              onPress={startDraw}
+            />
+          </View>
+        ) : null}
+
+        <Text style={styles.sectionTitle}>Running order</Text>
+        {listed.length === 0 ? (
+          <Body>Nobody on the list yet. Signups appear here in real time.</Body>
+        ) : (
+          listed.map((row) => (
             <View key={row.id} style={styles.row}>
-              <Text style={styles.slot}>·</Text>
+              <Text style={styles.slot}>{row.slot_position ?? '·'}</Text>
               <View style={styles.rowBody}>
                 <Text style={styles.name}>
                   {row.display_name ?? row.handle ?? row.guest_name ?? 'Performer'}
                   {row.guest_name ? ' (walk-in)' : ''}
                 </Text>
+                <Text style={row.on_deck_at ? styles.onDeckMeta : styles.meta}>
+                  {row.on_deck_at ? 'On deck' : row.status ? ROSTER_STATUS_LABELS[row.status] : ''}
+                </Text>
               </View>
-              <Button
-                label="Promote"
-                kind="secondary"
-                busy={setStatus.isPending}
-                onPress={() => setStatus.mutate({ signupId: row.id!, status: 'confirmed' })}
-              />
+              {row.status === 'confirmed' || row.status === 'drawn' ? (
+                <View style={styles.actions}>
+                  <IconAction
+                    label={
+                      row.on_deck_at
+                        ? `Take ${row.display_name ?? 'performer'} off deck`
+                        : `Put ${row.display_name ?? 'performer'} on deck and notify them`
+                    }
+                    icon={row.on_deck_at ? 'megaphone' : 'megaphone-outline'}
+                    color={row.on_deck_at ? palette.warning : palette.text}
+                    onPress={() => onDeck.mutate({ signupId: row.id!, onDeck: !row.on_deck_at })}
+                  />
+                  <IconAction label="Move up" icon="chevron-up" onPress={() => move(row, -1)} />
+                  <IconAction label="Move down" icon="chevron-down" onPress={() => move(row, 1)} />
+                  <IconAction
+                    label="Mark performed"
+                    icon="checkmark-circle"
+                    color={palette.success}
+                    onPress={() => setStatus.mutate({ signupId: row.id!, status: 'performed' })}
+                  />
+                  <IconAction
+                    label="Mark no-show"
+                    icon="close-circle"
+                    color={palette.danger}
+                    onPress={() => setConfirmNoShow(row)}
+                  />
+                  {row.performer_id ? (
+                    <IconAction
+                      label={`Report or block ${row.display_name ?? 'performer'}`}
+                      icon="flag-outline"
+                      onPress={() => setReporting(row)}
+                    />
+                  ) : null}
+                </View>
+              ) : null}
             </View>
-          ))}
-        </>
-      ) : null}
-      {setStatus.isError ? (
-        <ErrorText>
-          {setStatus.error instanceof Error ? setStatus.error.message : 'Could not update.'}
-        </ErrorText>
-      ) : null}
-      {onDeck.isError ? (
-        <ErrorText>
-          {onDeck.error instanceof Error ? onDeck.error.message : 'Could not update on deck.'}
-        </ErrorText>
-      ) : null}
-      {reorder.isError ? (
-        <ErrorText>
-          {reorder.error instanceof Error ? reorder.error.message : 'Could not reorder the list.'}
-        </ErrorText>
-      ) : null}
-      {confirmNoShow ? (
-        <ConfirmSheet
-          title={`Mark ${confirmNoShow.display_name ?? confirmNoShow.handle ?? 'this performer'} as a no-show?`}
-          body="They are notified immediately and the mark stays on this night."
-          confirmLabel="Mark no-show"
-          onConfirm={() => {
-            setStatus.mutate({ signupId: confirmNoShow.id!, status: 'no_show' });
-            setConfirmNoShow(null);
-          }}
-          onClose={() => setConfirmNoShow(null)}
-        />
-      ) : null}
-      {confirmRedraw ? (
-        <ConfirmSheet
-          title="Draw again?"
-          body="A new draw reshuffles everyone, including performers already told they are on. The current order is replaced."
-          confirmLabel="Re-draw the lottery"
-          onConfirm={() => {
-            setConfirmRedraw(false);
-            runDraw();
-          }}
-          onClose={() => setConfirmRedraw(false)}
-        />
-      ) : null}
-      {reporting?.performer_id ? (
-        <ReportModal
-          visible
-          onClose={() => setReporting(null)}
-          targetType="profile"
-          targetId={reporting.performer_id}
-          blockableUserId={reporting.performer_id}
-          targetLabel={reporting.display_name ?? 'this performer'}
-        />
-      ) : null}
-    </ScrollView>
+          ))
+        )}
+
+        <View style={styles.walkInRow}>
+          <View style={styles.walkInField}>
+            <Field
+              label="Add a walk-in"
+              value={walkInName}
+              onChangeText={setWalkInName}
+              placeholder="Name at the door"
+            />
+          </View>
+          <Button
+            label="Add"
+            busy={addWalkIn.isPending}
+            disabled={!walkInName.trim() || !occurrenceId}
+            onPress={() =>
+              addWalkIn.mutate(
+                { occurrenceId: occurrenceId!, guestName: walkInName.trim() },
+                { onSuccess: () => setWalkInName('') },
+              )
+            }
+          />
+        </View>
+        {addWalkIn.isError ? (
+          <ErrorText>
+            {addWalkIn.error instanceof Error ? addWalkIn.error.message : 'Could not add them.'}
+          </ErrorText>
+        ) : null}
+
+        {waitlist.length > 0 ? (
+          <>
+            <Text style={styles.sectionTitle}>Waitlist</Text>
+            {waitlist.map((row) => (
+              <View key={row.id} style={styles.row}>
+                <Text style={styles.slot}>·</Text>
+                <View style={styles.rowBody}>
+                  <Text style={styles.name}>
+                    {row.display_name ?? row.handle ?? row.guest_name ?? 'Performer'}
+                    {row.guest_name ? ' (walk-in)' : ''}
+                  </Text>
+                </View>
+                <Button
+                  label="Promote"
+                  kind="secondary"
+                  busy={setStatus.isPending}
+                  onPress={() => setStatus.mutate({ signupId: row.id!, status: 'confirmed' })}
+                />
+              </View>
+            ))}
+          </>
+        ) : null}
+        {setStatus.isError ? (
+          <ErrorText>
+            {setStatus.error instanceof Error ? setStatus.error.message : 'Could not update.'}
+          </ErrorText>
+        ) : null}
+        {onDeck.isError ? (
+          <ErrorText>
+            {onDeck.error instanceof Error ? onDeck.error.message : 'Could not update on deck.'}
+          </ErrorText>
+        ) : null}
+        {reorder.isError ? (
+          <ErrorText>
+            {reorder.error instanceof Error ? reorder.error.message : 'Could not reorder the list.'}
+          </ErrorText>
+        ) : null}
+        {confirmNoShow ? (
+          <ConfirmSheet
+            title={`Mark ${confirmNoShow.display_name ?? confirmNoShow.handle ?? 'this performer'} as a no-show?`}
+            body="They are notified immediately and the mark stays on this night."
+            confirmLabel="Mark no-show"
+            onConfirm={() => {
+              setStatus.mutate({ signupId: confirmNoShow.id!, status: 'no_show' });
+              setConfirmNoShow(null);
+            }}
+            onClose={() => setConfirmNoShow(null)}
+          />
+        ) : null}
+        {confirmRedraw ? (
+          <ConfirmSheet
+            title="Draw again?"
+            body="A new draw reshuffles everyone, including performers already told they are on. The current order is replaced."
+            confirmLabel="Re-draw the lottery"
+            onConfirm={() => {
+              setConfirmRedraw(false);
+              runDraw();
+            }}
+            onClose={() => setConfirmRedraw(false)}
+          />
+        ) : null}
+        {reporting?.performer_id ? (
+          <ReportModal
+            visible
+            onClose={() => setReporting(null)}
+            targetType="profile"
+            targetId={reporting.performer_id}
+            blockableUserId={reporting.performer_id}
+            targetLabel={reporting.display_name ?? 'this performer'}
+          />
+        ) : null}
+      </ScrollView>
+    </KeyboardShift>
   );
 }
 

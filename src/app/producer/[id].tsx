@@ -4,7 +4,16 @@ import { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Glyph } from '@/components/glyph';
-import { Body, Button, ErrorText, Field, LoadingView, Screen, Title } from '@/components/ui';
+import {
+  Body,
+  Button,
+  ErrorText,
+  Field,
+  KeyboardShift,
+  LoadingView,
+  Screen,
+  Title,
+} from '@/components/ui';
 import { useSession } from '@/features/auth/session';
 import { freshness } from '@/features/discovery/freshness';
 import { useMicDetail } from '@/features/discovery/queries';
@@ -118,8 +127,8 @@ export default function ManageSeriesScreen() {
           </Text>
         ) : series.moderation_status === 'rejected' ? (
           <Text style={styles.rejectedNote}>
-            This listing was rejected in review and is not public. Edit the wording to resubmit,
-            or contact support.
+            This listing was rejected in review and is not public. Edit the wording to resubmit, or
+            contact support.
           </Text>
         ) : null}
         <Text style={styles.meta}>
@@ -300,7 +309,12 @@ export default function ManageSeriesScreen() {
       ) : null}
 
       {confirmPause ? (
-        <Modal visible transparent animationType="slide" onRequestClose={() => setConfirmPause(false)}>
+        <Modal
+          visible
+          transparent
+          animationType="slide"
+          onRequestClose={() => setConfirmPause(false)}
+        >
           <View style={styles.modalBackdrop}>
             <View style={styles.modalSheet}>
               <Text style={styles.sectionTitle}>Pause this listing?</Text>
@@ -381,55 +395,57 @@ function NightModal({
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalBackdrop}>
-        <View style={styles.modalSheet}>
-          <Text style={styles.sectionTitle}>
-            {mode === 'cancel' ? `Cancel ${dateLabel}?` : `Edit ${dateLabel} only`}
-          </Text>
-          {mode === 'cancel' ? (
-            <>
-              <Body>
-                Only this night is cancelled. The rest of the schedule is untouched, and performers
-                see the cancellation on the listing.
-              </Body>
-              <Field
-                label="Reason (shown to performers, optional)"
-                value={note}
-                onChangeText={setNote}
-                placeholder="Venue is closed for a private event"
-              />
-            </>
-          ) : (
-            <>
-              <Body>
-                Changes here apply to this night only. Use the Edit mic button for this and all
-                future nights.
-              </Body>
-              <Field
-                label="Special title (optional)"
-                value={overrideTitle}
-                onChangeText={setOverrideTitle}
-                placeholder="Holiday showcase"
-              />
-              <Field
-                label="Cost for this night ($, optional)"
-                value={overrideCost}
-                onChangeText={setOverrideCost}
-                inputMode="decimal"
-              />
-            </>
-          )}
-          {update.isError ? (
-            <ErrorText>
-              {update.error instanceof Error ? update.error.message : 'Could not save.'}
-            </ErrorText>
-          ) : null}
-          <Button
-            label={mode === 'cancel' ? 'Cancel this night' : 'Save this night'}
-            busy={update.isPending}
-            onPress={submit}
-          />
-          <Button label="Back" kind="secondary" onPress={onClose} />
-        </View>
+        <KeyboardShift>
+          <View style={styles.modalSheet}>
+            <Text style={styles.sectionTitle}>
+              {mode === 'cancel' ? `Cancel ${dateLabel}?` : `Edit ${dateLabel} only`}
+            </Text>
+            {mode === 'cancel' ? (
+              <>
+                <Body>
+                  Only this night is cancelled. The rest of the schedule is untouched, and
+                  performers see the cancellation on the listing.
+                </Body>
+                <Field
+                  label="Reason (shown to performers, optional)"
+                  value={note}
+                  onChangeText={setNote}
+                  placeholder="Venue is closed for a private event"
+                />
+              </>
+            ) : (
+              <>
+                <Body>
+                  Changes here apply to this night only. Use the Edit mic button for this and all
+                  future nights.
+                </Body>
+                <Field
+                  label="Special title (optional)"
+                  value={overrideTitle}
+                  onChangeText={setOverrideTitle}
+                  placeholder="Holiday showcase"
+                />
+                <Field
+                  label="Cost for this night ($, optional)"
+                  value={overrideCost}
+                  onChangeText={setOverrideCost}
+                  inputMode="decimal"
+                />
+              </>
+            )}
+            {update.isError ? (
+              <ErrorText>
+                {update.error instanceof Error ? update.error.message : 'Could not save.'}
+              </ErrorText>
+            ) : null}
+            <Button
+              label={mode === 'cancel' ? 'Cancel this night' : 'Save this night'}
+              busy={update.isPending}
+              onPress={submit}
+            />
+            <Button label="Back" kind="secondary" onPress={onClose} />
+          </View>
+        </KeyboardShift>
       </View>
     </Modal>
   );

@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 import { signUpWithEmail } from '@/features/auth/api';
 import { validateEmail, validatePassword } from '@/features/auth/validation';
-import { Body, Button, ErrorText, Field, Screen, Title } from '@/components/ui';
+import { Body, Button, ErrorText, Field, FormScreen, Screen, Title } from '@/components/ui';
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -52,7 +52,7 @@ export default function SignUpScreen() {
   }
 
   return (
-    <Screen>
+    <FormScreen>
       <Title>Create your account</Title>
       <Body>
         One account covers both sides of the mic: performing, producing, or both. You pick your
@@ -78,6 +78,6 @@ export default function SignUpScreen() {
       <Body>Passwords are at least 10 characters.</Body>
       {error ? <ErrorText>{error}</ErrorText> : null}
       <Button label="Create account" busy={busy} disabled={busy} onPress={submit} />
-    </Screen>
+    </FormScreen>
   );
 }

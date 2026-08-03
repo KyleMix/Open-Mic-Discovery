@@ -1,7 +1,10 @@
 import { type ReactNode } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -13,6 +16,42 @@ import { fonts, minTouchTarget, palette, spacing, type } from '@/theme';
 
 export function Screen({ children }: { children: ReactNode }) {
   return <View style={styles.screen}>{children}</View>;
+}
+
+/**
+ * A Screen for forms: scrolls, and rides above the keyboard so inputs and
+ * the submit button are never covered on small phones.
+ */
+export function FormScreen({ children }: { children: ReactNode }) {
+  return (
+    <KeyboardAvoidingView
+      style={styles.flexBg}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        style={styles.flexBg}
+        contentContainerStyle={styles.formContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        {children}
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
+
+/**
+ * Wraps content that contains a text input (a bottom sheet, or a whole
+ * scrolling screen with grow) so the keyboard pushes it up, not over it.
+ */
+export function KeyboardShift({ children, grow }: { children: ReactNode; grow?: boolean }) {
+  return (
+    <KeyboardAvoidingView
+      style={grow ? styles.flexBg : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      {children}
+    </KeyboardAvoidingView>
+  );
 }
 
 export function Title({ children }: { children: ReactNode }) {
@@ -130,6 +169,15 @@ const styles = StyleSheet.create({
     backgroundColor: palette.bg,
     padding: spacing.lg,
     gap: spacing.md,
+  },
+  flexBg: {
+    backgroundColor: palette.bg,
+    flex: 1,
+  },
+  formContent: {
+    gap: spacing.md,
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl,
   },
   center: {
     flex: 1,

@@ -2,7 +2,7 @@ import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { Body, Button, ErrorText, Field, LoadingView, Title } from '@/components/ui';
+import { Body, Button, ErrorText, Field, KeyboardShift, LoadingView, Title } from '@/components/ui';
 import { validateDisplayName } from '@/features/auth/validation';
 import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
@@ -11,12 +11,7 @@ import { pickAndUploadAvatar } from '@/features/profile/avatar';
 import { geocodeHomeArea } from '@/features/profile/geocode';
 import { homeAreaError, homeAreaQuery, normalizeHomeArea } from '@/features/profile/home-area';
 import { useUpdateProfile } from '@/features/profile/queries';
-import {
-  handleError,
-  normalizeHandle,
-  normalizeUrl,
-  urlError,
-} from '@/features/profile/social';
+import { handleError, normalizeHandle, normalizeUrl, urlError } from '@/features/profile/social';
 import { fonts, palette, spacing, type } from '@/theme';
 
 export default function EditProfileScreen() {
@@ -122,9 +117,7 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
         home_city: area.city || null,
         home_region: area.region || null,
         home_postal_code: area.postalCode || null,
-        ...(areaChanged
-          ? { home_lat: coords?.lat ?? null, home_lng: coords?.lng ?? null }
-          : {}),
+        ...(areaChanged ? { home_lat: coords?.lat ?? null, home_lng: coords?.lng ?? null } : {}),
         link_instagram: ig || null,
         link_tiktok: tt || null,
         link_youtube: yt || null,
@@ -137,107 +130,109 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
   }
 
   return (
-    <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled"
-    >
-      <ScreenHeader />
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Change your photo"
-        onPress={changePhoto}
-        disabled={photoBusy}
-        style={styles.avatarWrap}
+    <KeyboardShift grow>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
       >
-        <AvatarCircle url={avatarUrl} name={displayName} size={96} />
-        <Text style={styles.changePhoto}>{photoBusy ? 'Uploading...' : 'Change photo'}</Text>
-      </Pressable>
+        <ScreenHeader />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Change your photo"
+          onPress={changePhoto}
+          disabled={photoBusy}
+          style={styles.avatarWrap}
+        >
+          <AvatarCircle url={avatarUrl} name={displayName} size={96} />
+          <Text style={styles.changePhoto}>{photoBusy ? 'Uploading...' : 'Change photo'}</Text>
+        </Pressable>
 
-      <Field
-        label="Name"
-        value={displayName}
-        onChangeText={setDisplayName}
-        error={errors.displayName}
-      />
-      <Field
-        label="About you (optional)"
-        value={bio}
-        onChangeText={setBio}
-        multiline
-        numberOfLines={3}
-        placeholder="What you play, your style, anything you want people to know."
-      />
-      <Text style={styles.sectionTitle}>Home area</Text>
-      <Body>
-        Used only to show mics near you. Never shown on your profile. Enter city and state, or
-        a ZIP code.
-      </Body>
-      <View style={styles.areaRow}>
-        <View style={styles.areaCity}>
-          <Field label="City" value={homeCity} onChangeText={setHomeCity} placeholder="Seattle" />
+        <Field
+          label="Name"
+          value={displayName}
+          onChangeText={setDisplayName}
+          error={errors.displayName}
+        />
+        <Field
+          label="About you (optional)"
+          value={bio}
+          onChangeText={setBio}
+          multiline
+          numberOfLines={3}
+          placeholder="What you play, your style, anything you want people to know."
+        />
+        <Text style={styles.sectionTitle}>Home area</Text>
+        <Body>
+          Used only to show mics near you. Never shown on your profile. Enter city and state, or a
+          ZIP code.
+        </Body>
+        <View style={styles.areaRow}>
+          <View style={styles.areaCity}>
+            <Field label="City" value={homeCity} onChangeText={setHomeCity} placeholder="Seattle" />
+          </View>
+          <View style={styles.areaRegion}>
+            <Field
+              label="State"
+              autoCapitalize="characters"
+              value={homeRegion}
+              onChangeText={setHomeRegion}
+              placeholder="WA"
+            />
+          </View>
         </View>
-        <View style={styles.areaRegion}>
-          <Field
-            label="State"
-            autoCapitalize="characters"
-            value={homeRegion}
-            onChangeText={setHomeRegion}
-            placeholder="WA"
-          />
-        </View>
-      </View>
-      <Field
-        label="Or ZIP code"
-        inputMode="numeric"
-        value={homeZip}
-        onChangeText={setHomeZip}
-        placeholder="98101"
-      />
-      {errors.homeArea ? <ErrorText>{errors.homeArea}</ErrorText> : null}
+        <Field
+          label="Or ZIP code"
+          inputMode="numeric"
+          value={homeZip}
+          onChangeText={setHomeZip}
+          placeholder="98101"
+        />
+        {errors.homeArea ? <ErrorText>{errors.homeArea}</ErrorText> : null}
 
-      <Text style={styles.sectionTitle}>Your links</Text>
-      <Body>Optional. Paste a link or just type your username.</Body>
-      <Field
-        label="Instagram"
-        autoCapitalize="none"
-        autoCorrect={false}
-        value={instagram}
-        onChangeText={setInstagram}
-        error={errors.instagram}
-        placeholder="@yourname"
-      />
-      <Field
-        label="TikTok"
-        autoCapitalize="none"
-        autoCorrect={false}
-        value={tiktok}
-        onChangeText={setTiktok}
-        error={errors.tiktok}
-        placeholder="@yourname"
-      />
-      <Field
-        label="YouTube"
-        autoCapitalize="none"
-        autoCorrect={false}
-        value={youtube}
-        onChangeText={setYoutube}
-        error={errors.youtube}
-        placeholder="youtube.com/@yourname"
-      />
-      <Field
-        label="Website"
-        autoCapitalize="none"
-        autoCorrect={false}
-        value={website}
-        onChangeText={setWebsite}
-        error={errors.website}
-        placeholder="yourname.com"
-      />
+        <Text style={styles.sectionTitle}>Your links</Text>
+        <Body>Optional. Paste a link or just type your username.</Body>
+        <Field
+          label="Instagram"
+          autoCapitalize="none"
+          autoCorrect={false}
+          value={instagram}
+          onChangeText={setInstagram}
+          error={errors.instagram}
+          placeholder="@yourname"
+        />
+        <Field
+          label="TikTok"
+          autoCapitalize="none"
+          autoCorrect={false}
+          value={tiktok}
+          onChangeText={setTiktok}
+          error={errors.tiktok}
+          placeholder="@yourname"
+        />
+        <Field
+          label="YouTube"
+          autoCapitalize="none"
+          autoCorrect={false}
+          value={youtube}
+          onChangeText={setYoutube}
+          error={errors.youtube}
+          placeholder="youtube.com/@yourname"
+        />
+        <Field
+          label="Website"
+          autoCapitalize="none"
+          autoCorrect={false}
+          value={website}
+          onChangeText={setWebsite}
+          error={errors.website}
+          placeholder="yourname.com"
+        />
 
-      {error ? <ErrorText>{error}</ErrorText> : null}
-      <Button label="Save" busy={update.isPending} disabled={update.isPending} onPress={save} />
-    </ScrollView>
+        {error ? <ErrorText>{error}</ErrorText> : null}
+        <Button label="Save" busy={update.isPending} disabled={update.isPending} onPress={save} />
+      </ScrollView>
+    </KeyboardShift>
   );
 }
 

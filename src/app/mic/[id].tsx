@@ -16,7 +16,16 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Glyph, disciplineGlyphs, signupMethodGlyphs } from '@/components/glyph';
-import { Body, Button, ErrorText, Field, LoadingView, Screen, Title } from '@/components/ui';
+import {
+  Body,
+  Button,
+  ErrorText,
+  Field,
+  KeyboardShift,
+  LoadingView,
+  Screen,
+  Title,
+} from '@/components/ui';
 import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
 import { addToCalendar } from '@/features/calendar/calendar';
@@ -436,64 +445,66 @@ function ClaimModal({
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={close}>
       <View style={styles.modalBackdrop}>
-        <View style={styles.modalSheet}>
-          {done ? (
-            <>
-              <Text style={styles.modalTitle}>Claim submitted</Text>
-              <Body>
-                We review claims by hand to keep listings trustworthy. Once approved, this mic
-                appears in your My Mics tab with full control.
-              </Body>
-              <Button label="Done" onPress={close} />
-            </>
-          ) : !session ? (
-            <>
-              <Text style={styles.modalTitle}>Sign in to claim</Text>
-              <Body>Claiming a mic needs an account so we can hand you the keys.</Body>
-              <Button
-                label="Sign in"
-                onPress={() => {
-                  close();
-                  router.push('/(auth)/sign-in');
-                }}
-              />
-              <Button label="Cancel" kind="secondary" onPress={close} />
-            </>
-          ) : (
-            <>
-              <Text style={styles.modalTitle}>Claim this mic</Text>
-              <Body>
-                Tell us how we can verify you run this night: your role, socials, or who at the
-                venue can vouch for you.
-              </Body>
-              <Field
-                label="How can we verify you?"
-                value={evidence}
-                onChangeText={setEvidence}
-                multiline
-                numberOfLines={3}
-                placeholder="I host every week; the bar manager Sam can confirm."
-              />
-              {claim.isError ? (
-                <ErrorText>
-                  {claim.error instanceof Error ? claim.error.message : 'Could not submit.'}
-                </ErrorText>
-              ) : null}
-              <Button
-                label="Submit claim"
-                busy={claim.isPending}
-                disabled={evidence.trim().length < 10}
-                onPress={() =>
-                  claim.mutate(
-                    { seriesId, userId: session.user.id, evidence: evidence.trim() },
-                    { onSuccess: () => setDone(true) },
-                  )
-                }
-              />
-              <Button label="Cancel" kind="secondary" onPress={close} />
-            </>
-          )}
-        </View>
+        <KeyboardShift>
+          <View style={styles.modalSheet}>
+            {done ? (
+              <>
+                <Text style={styles.modalTitle}>Claim submitted</Text>
+                <Body>
+                  We review claims by hand to keep listings trustworthy. Once approved, this mic
+                  appears in your My Mics tab with full control.
+                </Body>
+                <Button label="Done" onPress={close} />
+              </>
+            ) : !session ? (
+              <>
+                <Text style={styles.modalTitle}>Sign in to claim</Text>
+                <Body>Claiming a mic needs an account so we can hand you the keys.</Body>
+                <Button
+                  label="Sign in"
+                  onPress={() => {
+                    close();
+                    router.push('/(auth)/sign-in');
+                  }}
+                />
+                <Button label="Cancel" kind="secondary" onPress={close} />
+              </>
+            ) : (
+              <>
+                <Text style={styles.modalTitle}>Claim this mic</Text>
+                <Body>
+                  Tell us how we can verify you run this night: your role, socials, or who at the
+                  venue can vouch for you.
+                </Body>
+                <Field
+                  label="How can we verify you?"
+                  value={evidence}
+                  onChangeText={setEvidence}
+                  multiline
+                  numberOfLines={3}
+                  placeholder="I host every week; the bar manager Sam can confirm."
+                />
+                {claim.isError ? (
+                  <ErrorText>
+                    {claim.error instanceof Error ? claim.error.message : 'Could not submit.'}
+                  </ErrorText>
+                ) : null}
+                <Button
+                  label="Submit claim"
+                  busy={claim.isPending}
+                  disabled={evidence.trim().length < 10}
+                  onPress={() =>
+                    claim.mutate(
+                      { seriesId, userId: session.user.id, evidence: evidence.trim() },
+                      { onSuccess: () => setDone(true) },
+                    )
+                  }
+                />
+                <Button label="Cancel" kind="secondary" onPress={close} />
+              </>
+            )}
+          </View>
+        </KeyboardShift>
       </View>
     </Modal>
   );
@@ -586,61 +597,63 @@ function FlagModal({
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={close}>
       <View style={styles.modalBackdrop}>
-        <View style={styles.modalSheet}>
-          {done ? (
-            <>
-              <Text style={styles.modalTitle}>Thanks for keeping it fresh</Text>
-              <Body>Your flag is in. Flags like this are what keep listings accurate.</Body>
-              <Button label="Done" onPress={close} />
-            </>
-          ) : !session ? (
-            <>
-              <Text style={styles.modalTitle}>Sign in to flag</Text>
-              <Body>Flagging a listing needs an account so we can follow up on fixes.</Body>
-              <Button
-                label="Sign in"
-                onPress={() => {
-                  close();
-                  router.push('/(auth)/sign-in');
-                }}
-              />
-              <Button label="Cancel" kind="secondary" onPress={close} />
-            </>
-          ) : (
-            <>
-              <Text style={styles.modalTitle}>What is wrong?</Text>
-              {FLAG_REASONS.map((r) => (
-                <Pressable
-                  key={r.reason}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: reason === r.reason }}
-                  onPress={() => setReason(r.reason)}
-                  style={[styles.reasonRow, reason === r.reason && styles.reasonRowActive]}
-                >
-                  <Text style={styles.reasonText}>{r.label}</Text>
-                </Pressable>
-              ))}
-              <Field
-                label="Details (optional)"
-                value={details}
-                onChangeText={setDetails}
-                placeholder="What should it say instead?"
-              />
-              {flag.isError ? (
-                <ErrorText>
-                  {flag.error instanceof Error ? flag.error.message : 'Could not submit.'}
-                </ErrorText>
-              ) : null}
-              <Button
-                label="Submit flag"
-                busy={flag.isPending}
-                disabled={!reason}
-                onPress={submit}
-              />
-              <Button label="Cancel" kind="secondary" onPress={close} />
-            </>
-          )}
-        </View>
+        <KeyboardShift>
+          <View style={styles.modalSheet}>
+            {done ? (
+              <>
+                <Text style={styles.modalTitle}>Thanks for keeping it fresh</Text>
+                <Body>Your flag is in. Flags like this are what keep listings accurate.</Body>
+                <Button label="Done" onPress={close} />
+              </>
+            ) : !session ? (
+              <>
+                <Text style={styles.modalTitle}>Sign in to flag</Text>
+                <Body>Flagging a listing needs an account so we can follow up on fixes.</Body>
+                <Button
+                  label="Sign in"
+                  onPress={() => {
+                    close();
+                    router.push('/(auth)/sign-in');
+                  }}
+                />
+                <Button label="Cancel" kind="secondary" onPress={close} />
+              </>
+            ) : (
+              <>
+                <Text style={styles.modalTitle}>What is wrong?</Text>
+                {FLAG_REASONS.map((r) => (
+                  <Pressable
+                    key={r.reason}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: reason === r.reason }}
+                    onPress={() => setReason(r.reason)}
+                    style={[styles.reasonRow, reason === r.reason && styles.reasonRowActive]}
+                  >
+                    <Text style={styles.reasonText}>{r.label}</Text>
+                  </Pressable>
+                ))}
+                <Field
+                  label="Details (optional)"
+                  value={details}
+                  onChangeText={setDetails}
+                  placeholder="What should it say instead?"
+                />
+                {flag.isError ? (
+                  <ErrorText>
+                    {flag.error instanceof Error ? flag.error.message : 'Could not submit.'}
+                  </ErrorText>
+                ) : null}
+                <Button
+                  label="Submit flag"
+                  busy={flag.isPending}
+                  disabled={!reason}
+                  onPress={submit}
+                />
+                <Button label="Cancel" kind="secondary" onPress={close} />
+              </>
+            )}
+          </View>
+        </KeyboardShift>
       </View>
     </Modal>
   );
