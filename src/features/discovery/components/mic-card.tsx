@@ -1,10 +1,13 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Glyph, disciplineGlyphs, signupMethodGlyphs } from '@/components/glyph';
+import { useSession } from '@/features/auth/session';
 import { formatMilesFromMeters } from '@/features/discovery/distance';
 import { freshness } from '@/features/discovery/freshness';
 import type { NearbyMic } from '@/features/discovery/queries';
 import { describeRecurrence } from '@/features/discovery/recurrence';
+import { useFavorites, useToggleFavorite } from '@/features/favorites/queries';
 import { disciplineAccents, fonts, palette, spacing, type, type Discipline } from '@/theme';
 
 // Plain-language names for how you get on stage; shared across discovery,
@@ -75,6 +78,7 @@ export function MicCard({ mic, onPress }: Props) {
             {(mic.disciplines as Discipline[]).map((d) => (
               <Glyph key={d} name={disciplineGlyphs[d]} size={16} color={disciplineAccents[d]} />
             ))}
+            <CardStar seriesId={mic.series_id} title={mic.title} />
           </View>
         </View>
         <Text numberOfLines={1} style={styles.venue}>
@@ -103,7 +107,49 @@ export function MicCard({ mic, onPress }: Props) {
   );
 }
 
+/**
+ * Favoriting straight from the card; building a favorites list used to cost
+ * a detail visit and a back navigation per mic. Hidden for guests, whose
+ * path to favoriting runs through the detail screen's sign-in prompt.
+ */
+function CardStar({ seriesId, title }: { seriesId: string; title: string }) {
+  const { session } = useSession();
+  // One shared favorites query serves every card; a per-card lookup would
+  // fire a request per row of the list.
+  const favorites = useFavorites(session?.user.id);
+  const toggle = useToggleFavorite();
+  if (!session) {
+    return null;
+  }
+  const active = favorites.data?.some((f) => f.series_id === seriesId) ?? false;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={
+        active ? `Remove ${title} from favorites` : `Add ${title} to favorites`
+      }
+      accessibilityState={{ selected: active }}
+      disabled={toggle.isPending || favorites.isPending}
+      hitSlop={12}
+      onPress={() => toggle.mutate({ userId: session.user.id, seriesId, favorite: !active })}
+      style={styles.star}
+    >
+      <Ionicons
+        name={active ? 'star' : 'star-outline'}
+        size={18}
+        color={active ? palette.warning : palette.textSecondary}
+      />
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
+  star: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 24,
+    minWidth: 24,
+  },
   card: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
