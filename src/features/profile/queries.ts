@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { getSupabase } from '@/lib/supabase';
+import { userError } from '@/lib/user-error';
 
 export type ProfilePatch = {
   display_name: string;
@@ -26,7 +27,7 @@ export function useUpdateProfile(userId: string | undefined) {
       }
       const { error } = await getSupabase().from('profiles').update(patch).eq('id', userId);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not save your profile. Try again.');
       }
     },
     onSuccess: () => {

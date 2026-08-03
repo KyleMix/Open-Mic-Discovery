@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { getSupabase } from '@/lib/supabase';
+import { userError } from '@/lib/user-error';
 import type { Database } from '@/types/database.types';
 
 type SeriesUpdate = Database['public']['Tables']['mic_series']['Update'];
@@ -21,7 +22,7 @@ export function useMySeries(userId: string | undefined) {
         .is('deleted_at', null)
         .order('title');
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load your mics. Check your connection and try again.');
       }
       return data;
     },
@@ -49,7 +50,7 @@ export function useConfirmSeries() {
         .update({ last_confirmed_at: new Date().toISOString() })
         .eq('id', seriesId);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not confirm the listing. Check your connection and try again.');
       }
     },
     onSuccess: (_d, seriesId) => invalidate(seriesId),
@@ -62,7 +63,7 @@ export function useUpdateSeries() {
     mutationFn: async ({ seriesId, patch }: { seriesId: string; patch: SeriesUpdate }) => {
       const { error } = await getSupabase().from('mic_series').update(patch).eq('id', seriesId);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not save the changes. Try again.');
       }
     },
     onSuccess: (_d, { seriesId }) => invalidate(seriesId),
@@ -86,7 +87,7 @@ export function useUpdateOccurrence() {
         .update(patch)
         .eq('id', occurrenceId);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not save that night. Try again.');
       }
       return seriesId;
     },
@@ -123,7 +124,7 @@ export function useCreateSeries() {
           .select('id')
           .single();
         if (error) {
-          throw new Error(error.message);
+          throw userError(error, 'Could not save the venue. Check the address and try again.');
         }
         venueId = data.id;
       }
@@ -138,7 +139,7 @@ export function useCreateSeries() {
         .select('id')
         .single();
       if (seriesError) {
-        throw new Error(seriesError.message);
+        throw userError(seriesError, 'Could not create the listing. Try again.');
       }
       return series.id;
     },
@@ -159,7 +160,7 @@ export function useVenueSearch(query: string) {
         .is('deleted_at', null)
         .limit(12);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Venue search failed. Try again.');
       }
       return data;
     },
@@ -179,7 +180,7 @@ export function useSeriesOccurrences(seriesId: string | undefined) {
         .order('starts_at')
         .limit(10);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load the upcoming nights. Try again.');
       }
       return data;
     },
@@ -198,7 +199,7 @@ export function useOccurrenceContext(occurrenceId: string | undefined) {
         .eq('id', occurrenceId!)
         .maybeSingle();
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load this night. Try again.');
       }
       return data;
     },
@@ -224,7 +225,7 @@ export function useNextNights(seriesIds: string[]) {
         .gte('starts_at', new Date().toISOString())
         .order('starts_at');
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load the upcoming nights. Try again.');
       }
       const bySeries: Record<string, NextNight> = {};
       for (const row of data) {
@@ -262,7 +263,7 @@ export function useSubmitClaim() {
         if (error.code === '23505') {
           throw new Error('You already have a pending claim on this mic.');
         }
-        throw new Error(error.message);
+        throw userError(error, 'Could not submit the claim. Try again.');
       }
     },
     onSuccess: () => invalidate(),
@@ -281,7 +282,7 @@ export function usePendingClaims(isAdmin: boolean) {
         .eq('status', 'pending')
         .order('created_at');
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load the pending claims. Try again.');
       }
       return data;
     },
@@ -297,7 +298,7 @@ export function useReviewClaim() {
         p_approve: approve,
       });
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not update the claim. Try again.');
       }
     },
     onSuccess: () => invalidate(),
@@ -315,13 +316,13 @@ export function useEnablePerformerRole() {
         .update({ is_performer: true })
         .eq('id', userId);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not turn on performing. Try again.');
       }
       const { error: ppError } = await supabase
         .from('performer_profiles')
         .upsert({ profile_id: userId }, { onConflict: 'profile_id', ignoreDuplicates: true });
       if (ppError) {
-        throw new Error(ppError.message);
+        throw userError(ppError, 'Could not turn on performing. Try again.');
       }
     },
     onSuccess: (_d, userId) => {
@@ -341,13 +342,13 @@ export function useEnableProducerRole() {
         .update({ is_producer: true })
         .eq('id', userId);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not enable the producer role. Try again.');
       }
       const { error: ppError } = await supabase
         .from('producer_profiles')
         .upsert({ profile_id: userId }, { onConflict: 'profile_id', ignoreDuplicates: true });
       if (ppError) {
-        throw new Error(ppError.message);
+        throw userError(ppError, 'Could not enable the producer role. Try again.');
       }
     },
     onSuccess: (_d, userId) => {

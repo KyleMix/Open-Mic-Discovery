@@ -2,6 +2,7 @@ import { decode } from 'base64-arraybuffer';
 import * as ImagePicker from 'expo-image-picker';
 
 import { getSupabase } from '@/lib/supabase';
+import { userError } from '@/lib/user-error';
 
 /**
  * Picks an event poster and uploads it to the public posters bucket under
@@ -41,7 +42,7 @@ export async function pickAndUploadPoster(
     .from('posters')
     .upload(path, body, { contentType: 'image/jpeg', upsert: true });
   if (error) {
-    throw new Error(error.message);
+    throw userError(error, 'Could not upload the poster. Try again.');
   }
   const { data } = supabase.storage.from('posters').getPublicUrl(path);
   return `${data.publicUrl}?v=${Date.now()}`;

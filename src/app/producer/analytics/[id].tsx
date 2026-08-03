@@ -6,6 +6,7 @@ import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/component
 import { useSession } from '@/features/auth/session';
 import { useProStatus } from '@/features/pro/use-pro';
 import { getSupabase } from '@/lib/supabase';
+import { userError } from '@/lib/user-error';
 import { fonts, palette, spacing, type } from '@/theme';
 
 /** Producer Pro: signups and turnout per night for one listing. */
@@ -30,7 +31,7 @@ export default function AnalyticsScreen() {
         .order('starts_at', { ascending: false })
         .limit(20);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load analytics. Check your connection and try again.');
       }
       return occurrences;
     },

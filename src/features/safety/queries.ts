@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { signOut } from '@/features/auth/api';
 import { getSupabase } from '@/lib/supabase';
+import { userError } from '@/lib/user-error';
 import type { Database } from '@/types/database.types';
 
 export type ReportTarget = Database['public']['Enums']['report_target'];
@@ -24,7 +25,7 @@ export function useSubmitReport() {
         details: input.details,
       });
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not submit the report. Try again.');
       }
     },
   });
@@ -38,7 +39,7 @@ export function useBlockUser() {
         .from('blocks')
         .insert({ blocker_id: blockerId, blocked_id: blockedId });
       if (error && error.code !== '23505') {
-        throw new Error(error.message);
+        throw userError(error, 'Could not block them. Try again.');
       }
     },
     onSuccess: () => queryClient.invalidateQueries(),
@@ -55,7 +56,7 @@ export function useUnblockUser() {
         .eq('blocker_id', blockerId)
         .eq('blocked_id', blockedId);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not unblock them. Try again.');
       }
     },
     onSuccess: () => queryClient.invalidateQueries(),
@@ -74,7 +75,7 @@ export function useBlockedUsers(userId: string | undefined) {
         .from('blocked_profiles')
         .select('blocked_id, blocked_at, handle, display_name');
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load blocked users. Try again.');
       }
       return data;
     },
@@ -87,7 +88,7 @@ export function useDeleteAccount() {
     mutationFn: async () => {
       const { error } = await getSupabase().rpc('delete_account');
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not delete the account. Try again, or contact support.');
       }
       await signOut().catch(() => null);
     },
@@ -124,7 +125,7 @@ export function useModerationQueue(isAdmin: boolean) {
       ]);
       for (const result of [profiles, venues, series, reports, flags]) {
         if (result.error) {
-          throw new Error(result.error.message);
+          throw userError(result.error, 'Could not load the queue. Try again.');
         }
       }
       return {
@@ -148,7 +149,7 @@ export function useModerateContent() {
         p_approve: input.approve,
       });
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not save the decision. Try again.');
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['moderation'] }),
@@ -168,7 +169,7 @@ export function useResolveReport() {
         })
         .eq('id', input.reportId);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not resolve the report. Try again.');
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['moderation'] }),
@@ -187,7 +188,7 @@ export function useResolveFlag() {
         p_confirm: input.confirmed,
       });
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not resolve the flag. Try again.');
       }
     },
     onSuccess: () => {

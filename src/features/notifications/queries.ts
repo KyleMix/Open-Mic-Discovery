@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { getSupabase } from '@/lib/supabase';
+import { userError } from '@/lib/user-error';
 import type { Database } from '@/types/database.types';
 
 type Prefs = Database['public']['Tables']['notification_prefs']['Insert'];
@@ -13,7 +14,7 @@ export function useUpdatePrefs() {
         .from('notification_prefs')
         .upsert({ ...patch, profile_id: userId }, { onConflict: 'profile_id' });
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not save the preference. Try again.');
       }
     },
     onSuccess: (_d, { userId }) => {

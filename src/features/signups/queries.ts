@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 
 import { registerPushToken } from '@/lib/notifications';
 import { getSupabase } from '@/lib/supabase';
+import { userError } from '@/lib/user-error';
 import type { Database } from '@/types/database.types';
 
 export type SignupStatus = Database['public']['Enums']['signup_status'];
@@ -21,7 +22,7 @@ export function useMySignup(occurrenceId: string | undefined, userId: string | u
         .eq('performer_id', userId!)
         .maybeSingle();
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not check your signup. Try again.');
       }
       return data;
     },
@@ -87,7 +88,7 @@ export function useMyNights(userId: string | undefined) {
         .order('created_at', { ascending: false })
         .limit(100);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load your nights. Try again.');
       }
       return data;
     },
@@ -108,7 +109,7 @@ export function useJoinList() {
         if (error.code === '23505') {
           throw new Error('You are already on this list.');
         }
-        throw new Error(error.message);
+        throw userError(error, 'Could not sign you up. Try again.');
       }
     },
     onSuccess: (_d, { userId }) => {
@@ -130,7 +131,7 @@ export function useWithdraw() {
         .eq('occurrence_id', occurrenceId)
         .eq('performer_id', userId);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not withdraw. Try again.');
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['signup'] }),
@@ -151,7 +152,7 @@ export function useRoster(occurrenceId: string | undefined) {
         .order('slot_position', { ascending: true, nullsFirst: false })
         .order('created_at');
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load the list. Try again.');
       }
       return data;
     },
@@ -194,7 +195,7 @@ export function useDrawLottery() {
         p_occurrence_id: occurrenceId,
       });
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'The draw did not run. Try again.');
       }
       return data;
     },
@@ -217,7 +218,7 @@ export function useSetSlotOrder() {
         p_signup_ids: signupIds,
       });
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not reorder the list. Try again.');
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['signup'] }),
@@ -237,7 +238,7 @@ export function useSignupCounts(occurrenceId: string | undefined) {
         p_occurrence_id: occurrenceId!,
       });
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not check how many spots are taken.');
       }
       return data[0] ?? null;
     },
@@ -262,7 +263,7 @@ export function useAddWalkIn() {
         if (error.code === '42501') {
           throw new Error('Only the producer of this mic can add walk-ins.');
         }
-        throw new Error(error.message);
+        throw userError(error, 'Could not add them to the list. Try again.');
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['signup'] }),
@@ -276,7 +277,7 @@ export function useRemoveWalkIn() {
     mutationFn: async (signupId: string) => {
       const { error } = await getSupabase().from('signups').delete().eq('id', signupId);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not remove them from the list. Try again.');
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['signup'] }),
@@ -293,7 +294,7 @@ export function useMarkOnDeck() {
         p_on_deck: onDeck,
       });
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not update on deck. Try again.');
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['signup'] }),
@@ -306,7 +307,7 @@ export function useSetSignupStatus() {
     mutationFn: async ({ signupId, status }: { signupId: string; status: SignupStatus }) => {
       const { error } = await getSupabase().from('signups').update({ status }).eq('id', signupId);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not update their status. Try again.');
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['signup'] }),

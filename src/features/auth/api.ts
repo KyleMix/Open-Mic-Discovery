@@ -3,21 +3,37 @@ import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 
 import { getSupabase } from '@/lib/supabase';
+import { userError } from '@/lib/user-error';
 import type { Database } from '@/types/database.types';
 
 type Discipline = Database['public']['Enums']['discipline'];
 
-/** Supabase network failures can carry empty or non-string messages. */
-function authMessage(error: { message?: unknown }, fallback: string): string {
-  return typeof error.message === 'string' && error.message.trim().length > 0
-    ? error.message
-    : fallback;
+/**
+ * Auth errors a person can act on. Known GoTrue messages get a specific
+ * translation; everything else falls through to the shared mapper, so no
+ * raw server string ever reaches a screen.
+ */
+function authError(error: { code?: string | null; message?: unknown }, fallback: string): Error {
+  const raw = typeof error.message === 'string' ? error.message.toLowerCase() : '';
+  if (raw.includes('invalid login credentials')) {
+    return new Error('Email or password is wrong. Check them, or use Forgot your password.');
+  }
+  if (raw.includes('already registered')) {
+    return new Error('An account with that email already exists. Sign in instead.');
+  }
+  if (raw.includes('email not confirmed')) {
+    return new Error('Confirm your email first: open the link we sent you, then sign in.');
+  }
+  if (raw.includes('rate limit')) {
+    return new Error('Too many attempts. Wait a minute and try again.');
+  }
+  return userError(error, fallback);
 }
 
 export async function signInWithEmail(email: string, password: string): Promise<void> {
   const { error } = await getSupabase().auth.signInWithPassword({ email, password });
   if (error) {
-    throw new Error(authMessage(error, 'Could not reach the server. Check your connection.'));
+    throw authError(error, 'Could not sign in. Check your connection and try again.');
   }
 }
 
@@ -32,7 +48,7 @@ export async function signUpWithEmail(
 ): Promise<{ needsEmailConfirmation: boolean }> {
   const { data, error } = await getSupabase().auth.signUp({ email, password });
   if (error) {
-    throw new Error(authMessage(error, 'Could not reach the server. Check your connection.'));
+    throw authError(error, 'Could not create the account. Check your connection and try again.');
   }
   return { needsEmailConfirmation: data.session === null };
 }
@@ -46,28 +62,28 @@ export async function requestPasswordReset(email: string): Promise<void> {
     redirectTo: Linking.createURL('reset-password'),
   });
   if (error) {
-    throw new Error(authMessage(error, 'Could not reach the server. Check your connection.'));
+    throw authError(error, 'Could not send the reset email. Check your connection and try again.');
   }
 }
 
 export async function exchangeRecoveryCode(code: string): Promise<void> {
   const { error } = await getSupabase().auth.exchangeCodeForSession(code);
   if (error) {
-    throw new Error(authMessage(error, 'That reset link is invalid or expired.'));
+    throw authError(error, 'That reset link is invalid or expired. Request a new one.');
   }
 }
 
 export async function updatePassword(newPassword: string): Promise<void> {
   const { error } = await getSupabase().auth.updateUser({ password: newPassword });
   if (error) {
-    throw new Error(authMessage(error, 'Could not update the password. Try again.'));
+    throw authError(error, 'Could not update the password. Try again.');
   }
 }
 
 export async function signOut(): Promise<void> {
   const { error } = await getSupabase().auth.signOut();
   if (error) {
-    throw new Error(error.message);
+    throw authError(error, 'Sign out failed. Try again.');
   }
 }
 
@@ -87,7 +103,7 @@ export async function signInWithApple(): Promise<void> {
     token: credential.identityToken,
   });
   if (error) {
-    throw new Error(error.message);
+    throw authError(error, 'Apple sign in failed. Try again.');
   }
 }
 
@@ -100,7 +116,9 @@ export async function signInWithGoogle(): Promise<void> {
     options: { redirectTo, skipBrowserRedirect: true },
   });
   if (error || !data.url) {
-    throw new Error(error?.message ?? 'Could not start Google sign in.');
+    throw error
+      ? authError(error, 'Could not start Google sign in. Try again.')
+      : new Error('Could not start Google sign in.');
   }
   const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
   if (result.type !== 'success') {
@@ -112,7 +130,7 @@ export async function signInWithGoogle(): Promise<void> {
   }
   const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
   if (exchangeError) {
-    throw new Error(exchangeError.message);
+    throw authError(exchangeError, 'Could not finish Google sign in. Try again.');
   }
 }
 
@@ -158,7 +176,7 @@ export async function completeOnboarding(input: OnboardingInput): Promise<void> 
     if (profileError.code === '23505') {
       throw new Error('That handle is taken. Try another.');
     }
-    throw new Error(profileError.message);
+    throw userError(profileError, 'Could not save your profile. Try again.');
   }
   if (input.isPerformer) {
     const { error } = await supabase.from('performer_profiles').insert({
@@ -166,7 +184,7 @@ export async function completeOnboarding(input: OnboardingInput): Promise<void> 
       disciplines: input.disciplines,
     });
     if (error) {
-      throw new Error(error.message);
+      throw userError(error, 'Could not finish setup. Try again.');
     }
   }
   if (input.isProducer) {
@@ -174,13 +192,13 @@ export async function completeOnboarding(input: OnboardingInput): Promise<void> 
       profile_id: input.userId,
     });
     if (error) {
-      throw new Error(error.message);
+      throw userError(error, 'Could not finish setup. Try again.');
     }
   }
   const { error: prefsError } = await supabase.from('notification_prefs').insert({
     profile_id: input.userId,
   });
   if (prefsError) {
-    throw new Error(prefsError.message);
+    throw userError(prefsError, 'Could not finish setup. Try again.');
   }
 }

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { registerPushToken } from '@/lib/notifications';
 import { getSupabase } from '@/lib/supabase';
+import { userError } from '@/lib/user-error';
 
 export function useFavorites(userId: string | undefined) {
   return useQuery({
@@ -17,7 +18,7 @@ export function useFavorites(userId: string | undefined) {
         .eq('profile_id', userId!)
         .order('created_at', { ascending: false });
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load favorites. Check your connection and try again.');
       }
       // A favorites list that cannot say what is on tonight is a bookmark
       // graveyard: fetch each mic's next night and lead with the soonest.
@@ -32,7 +33,7 @@ export function useFavorites(userId: string | undefined) {
           .neq('status', 'cancelled')
           .order('starts_at');
         if (occError) {
-          throw new Error(occError.message);
+          throw userError(occError, 'Could not load favorites. Check your connection and try again.');
         }
         for (const occ of occurrences) {
           if (!nextBySeries[occ.series_id]) {
@@ -70,7 +71,7 @@ export function useIsFavorite(userId: string | undefined, seriesId: string | und
         .eq('series_id', seriesId!)
         .maybeSingle();
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not check your favorites. Try again.');
       }
       return !!data;
     },
@@ -98,7 +99,7 @@ export function useToggleFavorite() {
             { onConflict: 'profile_id,series_id', ignoreDuplicates: true },
           );
         if (error) {
-          throw new Error(error.message);
+          throw userError(error, 'Could not add the favorite. Try again.');
         }
       } else {
         const { error } = await supabase
@@ -107,7 +108,7 @@ export function useToggleFavorite() {
           .eq('profile_id', userId)
           .eq('series_id', seriesId);
         if (error) {
-          throw new Error(error.message);
+          throw userError(error, 'Could not remove the favorite. Try again.');
         }
       }
     },
