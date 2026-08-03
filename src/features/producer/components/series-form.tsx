@@ -62,6 +62,15 @@ function deviceTimezone(): string | null {
   }
 }
 
+/** Days from a Postgres interval like "7 days"; null for any other shape. */
+function parseIntervalDays(interval: string | null | undefined): number | null {
+  if (!interval) {
+    return null;
+  }
+  const match = /^(\d+)\s+days?$/.exec(interval.trim());
+  return match ? Number(match[1]) : null;
+}
+
 export type SeriesFormValues = {
   title: string;
   description: string;
@@ -96,6 +105,7 @@ type ExistingSeries = {
   rrule: string;
   start_time: string;
   timezone: string;
+  signup_opens: string | null;
   cost_cents: number;
   cost_note: string | null;
   set_length_minutes: number | null;
@@ -130,7 +140,9 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
   const [timezone, setTimezone] = useState<string>(
     existing?.timezone ?? deviceTimezone() ?? 'America/Los_Angeles',
   );
-  const [signupOpensDays, setSignupOpensDays] = useState(7);
+  const [signupOpensDays, setSignupOpensDays] = useState(
+    existing ? (parseIntervalDays(existing.signup_opens) ?? 7) : 7,
+  );
   const [costDollars, setCostDollars] = useState(
     existing ? String(existing.cost_cents / 100) : '0',
   );
@@ -429,7 +441,10 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
         ))}
       </View>
       <View style={styles.chipRow}>
-        {[1, 3, 7, 14, 30].map((days) => (
+        {([1, 3, 7, 14, 30].includes(signupOpensDays)
+          ? [1, 3, 7, 14, 30]
+          : [1, 3, 7, 14, 30, signupOpensDays].sort((a, b) => a - b)
+        ).map((days) => (
           <Pressable
             key={days}
             accessibilityRole="button"
