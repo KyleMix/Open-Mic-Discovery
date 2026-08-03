@@ -1,18 +1,13 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, StyleSheet, Text, View } from 'react-native';
 
 import { Body, Button, ErrorText } from '@/components/ui';
 import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
 import { formatInZone } from '@/features/discovery/timezone';
 import { useEnablePerformerRole } from '@/features/producer/queries';
-import {
-  useJoinList,
-  useMySignup,
-  useSignupCounts,
-  useWithdraw,
-} from '@/features/signups/queries';
+import { useJoinList, useMySignup, useSignupCounts, useWithdraw } from '@/features/signups/queries';
 import { signupWindow } from '@/features/signups/window';
 import { fonts, palette, spacing, type } from '@/theme';
 import type { Database } from '@/types/database.types';
@@ -64,6 +59,28 @@ export function SignupCard({
   const enablePerformer = useEnablePerformerRole();
   const counts = useSignupCounts(occurrence.id);
   const [confirmingWithdraw, setConfirmingWithdraw] = useState(false);
+
+  // Draw results, promotion, and on-deck arrive via realtime while the
+  // performer is staring at this card; a sighted user sees the card
+  // change, a screen reader user hears it announced.
+  const signupStatus = mySignup.isSuccess ? (mySignup.data?.status ?? null) : undefined;
+  const onDeck = mySignup.isSuccess ? mySignup.data?.on_deck_at != null : undefined;
+  const lastAnnounced = useRef<{ status: string | null; onDeck: boolean } | null>(null);
+  useEffect(() => {
+    if (signupStatus === undefined || onDeck === undefined) {
+      return;
+    }
+    const last = lastAnnounced.current;
+    lastAnnounced.current = { status: signupStatus, onDeck };
+    if (!last) {
+      return;
+    }
+    if (onDeck && !last.onDeck) {
+      AccessibilityInfo.announceForAccessibility('You are on deck. Get ready, you are up soon.');
+    } else if (signupStatus && signupStatus !== last.status) {
+      AccessibilityInfo.announceForAccessibility(STATUS_LABELS[signupStatus]);
+    }
+  }, [signupStatus, onDeck]);
 
   if (signupMethod === 'host_booked' || occurrence.status !== 'scheduled') {
     return null;
@@ -151,11 +168,7 @@ export function SignupCard({
               />
             </>
           ) : (
-            <Button
-              label="Withdraw"
-              kind="secondary"
-              onPress={() => setConfirmingWithdraw(true)}
-            />
+            <Button label="Withdraw" kind="secondary" onPress={() => setConfirmingWithdraw(true)} />
           )
         ) : null}
       </>

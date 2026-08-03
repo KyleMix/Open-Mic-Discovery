@@ -1,7 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  AccessibilityInfo,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
 import {
   Body,
@@ -158,6 +166,10 @@ export default function NightScreen() {
         }
         setShuffling(null);
       },
+      // The shuffle animation is purely visual; a screen reader user
+      // otherwise gets no signal that the draw finished.
+      onSuccess: () =>
+        AccessibilityInfo.announceForAccessibility('Draw complete. The running order is set.'),
     });
   }
 
