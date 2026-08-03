@@ -23,6 +23,7 @@ import { useFlagListing, useMicDetail } from '@/features/discovery/queries';
 import { useIsFavorite, useToggleFavorite } from '@/features/favorites/queries';
 import { useSubmitClaim } from '@/features/producer/queries';
 import { ReportModal } from '@/features/safety/components/report-modal';
+import { FLAG_REASON_LABELS } from '@/features/safety/labels';
 import { SignupCard } from '@/features/signups/components/signup-card';
 import { describeRecurrence, formatLocalTime } from '@/features/discovery/recurrence';
 import { formatInZone, zoneDiffersFromDevice } from '@/features/discovery/timezone';
@@ -39,15 +40,17 @@ const SIGNUP_METHOD_EXPLAINERS: Record<Database['public']['Enums']['signup_metho
     'The host books this lineup directly. Reach out through the venue or host to ask for a spot.',
 };
 
-const FLAG_REASONS: { reason: FlagReason; label: string }[] = [
-  { reason: 'wrong_time', label: 'Time or day is wrong' },
-  { reason: 'wrong_venue', label: 'Venue info is wrong' },
-  { reason: 'wrong_cost', label: 'Cost is wrong' },
-  { reason: 'not_happening', label: 'A listed night is not happening' },
-  { reason: 'permanently_dead', label: 'This mic is dead' },
-  { reason: 'duplicate', label: 'Duplicate listing' },
-  { reason: 'other', label: 'Something else' },
-];
+const FLAG_REASONS: { reason: FlagReason; label: string }[] = (
+  [
+    'wrong_time',
+    'wrong_venue',
+    'wrong_cost',
+    'not_happening',
+    'permanently_dead',
+    'duplicate',
+    'other',
+  ] as const
+).map((reason) => ({ reason, label: FLAG_REASON_LABELS[reason] }));
 
 export default function MicDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

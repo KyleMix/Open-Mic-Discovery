@@ -4,6 +4,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Body, Button, ErrorText, Field } from '@/components/ui';
 import { useSession } from '@/features/auth/session';
+import { REPORT_REASON_LABELS } from '@/features/safety/labels';
 import {
   useBlockUser,
   useSubmitReport,
@@ -12,16 +13,18 @@ import {
 } from '@/features/safety/queries';
 import { fonts, palette, spacing, type } from '@/theme';
 
-const REASONS: { reason: ReportReason; label: string }[] = [
-  { reason: 'spam', label: 'Spam or scam' },
-  { reason: 'harassment', label: 'Harassment or bullying' },
-  { reason: 'hate', label: 'Hate or discrimination' },
-  { reason: 'sexual_content', label: 'Sexual content' },
-  { reason: 'violence_threat', label: 'Violence or threats' },
-  { reason: 'impersonation', label: 'Impersonation' },
-  { reason: 'illegal', label: 'Illegal activity' },
-  { reason: 'other', label: 'Something else' },
-];
+const REASONS: { reason: ReportReason; label: string }[] = (
+  [
+    'spam',
+    'harassment',
+    'hate',
+    'sexual_content',
+    'violence_threat',
+    'impersonation',
+    'illegal',
+    'other',
+  ] as const
+).map((reason) => ({ reason, label: REPORT_REASON_LABELS[reason] }));
 
 type Props = {
   visible: boolean;

@@ -8,6 +8,7 @@ import { useSession } from '@/features/auth/session';
 import { useOccurrenceContext } from '@/features/producer/queries';
 import { useProStatus } from '@/features/pro/use-pro';
 import { ReportModal } from '@/features/safety/components/report-modal';
+import { ROSTER_STATUS_LABELS } from '@/features/signups/labels';
 import {
   useAddWalkIn,
   useDrawLottery,
@@ -105,7 +106,9 @@ export default function NightScreen() {
                 {row.display_name ?? row.handle ?? row.guest_name ?? 'Performer'}
                 {row.guest_name ? ' (walk-in)' : ''}
               </Text>
-              <Text style={styles.meta}>{row.status}</Text>
+              <Text style={styles.meta}>
+                {row.status ? ROSTER_STATUS_LABELS[row.status] : ''}
+              </Text>
             </View>
           </View>
         ))}
@@ -213,7 +216,7 @@ export default function NightScreen() {
                 {row.guest_name ? ' (walk-in)' : ''}
               </Text>
               <Text style={row.on_deck_at ? styles.onDeckMeta : styles.meta}>
-                {row.on_deck_at ? 'On deck' : row.status}
+                {row.on_deck_at ? 'On deck' : row.status ? ROSTER_STATUS_LABELS[row.status] : ''}
               </Text>
             </View>
             {row.status === 'confirmed' || row.status === 'drawn' ? (
