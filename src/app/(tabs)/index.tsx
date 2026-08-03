@@ -74,7 +74,14 @@ export default function DiscoverScreen() {
   // Tonight and This weekend quick picks additionally bound results to
   // their actual dates, not just their weekdays.
   const visibleMics = useMemo(
-    () => boundByDate(sortSoonestNearest(nearby.data ?? []), filters.dateBound, new Date()),
+    () =>
+      boundByDate(
+        // Paused listings generate no nights; showing them as undated
+        // cards reads as data rot, the exact thing the badge fights.
+        sortSoonestNearest((nearby.data ?? []).filter((m) => m.is_active !== false)),
+        filters.dateBound,
+        new Date(),
+      ),
     [nearby.data, filters.dateBound],
   );
 

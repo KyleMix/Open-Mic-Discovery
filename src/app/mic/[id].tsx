@@ -177,7 +177,11 @@ function MicDetail({
               : ''}
           </Text>
         ) : (
-          <Text style={styles.nextDate}>No upcoming dates listed</Text>
+          <Text style={styles.nextDate}>
+            {series.is_active
+              ? 'No upcoming dates listed'
+              : 'This mic is paused right now. Check back, or flag it if you think it is gone.'}
+          </Text>
         )}
         {zoneDiffersFromDevice(series.timezone) ? (
           <Text style={styles.nextDate}>Times shown are local to the venue.</Text>
