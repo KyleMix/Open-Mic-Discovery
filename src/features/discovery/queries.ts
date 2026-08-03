@@ -67,7 +67,18 @@ export function useMicDetail(seriesId: string | undefined) {
       if (!seriesRes.data) {
         return null;
       }
-      return { series: seriesRes.data, occurrences: occurrencesRes.data };
+      // Stewardship: claimed listings show who stands behind them. A
+      // failed lookup degrades to "Host-managed", never an error.
+      let ownerVerified = false;
+      if (seriesRes.data.owner_id) {
+        const { data: producerRow } = await supabase
+          .from('producer_public')
+          .select('verified')
+          .eq('profile_id', seriesRes.data.owner_id)
+          .maybeSingle();
+        ownerVerified = producerRow?.verified ?? false;
+      }
+      return { series: seriesRes.data, occurrences: occurrencesRes.data, ownerVerified };
     },
   });
 }

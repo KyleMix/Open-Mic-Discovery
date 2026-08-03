@@ -5,6 +5,7 @@ import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Body, Button, ErrorText, Field, KeyboardShift, LoadingView, Title } from '@/components/ui';
 import { useSession } from '@/features/auth/session';
 import { useBlockedUsers, useDeleteAccount, useUnblockUser } from '@/features/safety/queries';
+import { SUPPORT_EMAIL, contactSupport } from '@/lib/support';
 import { fonts, palette, spacing, type } from '@/theme';
 
 export default function SettingsScreen() {
@@ -71,6 +72,17 @@ export default function SettingsScreen() {
             </View>
           ))
       )}
+
+      <Text style={styles.sectionTitle}>Help</Text>
+      <Body>
+        Stuck, or something in the app is wrong? Email us at {SUPPORT_EMAIL} and a person reads it.
+      </Body>
+      <Button
+        label="Contact support"
+        kind="secondary"
+        onPress={() => contactSupport('Open Mic Finder support')}
+      />
+      <Button label="Read the terms" kind="secondary" onPress={() => router.push('/terms')} />
 
       <Text style={styles.sectionTitle}>Account</Text>
       <Body>

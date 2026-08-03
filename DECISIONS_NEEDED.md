@@ -41,3 +41,26 @@ Every item from the original list was decided by the owner and implemented on
 All migrations were verified end to end on a local Postgres via
 `scripts/db/verify-local.sh`: 150 pgTAP tests pass, 22 of them new in
 `supabase/tests/ux-decisions.test.sql`.
+
+# Open decisions: user-friendliness fix run, 2026-08-03
+
+New items from the `user-friendliness-fixes` branch. Each ships with a
+working placeholder so nothing blocks; the decision swaps a value, not a
+design.
+
+11. **Support inbox address.** The app now has a working support path
+    (Settings > Help > Contact support, and the rejected-listing note on
+    the Manage screen). Both open a mailto to `SUPPORT_EMAIL` in
+    `src/lib/support.ts`, currently the placeholder
+    `support@openmicfinder.app`. Decision: the real address and who reads
+    it. Recommendation: a shared inbox on the product domain, not a
+    personal address, so App Store review and users see a stable contact.
+12. **Stewardship badge on discovery cards.** The mic detail screen now
+    shows "Verified host", "Host-managed", or "Community-listed" beside
+    the freshness badge, from `owner_id` plus `producer_public.verified`.
+    Discovery cards do not, because `mics_near` and `search_mics` do not
+    return `owner_id`; adding it is a migration touching both functions.
+    Recommendation: add it once verified hosts exist in real data; today
+    it would label nearly every card "Community-listed". Note there is
+    still no admin path granting `producer_profiles.verified`; that flow
+    needs its own design.

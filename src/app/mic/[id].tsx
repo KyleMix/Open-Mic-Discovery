@@ -96,7 +96,11 @@ export default function MicDetailScreen() {
           <Body>This listing is no longer available.</Body>
         </Screen>
       ) : (
-        <MicDetail series={detail.data.series} occurrences={detail.data.occurrences} />
+        <MicDetail
+          series={detail.data.series}
+          occurrences={detail.data.occurrences}
+          ownerVerified={detail.data.ownerVerified}
+        />
       )}
     </>
   );
@@ -107,9 +111,11 @@ type DetailData = NonNullable<ReturnType<typeof useMicDetail>['data']>;
 function MicDetail({
   series,
   occurrences,
+  ownerVerified,
 }: {
   series: DetailData['series'];
   occurrences: DetailData['occurrences'];
+  ownerVerified: boolean;
 }) {
   const venue = series.venue;
   const fresh = freshness(series.last_confirmed_at, new Date());
@@ -180,6 +186,26 @@ function MicDetail({
         <View style={styles.freshRow}>
           <Glyph name="freshness-badge" size={16} color={fresh.color} />
           <Text style={[styles.freshText, { color: fresh.color }]}>{fresh.label}</Text>
+          <Text style={[styles.freshText, { color: palette.textSecondary }]}>·</Text>
+          <Text
+            accessibilityLabel={
+              series.owner_id
+                ? ownerVerified
+                  ? 'Run by a verified host'
+                  : 'Run by its host'
+                : 'Community-listed, not yet claimed by its host'
+            }
+            style={[
+              styles.freshText,
+              { color: ownerVerified ? palette.success : palette.textSecondary },
+            ]}
+          >
+            {series.owner_id
+              ? ownerVerified
+                ? 'Verified host'
+                : 'Host-managed'
+              : 'Community-listed'}
+          </Text>
         </View>
 
         <Card>

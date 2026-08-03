@@ -26,6 +26,7 @@ import {
   useUpdateOccurrence,
   useUpdateSeries,
 } from '@/features/producer/queries';
+import { contactSupport } from '@/lib/support';
 import { fonts, palette, spacing, type, type Discipline } from '@/theme';
 import type { Database } from '@/types/database.types';
 
@@ -126,10 +127,17 @@ export default function ManageSeriesScreen() {
             now only you can see it.
           </Text>
         ) : series.moderation_status === 'rejected' ? (
-          <Text style={styles.rejectedNote}>
-            This listing was rejected in review and is not public. Edit the wording to resubmit, or
-            contact support.
-          </Text>
+          <>
+            <Text style={styles.rejectedNote}>
+              This listing was rejected in review and is not public. Edit the wording to resubmit,
+              or contact support.
+            </Text>
+            <Button
+              label="Contact support"
+              kind="secondary"
+              onPress={() => contactSupport(`Rejected listing: ${series.title}`)}
+            />
+          </>
         ) : null}
         <Text style={styles.meta}>
           {describeRecurrence(series.rrule, series.start_time) ?? 'Schedule varies'} ·{' '}
