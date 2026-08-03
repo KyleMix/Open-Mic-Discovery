@@ -95,6 +95,10 @@ function MicDetail({
   const fresh = freshness(series.last_confirmed_at, new Date());
   const recurrence = describeRecurrence(series.rrule, series.start_time);
   const next = occurrences.find((o) => o.status !== 'cancelled');
+  // A producer can rename or reprice a single night; the next night must
+  // show those overrides or performers see the wrong show and price.
+  const nextTitle = next?.override_title ?? null;
+  const nextCostCents = next?.override_cost_cents ?? series.cost_cents;
   const [flagOpen, setFlagOpen] = useState(false);
   const [claimOpen, setClaimOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -119,11 +123,11 @@ function MicDetail({
     const endsAt = new Date(startsAt.getTime() + 3 * 60 * 60 * 1000);
     try {
       await addToCalendar({
-        title: series.title,
+        title: next.override_title ?? series.title,
         startsAt,
         endsAt,
         location: venue ? `${venue.name}, ${venue.address_line}, ${venue.city}` : series.title,
-        notes: `${SIGNUP_METHOD_LABELS[series.signup_method]} · ${costLabel(series.cost_cents)}. Added from Open Mic Finder.`,
+        notes: `${SIGNUP_METHOD_LABELS[series.signup_method]} · ${costLabel(nextCostCents)}. Added from Open Mic Finder.`,
       });
     } catch {
       // The person backed out of the system sheet or the platform refused;
@@ -173,6 +177,13 @@ function MicDetail({
         ) : (
           <Text style={styles.nextDate}>No upcoming dates listed</Text>
         )}
+        {nextTitle ? <Text style={styles.overrideNote}>Special night: {nextTitle}</Text> : null}
+        {next && next.override_cost_cents != null ? (
+          <Text style={styles.overrideNote}>
+            This night: {costLabel(next.override_cost_cents)} (usually{' '}
+            {costLabel(series.cost_cents)})
+          </Text>
+        ) : null}
         {next ? (
           <Button label="Add to my calendar" kind="secondary" onPress={addNightToCalendar} />
         ) : null}
@@ -195,7 +206,7 @@ function MicDetail({
           signupMethod={series.signup_method}
           signupOpens={series.signup_opens}
           signupCloses={series.signup_closes}
-          costCents={series.cost_cents}
+          costCents={nextCostCents}
         />
       ) : null}
 
@@ -590,6 +601,11 @@ const styles = StyleSheet.create({
   },
   nextDate: {
     color: palette.textSecondary,
+    fontSize: type.body.fontSize,
+  },
+  overrideNote: {
+    color: palette.warning,
+    fontFamily: fonts.medium,
     fontSize: type.body.fontSize,
   },
   cancelNote: {
