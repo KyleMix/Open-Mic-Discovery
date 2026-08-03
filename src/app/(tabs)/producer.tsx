@@ -12,6 +12,7 @@ import {
   useConfirmSeries,
   useEnableProducerRole,
   useMySeries,
+  useNextNights,
   usePendingClaims,
   useReviewClaim,
 } from '@/features/producer/queries';
@@ -27,6 +28,7 @@ export default function ProducerScreen() {
   const claims = usePendingClaims(profile.data?.is_admin ?? false);
   const review = useReviewClaim();
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const nextNights = useNextNights((mySeries.data ?? []).map((s) => s.id));
 
   if (!session) {
     return (
@@ -128,6 +130,10 @@ export default function ProducerScreen() {
         renderItem={({ item }) => {
           const fresh = freshness(item.last_confirmed_at, new Date());
           const confirming = confirm.isPending && confirmingId === item.id;
+          const night = nextNights.data?.[item.id];
+          const nightIsToday =
+            night != null &&
+            new Date(night.startsAt).toDateString() === new Date().toDateString();
           return (
             <Pressable
               accessibilityRole="button"
@@ -148,6 +154,24 @@ export default function ProducerScreen() {
                 {item.venue?.name}, {item.venue?.city} ·{' '}
                 {describeRecurrence(item.rrule, item.start_time) ?? 'Schedule varies'}
               </Text>
+              {night ? (
+                <Text style={styles.nextNight}>
+                  {nightIsToday
+                    ? 'Tonight'
+                    : `Next: ${new Date(night.startsAt).toLocaleDateString(undefined, {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                      })}`}{' '}
+                  · {night.signupCount} signed up
+                </Text>
+              ) : null}
+              {nightIsToday ? (
+                <Button
+                  label="Open tonight's list"
+                  onPress={() => router.push(`/producer/night/${night.occurrenceId}`)}
+                />
+              ) : null}
               <View style={styles.cardBottom}>
                 <View style={styles.freshRow}>
                   <Glyph name="freshness-badge" size={14} color={fresh.color} />
@@ -237,6 +261,11 @@ const styles = StyleSheet.create({
   },
   cardMeta: {
     color: palette.textSecondary,
+    fontSize: type.caption.fontSize,
+  },
+  nextNight: {
+    color: palette.text,
+    fontFamily: fonts.medium,
     fontSize: type.caption.fontSize,
   },
   cardBottom: {
