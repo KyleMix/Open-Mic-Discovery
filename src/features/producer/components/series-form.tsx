@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import tzLookup from 'tz-lookup';
 
@@ -130,13 +130,15 @@ type Props = {
   error: string | null;
   submitLabel: string;
   onSubmit: (values: SeriesFormValues) => void;
+  /** Fires when entries diverge from (or return to) their initial values. */
+  onDirtyChange?: (dirty: boolean) => void;
 };
 
 function chipStyle(active: boolean) {
   return [styles.chip, active && styles.chipActive];
 }
 
-export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Props) {
+export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDirtyChange }: Props) {
   const [title, setTitle] = useState(existing?.title ?? '');
   const [description, setDescription] = useState(existing?.description ?? '');
   const [disciplines, setDisciplines] = useState<Discipline[]>(existing?.disciplines ?? []);
@@ -197,6 +199,39 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
   const startTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
   const rrule = buildRrule(recurrence);
   const preview = rrule ? describeRecurrence(rrule, startTime) : null;
+
+  // ~20 fields of typed-in work; the parent guards navigation on this so
+  // a stray back tap cannot silently discard it all.
+  const snapshot = JSON.stringify([
+    title,
+    description,
+    disciplines,
+    method,
+    recurrence,
+    biweeklyNextWeek,
+    hour,
+    minute,
+    timezone,
+    signupOpensDays,
+    costDollars,
+    costNote,
+    setLength,
+    capacity,
+    venueId ?? null,
+    venueLabel,
+    addingVenue,
+    venueName,
+    venueAddress,
+    venueNeighborhood,
+    venueCity,
+    venueRegion,
+    pin,
+  ]);
+  const [initialSnapshot] = useState(snapshot);
+  const dirty = snapshot !== initialSnapshot;
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
 
   function toggleIn<T>(list: T[], item: T): T[] {
     return list.includes(item) ? list.filter((x) => x !== item) : [...list, item];

@@ -3,6 +3,8 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { ConfirmSheet, DiscardPrompt } from '@/components/confirm-sheet';
+import { useDiscardGuard } from '@/components/discard-guard';
 import { Glyph } from '@/components/glyph';
 import {
   Body,
@@ -43,6 +45,8 @@ export default function ManageSeriesScreen() {
 
   const { session } = useSession();
   const [editing, setEditing] = useState(false);
+  const [editorDirty, setEditorDirty] = useState(false);
+  const [confirmCloseEditor, setConfirmCloseEditor] = useState(false);
   const [posterBusy, setPosterBusy] = useState(false);
   const [posterError, setPosterError] = useState<string | null>(null);
   const [confirmPause, setConfirmPause] = useState(false);
@@ -50,6 +54,18 @@ export default function ManageSeriesScreen() {
     occurrence: Occurrence;
     mode: 'cancel' | 'edit';
   } | null>(null);
+  const { guardElement } = useDiscardGuard({
+    when: editing && editorDirty,
+    title: 'Discard your edits?',
+    body: 'The changes in the editor are not saved. Leaving now loses them.',
+    discardLabel: 'Discard edits',
+  });
+
+  function closeEditor() {
+    setEditing(false);
+    setEditorDirty(false);
+    setConfirmCloseEditor(false);
+  }
 
   if (detail.isPending) {
     return <LoadingView label="Loading your mic" />;
@@ -105,7 +121,12 @@ export default function ManageSeriesScreen() {
           ...(values.venueId ? { venue_id: values.venueId } : {}),
         },
       },
-      { onSuccess: () => setEditing(false) },
+      {
+        onSuccess: () => {
+          setEditing(false);
+          setEditorDirty(false);
+        },
+      },
     );
   }
 
@@ -171,7 +192,15 @@ export default function ManageSeriesScreen() {
             <Button
               label={editing ? 'Close editor' : 'Edit mic (all future nights)'}
               kind="secondary"
-              onPress={() => setEditing(!editing)}
+              onPress={() => {
+                if (editing && editorDirty) {
+                  setConfirmCloseEditor(true);
+                } else if (editing) {
+                  closeEditor();
+                } else {
+                  setEditing(true);
+                }
+              }}
             />
           </View>
           <View style={styles.buttonFlex}>
@@ -246,6 +275,7 @@ export default function ManageSeriesScreen() {
               }
               submitLabel="Save for all future nights"
               onSubmit={submitEdit}
+              onDirtyChange={setEditorDirty}
             />
           </View>
         ) : null}
@@ -307,6 +337,16 @@ export default function ManageSeriesScreen() {
         )}
       </ScrollView>
 
+      {confirmCloseEditor ? (
+        <ConfirmSheet
+          title="Discard your edits?"
+          body="The changes in the editor are not saved. Closing it loses them."
+          confirmLabel="Discard edits"
+          onConfirm={closeEditor}
+          onClose={() => setConfirmCloseEditor(false)}
+        />
+      ) : null}
+      {guardElement}
       {nightAction ? (
         <NightModal
           seriesId={series.id}
@@ -362,10 +402,24 @@ function NightModal({
 }) {
   const update = useUpdateOccurrence();
   const [note, setNote] = useState('');
-  const [overrideTitle, setOverrideTitle] = useState(occurrence.override_title ?? '');
-  const [overrideCost, setOverrideCost] = useState(
-    occurrence.override_cost_cents != null ? String(occurrence.override_cost_cents / 100) : '',
-  );
+  const initialTitle = occurrence.override_title ?? '';
+  const initialCost =
+    occurrence.override_cost_cents != null ? String(occurrence.override_cost_cents / 100) : '';
+  const [overrideTitle, setOverrideTitle] = useState(initialTitle);
+  const [overrideCost, setOverrideCost] = useState(initialCost);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const dirty =
+    mode === 'cancel'
+      ? note.trim().length > 0
+      : overrideTitle !== initialTitle || overrideCost !== initialCost;
+
+  function close() {
+    if (dirty) {
+      setConfirmDiscard(true);
+      return;
+    }
+    onClose();
+  }
 
   const dateLabel = new Date(occurrence.starts_at).toLocaleDateString(undefined, {
     weekday: 'long',
@@ -401,57 +455,63 @@ function NightModal({
   }
 
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible transparent animationType="slide" onRequestClose={close}>
       <View style={styles.modalBackdrop}>
         <KeyboardShift>
           <View style={styles.modalSheet}>
-            <Text style={styles.sectionTitle}>
-              {mode === 'cancel' ? `Cancel ${dateLabel}?` : `Edit ${dateLabel} only`}
-            </Text>
-            {mode === 'cancel' ? (
-              <>
-                <Body>
-                  Only this night is cancelled. The rest of the schedule is untouched, and
-                  performers see the cancellation on the listing.
-                </Body>
-                <Field
-                  label="Reason (shown to performers, optional)"
-                  value={note}
-                  onChangeText={setNote}
-                  placeholder="Venue is closed for a private event"
-                />
-              </>
+            {confirmDiscard ? (
+              <DiscardPrompt onDiscard={onClose} onKeep={() => setConfirmDiscard(false)} />
             ) : (
               <>
-                <Body>
-                  Changes here apply to this night only. Use the Edit mic button for this and all
-                  future nights.
-                </Body>
-                <Field
-                  label="Special title (optional)"
-                  value={overrideTitle}
-                  onChangeText={setOverrideTitle}
-                  placeholder="Holiday showcase"
+                <Text style={styles.sectionTitle}>
+                  {mode === 'cancel' ? `Cancel ${dateLabel}?` : `Edit ${dateLabel} only`}
+                </Text>
+                {mode === 'cancel' ? (
+                  <>
+                    <Body>
+                      Only this night is cancelled. The rest of the schedule is untouched, and
+                      performers see the cancellation on the listing.
+                    </Body>
+                    <Field
+                      label="Reason (shown to performers, optional)"
+                      value={note}
+                      onChangeText={setNote}
+                      placeholder="Venue is closed for a private event"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <Body>
+                      Changes here apply to this night only. Use the Edit mic button for this and
+                      all future nights.
+                    </Body>
+                    <Field
+                      label="Special title (optional)"
+                      value={overrideTitle}
+                      onChangeText={setOverrideTitle}
+                      placeholder="Holiday showcase"
+                    />
+                    <Field
+                      label="Cost for this night ($, optional)"
+                      value={overrideCost}
+                      onChangeText={setOverrideCost}
+                      inputMode="decimal"
+                    />
+                  </>
+                )}
+                {update.isError ? (
+                  <ErrorText>
+                    {update.error instanceof Error ? update.error.message : 'Could not save.'}
+                  </ErrorText>
+                ) : null}
+                <Button
+                  label={mode === 'cancel' ? 'Cancel this night' : 'Save this night'}
+                  busy={update.isPending}
+                  onPress={submit}
                 />
-                <Field
-                  label="Cost for this night ($, optional)"
-                  value={overrideCost}
-                  onChangeText={setOverrideCost}
-                  inputMode="decimal"
-                />
+                <Button label="Back" kind="secondary" onPress={close} />
               </>
             )}
-            {update.isError ? (
-              <ErrorText>
-                {update.error instanceof Error ? update.error.message : 'Could not save.'}
-              </ErrorText>
-            ) : null}
-            <Button
-              label={mode === 'cancel' ? 'Cancel this night' : 'Save this night'}
-              busy={update.isPending}
-              onPress={submit}
-            />
-            <Button label="Back" kind="secondary" onPress={onClose} />
           </View>
         </KeyboardShift>
       </View>

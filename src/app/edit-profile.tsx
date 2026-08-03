@@ -2,6 +2,7 @@ import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { useDiscardGuard } from '@/components/discard-guard';
 import { useToast } from '@/components/toast';
 import { Body, Button, ErrorText, Field, KeyboardShift, LoadingView, Title } from '@/components/ui';
 import { validateDisplayName } from '@/features/auth/validation';
@@ -70,6 +71,25 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
   const [photoBusy, setPhotoBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // The photo saves immediately; every text field only saves on Save, so
+  // back navigation asks before dropping typed-in changes.
+  const dirty =
+    displayName !== profile.display_name ||
+    bio !== (profile.bio ?? '') ||
+    homeCity !== (profile.home_city ?? '') ||
+    homeRegion !== (profile.home_region ?? '') ||
+    homeZip !== (profile.home_postal_code ?? '') ||
+    instagram !== (profile.link_instagram ?? '') ||
+    tiktok !== (profile.link_tiktok ?? '') ||
+    youtube !== (profile.link_youtube ?? '') ||
+    website !== (profile.link_website ?? '');
+  const { guardElement, bypassGuard } = useDiscardGuard({
+    when: dirty,
+    title: 'Discard profile changes?',
+    body: 'Your edits are not saved. Leaving now loses them.',
+    discardLabel: 'Discard changes',
+  });
+
   async function changePhoto() {
     setPhotoBusy(true);
     setError(null);
@@ -126,7 +146,7 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
         link_website: web || null,
       });
       toast.show('Profile saved.');
-      router.back();
+      bypassGuard(() => router.back());
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save. Try again.');
     }
@@ -234,6 +254,7 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
 
         {error ? <ErrorText>{error}</ErrorText> : null}
         <Button label="Save" busy={update.isPending} disabled={update.isPending} onPress={save} />
+        {guardElement}
       </ScrollView>
     </KeyboardShift>
   );

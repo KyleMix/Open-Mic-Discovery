@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { DiscardPrompt } from '@/components/confirm-sheet';
 import { Body, Button, ErrorText, Field, KeyboardShift } from '@/components/ui';
 import { useSession } from '@/features/auth/session';
 import { REPORT_REASON_LABELS } from '@/features/safety/labels';
@@ -55,13 +56,23 @@ export function ReportModal({
   const [reason, setReason] = useState<ReportReason | null>(null);
   const [details, setDetails] = useState('');
   const [done, setDone] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
 
-  function close() {
+  function reallyClose() {
     setReason(null);
     setDetails('');
     setDone(false);
+    setConfirmDiscard(false);
     report.reset();
     onClose();
+  }
+
+  function close() {
+    if (!done && (reason !== null || details.trim())) {
+      setConfirmDiscard(true);
+      return;
+    }
+    reallyClose();
   }
 
   return (
@@ -69,7 +80,9 @@ export function ReportModal({
       <View style={styles.backdrop}>
         <KeyboardShift>
           <View style={styles.sheet}>
-            {done ? (
+            {confirmDiscard ? (
+              <DiscardPrompt onDiscard={reallyClose} onKeep={() => setConfirmDiscard(false)} />
+            ) : done ? (
               <>
                 <Text style={styles.title}>Report received</Text>
                 <Body>

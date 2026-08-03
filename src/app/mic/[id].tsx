@@ -34,6 +34,7 @@ import { freshness } from '@/features/discovery/freshness';
 import { useFlagListing, useMicDetail } from '@/features/discovery/queries';
 import { useIsFavorite, useToggleFavorite } from '@/features/favorites/queries';
 import { useSubmitClaim } from '@/features/producer/queries';
+import { DiscardPrompt } from '@/components/confirm-sheet';
 import { ReportModal } from '@/features/safety/components/report-modal';
 import { FLAG_REASON_LABELS } from '@/features/safety/labels';
 import { SignupCard } from '@/features/signups/components/signup-card';
@@ -460,12 +461,22 @@ function ClaimModal({
   const claim = useSubmitClaim();
   const [evidence, setEvidence] = useState('');
   const [done, setDone] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
 
-  function close() {
+  function reallyClose() {
     setEvidence('');
     setDone(false);
+    setConfirmDiscard(false);
     claim.reset();
     onClose();
+  }
+
+  function close() {
+    if (!done && evidence.trim()) {
+      setConfirmDiscard(true);
+      return;
+    }
+    reallyClose();
   }
 
   return (
@@ -473,7 +484,9 @@ function ClaimModal({
       <View style={styles.modalBackdrop}>
         <KeyboardShift>
           <View style={styles.modalSheet}>
-            {done ? (
+            {confirmDiscard ? (
+              <DiscardPrompt onDiscard={reallyClose} onKeep={() => setConfirmDiscard(false)} />
+            ) : done ? (
               <>
                 <Text style={styles.modalTitle}>Claim submitted</Text>
                 <Body>
@@ -601,13 +614,23 @@ function FlagModal({
   const [reason, setReason] = useState<FlagReason | null>(null);
   const [details, setDetails] = useState('');
   const [done, setDone] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
 
-  function close() {
+  function reallyClose() {
     setReason(null);
     setDetails('');
     setDone(false);
+    setConfirmDiscard(false);
     flag.reset();
     onClose();
+  }
+
+  function close() {
+    if (!done && (reason !== null || details.trim())) {
+      setConfirmDiscard(true);
+      return;
+    }
+    reallyClose();
   }
 
   async function submit() {
@@ -625,7 +648,9 @@ function FlagModal({
       <View style={styles.modalBackdrop}>
         <KeyboardShift>
           <View style={styles.modalSheet}>
-            {done ? (
+            {confirmDiscard ? (
+              <DiscardPrompt onDiscard={reallyClose} onKeep={() => setConfirmDiscard(false)} />
+            ) : done ? (
               <>
                 <Text style={styles.modalTitle}>Thanks for keeping it fresh</Text>
                 <Body>Your flag is in. Flags like this are what keep listings accurate.</Body>
