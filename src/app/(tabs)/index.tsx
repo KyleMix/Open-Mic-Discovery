@@ -14,6 +14,8 @@ import { MicCard, formatNextDate } from '@/features/discovery/components/mic-car
 import { MicMap } from '@/features/discovery/components/mic-map';
 import { radiusLabel } from '@/features/discovery/distance';
 import { DEFAULT_CENTER, requestForegroundLocation } from '@/features/discovery/location';
+import { geocodeHomeArea } from '@/features/profile/geocode';
+import { homeAreaLabel } from '@/features/profile/home-area';
 import { sortSoonestNearest } from '@/features/discovery/order';
 import { useNearbyMics, useSearchMics } from '@/features/discovery/queries';
 import { useFiltersStore } from '@/stores/filters';
@@ -31,13 +33,25 @@ export default function DiscoverScreen() {
   const performerDisciplines = usePerformerDisciplines(session?.user.id);
 
   // Home base: the private home area from the profile. A tap on the locate
-  // button overrides it with the device position for this session.
-  const [manualCenter, setManualCenter] = useState<{ lat: number; lng: number } | null>(null);
+  // button or a "browse near" search overrides it for this session.
+  const [manualCenter, setManualCenter] = useState<{
+    lat: number;
+    lng: number;
+    label: string;
+  } | null>(null);
   const profileCenter =
     profile.data?.home_lat != null && profile.data?.home_lng != null
       ? { lat: profile.data.home_lat, lng: profile.data.home_lng }
       : null;
-  const center = manualCenter ?? profileCenter ?? DEFAULT_CENTER;
+  const center = manualCenter
+    ? { lat: manualCenter.lat, lng: manualCenter.lng }
+    : (profileCenter ?? DEFAULT_CENTER);
+  // Nothing on this screen said where results were centered; now it does.
+  const centerLabel = manualCenter
+    ? manualCenter.label
+    : profileCenter
+      ? (profile.data ? homeAreaLabel(profile.data) : null) || 'your home area'
+      : 'Seattle (default area)';
 
   // First open defaults the discipline chips to what this performer does.
   useEffect(() => {
@@ -64,6 +78,22 @@ export default function DiscoverScreen() {
     [nearby.data, filters.dateBound],
   );
 
+  // Searching a place can move the whole browse experience there: type a
+  // city, tap "Show mics near", and the filtered nearby view recenters.
+  const [placeSearch, setPlaceSearch] = useState<'idle' | 'busy' | 'failed'>('idle');
+  async function browseNear(place: string) {
+    setPlaceSearch('busy');
+    const coords = await geocodeHomeArea(place);
+    if (coords) {
+      setManualCenter({ ...coords, label: place });
+      setSearch('');
+      setLocationNote(null);
+      setPlaceSearch('idle');
+    } else {
+      setPlaceSearch('failed');
+    }
+  }
+
   async function locateMe() {
     // In-context explanation lives right on the button and note below;
     // the OS prompt fires only after this deliberate tap.
@@ -72,7 +102,7 @@ export default function DiscoverScreen() {
     const result = await requestForegroundLocation();
     setLocating(false);
     if (result.status === 'granted') {
-      setManualCenter({ lat: result.lat, lng: result.lng });
+      setManualCenter({ lat: result.lat, lng: result.lng, label: 'your location' });
     } else if (result.status === 'denied') {
       setLocationNote(
         'Location is off. Showing your home area instead. Enable location in Settings to search right where you are.',
@@ -121,9 +151,35 @@ export default function DiscoverScreen() {
         </Pressable>
       </View>
       {locationNote ? <Text style={styles.locationNote}>{locationNote}</Text> : null}
+      {!searching ? (
+        <View style={styles.centerRow}>
+          <Text style={styles.centerLabel}>Near {centerLabel}</Text>
+          {manualCenter ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Go back to your home area"
+              onPress={() => setManualCenter(null)}
+            >
+              <Text style={styles.centerReset}>Back to home area</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
+      {!searching && !manualCenter && !profileCenter && !profile.isPending ? (
+        <Text style={styles.locationNote}>
+          Showing the default Seattle area, not your own. Use the locate button, or search your
+          city and tap Show mics near it.
+        </Text>
+      ) : null}
 
       {searching ? (
-        <SearchResults state={searchResults} onSelect={openMic} />
+        <SearchResults
+          state={searchResults}
+          onSelect={openMic}
+          query={search.trim()}
+          placeSearch={placeSearch}
+          onBrowseNear={browseNear}
+        />
       ) : (
         <>
           <FilterBar />
@@ -181,10 +237,30 @@ function useDebounced(value: string, ms: number): string {
 function SearchResults({
   state,
   onSelect,
+  query,
+  placeSearch,
+  onBrowseNear,
 }: {
   state: ReturnType<typeof useSearchMics>;
   onSelect: (seriesId: string) => void;
+  query: string;
+  placeSearch: 'idle' | 'busy' | 'failed';
+  onBrowseNear: (place: string) => void;
 }) {
+  const browseButton = (
+    <View style={styles.browseNear}>
+      <Button
+        label={`Show mics near "${query}"`}
+        kind="secondary"
+        busy={placeSearch === 'busy'}
+        onPress={() => onBrowseNear(query)}
+      />
+      {placeSearch === 'failed' ? (
+        <ErrorText>Could not find that place. Try a city name, like Portland, OR.</ErrorText>
+      ) : null}
+    </View>
+  );
+
   if (state.isPending || state.isLoading) {
     return <LoadingView label="Searching" />;
   }
@@ -200,7 +276,8 @@ function SearchResults({
     return (
       <View style={styles.stateWrap}>
         <Text style={styles.emptyTitle}>No matches</Text>
-        <Body>No mic, venue, or city matches that search.</Body>
+        <Body>No mic, venue, or city matches that search by name.</Body>
+        {browseButton}
       </View>
     );
   }
@@ -209,6 +286,7 @@ function SearchResults({
       data={state.data}
       keyExtractor={(r) => r.series_id}
       contentContainerStyle={styles.list}
+      ListHeaderComponent={browseButton}
       renderItem={({ item }) => {
         const fresh = freshness(item.last_confirmed_at, new Date());
         return (
@@ -274,6 +352,28 @@ const styles = StyleSheet.create({
     fontSize: type.caption.fontSize,
     paddingHorizontal: spacing.md,
     paddingTop: spacing.xs,
+  },
+  centerRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.md,
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.xs,
+  },
+  centerLabel: {
+    color: palette.textSecondary,
+    flexShrink: 1,
+    fontSize: type.caption.fontSize,
+  },
+  centerReset: {
+    color: palette.text,
+    fontFamily: fonts.medium,
+    fontSize: type.caption.fontSize,
+    textDecorationLine: 'underline',
+  },
+  browseNear: {
+    gap: spacing.sm,
   },
   mapWrap: {
     flex: 1,
