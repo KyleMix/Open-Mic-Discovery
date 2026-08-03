@@ -662,7 +662,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   factLabel: {
-    color: palette.textDisabled,
+    color: palette.textFaint,
     fontSize: type.caption.fontSize,
   },
   factValue: {

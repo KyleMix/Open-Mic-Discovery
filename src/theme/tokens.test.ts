@@ -20,14 +20,27 @@ describe('theme tokens', () => {
     expect(Object.keys(disciplineAccents).sort()).toEqual(['comedy', 'music', 'other', 'poetry']);
   });
 
-  it('body text meets WCAG AA contrast (4.5:1) on the background', () => {
-    expect(contrastRatio(palette.text, palette.bg)).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio(palette.textSecondary, palette.bg)).toBeGreaterThanOrEqual(4.5);
+  it('every text color meets WCAG AA contrast (4.5:1) on every surface it can sit on', () => {
+    const textColors = [
+      palette.text,
+      palette.textSecondary,
+      palette.textFaint,
+      palette.danger,
+      palette.success,
+      palette.warning,
+    ];
+    const surfaces = [palette.bg, palette.bgElevated, palette.bgPressed];
+    for (const color of textColors) {
+      for (const surface of surfaces) {
+        expect(contrastRatio(color, surface)).toBeGreaterThanOrEqual(4.5);
+      }
+    }
   });
 
-  it('discipline accents meet non-text contrast (3:1) on the background', () => {
+  it('discipline accents meet non-text contrast (3:1) on background surfaces', () => {
     for (const accent of Object.values(disciplineAccents)) {
       expect(contrastRatio(accent, palette.bg)).toBeGreaterThanOrEqual(3);
+      expect(contrastRatio(accent, palette.bgElevated)).toBeGreaterThanOrEqual(3);
     }
   });
 

@@ -52,7 +52,7 @@ export function Field({ label, error, ...inputProps }: FieldProps) {
       <Text style={styles.fieldLabel}>{label}</Text>
       <TextInput
         accessibilityLabel={label}
-        placeholderTextColor={palette.textDisabled}
+        placeholderTextColor={palette.textFaint}
         style={styles.input}
         {...inputProps}
       />

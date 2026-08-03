@@ -16,7 +16,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function freshness(lastConfirmedAt: string | null, now: Date): Freshness {
   if (!lastConfirmedAt) {
-    return { tier: 'unknown', label: 'Not yet confirmed', color: palette.textDisabled };
+    return { tier: 'unknown', label: 'Not yet confirmed', color: palette.textFaint };
   }
   const days = Math.floor((now.getTime() - new Date(lastConfirmedAt).getTime()) / DAY_MS);
   const label =
@@ -31,5 +31,5 @@ export function freshness(lastConfirmedAt: string | null, now: Date): Freshness 
   if (days <= 45) {
     return { tier: 'aging', label, color: palette.warning };
   }
-  return { tier: 'stale', label, color: palette.textDisabled };
+  return { tier: 'stale', label, color: palette.textFaint };
 }

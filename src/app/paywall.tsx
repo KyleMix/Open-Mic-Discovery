@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
     fontSize: type.heading.fontSize,
   },
   finePrint: {
-    color: palette.textDisabled,
+    color: palette.textFaint,
     fontSize: type.caption.fontSize,
     lineHeight: type.caption.lineHeight,
   },

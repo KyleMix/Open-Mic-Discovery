@@ -515,7 +515,7 @@ const styles = StyleSheet.create({
     fontSize: type.body.fontSize,
   },
   cancelled: {
-    color: palette.textDisabled,
+    color: palette.textFaint,
     textDecorationLine: 'line-through',
   },
   cancelledNote: {

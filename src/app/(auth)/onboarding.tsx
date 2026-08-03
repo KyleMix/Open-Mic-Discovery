@@ -124,7 +124,7 @@ export default function OnboardingScreen() {
                   <Glyph
                     name={disciplineGlyphs[d]}
                     size={28}
-                    color={disciplines.includes(d) ? disciplineAccents[d] : palette.textDisabled}
+                    color={disciplines.includes(d) ? disciplineAccents[d] : palette.textFaint}
                   />
                 }
               />

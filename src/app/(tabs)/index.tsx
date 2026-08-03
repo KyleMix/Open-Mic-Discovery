@@ -127,7 +127,7 @@ export default function DiscoverScreen() {
         <TextInput
           accessibilityLabel="Search by city or venue"
           placeholder="Search city or venue"
-          placeholderTextColor={palette.textDisabled}
+          placeholderTextColor={palette.textFaint}
           style={styles.searchInput}
           value={search}
           onChangeText={setSearch}

@@ -13,7 +13,7 @@ export default function TabsLayout() {
         headerShadowVisible: false,
         tabBarStyle: { backgroundColor: palette.bgElevated, borderTopColor: palette.border },
         tabBarActiveTintColor: disciplineAccents.music,
-        tabBarInactiveTintColor: palette.textDisabled,
+        tabBarInactiveTintColor: palette.textFaint,
       }}
     >
       <Tabs.Screen
