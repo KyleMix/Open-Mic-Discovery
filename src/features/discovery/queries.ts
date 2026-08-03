@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { getSupabase } from '@/lib/supabase';
 import { filtersToRpcArgs, type DiscoveryFilters } from '@/stores/filters';
@@ -28,6 +28,9 @@ export function useSearchMics(query: string) {
   return useQuery({
     queryKey: ['mics', 'search', trimmed],
     enabled: trimmed.length >= 2,
+    // Typing re-keys the query per keystroke; keeping the previous results
+    // on screen stops the pane flashing back to a spinner mid-word.
+    placeholderData: keepPreviousData,
     queryFn: async (): Promise<SearchResult[]> => {
       const { data, error } = await getSupabase().rpc('search_mics', { p_query: trimmed });
       if (error) {

@@ -3,7 +3,9 @@ import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { Glyph } from '@/components/glyph';
 import { Body, Button, ErrorText, LoadingView } from '@/components/ui';
+import { freshness } from '@/features/discovery/freshness';
 import { useOwnProfile, usePerformerDisciplines } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
 import { FilterBar } from '@/features/discovery/components/filter-bar';
@@ -47,9 +49,11 @@ export default function DiscoverScreen() {
   const [locating, setLocating] = useState(false);
   const [locationNote, setLocationNote] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  // One search RPC per pause in typing, not one per keystroke.
+  const debouncedSearch = useDebounced(search, 300);
 
   const nearby = useNearbyMics(filters, center);
-  const searchResults = useSearchMics(search);
+  const searchResults = useSearchMics(debouncedSearch);
   const searching = search.trim().length >= 2;
 
   // The list leads with what is happening soonest, closest first. The
@@ -165,6 +169,15 @@ export default function DiscoverScreen() {
   );
 }
 
+function useDebounced(value: string, ms: number): string {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), ms);
+    return () => clearTimeout(timer);
+  }, [value, ms]);
+  return debounced;
+}
+
 function SearchResults({
   state,
   onSelect,
@@ -196,22 +209,29 @@ function SearchResults({
       data={state.data}
       keyExtractor={(r) => r.series_id}
       contentContainerStyle={styles.list}
-      renderItem={({ item }) => (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`${item.title} in ${item.city}`}
-          onPress={() => onSelect(item.series_id)}
-          style={({ pressed }) => [
-            styles.searchResult,
-            pressed && { backgroundColor: palette.bgPressed },
-          ]}
-        >
-          <Text style={styles.searchResultTitle}>{item.title}</Text>
-          <Text style={styles.searchResultMeta}>
-            {item.venue_name}, {item.city} · {formatNextDate(item.next_starts_at)}
-          </Text>
-        </Pressable>
-      )}
+      renderItem={({ item }) => {
+        const fresh = freshness(item.last_confirmed_at, new Date());
+        return (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${item.title} in ${item.city}, ${fresh.label}`}
+            onPress={() => onSelect(item.series_id)}
+            style={({ pressed }) => [
+              styles.searchResult,
+              pressed && { backgroundColor: palette.bgPressed },
+            ]}
+          >
+            <Text style={styles.searchResultTitle}>{item.title}</Text>
+            <Text style={styles.searchResultMeta}>
+              {item.venue_name}, {item.city} · {formatNextDate(item.next_starts_at)}
+            </Text>
+            <View style={styles.searchResultFresh}>
+              <Glyph name="freshness-badge" size={14} color={fresh.color} />
+              <Text style={[styles.searchResultMeta, { color: fresh.color }]}>{fresh.label}</Text>
+            </View>
+          </Pressable>
+        );
+      }}
     />
   );
 }
@@ -289,5 +309,10 @@ const styles = StyleSheet.create({
   searchResultMeta: {
     color: palette.textSecondary,
     fontSize: type.caption.fontSize,
+  },
+  searchResultFresh: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.xs,
   },
 });
