@@ -14,7 +14,7 @@ import { useEffect, type ReactNode } from 'react';
 import { Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { SessionProvider, useSession } from '@/features/auth/session';
 import { useLatestEula, useOwnProfile } from '@/features/auth/queries';
-import { registerPushToken } from '@/lib/notifications';
+import { observeNotificationTaps, registerPushToken } from '@/lib/notifications';
 import { queryClient } from '@/lib/query-client';
 import { initSentry } from '@/lib/sentry';
 import { palette } from '@/theme';
@@ -58,6 +58,13 @@ function AuthGate({ children }: { children: ReactNode }) {
       registerPushToken(session.user.id);
     }
   }, [session?.user.id]);
+
+  // Tapping a push opens the mic it is about instead of the last screen.
+  useEffect(() => {
+    return observeNotificationTaps((path) => {
+      router.push(path as Parameters<typeof router.push>[0]);
+    });
+  }, [router]);
 
   useEffect(() => {
     if (waiting || profile.isError || eula.isError) {

@@ -43,3 +43,90 @@ export async function registerPushToken(userId: string): Promise<void> {
     // No push in this environment; nothing to do.
   }
 }
+
+type PushPayload = {
+  occurrence_id?: string;
+  series_id?: string;
+};
+
+function asPushPayload(data: unknown): PushPayload | null {
+  if (typeof data !== 'object' || data === null) {
+    return null;
+  }
+  const d = data as Record<string, unknown>;
+  const occurrence = typeof d.occurrence_id === 'string' ? d.occurrence_id : undefined;
+  const series = typeof d.series_id === 'string' ? d.series_id : undefined;
+  return occurrence || series ? { occurrence_id: occurrence, series_id: series } : null;
+}
+
+/** The mic page a push payload points at, or null when it points nowhere. */
+export async function routeForPushPayload(data: unknown): Promise<string | null> {
+  const payload = asPushPayload(data);
+  if (!payload) {
+    return null;
+  }
+  if (payload.series_id) {
+    return `/mic/${payload.series_id}`;
+  }
+  if (payload.occurrence_id) {
+    try {
+      const { data: occurrence } = await getSupabase()
+        .from('mic_occurrences')
+        .select('series_id')
+        .eq('id', payload.occurrence_id)
+        .maybeSingle();
+      if (occurrence?.series_id) {
+        return `/mic/${occurrence.series_id}`;
+      }
+    } catch {
+      // Offline or gone; landing on the last screen beats crashing the tap.
+    }
+  }
+  return null;
+}
+
+type NotificationResponseLike = {
+  notification: { request: { content: { data?: unknown } } };
+};
+
+/**
+ * Makes push notifications tappable: signup updates, on-deck alerts,
+ * reminders, and new-mic alerts open the mic they are about, both from a
+ * cold start and while the app is running. Returns an unsubscribe.
+ */
+export function observeNotificationTaps(onRoute: (path: string) => void): () => void {
+  if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) {
+    return () => undefined;
+  }
+  let removed = false;
+  let subscription: { remove: () => void } | null = null;
+  (async () => {
+    try {
+      const Notifications = await import('expo-notifications');
+      const respond = async (response: NotificationResponseLike | null) => {
+        if (!response) {
+          return;
+        }
+        const path = await routeForPushPayload(response.notification.request.content.data);
+        if (path && !removed) {
+          onRoute(path);
+        }
+      };
+      await respond(await Notifications.getLastNotificationResponseAsync());
+      const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+        void respond(response);
+      });
+      if (removed) {
+        sub.remove();
+      } else {
+        subscription = sub;
+      }
+    } catch {
+      // No notifications in this environment; nothing to observe.
+    }
+  })();
+  return () => {
+    removed = true;
+    subscription?.remove();
+  };
+}
