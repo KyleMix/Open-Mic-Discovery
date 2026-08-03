@@ -21,11 +21,20 @@ export async function signInWithEmail(email: string, password: string): Promise<
   }
 }
 
-export async function signUpWithEmail(email: string, password: string): Promise<void> {
-  const { error } = await getSupabase().auth.signUp({ email, password });
+/**
+ * Creates the account. When the project requires email confirmation,
+ * signUp succeeds with no session; the caller must tell the user to go
+ * check their inbox instead of silently doing nothing.
+ */
+export async function signUpWithEmail(
+  email: string,
+  password: string,
+): Promise<{ needsEmailConfirmation: boolean }> {
+  const { data, error } = await getSupabase().auth.signUp({ email, password });
   if (error) {
     throw new Error(authMessage(error, 'Could not reach the server. Check your connection.'));
   }
+  return { needsEmailConfirmation: data.session === null };
 }
 
 export async function signOut(): Promise<void> {
