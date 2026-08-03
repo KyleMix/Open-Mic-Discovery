@@ -106,6 +106,8 @@ type ExistingSeries = {
   start_time: string;
   timezone: string;
   signup_opens: string | null;
+  /** Current venue, shown so the venue can be changed to another listed one. */
+  venue_label: string | null;
   cost_cents: number;
   cost_note: string | null;
   set_length_minutes: number | null;
@@ -153,11 +155,13 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
   const [capacity, setCapacity] = useState(existing?.capacity ? String(existing.capacity) : '');
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Venue (create mode only)
+  // Venue. In edit mode the current venue shows with a Change action;
+  // picking another listed venue moves the whole series there. Adding a
+  // brand-new venue is create-mode only.
   const [venueQuery, setVenueQuery] = useState('');
   const venueResults = useVenueSearch(venueQuery);
   const [venueId, setVenueId] = useState<string | undefined>();
-  const [venueLabel, setVenueLabel] = useState<string | null>(null);
+  const [venueLabel, setVenueLabel] = useState<string | null>(existing?.venue_label ?? null);
   const [addingVenue, setAddingVenue] = useState(false);
   const [venueName, setVenueName] = useState('');
   const [venueAddress, setVenueAddress] = useState('');
@@ -192,6 +196,13 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
     if (!Number.isFinite(cost) || cost < 0) {
       setFormError('Cost must be a number.');
       return;
+    }
+    if (existing) {
+      // Editing: a cleared venue must be re-picked before saving.
+      if (!venueId && !venueLabel) {
+        setFormError('Pick the venue for this mic.');
+        return;
+      }
     }
     if (!existing) {
       if (!venueId && !addingVenue) {
@@ -495,10 +506,12 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
         placeholder="What should performers know before they show up?"
       />
 
-      {!existing ? (
-        <>
-          <Text style={styles.sectionLabel}>Venue</Text>
-          {venueLabel ? (
+      <>
+        <Text style={styles.sectionLabel}>Venue</Text>
+        {existing ? (
+          <Body>Changing the venue moves this and all future nights there.</Body>
+        ) : null}
+        {venueLabel ? (
             <View style={styles.venuePicked}>
               <Text style={styles.chipText}>{venueLabel}</Text>
               <Button
@@ -565,15 +578,16 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
                   </Text>
                 </Pressable>
               ))}
-              <Button
-                label="Venue is not listed: add it"
-                kind="secondary"
-                onPress={() => setAddingVenue(true)}
-              />
+              {!existing ? (
+                <Button
+                  label="Venue is not listed: add it"
+                  kind="secondary"
+                  onPress={() => setAddingVenue(true)}
+                />
+              ) : null}
             </>
           )}
-        </>
-      ) : null}
+      </>
 
       {formError ? <ErrorText>{formError}</ErrorText> : null}
       {error ? <ErrorText>{error}</ErrorText> : null}
