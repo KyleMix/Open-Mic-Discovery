@@ -65,7 +65,7 @@ export type MyNight = {
     id: string;
     starts_at: string;
     status: Database['public']['Enums']['occurrence_status'];
-    series: { id: string; title: string } | null;
+    series: { id: string; title: string; timezone: string } | null;
   } | null;
 };
 
@@ -81,7 +81,7 @@ export function useMyNights(userId: string | undefined) {
       const { data, error } = await getSupabase()
         .from('signups')
         .select(
-          'id, status, slot_position, occurrence:mic_occurrences(id, starts_at, status, series:mic_series(id, title))',
+          'id, status, slot_position, occurrence:mic_occurrences(id, starts_at, status, series:mic_series(id, title, timezone))',
         )
         .eq('performer_id', userId!)
         .order('created_at', { ascending: false })

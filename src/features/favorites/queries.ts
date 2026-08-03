@@ -12,7 +12,7 @@ export function useFavorites(userId: string | undefined) {
       const { data, error } = await supabase
         .from('favorites')
         .select(
-          'series_id, created_at, series:mic_series(id, title, disciplines, rrule, start_time, last_confirmed_at, venue:venues(name, city))',
+          'series_id, created_at, series:mic_series(id, title, disciplines, rrule, start_time, timezone, last_confirmed_at, venue:venues(name, city))',
         )
         .eq('profile_id', userId!)
         .order('created_at', { ascending: false });

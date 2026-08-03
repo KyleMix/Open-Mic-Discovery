@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Glyph, disciplineGlyphs, signupMethodGlyphs } from '@/components/glyph';
 import { useSession } from '@/features/auth/session';
+import { formatNextDate } from '@/features/discovery/date-label';
 import { formatMilesFromMeters } from '@/features/discovery/distance';
 import { freshness } from '@/features/discovery/freshness';
 import type { NearbyMic } from '@/features/discovery/queries';
@@ -26,17 +27,8 @@ export const SIGNUP_METHOD_DESCRIPTIONS: Record<NearbyMic['signup_method'], stri
   host_booked: 'The host chooses the lineup.',
 };
 
-export function formatNextDate(startsAt: string | null): string {
-  if (!startsAt) {
-    return 'No upcoming date';
-  }
-  const date = new Date(startsAt);
-  return date.toLocaleDateString(undefined, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  });
-}
+// Re-exported for the screens that already import it from here.
+export { formatNextDate };
 
 export function costLabel(costCents: number): string {
   return costCents === 0 ? 'Free' : `$${(costCents / 100).toFixed(costCents % 100 === 0 ? 0 : 2)}`;
@@ -52,7 +44,7 @@ export function MicCard({ mic, onPress }: Props) {
   const recurrence = describeRecurrence(mic.rrule, mic.start_time);
   // Pattern and concrete date together: "Every Tuesday, 8:00 PM" alone hides
   // whether the next night is tomorrow or twelve days out.
-  const nextDate = formatNextDate(mic.next_starts_at);
+  const nextDate = formatNextDate(mic.next_starts_at, mic.timezone);
   const when = recurrence ? `${recurrence} · ${nextDate}` : nextDate;
 
   return (

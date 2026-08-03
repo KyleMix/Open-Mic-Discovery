@@ -25,6 +25,7 @@ import { useSubmitClaim } from '@/features/producer/queries';
 import { ReportModal } from '@/features/safety/components/report-modal';
 import { FLAG_REASON_LABELS } from '@/features/safety/labels';
 import { SignupCard } from '@/features/signups/components/signup-card';
+import { formatNextDateLong } from '@/features/discovery/date-label';
 import { describeRecurrence, formatLocalTime } from '@/features/discovery/recurrence';
 import { formatInZone, zoneDiffersFromDevice } from '@/features/discovery/timezone';
 import { disciplineAccents, fonts, palette, spacing, type, type Discipline } from '@/theme';
@@ -169,12 +170,7 @@ function MicDetail({
         <Text style={styles.when}>{recurrence ?? 'Schedule varies'}</Text>
         {next ? (
           <Text style={styles.nextDate}>
-            Next:{' '}
-            {formatInZone(next.starts_at, series.timezone, {
-              weekday: 'long',
-              month: 'long',
-              day: 'numeric',
-            })}
+            Next: {formatNextDateLong(next.starts_at, series.timezone)}
             {next.doors_at
               ? ` · Doors ${formatInZone(next.doors_at, series.timezone, { hour: 'numeric', minute: '2-digit' })}`
               : ''}

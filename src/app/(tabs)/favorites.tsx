@@ -85,7 +85,9 @@ export default function FavoritesScreen() {
                   {s.venue?.name}, {s.venue?.city} ·{' '}
                   {describeRecurrence(s.rrule, s.start_time) ?? 'Schedule varies'}
                 </Text>
-                <Text style={styles.nextDate}>Next: {formatNextDate(item.next_starts_at)}</Text>
+                <Text style={styles.nextDate}>
+                  Next: {formatNextDate(item.next_starts_at, s.timezone)}
+                </Text>
                 <View style={styles.freshRow}>
                   <Glyph name="freshness-badge" size={14} color={fresh.color} />
                   <Text style={[styles.cardMeta, { color: fresh.color }]}>{fresh.label}</Text>
