@@ -167,6 +167,16 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
   );
   const [capacity, setCapacity] = useState(existing?.capacity ? String(existing.capacity) : '');
   const [formError, setFormError] = useState<string | null>(null);
+  // Inline validation for the text fields; the chip-driven requirements
+  // (disciplines, schedule, venue) still surface at submit, next to the
+  // button, because there is no blur moment to hang them on.
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string | null>>({});
+  const setFieldError = (field: string, message: string | null) =>
+    setFieldErrors((cur) => ({ ...cur, [field]: message }));
+  const numberError = (value: string, label: string): string | null =>
+    value.trim() && (!Number.isFinite(Number(value)) || Number(value) < 0)
+      ? `${label} must be a number.`
+      : null;
 
   // Venue. In edit mode the current venue shows with a Change action;
   // picking another listed venue moves the whole series there. Adding a
@@ -313,7 +323,12 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
       <Field
         label="Mic name"
         value={title}
-        onChangeText={setTitle}
+        onChangeText={(v) => {
+          setTitle(v);
+          setFieldError('title', null);
+        }}
+        onBlur={() => setFieldError('title', title.trim() ? null : 'Give the mic a name.')}
+        error={fieldErrors.title}
         placeholder="The Basement Open Mic"
       />
 
@@ -537,7 +552,12 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
           <Field
             label="Cost ($)"
             value={costDollars}
-            onChangeText={setCostDollars}
+            onChangeText={(v) => {
+              setCostDollars(v);
+              setFieldError('cost', null);
+            }}
+            onBlur={() => setFieldError('cost', numberError(costDollars, 'Cost'))}
+            error={fieldErrors.cost}
             inputMode="decimal"
           />
         </View>
@@ -545,12 +565,27 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
           <Field
             label="Set length (min)"
             value={setLength}
-            onChangeText={setSetLength}
+            onChangeText={(v) => {
+              setSetLength(v);
+              setFieldError('setLength', null);
+            }}
+            onBlur={() => setFieldError('setLength', numberError(setLength, 'Set length'))}
+            error={fieldErrors.setLength}
             inputMode="numeric"
           />
         </View>
         <View style={styles.pairItem}>
-          <Field label="Spots" value={capacity} onChangeText={setCapacity} inputMode="numeric" />
+          <Field
+            label="Spots"
+            value={capacity}
+            onChangeText={(v) => {
+              setCapacity(v);
+              setFieldError('capacity', null);
+            }}
+            onBlur={() => setFieldError('capacity', numberError(capacity, 'Spots'))}
+            error={fieldErrors.capacity}
+            inputMode="numeric"
+          />
         </View>
       </View>
       <Field

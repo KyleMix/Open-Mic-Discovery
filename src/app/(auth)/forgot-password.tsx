@@ -54,7 +54,11 @@ export default function ForgotPasswordScreen() {
         autoComplete="email"
         inputMode="email"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={(v) => {
+          setEmail(v);
+          setFieldError(null);
+        }}
+        onBlur={() => setFieldError(email ? validateEmail(email) : null)}
         error={fieldError}
       />
       {error ? <ErrorText>{error}</ErrorText> : null}

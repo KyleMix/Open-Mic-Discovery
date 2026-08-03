@@ -47,6 +47,15 @@ export default function OnboardingScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const setFieldError = (field: string, message: string | null) =>
+    setErrors((cur) => ({ ...cur, [field]: message }));
+  const clearFieldError = (field: string) => setFieldError(field, null);
+  const areaOnBlur = () =>
+    setFieldError(
+      'homeArea',
+      homeAreaError(normalizeHomeArea({ city: homeCity, region: homeRegion, postalCode: homeZip })),
+    );
+
   const toggleDiscipline = (d: Discipline) => {
     setDisciplines((current) =>
       current.includes(d) ? current.filter((x) => x !== d) : [...current, d],
@@ -145,14 +154,22 @@ export default function OnboardingScreen() {
             label="Handle"
             autoCapitalize="none"
             value={handle}
-            onChangeText={(v) => setHandle(v.toLowerCase())}
+            onChangeText={(v) => {
+              setHandle(v.toLowerCase());
+              clearFieldError('handle');
+            }}
+            onBlur={() => setFieldError('handle', validateHandle(handle))}
             error={errors.handle}
             placeholder="lowercase letters, numbers, underscores"
           />
           <Field
             label="Display name"
             value={displayName}
-            onChangeText={setDisplayName}
+            onChangeText={(v) => {
+              setDisplayName(v);
+              clearFieldError('displayName');
+            }}
+            onBlur={() => setFieldError('displayName', validateDisplayName(displayName))}
             error={errors.displayName}
           />
           <Body>
@@ -164,7 +181,11 @@ export default function OnboardingScreen() {
               <Field
                 label="City"
                 value={homeCity}
-                onChangeText={setHomeCity}
+                onChangeText={(v) => {
+                  setHomeCity(v);
+                  clearFieldError('homeArea');
+                }}
+                onBlur={areaOnBlur}
                 placeholder="Seattle"
               />
             </View>
@@ -173,7 +194,11 @@ export default function OnboardingScreen() {
                 label="State"
                 autoCapitalize="characters"
                 value={homeRegion}
-                onChangeText={setHomeRegion}
+                onChangeText={(v) => {
+                  setHomeRegion(v);
+                  clearFieldError('homeArea');
+                }}
+                onBlur={areaOnBlur}
                 placeholder="WA"
               />
             </View>
@@ -182,7 +207,11 @@ export default function OnboardingScreen() {
             label="Or ZIP code"
             inputMode="numeric"
             value={homeZip}
-            onChangeText={setHomeZip}
+            onChangeText={(v) => {
+              setHomeZip(v);
+              clearFieldError('homeArea');
+            }}
+            onBlur={areaOnBlur}
             placeholder="98101"
           />
           {errors.homeArea ? <ErrorText>{errors.homeArea}</ErrorText> : null}
@@ -190,7 +219,11 @@ export default function OnboardingScreen() {
             label="Birth year"
             inputMode="numeric"
             value={birthYear}
-            onChangeText={setBirthYear}
+            onChangeText={(v) => {
+              setBirthYear(v);
+              clearFieldError('birthYear');
+            }}
+            onBlur={() => setFieldError('birthYear', validateBirthYear(birthYear, new Date()))}
             error={errors.birthYear}
             placeholder="1994"
           />

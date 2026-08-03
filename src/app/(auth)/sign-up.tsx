@@ -64,7 +64,11 @@ export default function SignUpScreen() {
         autoComplete="email"
         inputMode="email"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={(v) => {
+          setEmail(v);
+          setFieldErrors((e) => ({ ...e, email: null }));
+        }}
+        onBlur={() => setFieldErrors((e) => ({ ...e, email: validateEmail(email) }))}
         error={fieldErrors.email}
       />
       <Field
@@ -72,7 +76,11 @@ export default function SignUpScreen() {
         autoComplete="new-password"
         secureTextEntry
         value={password}
-        onChangeText={setPassword}
+        onChangeText={(v) => {
+          setPassword(v);
+          setFieldErrors((e) => ({ ...e, password: null }));
+        }}
+        onBlur={() => setFieldErrors((e) => ({ ...e, password: validatePassword(password) }))}
         error={fieldErrors.password}
       />
       <Body>Passwords are at least 10 characters.</Body>

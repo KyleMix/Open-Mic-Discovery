@@ -90,6 +90,15 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
     discardLabel: 'Discard changes',
   });
 
+  const setFieldError = (field: string, message: string | null) =>
+    setErrors((cur) => ({ ...cur, [field]: message }));
+  const clearFieldError = (field: string) => setFieldError(field, null);
+  const areaOnBlur = () =>
+    setFieldError(
+      'homeArea',
+      homeAreaError(normalizeHomeArea({ city: homeCity, region: homeRegion, postalCode: homeZip })),
+    );
+
   async function changePhoto() {
     setPhotoBusy(true);
     setError(null);
@@ -174,7 +183,11 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
         <Field
           label="Name"
           value={displayName}
-          onChangeText={setDisplayName}
+          onChangeText={(v) => {
+            setDisplayName(v);
+            clearFieldError('displayName');
+          }}
+          onBlur={() => setFieldError('displayName', validateDisplayName(displayName))}
           error={errors.displayName}
         />
         <Field
@@ -192,14 +205,27 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
         </Body>
         <View style={styles.areaRow}>
           <View style={styles.areaCity}>
-            <Field label="City" value={homeCity} onChangeText={setHomeCity} placeholder="Seattle" />
+            <Field
+              label="City"
+              value={homeCity}
+              onChangeText={(v) => {
+                setHomeCity(v);
+                clearFieldError('homeArea');
+              }}
+              onBlur={areaOnBlur}
+              placeholder="Seattle"
+            />
           </View>
           <View style={styles.areaRegion}>
             <Field
               label="State"
               autoCapitalize="characters"
               value={homeRegion}
-              onChangeText={setHomeRegion}
+              onChangeText={(v) => {
+                setHomeRegion(v);
+                clearFieldError('homeArea');
+              }}
+              onBlur={areaOnBlur}
               placeholder="WA"
             />
           </View>
@@ -208,7 +234,11 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
           label="Or ZIP code"
           inputMode="numeric"
           value={homeZip}
-          onChangeText={setHomeZip}
+          onChangeText={(v) => {
+            setHomeZip(v);
+            clearFieldError('homeArea');
+          }}
+          onBlur={areaOnBlur}
           placeholder="98101"
         />
         {errors.homeArea ? <ErrorText>{errors.homeArea}</ErrorText> : null}
@@ -220,7 +250,11 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
           autoCapitalize="none"
           autoCorrect={false}
           value={instagram}
-          onChangeText={setInstagram}
+          onChangeText={(v) => {
+            setInstagram(v);
+            clearFieldError('instagram');
+          }}
+          onBlur={() => setFieldError('instagram', handleError(normalizeHandle(instagram)))}
           error={errors.instagram}
           placeholder="@yourname"
         />
@@ -229,7 +263,11 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
           autoCapitalize="none"
           autoCorrect={false}
           value={tiktok}
-          onChangeText={setTiktok}
+          onChangeText={(v) => {
+            setTiktok(v);
+            clearFieldError('tiktok');
+          }}
+          onBlur={() => setFieldError('tiktok', handleError(normalizeHandle(tiktok)))}
           error={errors.tiktok}
           placeholder="@yourname"
         />
@@ -238,7 +276,11 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
           autoCapitalize="none"
           autoCorrect={false}
           value={youtube}
-          onChangeText={setYoutube}
+          onChangeText={(v) => {
+            setYoutube(v);
+            clearFieldError('youtube');
+          }}
+          onBlur={() => setFieldError('youtube', urlError(normalizeUrl(youtube)))}
           error={errors.youtube}
           placeholder="youtube.com/@yourname"
         />
@@ -247,7 +289,11 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
           autoCapitalize="none"
           autoCorrect={false}
           value={website}
-          onChangeText={setWebsite}
+          onChangeText={(v) => {
+            setWebsite(v);
+            clearFieldError('website');
+          }}
+          onBlur={() => setFieldError('website', urlError(normalizeUrl(website)))}
           error={errors.website}
           placeholder="yourname.com"
         />

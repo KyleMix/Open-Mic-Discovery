@@ -100,7 +100,11 @@ export default function ResetPasswordScreen() {
         autoComplete="new-password"
         secureTextEntry
         value={password}
-        onChangeText={setPassword}
+        onChangeText={(v) => {
+          setPassword(v);
+          setFieldError(null);
+        }}
+        onBlur={() => setFieldError(password ? validatePassword(password) : null)}
         error={fieldError}
       />
       <Body>Passwords are at least 10 characters.</Body>
