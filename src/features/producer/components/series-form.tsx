@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import tzLookup from 'tz-lookup';
 
 import { Glyph, disciplineGlyphs } from '@/components/glyph';
 import { Body, Button, ErrorText, Field } from '@/components/ui';
@@ -142,6 +143,8 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
   const [timezone, setTimezone] = useState<string>(
     existing?.timezone ?? deviceTimezone() ?? 'America/Los_Angeles',
   );
+  // A hand-picked timezone always wins; otherwise the venue pin decides.
+  const [timezoneTouched, setTimezoneTouched] = useState(false);
   const [signupOpensDays, setSignupOpensDays] = useState(
     existing ? (parseIntervalDays(existing.signup_opens) ?? 7) : 7,
   );
@@ -169,6 +172,19 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
   const [venueCity, setVenueCity] = useState('');
   const [venueRegion, setVenueRegion] = useState('');
   const [pin, setPin] = useState<{ lat: number; lng: number } | null>(null);
+
+  function placePin(next: { lat: number; lng: number } | null) {
+    setPin(next);
+    // The venue's coordinates know their own timezone; a producer placing
+    // a Chicago pin should not have to know their bar is Central time.
+    if (next && !timezoneTouched) {
+      try {
+        setTimezone(tzLookup(next.lat, next.lng));
+      } catch {
+        // Out-of-range coordinates; keep the current choice.
+      }
+    }
+  }
 
   const startTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
   const rrule = buildRrule(recurrence);
@@ -426,7 +442,10 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
             accessibilityRole="button"
             accessibilityState={{ selected: timezone === t.id }}
             accessibilityLabel={`${t.label} time`}
-            onPress={() => setTimezone(t.id)}
+            onPress={() => {
+              setTimezone(t.id);
+              setTimezoneTouched(true);
+            }}
             style={chipStyle(timezone === t.id)}
           >
             <Text style={styles.chipText}>{t.label}</Text>
@@ -546,7 +565,7 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
                 </View>
               </View>
               <Body>Place the venue so performers can find it.</Body>
-              <PinPicker pin={pin} onChange={setPin} />
+              <PinPicker pin={pin} onChange={placePin} />
               <Button
                 label="Search existing venues instead"
                 kind="secondary"
