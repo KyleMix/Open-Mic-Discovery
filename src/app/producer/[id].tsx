@@ -35,6 +35,7 @@ export default function ManageSeriesScreen() {
   const [editing, setEditing] = useState(false);
   const [posterBusy, setPosterBusy] = useState(false);
   const [posterError, setPosterError] = useState<string | null>(null);
+  const [confirmPause, setConfirmPause] = useState(false);
   const [nightAction, setNightAction] = useState<{
     occurrence: Occurrence;
     mode: 'cancel' | 'edit';
@@ -109,6 +110,17 @@ export default function ManageSeriesScreen() {
       />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>{series.title}</Text>
+        {series.moderation_status === 'pending' ? (
+          <Text style={styles.heldNote}>
+            Held for review: a moderator checks the wording before this listing goes public. Right
+            now only you can see it.
+          </Text>
+        ) : series.moderation_status === 'rejected' ? (
+          <Text style={styles.rejectedNote}>
+            This listing was rejected in review and is not public. Edit the wording to resubmit,
+            or contact support.
+          </Text>
+        ) : null}
         <Text style={styles.meta}>
           {describeRecurrence(series.rrule, series.start_time) ?? 'Schedule varies'} ·{' '}
           {series.venue?.name}
@@ -126,6 +138,9 @@ export default function ManageSeriesScreen() {
           busy={confirm.isPending}
           onPress={() => confirm.mutate(series.id)}
         />
+        {confirm.isError ? (
+          <ErrorText>Could not confirm the listing. Check your connection and try again.</ErrorText>
+        ) : null}
         <View style={styles.buttonRow}>
           <View style={styles.buttonFlex}>
             <Button
@@ -146,12 +161,16 @@ export default function ManageSeriesScreen() {
               label={series.is_active ? 'Pause listing' : 'Resume listing'}
               kind="secondary"
               busy={updateSeries.isPending && !editing}
-              onPress={() =>
-                updateSeries.mutate({
-                  seriesId: series.id,
-                  patch: { is_active: !series.is_active },
-                })
-              }
+              onPress={() => {
+                if (series.is_active) {
+                  setConfirmPause(true);
+                } else {
+                  updateSeries.mutate({
+                    seriesId: series.id,
+                    patch: { is_active: true },
+                  });
+                }
+              }}
             />
           </View>
         </View>
@@ -276,6 +295,31 @@ export default function ManageSeriesScreen() {
           mode={nightAction.mode}
           onClose={() => setNightAction(null)}
         />
+      ) : null}
+
+      {confirmPause ? (
+        <Modal visible transparent animationType="slide" onRequestClose={() => setConfirmPause(false)}>
+          <View style={styles.modalBackdrop}>
+            <View style={styles.modalSheet}>
+              <Text style={styles.sectionTitle}>Pause this listing?</Text>
+              <Body>
+                Pausing removes the upcoming nights from the schedule until you resume. Performers
+                can still find the listing, with no dates.
+              </Body>
+              <Button
+                label="Pause listing"
+                busy={updateSeries.isPending}
+                onPress={() =>
+                  updateSeries.mutate(
+                    { seriesId: series.id, patch: { is_active: false } },
+                    { onSettled: () => setConfirmPause(false) },
+                  )
+                }
+              />
+              <Button label="Back" kind="secondary" onPress={() => setConfirmPause(false)} />
+            </View>
+          </View>
+        </Modal>
       ) : null}
     </View>
   );
@@ -406,6 +450,14 @@ const styles = StyleSheet.create({
   },
   meta: {
     color: palette.textSecondary,
+    fontSize: type.caption.fontSize,
+  },
+  heldNote: {
+    color: palette.warning,
+    fontSize: type.caption.fontSize,
+  },
+  rejectedNote: {
+    color: palette.danger,
     fontSize: type.caption.fontSize,
   },
   freshRow: {

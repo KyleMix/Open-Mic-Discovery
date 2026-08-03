@@ -50,7 +50,7 @@ export default function SettingsScreen() {
       ) : blocked.isError ? (
         <ErrorText>Could not load blocked users.</ErrorText>
       ) : blocked.data.length === 0 ? (
-        <Body>Nobody is blocked. Blocking hides a user from you everywhere, server side.</Body>
+        <Body>Nobody is blocked. Blocking hides that user from you everywhere in the app.</Body>
       ) : (
         blocked.data.map((b) => (
           <View key={b.blocked_id} style={styles.blockRow}>

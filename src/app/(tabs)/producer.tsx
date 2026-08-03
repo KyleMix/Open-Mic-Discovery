@@ -90,6 +90,11 @@ export default function ProducerScreen() {
         ListHeaderComponent={
           <View style={styles.header}>
             <Button label="Add a mic" onPress={() => router.push('/producer/new')} />
+            {confirm.isError ? (
+              <ErrorText>
+                Could not confirm the listing. Check your connection and try again.
+              </ErrorText>
+            ) : null}
             {profile.data?.is_admin && claims.data && claims.data.length > 0 ? (
               <View style={styles.claimsBox}>
                 <Text style={styles.sectionTitle}>Pending claims</Text>
@@ -149,6 +154,9 @@ export default function ProducerScreen() {
                   {item.title}
                 </Text>
                 {!item.is_active ? <Text style={styles.pausedTag}>Paused</Text> : null}
+                {item.moderation_status === 'pending' ? (
+                  <Text style={styles.pausedTag}>In review</Text>
+                ) : null}
               </View>
               <Text style={styles.cardMeta}>
                 {item.venue?.name}, {item.venue?.city} ·{' '}

@@ -20,10 +20,13 @@ export default function AnalyticsScreen() {
     enabled: !!id && (pro.data?.entitled ?? false),
     queryFn: async () => {
       const supabase = getSupabase();
+      // Past nights only: the 90-day forward window otherwise fills the
+      // screen with future zero-signup rows and skews every total.
       const { data: occurrences, error } = await supabase
         .from('mic_occurrences')
         .select('id, starts_at, status, signups(status)')
         .eq('series_id', id!)
+        .lte('starts_at', new Date().toISOString())
         .order('starts_at', { ascending: false })
         .limit(20);
       if (error) {
