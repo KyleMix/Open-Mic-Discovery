@@ -66,11 +66,13 @@ export function useBlockedUsers(userId: string | undefined) {
   return useQuery({
     queryKey: ['blocks', userId],
     enabled: !!userId,
+    // The view exists because blocks hide the blocked profile from
+    // public_profiles in both directions; without it the list could only
+    // say "Blocked user" and unblocking was guesswork.
     queryFn: async () => {
       const { data, error } = await getSupabase()
-        .from('blocks')
-        .select('blocked_id, created_at')
-        .eq('blocker_id', userId!);
+        .from('blocked_profiles')
+        .select('blocked_id, blocked_at, handle, display_name');
       if (error) {
         throw new Error(error.message);
       }
@@ -176,19 +178,21 @@ export function useResolveReport() {
 export function useResolveFlag() {
   const queryClient = useQueryClient();
   return useMutation({
+    // The RPC resolves the flag AND acts on it: a confirmed "this mic is
+    // dead" flag pauses the listing and notifies the owner, instead of
+    // stamping a row and changing nothing.
     mutationFn: async (input: { flagId: string; adminId: string; confirmed: boolean }) => {
-      const { error } = await getSupabase()
-        .from('listing_flags')
-        .update({
-          status: input.confirmed ? 'confirmed' : 'dismissed',
-          resolved_by: input.adminId,
-          resolved_at: new Date().toISOString(),
-        })
-        .eq('id', input.flagId);
+      const { error } = await getSupabase().rpc('resolve_flag', {
+        p_flag_id: input.flagId,
+        p_confirm: input.confirmed,
+      });
       if (error) {
         throw new Error(error.message);
       }
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['moderation'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['moderation'] });
+      queryClient.invalidateQueries({ queryKey: ['mics'] });
+    },
   });
 }

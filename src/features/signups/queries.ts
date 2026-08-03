@@ -45,6 +45,7 @@ export function useMySignup(occurrenceId: string | undefined, userId: string | u
         },
         () => {
           queryClient.invalidateQueries({ queryKey: ['signup', 'mine'] });
+          queryClient.invalidateQueries({ queryKey: ['signup', 'counts'] });
         },
       )
       .subscribe();
@@ -173,6 +174,7 @@ export function useRoster(occurrenceId: string | undefined) {
         () => {
           queryClient.invalidateQueries({ queryKey: ['signup', 'roster', occurrenceId] });
           queryClient.invalidateQueries({ queryKey: ['signup', 'mine', occurrenceId] });
+          queryClient.invalidateQueries({ queryKey: ['signup', 'counts', occurrenceId] });
         },
       )
       .subscribe();
@@ -214,6 +216,65 @@ export function useSetSlotOrder() {
         p_occurrence_id: occurrenceId,
         p_signup_ids: signupIds,
       });
+      if (error) {
+        throw new Error(error.message);
+      }
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['signup'] }),
+  });
+}
+
+/**
+ * Anonymous taken-versus-capacity for a night, so a performer can tell
+ * whether signing up confirms them or waitlists them. No names.
+ */
+export function useSignupCounts(occurrenceId: string | undefined) {
+  return useQuery({
+    queryKey: ['signup', 'counts', occurrenceId],
+    enabled: !!occurrenceId,
+    queryFn: async () => {
+      const { data, error } = await getSupabase().rpc('signup_counts', {
+        p_occurrence_id: occurrenceId!,
+      });
+      if (error) {
+        throw new Error(error.message);
+      }
+      return data[0] ?? null;
+    },
+  });
+}
+
+/** Producer-only: put a walk-in on the list by name, no account needed. */
+export function useAddWalkIn() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      occurrenceId,
+      guestName,
+    }: {
+      occurrenceId: string;
+      guestName: string;
+    }) => {
+      const { error } = await getSupabase()
+        .from('signups')
+        .insert({ occurrence_id: occurrenceId, guest_name: guestName });
+      if (error) {
+        if (error.code === '42501') {
+          throw new Error('Only the producer of this mic can add walk-ins.');
+        }
+        throw new Error(error.message);
+      }
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['signup'] }),
+  });
+}
+
+/** Producer-only: remove a walk-in guest from the list. */
+export function useRemoveWalkIn() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (signupId: string) => {
+      const { error } = await getSupabase().from('signups').delete().eq('id', signupId);
       if (error) {
         throw new Error(error.message);
       }

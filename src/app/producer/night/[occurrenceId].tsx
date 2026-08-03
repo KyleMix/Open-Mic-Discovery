@@ -3,12 +3,13 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
+import { Body, Button, ErrorText, Field, LoadingView, Screen, Title } from '@/components/ui';
 import { useSession } from '@/features/auth/session';
 import { useOccurrenceContext } from '@/features/producer/queries';
 import { useProStatus } from '@/features/pro/use-pro';
 import { ReportModal } from '@/features/safety/components/report-modal';
 import {
+  useAddWalkIn,
   useDrawLottery,
   useMarkOnDeck,
   useRoster,
@@ -34,6 +35,8 @@ export default function NightScreen() {
   const reorder = useSetSlotOrder();
   const setStatus = useSetSignupStatus();
   const onDeck = useMarkOnDeck();
+  const addWalkIn = useAddWalkIn();
+  const [walkInName, setWalkInName] = useState('');
 
   // Visible randomization: shuffle names on screen while the server draws.
   const [shuffling, setShuffling] = useState<RosterRow[] | null>(null);
@@ -98,7 +101,10 @@ export default function NightScreen() {
           <View key={row.id} style={styles.row}>
             <Text style={styles.slot}>{row.slot_position ?? '·'}</Text>
             <View style={styles.rowBody}>
-              <Text style={styles.name}>{row.display_name ?? row.handle ?? 'Performer'}</Text>
+              <Text style={styles.name}>
+                {row.display_name ?? row.handle ?? row.guest_name ?? 'Performer'}
+                {row.guest_name ? ' (walk-in)' : ''}
+              </Text>
               <Text style={styles.meta}>{row.status}</Text>
             </View>
           </View>
@@ -202,7 +208,10 @@ export default function NightScreen() {
           <View key={row.id} style={styles.row}>
             <Text style={styles.slot}>{row.slot_position ?? '·'}</Text>
             <View style={styles.rowBody}>
-              <Text style={styles.name}>{row.display_name ?? row.handle ?? 'Performer'}</Text>
+              <Text style={styles.name}>
+                {row.display_name ?? row.handle ?? row.guest_name ?? 'Performer'}
+                {row.guest_name ? ' (walk-in)' : ''}
+              </Text>
               <Text style={row.on_deck_at ? styles.onDeckMeta : styles.meta}>
                 {row.on_deck_at ? 'On deck' : row.status}
               </Text>
@@ -233,16 +242,45 @@ export default function NightScreen() {
                   color={palette.danger}
                   onPress={() => setConfirmNoShow(row)}
                 />
-                <IconAction
-                  label={`Report or block ${row.display_name ?? 'performer'}`}
-                  icon="flag-outline"
-                  onPress={() => setReporting(row)}
-                />
+                {row.performer_id ? (
+                  <IconAction
+                    label={`Report or block ${row.display_name ?? 'performer'}`}
+                    icon="flag-outline"
+                    onPress={() => setReporting(row)}
+                  />
+                ) : null}
               </View>
             ) : null}
           </View>
         ))
       )}
+
+      <View style={styles.walkInRow}>
+        <View style={styles.walkInField}>
+          <Field
+            label="Add a walk-in"
+            value={walkInName}
+            onChangeText={setWalkInName}
+            placeholder="Name at the door"
+          />
+        </View>
+        <Button
+          label="Add"
+          busy={addWalkIn.isPending}
+          disabled={!walkInName.trim() || !occurrenceId}
+          onPress={() =>
+            addWalkIn.mutate(
+              { occurrenceId: occurrenceId!, guestName: walkInName.trim() },
+              { onSuccess: () => setWalkInName('') },
+            )
+          }
+        />
+      </View>
+      {addWalkIn.isError ? (
+        <ErrorText>
+          {addWalkIn.error instanceof Error ? addWalkIn.error.message : 'Could not add them.'}
+        </ErrorText>
+      ) : null}
 
       {waitlist.length > 0 ? (
         <>
@@ -251,7 +289,10 @@ export default function NightScreen() {
             <View key={row.id} style={styles.row}>
               <Text style={styles.slot}>·</Text>
               <View style={styles.rowBody}>
-                <Text style={styles.name}>{row.display_name ?? row.handle ?? 'Performer'}</Text>
+                <Text style={styles.name}>
+                  {row.display_name ?? row.handle ?? row.guest_name ?? 'Performer'}
+                  {row.guest_name ? ' (walk-in)' : ''}
+                </Text>
               </View>
               <Button
                 label="Promote"
@@ -432,6 +473,14 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     gap: spacing.xs,
+  },
+  walkInRow: {
+    alignItems: 'flex-end',
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  walkInField: {
+    flex: 1,
   },
   iconAction: {
     alignItems: 'center',

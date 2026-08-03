@@ -7,7 +7,12 @@ import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
 import { formatInZone } from '@/features/discovery/timezone';
 import { useEnablePerformerRole } from '@/features/producer/queries';
-import { useJoinList, useMySignup, useWithdraw } from '@/features/signups/queries';
+import {
+  useJoinList,
+  useMySignup,
+  useSignupCounts,
+  useWithdraw,
+} from '@/features/signups/queries';
 import { signupWindow } from '@/features/signups/window';
 import { fonts, palette, spacing, type } from '@/theme';
 import type { Database } from '@/types/database.types';
@@ -57,6 +62,7 @@ export function SignupCard({
   const join = useJoinList();
   const withdraw = useWithdraw();
   const enablePerformer = useEnablePerformerRole();
+  const counts = useSignupCounts(occurrence.id);
   const [confirmingWithdraw, setConfirmingWithdraw] = useState(false);
 
   if (signupMethod === 'host_booked' || occurrence.status !== 'scheduled') {
@@ -178,6 +184,17 @@ export function SignupCard({
             ? `Enter the draw for ${nightLabel}. The host draws the order.`
             : `Signups for ${nightLabel} are open.`}
         </Body>
+        {counts.data && signupMethod !== 'lottery' ? (
+          <Body>
+            {counts.data.capacity != null
+              ? `${counts.data.taken} of ${counts.data.capacity} spots taken${
+                  counts.data.taken >= counts.data.capacity
+                    ? '. Signing up now joins the waitlist.'
+                    : '.'
+                }`
+              : `${counts.data.taken} signed up so far.`}
+          </Body>
+        ) : null}
         {join.isError ? (
           <ErrorText>
             {join.error instanceof Error ? join.error.message : 'Could not sign up.'}
