@@ -55,6 +55,43 @@ export function useMySignup(occurrenceId: string | undefined, userId: string | u
   return query;
 }
 
+export type MyNight = {
+  id: string;
+  status: SignupStatus;
+  slot_position: number | null;
+  occurrence: {
+    id: string;
+    starts_at: string;
+    status: Database['public']['Enums']['occurrence_status'];
+    series: { id: string; title: string } | null;
+  } | null;
+};
+
+/**
+ * Every night this performer signed up for, upcoming and past, so the
+ * profile can show a schedule and a history instead of nothing.
+ */
+export function useMyNights(userId: string | undefined) {
+  return useQuery({
+    queryKey: ['signup', 'my-nights', userId],
+    enabled: !!userId,
+    queryFn: async (): Promise<MyNight[]> => {
+      const { data, error } = await getSupabase()
+        .from('signups')
+        .select(
+          'id, status, slot_position, occurrence:mic_occurrences(id, starts_at, status, series:mic_series(id, title))',
+        )
+        .eq('performer_id', userId!)
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (error) {
+        throw new Error(error.message);
+      }
+      return data;
+    },
+  });
+}
+
 export function useJoinList() {
   const queryClient = useQueryClient();
   return useMutation({

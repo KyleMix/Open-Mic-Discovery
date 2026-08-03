@@ -13,7 +13,7 @@ import type { Database } from '@/types/database.types';
 
 type Occurrence = Database['public']['Tables']['mic_occurrences']['Row'];
 
-const STATUS_LABELS: Record<Database['public']['Enums']['signup_status'], string> = {
+export const STATUS_LABELS: Record<Database['public']['Enums']['signup_status'], string> = {
   requested: 'In the draw',
   confirmed: 'On the list',
   waitlisted: 'Waitlisted',

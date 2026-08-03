@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { signOut } from '@/features/auth/api';
 import { useOwnProfile } from '@/features/auth/queries';
@@ -8,6 +8,8 @@ import { useSession } from '@/features/auth/session';
 import { AvatarCircle } from '@/features/profile/avatar-circle';
 import { homeAreaLabel } from '@/features/profile/home-area';
 import { buildSocialLinks } from '@/features/profile/social';
+import { STATUS_LABELS } from '@/features/signups/components/signup-card';
+import { useMyNights, type MyNight } from '@/features/signups/queries';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { disciplineAccents, fonts, minTouchTarget, palette, spacing, type } from '@/theme';
 
@@ -53,7 +55,7 @@ export default function ProfileScreen() {
   const p = profile.data;
   const links = buildSocialLinks(p);
   return (
-    <Screen>
+    <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
       <View style={styles.header}>
         <AvatarCircle url={p.avatar_url} name={p.display_name} size={72} />
         <View style={styles.headerText}>
@@ -104,6 +106,7 @@ export default function ProfileScreen() {
           ))}
         </View>
       ) : null}
+      {p.is_performer ? <MyNights userId={p.id} onOpenMic={(id) => router.push(`/mic/${id}`)} /> : null}
       {error ? <ErrorText>{error}</ErrorText> : null}
       <Button label="Edit profile" onPress={() => router.push('/edit-profile')} />
       <Button label="Settings" kind="secondary" onPress={() => router.push('/settings')} />
@@ -119,11 +122,164 @@ export default function ProfileScreen() {
           )
         }
       />
-    </Screen>
+    </ScrollView>
+  );
+}
+
+/**
+ * The performer's schedule and history, built from their own signups.
+ * Upcoming nights first, then how much they have played.
+ */
+function MyNights({ userId, onOpenMic }: { userId: string; onOpenMic: (id: string) => void }) {
+  const nights = useMyNights(userId);
+  if (nights.isPending) {
+    return <Body>Loading your nights...</Body>;
+  }
+  if (nights.isError) {
+    return <ErrorText>Could not load your nights.</ErrorText>;
+  }
+  const now = new Date().getTime();
+  const withDates = nights.data.filter(
+    (n): n is MyNight & { occurrence: NonNullable<MyNight['occurrence']> } => n.occurrence != null,
+  );
+  const upcoming = withDates
+    .filter(
+      (n) =>
+        new Date(n.occurrence.starts_at).getTime() >= now &&
+        n.occurrence.status !== 'cancelled' &&
+        !['no_show'].includes(n.status),
+    )
+    .sort(
+      (a, b) =>
+        new Date(a.occurrence.starts_at).getTime() - new Date(b.occurrence.starts_at).getTime(),
+    );
+  const past = withDates
+    .filter((n) => new Date(n.occurrence.starts_at).getTime() < now)
+    .sort(
+      (a, b) =>
+        new Date(b.occurrence.starts_at).getTime() - new Date(a.occurrence.starts_at).getTime(),
+    );
+  if (upcoming.length === 0 && past.length === 0) {
+    return null;
+  }
+  const played = past.filter((n) => ['performed', 'confirmed', 'drawn'].includes(n.status));
+
+  return (
+    <View style={styles.nightsWrap}>
+      <Text style={styles.sectionTitle}>My nights</Text>
+      {upcoming.length > 0 ? (
+        <>
+          {upcoming.slice(0, 5).map((n) => (
+            <NightRow key={n.id} night={n} onOpenMic={onOpenMic} />
+          ))}
+        </>
+      ) : (
+        <Body>Nothing coming up. Find a mic on the Discover tab and get on a list.</Body>
+      )}
+      {past.length > 0 ? (
+        <>
+          <Text style={styles.playedCount}>
+            {played.length === 1 ? '1 night played' : `${played.length} nights played`}
+          </Text>
+          {past.slice(0, 10).map((n) => (
+            <NightRow key={n.id} night={n} onOpenMic={onOpenMic} past />
+          ))}
+        </>
+      ) : null}
+    </View>
+  );
+}
+
+function NightRow({
+  night,
+  onOpenMic,
+  past,
+}: {
+  night: MyNight & { occurrence: NonNullable<MyNight['occurrence']> };
+  onOpenMic: (id: string) => void;
+  past?: boolean;
+}) {
+  const date = new Date(night.occurrence.starts_at).toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+  const title = night.occurrence.series?.title ?? 'Listing unavailable';
+  const label = past && night.status === 'confirmed' ? 'Was on the list' : STATUS_LABELS[night.status];
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${title} on ${date}, ${label}`}
+      disabled={!night.occurrence.series}
+      onPress={() => night.occurrence.series && onOpenMic(night.occurrence.series.id)}
+      style={({ pressed }) => [styles.nightRow, pressed && { backgroundColor: palette.bgPressed }]}
+    >
+      <Text style={styles.nightDate}>{date}</Text>
+      <View style={styles.nightBody}>
+        <Text numberOfLines={1} style={styles.nightTitle}>
+          {title}
+        </Text>
+        <Text style={styles.nightStatus}>{label}</Text>
+      </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
+  scroll: {
+    backgroundColor: palette.bg,
+    flex: 1,
+  },
+  scrollContent: {
+    gap: spacing.md,
+    padding: spacing.lg,
+    paddingBottom: spacing.xl,
+  },
+  nightsWrap: {
+    gap: spacing.sm,
+  },
+  sectionTitle: {
+    color: palette.text,
+    fontFamily: fonts.semibold,
+    fontSize: type.heading.fontSize,
+    marginTop: spacing.sm,
+  },
+  playedCount: {
+    color: palette.textSecondary,
+    fontFamily: fonts.medium,
+    fontSize: type.caption.fontSize,
+    marginTop: spacing.sm,
+  },
+  nightRow: {
+    alignItems: 'center',
+    backgroundColor: palette.bgElevated,
+    borderColor: palette.border,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: spacing.md,
+    minHeight: minTouchTarget,
+    padding: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  nightDate: {
+    color: palette.textSecondary,
+    fontSize: type.caption.fontSize,
+    width: 90,
+  },
+  nightBody: {
+    flex: 1,
+    gap: 2,
+  },
+  nightTitle: {
+    color: palette.text,
+    fontFamily: fonts.medium,
+    fontSize: type.body.fontSize,
+  },
+  nightStatus: {
+    color: palette.textSecondary,
+    fontSize: type.caption.fontSize,
+  },
   header: {
     alignItems: 'center',
     flexDirection: 'row',
