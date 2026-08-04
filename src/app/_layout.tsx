@@ -4,10 +4,16 @@ import {
   Poppins_600SemiBold,
   useFonts,
 } from '@expo-google-fonts/poppins';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { DarkTheme, Stack, ThemeProvider, useRouter, useSegments } from 'expo-router';
+import * as Sentry from '@sentry/react-native';
+import {
+  DarkTheme,
+  Stack,
+  ThemeProvider,
+  useRouter,
+  useSegments,
+  type ErrorBoundaryProps,
+} from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, type ReactNode } from 'react';
 
@@ -16,7 +22,7 @@ import { Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { SessionProvider, useSession } from '@/features/auth/session';
 import { useLatestEula, useOwnProfile } from '@/features/auth/queries';
 import { observeNotificationTaps, registerPushToken } from '@/lib/notifications';
-import { queryClient } from '@/lib/query-client';
+import { queryClient, queryPersister } from '@/lib/query-client';
 import { initSentry } from '@/lib/sentry';
 import { palette } from '@/theme';
 
@@ -132,11 +138,25 @@ function AuthGate({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-// Cached server data survives restarts so listings stay readable offline
-// (performers check this app in parking lots with one bar of signal).
-const persister = createAsyncStoragePersister({ storage: AsyncStorage });
-
 initSentry();
+
+/**
+ * Last-resort catch for render-phase errors anywhere in the tree. Without
+ * it a single throwing component takes down the whole app with a white
+ * screen instead of one recoverable message.
+ */
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+  return (
+    <Screen>
+      <Title>Something went wrong</Title>
+      <ErrorText>The app hit an unexpected error. Your account and data are safe.</ErrorText>
+      <Button label="Try again" onPress={retry} />
+    </Screen>
+  );
+}
 
 export default function RootLayout() {
   // Brand typography; screens render with the system font until loaded.
@@ -144,7 +164,7 @@ export default function RootLayout() {
   return (
     <PersistQueryClientProvider
       client={queryClient}
-      persistOptions={{ persister, maxAge: 24 * 60 * 60 * 1000 }}
+      persistOptions={{ persister: queryPersister, maxAge: 24 * 60 * 60 * 1000 }}
     >
       <SessionProvider>
         <ThemeProvider value={appTheme}>

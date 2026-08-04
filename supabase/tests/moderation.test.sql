@@ -1,6 +1,6 @@
 -- Content filter, admin moderation, and account deletion tests.
 begin;
-select plan(11);
+select plan(12);
 
 -- ---------------------------------------------------------------------------
 -- Automated first-pass filter: clean content goes live, banned content holds.
@@ -82,9 +82,26 @@ select is(
 -- ---------------------------------------------------------------------------
 select set_config('request.jwt.claims',
   '{"sub":"00000000-0000-4000-a000-000000000001","role":"authenticated"}', true);
+
+-- Give p1 an avatar object so deletion has something to scrub.
+reset role;
+insert into storage.objects (bucket_id, name, owner)
+values ('avatars', '00000000-0000-4000-a000-000000000001/avatar.jpg',
+        '00000000-0000-4000-a000-000000000001');
+set local role authenticated;
+select set_config('request.jwt.claims',
+  '{"sub":"00000000-0000-4000-a000-000000000001","role":"authenticated"}', true);
+
 select lives_ok($$select delete_account()$$, 'a user can delete their own account');
 
 reset role;
+select is(
+  (select count(*)::int from storage.objects
+   where bucket_id = 'avatars'
+     and (storage.foldername(name))[1] = '00000000-0000-4000-a000-000000000001'),
+  0,
+  'deletion removes the avatar object from the public bucket'
+);
 select is(
   (select count(*)::int from auth.users where id = '00000000-0000-4000-a000-000000000001'),
   0,

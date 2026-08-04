@@ -10,13 +10,14 @@ Every screen is functional; there are no placeholder screens, dead links, or stu
 
 Created by the database seed (`supabase/seed.sql`). Local development only; production demo accounts will be created on the hosted project before store submission and updated here.
 
-| Role                             | Email                        | Password            |
-| -------------------------------- | ---------------------------- | ------------------- |
-| Performer                        | performer@demo.openmic.local | demo-pass-1234      |
-| Producer                         | producer@demo.openmic.local  | demo-pass-1234      |
-| Dual role                        | dual@demo.openmic.local      | demo-pass-1234      |
-| Admin (moderation)               | admin@demo.openmic.local     | demo-pass-1234      |
-| Owner/tester (all roles + admin) | kylewmixon@gmail.com         | openmic-tester-2026 |
+| Role               | Email                        | Password       |
+| ------------------ | ---------------------------- | -------------- |
+| Performer          | performer@demo.openmic.local | demo-pass-1234 |
+| Producer           | producer@demo.openmic.local  | demo-pass-1234 |
+| Dual role          | dual@demo.openmic.local      | demo-pass-1234 |
+| Admin (moderation) | admin@demo.openmic.local     | demo-pass-1234 |
+
+These credentials are for the local seed only and must never be created on the hosted project. Production reviewer accounts get fresh credentials, created by hand before submission and recorded here at that time.
 
 ## Walkthrough of every non-obvious flow
 
