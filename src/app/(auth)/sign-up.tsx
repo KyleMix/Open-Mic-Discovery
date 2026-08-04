@@ -86,6 +86,14 @@ export default function SignUpScreen() {
       <Body>Passwords are at least 10 characters.</Body>
       {error ? <ErrorText>{error}</ErrorText> : null}
       <Button label="Create account" busy={busy} disabled={busy} onPress={submit} />
+      <Body>
+        You will review and accept the terms of use next. Curious how your data is handled?
+      </Body>
+      <Button
+        label="Read the privacy policy"
+        kind="secondary"
+        onPress={() => router.push('/privacy')}
+      />
     </FormScreen>
   );
 }

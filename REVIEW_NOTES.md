@@ -22,6 +22,7 @@ These credentials are for the local seed only and must never be created on the h
 ## Walkthrough of every non-obvious flow
 
 - **EULA gate.** Every new account accepts the EULA before onboarding; the accepted version and a server-stamped timestamp are recorded. Publishing a newer EULA version routes existing users back to the gate on next launch.
+- **Privacy policy.** Readable in every auth state: from the sign-up screen, at the EULA gate, and in Settings (Help section). The content ships with the binary so it also reads offline.
 - **Age gate.** Onboarding requires a birth year; under-17 cannot complete setup. Rated 17+ for comedy content.
 - **Dual roles.** One account can hold Performer and Producer together (onboarding, or later from the My Mics tab). There are no separate account types.
 - **Freshness badge.** Green within 14 days of producer confirmation, amber to 45, gray after or never-confirmed. Confirmation is one tap and server-stamped: it cannot be backdated or forged, so the badge is trustworthy.
@@ -50,7 +51,7 @@ These credentials are for the local seed only and must never be created on the h
 - Android maps need a Google Maps API key at build time (`android.config.googleMaps.apiKey`); iOS uses Apple Maps with no key.
 - Sign in with Apple and Google require provider credentials in Supabase Auth; email/password always works.
 - Push notifications require a physical device and an EAS project id; every flow degrades quietly without them.
-- New listings default to the America/Los_Angeles timezone (the launch region); timezone selection is planned before multi-region expansion.
+- New listings derive their timezone from the venue pin (with a visible picker that defaults to the device zone; a manual pick always wins).
 
 ## Temporary screens
 

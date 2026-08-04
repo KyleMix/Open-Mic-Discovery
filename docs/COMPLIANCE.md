@@ -19,7 +19,8 @@ In-app, two taps from settings root: Profile tab -> Settings -> Delete account (
 
 ## Privacy
 
-- Location: foreground only, requested only on the locate tap in Discover with in-context copy (`src/app/(tabs)/index.tsx`, plugin config in `app.json`). Background location never requested (`isAndroidBackgroundLocationEnabled: false`).
+- Privacy policy: in-app at `src/app/privacy.tsx` (content in `src/features/legal/privacy-policy.ts`), reachable by guests, at the EULA gate, from sign-up, and from Settings; the auth gate allows the route in every state (`src/app/_layout.tsx`). Hostable web copy: `docs/privacy/PRIVACY_POLICY.md` (the URL both store forms require). Out-of-app deletion page copy: `docs/store/ACCOUNT_DELETION_PAGE.md`.
+- Location: foreground only, requested only on the locate tap in Discover with in-context copy (`src/app/(tabs)/index.tsx`, plugin config in `app.json`). Background location never requested (`isAndroidBackgroundLocationEnabled: false`). The required home area is user-entered text geocoded on device; its coordinates are stored privately on the profile and declared as coarse location in both store forms.
 - Data collected: account (email, handle, display name), optional profile fields (bio, home city, birth year), signups and favorites, optional producer contact info (never shown publicly: RLS-verified in `supabase/tests/rls.test.sql`), device push tokens, coarse usage none, tracking none, third-party advertising none.
 - Apple privacy manifest source: `docs/privacy/APPLE_PRIVACY.md`. Google Play Data Safety answers: `docs/privacy/PLAY_DATA_SAFETY.md`.
 
