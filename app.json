@@ -23,7 +23,12 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "blockedPermissions": [
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "static",
@@ -36,13 +41,27 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "Open Mic Finder uses your location only while you use the app, to show open mics near you. It is never tracked in the background.",
+          "locationAlwaysPermission": false,
+          "locationAlwaysAndWhenInUsePermission": false,
+          "motionUsagePermission": false,
           "isAndroidBackgroundLocationEnabled": false
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Open Mic Finder uses your photo library only when you choose a profile photo."
+          "photosPermission": "Open Mic Finder uses your photo library only when you choose a profile photo.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Open Mic Finder adds a mic night to your calendar only when you tap Add to my calendar. It never reads your events.",
+          "writeOnlyCalendarPermission": "Open Mic Finder adds a mic night to your calendar only when you tap Add to my calendar. It never reads your events.",
+          "writeOnlyAccess": true,
+          "remindersPermission": false
         }
       ],
       [

@@ -15,7 +15,7 @@ Maps each store requirement to the implementing code. Living document; updated w
 
 ## Account deletion
 
-In-app, two taps from settings root: Profile tab -> Settings -> Delete account (`src/app/settings.tsx`). Server side: `delete_account()` in `supabase/migrations/20260728001000_moderation.sql` hard-deletes personal rows and the auth user, and anonymizes the profile row (documented anonymization: signup history keeps referential integrity with no personal data attached). Tested in `supabase/tests/moderation.test.sql`.
+In-app, two taps from settings root: Profile tab -> Settings -> Delete account (`src/app/settings.tsx`). Server side: `delete_account()` (effective definition in `supabase/migrations/20260804000200_delete_account_avatar_cleanup.sql`) hard-deletes personal rows, the avatar object in the public bucket, and the auth user, and anonymizes the profile row (documented anonymization: signup history keeps referential integrity with no personal data attached). Abuse reports a person filed keep their anonymized profile id for moderation-audit integrity; no personal data rides along. Tested in `supabase/tests/moderation.test.sql`. Still owed before submission: a hosted web page for deletion requests, referenced from the privacy policy and the Play Data Safety form.
 
 ## Privacy
 
