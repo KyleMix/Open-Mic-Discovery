@@ -2,7 +2,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 
 import { exchangeRecoveryCode, updatePassword } from '@/features/auth/api';
-import { useSession } from '@/features/auth/session';
 import { validatePassword } from '@/features/auth/validation';
 import {
   Body,
@@ -23,7 +22,6 @@ import {
  */
 export default function ResetPasswordScreen() {
   const router = useRouter();
-  const { session } = useSession();
   const { code } = useLocalSearchParams<{ code?: string }>();
   const [exchange, setExchange] = useState<'working' | 'done' | 'failed'>(
     code ? 'working' : 'failed',
@@ -73,10 +71,11 @@ export default function ResetPasswordScreen() {
   if (exchange === 'working') {
     return <LoadingView label="Checking your reset link" />;
   }
-  // A session from the exchange (or an already signed-in user changing
-  // their password through a reset link) can proceed; otherwise the link
-  // did not check out.
-  if (exchange === 'failed' && !session) {
+  // Only a successful code exchange unlocks the form. An existing session
+  // is not enough: updateUser needs no current password, so accepting a
+  // session here would let anyone holding an unlocked device (or any app
+  // firing the openmic:// scheme) silently take over the account.
+  if (exchange !== 'done') {
     return (
       <Screen>
         <Title>Reset link problem</Title>
