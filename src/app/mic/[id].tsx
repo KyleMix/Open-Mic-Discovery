@@ -31,6 +31,7 @@ import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
 import { addToCalendar } from '@/features/calendar/calendar';
 import { SIGNUP_METHOD_LABELS, costLabel } from '@/features/discovery/components/mic-card';
+import { StewardshipBadge } from '@/features/discovery/components/stewardship-badge';
 import { freshness } from '@/features/discovery/freshness';
 import { useFlagListing, useMicDetail } from '@/features/discovery/queries';
 import { useIsFavorite, useToggleFavorite } from '@/features/favorites/queries';
@@ -197,25 +198,7 @@ function MicDetail({
           <Glyph name="freshness-badge" size={16} color={fresh.color} />
           <Text style={[styles.freshText, { color: fresh.color }]}>{fresh.label}</Text>
           <Text style={[styles.freshText, { color: palette.textSecondary }]}>·</Text>
-          <Text
-            accessibilityLabel={
-              series.owner_id
-                ? ownerVerified
-                  ? 'Run by a verified host'
-                  : 'Run by its host'
-                : 'Community-listed, not yet claimed by its host'
-            }
-            style={[
-              styles.freshText,
-              { color: ownerVerified ? palette.success : palette.textSecondary },
-            ]}
-          >
-            {series.owner_id
-              ? ownerVerified
-                ? 'Verified host'
-                : 'Host-managed'
-              : 'Community-listed'}
-          </Text>
+          <StewardshipBadge ownerId={series.owner_id} verified={ownerVerified} />
         </View>
 
         <Card>

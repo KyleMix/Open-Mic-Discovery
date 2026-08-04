@@ -55,12 +55,18 @@ design.
     `support@openmicfinder.app`. Decision: the real address and who reads
     it. Recommendation: a shared inbox on the product domain, not a
     personal address, so App Store review and users see a stable contact.
-12. **Stewardship badge on discovery cards.** The mic detail screen now
-    shows "Verified host", "Host-managed", or "Community-listed" beside
-    the freshness badge, from `owner_id` plus `producer_public.verified`.
-    Discovery cards do not, because `mics_near` and `search_mics` do not
-    return `owner_id`; adding it is a migration touching both functions.
-    Recommendation: add it once verified hosts exist in real data; today
-    it would label nearly every card "Community-listed". Note there is
-    still no admin path granting `producer_profiles.verified`; that flow
-    needs its own design.
+12. **Stewardship badge on discovery cards: APPROVED, migration ready to
+    apply.** The migration is committed as
+    `supabase/migrations/20260804000100_discovery_stewardship.sql` and has
+    NOT been run. It drops and recreates `mics_near` and `search_mics`
+    with one appended `owner_id` column each (CREATE OR REPLACE cannot
+    change a return type); everything else is copied verbatim from the
+    current definitions. The card badge is gated on the field's presence
+    (`cardStewardship` in
+    `src/features/discovery/components/stewardship-badge.tsx`), so the
+    app behaves identically before and after the migration lands: no
+    badge at all pre-migration, never a wrong or placeholder one. After
+    applying: regenerate the Supabase types, and the optional-field probe
+    keeps working against the now-typed column. Still open from the
+    original note: no admin path grants `producer_profiles.verified`;
+    that flow needs its own design.
