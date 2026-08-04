@@ -102,6 +102,11 @@ export default function EulaScreen() {
         )}
       </ScrollView>
       {acceptError ? <ErrorText>{acceptError}</ErrorText> : null}
+      <Button
+        label="Read the privacy policy"
+        kind="secondary"
+        onPress={() => router.push('/privacy')}
+      />
       <Button label="I accept the terms" busy={busy} onPress={accept} />
     </Screen>
   );

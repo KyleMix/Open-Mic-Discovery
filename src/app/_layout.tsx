@@ -80,21 +80,23 @@ function AuthGate({ children }: { children: ReactNode }) {
     if (!session) {
       // Discovery is the wedge: guests can browse the tabs and open listings.
       // Actions that need an account (favorite, sign up, flag, claim, report)
-      // prompt for sign-in where they happen.
-      const inGuestArea = topSegment === '(tabs)' || topSegment === 'mic';
+      // prompt for sign-in where they happen. The privacy policy is readable
+      // in every auth state; stores require it before an account exists.
+      const inGuestArea =
+        topSegment === '(tabs)' || topSegment === 'mic' || topSegment === 'privacy';
       if (!inGuestArea && (!inAuthGroup || authScreen === 'eula' || authScreen === 'onboarding')) {
         router.replace('/(auth)/sign-in');
       }
       return;
     }
     if (!profile.data) {
-      if (authScreen !== 'eula' && authScreen !== 'onboarding') {
+      if (topSegment !== 'privacy' && authScreen !== 'eula' && authScreen !== 'onboarding') {
         router.replace('/(auth)/eula');
       }
       return;
     }
     if (eula.data && profile.data.eula_version !== eula.data.version) {
-      if (authScreen !== 'eula') {
+      if (topSegment !== 'privacy' && authScreen !== 'eula') {
         router.replace('/(auth)/eula');
       }
       return;

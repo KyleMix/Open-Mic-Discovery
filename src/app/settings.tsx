@@ -83,6 +83,11 @@ export default function SettingsScreen() {
         onPress={() => contactSupport('Open Mic Finder support')}
       />
       <Button label="Read the terms" kind="secondary" onPress={() => router.push('/terms')} />
+      <Button
+        label="Read the privacy policy"
+        kind="secondary"
+        onPress={() => router.push('/privacy')}
+      />
 
       <Text style={styles.sectionTitle}>Account</Text>
       <Body>

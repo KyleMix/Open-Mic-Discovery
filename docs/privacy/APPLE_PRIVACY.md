@@ -6,17 +6,17 @@ API entries for its own modules; app-level declarations below).
 
 ## Data collected and linked to identity
 
-| Data                                             | Purpose                                  | Notes                                                                                                     |
-| ------------------------------------------------ | ---------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Email address (account)                          | App functionality (account)              | Sign-in only; never shown to other users                                                                   |
-| Email address (producer contact, optional)       | App functionality                        | A producer's stated contact address is listed publicly with their listings, by design                       |
-| Name (display name, handle)                      | App functionality                        | Public profile content                                                                                     |
-| Coarse location (home city, optional)            | App functionality                        | User-entered text, not GPS                                                                                 |
-| Precise location (foreground, on demand)         | App functionality                        | Used transiently for "near me"; never stored server side, never background                                 |
-| User content (bio, listings, signups, favorites) | App functionality                        |                                                                                                            |
-| Year of birth                                    | App functionality (age gate)             | Never public                                                                                               |
-| Device push token                                | App functionality (notifications)        | Deleted with the account                                                                                   |
-| Purchase history (Producer Pro subscription)     | App functionality (unlocks Pro features) | RevenueCat processes the subscription: entitlement status and an app user id, linked to the account        |
+| Data                                             | Purpose                                  | Notes                                                                                                                                                                                                      |
+| ------------------------------------------------ | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Email address (account)                          | App functionality (account)              | Sign-in only; never shown to other users                                                                                                                                                                   |
+| Email address (producer contact, optional)       | App functionality                        | A producer's stated contact address is listed publicly with their listings, by design                                                                                                                      |
+| Name (display name, handle)                      | App functionality                        | Public profile content                                                                                                                                                                                     |
+| Coarse location (home area, required)            | App functionality                        | User-entered city/state or ZIP, geocoded on device into approximate coordinates stored privately on the profile; centers discovery and powers opt-in nearby alerts; never public, deleted with the account |
+| Precise location (foreground, on demand)         | App functionality                        | Used transiently for "near me"; never stored server side, never background                                                                                                                                 |
+| User content (bio, listings, signups, favorites) | App functionality                        |                                                                                                                                                                                                            |
+| Year of birth                                    | App functionality (age gate)             | Never public                                                                                                                                                                                               |
+| Device push token                                | App functionality (notifications)        | Deleted with the account                                                                                                                                                                                   |
+| Purchase history (Producer Pro subscription)     | App functionality (unlocks Pro features) | RevenueCat processes the subscription: entitlement status and an app user id, linked to the account                                                                                                        |
 
 ## Not collected
 

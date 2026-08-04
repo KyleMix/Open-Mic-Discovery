@@ -1,0 +1,62 @@
+# Privacy Policy (hostable web copy)
+
+This is the web copy of the privacy policy, ready to host at a public URL.
+Both store forms require that URL: App Store Connect (App Privacy, Privacy
+Policy URL) and the Play Console (Store listing and the Data safety section).
+The in-app copy lives in `src/features/legal/privacy-policy.ts` and renders
+at the `/privacy` screen; the two must always say the same things. Update
+both together.
+
+Before hosting, replace nothing except the support address if it changes
+(DECISIONS_NEEDED item 11); the policy already reads correctly as written.
+
+---
+
+# Privacy policy
+
+Effective August 4, 2026
+
+Open Mic Finder helps people find open mics and helps hosts run them. This policy explains what information the app collects, why, and what happens to it. The short version: we collect only what the app needs to work, we never sell it, we never use it to track you across other apps or websites, and you can delete your account and its data yourself, inside the app, at any time.
+
+## What we collect
+
+- Account: your email address and a password. The password is stored only as a secure hash by our sign-in provider. Your email is used for signing in and account messages and is never shown to other users.
+- Profile: your display name and handle (public), and optionally a bio, a profile photo, and links to your social accounts (public if you add them). Your birth year is collected once to confirm you meet the age requirement and is never public.
+- Home area: a city and state, or a ZIP code, that you provide during setup. The app converts it on your device into approximate coordinates and stores them privately with your profile. It is used to center discovery on your scene, rank nearby mics, and power the nearby alerts you opt into. It is never shown to other users.
+- Device location: only if you tap the locate button or enable a nearby feature without a stored home area. It is requested in the foreground with an explanation first, used for that search, and not stored on our servers. The app never requests background location.
+- Producer contact info: if you run a mic, an optional contact email you choose to list is shown publicly with your listings. A contact phone number, if provided, stays private to you and is never exposed to other users.
+- Activity in the app: listings you create, signups, favorites, confirmations, flags, and reports. Signup lists are visible to the people on them and to the host running that night.
+- Push token: if you allow notifications, a device token used only to deliver them. It is deleted with your account.
+- Purchases: if you subscribe to Producer Pro, our subscription provider (RevenueCat) processes the purchase through Apple or Google and shares your subscription status and an app-specific user id with us. We never see your payment details.
+- Crash reports: if the app crashes, a technical report goes to our error service (Sentry). Crash reports are not linked to your account.
+
+## What we never do
+
+- We never sell your information.
+- We never use your information to track you across other apps or websites.
+- We never show you third-party advertising, and no advertising or analytics SDKs are in the app.
+- We never request background location.
+
+## Who processes data for us
+
+Supabase hosts the database and sign-in. RevenueCat processes subscriptions. Sentry receives crash reports. Expo delivers push notifications. Each acts only as a service provider for the app and cannot use your data for its own purposes.
+
+## Blocking, reporting, and moderation
+
+If you block someone, the block is enforced on our servers so their content is filtered out of your results and yours from theirs. Reports you file are reviewed by a moderator; your report keeps an anonymized reference for audit integrity even if you later delete your account.
+
+## Deleting your account
+
+Settings, then Delete account. Deletion is immediate: your sign-in, personal details, home area, photo, and push tokens are removed. Records of past signups are kept in anonymized form, with nothing personal attached, so event history stays intact for the hosts who ran those nights. You can also request deletion by email if you no longer have the app installed.
+
+## Age
+
+Open Mic Finder is for people 17 and older. Setup asks for your birth year and stops if you are under 17.
+
+## Changes
+
+If this policy changes in a way that matters, the app will tell you and ask you to review it before you continue.
+
+## Contact
+
+Questions about privacy or your data: support@openmicfinder.app. A person reads it.

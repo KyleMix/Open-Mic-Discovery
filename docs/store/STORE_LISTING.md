@@ -54,4 +54,8 @@ Required sizes: iPhone 6.9" and 6.5"; Play phone plus 7" and 10" tablet. Dark ba
 5. Google Maps API key for Android in app.json (android.config.googleMaps.apiKey).
 6. Sign in with Apple (Services ID) and Google OAuth credentials configured in Supabase Auth.
 7. Final art: app icon, adaptive icon set, splash (prompts ready in docs/ASSET_PROMPTS.md).
-8. `eas build --profile production`, TestFlight + Play internal testing pass, then `eas submit`.
+8. Host the privacy policy (`docs/privacy/PRIVACY_POLICY.md`) and the account deletion page (`docs/store/ACCOUNT_DELETION_PAGE.md`) at public URLs; paste them into App Store Connect (Privacy Policy URL) and the Play Console (Store listing, Data safety, and Data deletion).
+9. Stand up the support inbox and finalize the address (`src/lib/support.ts`, DECISIONS_NEEDED item 11); it appears in the app, both store listings, and the deletion page.
+10. `eas build --profile production`, TestFlight + Play internal testing pass, then `eas submit`.
+
+The full owner runbook lives in `docs/store/SUBMISSION_CHECKLIST.md`.
