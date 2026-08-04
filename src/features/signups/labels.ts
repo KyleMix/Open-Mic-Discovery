@@ -15,3 +15,27 @@ export const ROSTER_STATUS_LABELS: Record<SignupStatus, string> = {
   performed: 'Performed',
   no_show: 'Marked no-show',
 };
+
+/** The sticky footer's action labels, shared so wording never drifts. */
+export const CTA_LABELS = {
+  signIn: 'Sign in to get on the list',
+  join: 'Sign me up',
+  lottery: 'Put my name in the draw',
+  waitlist: 'Join the waitlist',
+} as const;
+
+/** Window states the footer shows as status rather than action. */
+export function signupsOpenLabel(opensLabel: string): string {
+  return `Signups open ${opensLabel}`;
+}
+
+export const SIGNUPS_CLOSED_LABEL = 'Signups are closed. Walk-ups may be possible at the venue.';
+
+export function spotsTakenLabel(taken: number, capacity: number | null): string {
+  if (capacity == null) {
+    return taken === 1 ? '1 signed up so far' : `${taken} signed up so far`;
+  }
+  return taken >= capacity
+    ? `Full · ${taken} of ${capacity} spots taken`
+    : `${taken} of ${capacity} spots taken`;
+}

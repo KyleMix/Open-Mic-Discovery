@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  AccessibilityInfo,
   Linking,
   Modal,
   Platform,
@@ -39,12 +40,20 @@ import { ReportModal } from '@/features/safety/components/report-modal';
 import { FLAG_REASON_LABELS } from '@/features/safety/labels';
 import { SignupCard } from '@/features/signups/components/signup-card';
 import { signupCta } from '@/features/signups/cta';
-import { useJoinList, useMySignup } from '@/features/signups/queries';
+import { useJoinList, useMySignup, useSignupCounts } from '@/features/signups/queries';
 import { signupWindow } from '@/features/signups/window';
-import { formatNextDateLong } from '@/features/discovery/date-label';
+import { formatNextDateLong, formatRelativeDay } from '@/features/discovery/date-label';
 import { describeRecurrence, formatLocalTime } from '@/features/discovery/recurrence';
 import { formatInZone, zoneDiffersFromDevice } from '@/features/discovery/timezone';
-import { disciplineAccents, fonts, palette, spacing, type, type Discipline } from '@/theme';
+import {
+  disciplineAccents,
+  fonts,
+  minTouchTarget,
+  palette,
+  spacing,
+  type,
+  type Discipline,
+} from '@/theme';
 import type { Database } from '@/types/database.types';
 
 type FlagReason = Database['public']['Enums']['flag_reason'];
@@ -384,6 +393,7 @@ function MicDetail({
           signupMethod={series.signup_method}
           signupOpens={series.signup_opens}
           signupCloses={series.signup_closes}
+          timezone={series.timezone}
         />
       ) : null}
     </View>
@@ -395,32 +405,68 @@ function MicDetail({
  * inline signup card sits a screen and a half down; the wedge moment
  * ("I am on the list") should not require scrolling to find.
  */
+// setTimeout overflows a 32-bit int near 25 days; a window opening later
+// than that will not flip during one screen visit.
+const MAX_TIMER_MS = 2 ** 31 - 1;
+
 function SignupFooter({
   occurrence,
   signupMethod,
   signupOpens,
   signupCloses,
+  timezone,
 }: {
   occurrence: DetailData['occurrences'][number];
   signupMethod: Database['public']['Enums']['signup_method'];
   signupOpens: string;
   signupCloses: string;
+  timezone: string;
 }) {
   const router = useRouter();
   const { session } = useSession();
   const profile = useOwnProfile(session?.user.id);
   const mySignup = useMySignup(occurrence.id, session?.user.id);
+  const counts = useSignupCounts(occurrence.id);
   const join = useJoinList();
   const insets = useSafeAreaInsets();
+
+  // The window can open while the person is reading the screen: a tick
+  // re-renders at the opening instant and says so out loud.
+  const [, setTick] = useState(0);
   const window = signupWindow(occurrence.starts_at, signupOpens, signupCloses, new Date());
+  const opensAtMs = window.state === 'not_yet' ? window.opensAt.getTime() : null;
+  const nightLabel = formatRelativeDay(occurrence.starts_at, timezone);
+  useEffect(() => {
+    if (opensAtMs == null) {
+      return;
+    }
+    const delay = opensAtMs - Date.now() + 1000;
+    if (delay > MAX_TIMER_MS) {
+      return;
+    }
+    const timer = setTimeout(
+      () => {
+        setTick((n) => n + 1);
+        AccessibilityInfo.announceForAccessibility(`Signups are open for ${nightLabel}.`);
+      },
+      Math.max(delay, 0),
+    );
+    return () => clearTimeout(timer);
+  }, [opensAtMs, nightLabel]);
+
   const cta = signupCta({
     signedIn: !!session,
     isPerformer: profile.data ? profile.data.is_performer : null,
     signupPending: !!session && mySignup.isPending,
-    hasSignup: !!mySignup.data,
+    myStatus: mySignup.data?.status ?? null,
+    mySlot: mySignup.data?.slot_position ?? null,
     windowState: window.state,
     signupMethod,
     occurrenceStatus: occurrence.status,
+    opensLabel:
+      window.state === 'not_yet' ? formatRelativeDay(window.opensAt.toISOString(), timezone) : null,
+    taken: counts.data?.taken ?? null,
+    capacity: counts.data?.capacity ?? null,
   });
   if (!cta) {
     return null;
@@ -432,17 +478,28 @@ function SignupFooter({
           {join.error instanceof Error ? join.error.message : 'Could not sign you up.'}
         </ErrorText>
       ) : null}
-      <Button
-        label={cta.label}
-        busy={join.isPending}
-        onPress={() => {
-          if (cta.kind === 'sign-in') {
-            router.push('/(auth)/sign-in');
-          } else if (session) {
-            join.mutate({ occurrenceId: occurrence.id, userId: session.user.id });
-          }
-        }}
-      />
+      {cta.kind === 'status' ? (
+        <View accessibilityLiveRegion="polite" style={styles.footerStatus}>
+          <Text style={styles.footerStatusText}>{cta.label}</Text>
+        </View>
+      ) : (
+        <>
+          {cta.kind === 'join' && cta.detail ? (
+            <Text style={styles.footerDetail}>{cta.detail}</Text>
+          ) : null}
+          <Button
+            label={cta.label}
+            busy={join.isPending}
+            onPress={() => {
+              if (cta.kind === 'sign-in') {
+                router.push('/(auth)/sign-in');
+              } else if (session) {
+                join.mutate({ occurrenceId: occurrence.id, userId: session.user.id });
+              }
+            }}
+          />
+        </>
+      )}
     </View>
   );
 }
@@ -735,6 +792,22 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     position: 'absolute',
     right: 0,
+  },
+  footerStatus: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: minTouchTarget,
+  },
+  footerStatusText: {
+    color: palette.text,
+    fontFamily: fonts.medium,
+    fontSize: type.body.fontSize,
+    textAlign: 'center',
+  },
+  footerDetail: {
+    color: palette.textSecondary,
+    fontSize: type.caption.fontSize,
+    textAlign: 'center',
   },
   titleRow: {
     alignItems: 'flex-start',
