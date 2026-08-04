@@ -147,7 +147,7 @@ function MicDetail({
     const label = encodeURIComponent(venue.name);
     const url =
       Platform.OS === 'ios'
-        ? `http://maps.apple.com/?daddr=${encodeURIComponent(venue.address_line + ', ' + venue.city)}`
+        ? `https://maps.apple.com/?daddr=${encodeURIComponent(venue.address_line + ', ' + venue.city)}`
         : `geo:0,0?q=${encodeURIComponent(venue.address_line + ', ' + venue.city)}(${label})`;
     Linking.openURL(url).catch(() => null);
   }

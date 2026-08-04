@@ -272,7 +272,7 @@ export function useSignupCounts(occurrenceId: string | undefined) {
       if (error) {
         throw userError(error, 'Could not check how many spots are taken.');
       }
-      return data[0] ?? null;
+      return data?.[0] ?? null;
     },
   });
 }

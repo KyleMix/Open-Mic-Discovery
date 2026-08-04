@@ -187,7 +187,13 @@ export default function NightScreen() {
     }
     const next = [...ordered];
     [next[index], next[target]] = [next[target], next[index]];
-    reorder.mutate({ occurrenceId, signupIds: next.map((r) => r.id!).filter(Boolean) });
+    // Every listed row must carry an id; sending a partial array would
+    // silently rewrite the running order with entries missing.
+    const signupIds = next.map((r) => r.id);
+    if (signupIds.some((id) => id == null)) {
+      return;
+    }
+    reorder.mutate({ occurrenceId, signupIds: signupIds.filter((id): id is string => id != null) });
   }
 
   return (
@@ -257,7 +263,11 @@ export default function NightScreen() {
                     }
                     icon={row.on_deck_at ? 'megaphone' : 'megaphone-outline'}
                     color={row.on_deck_at ? palette.warning : palette.text}
-                    onPress={() => onDeck.mutate({ signupId: row.id!, onDeck: !row.on_deck_at })}
+                    onPress={() => {
+                      if (row.id != null) {
+                        onDeck.mutate({ signupId: row.id, onDeck: !row.on_deck_at });
+                      }
+                    }}
                   />
                   <IconAction label="Move up" icon="chevron-up" onPress={() => move(row, -1)} />
                   <IconAction label="Move down" icon="chevron-down" onPress={() => move(row, 1)} />
@@ -265,7 +275,11 @@ export default function NightScreen() {
                     label="Mark performed"
                     icon="checkmark-circle"
                     color={palette.success}
-                    onPress={() => setStatus.mutate({ signupId: row.id!, status: 'performed' })}
+                    onPress={() => {
+                      if (row.id != null) {
+                        setStatus.mutate({ signupId: row.id, status: 'performed' });
+                      }
+                    }}
                   />
                   <IconAction
                     label="Mark no-show"
@@ -329,7 +343,11 @@ export default function NightScreen() {
                   label="Promote"
                   kind="secondary"
                   busy={setStatus.isPending}
-                  onPress={() => setStatus.mutate({ signupId: row.id!, status: 'confirmed' })}
+                  onPress={() => {
+                    if (row.id != null) {
+                      setStatus.mutate({ signupId: row.id, status: 'confirmed' });
+                    }
+                  }}
                 />
               </View>
             ))}
@@ -356,7 +374,9 @@ export default function NightScreen() {
             body="They are notified immediately and the mark stays on this night."
             confirmLabel="Mark no-show"
             onConfirm={() => {
-              setStatus.mutate({ signupId: confirmNoShow.id!, status: 'no_show' });
+              if (confirmNoShow.id != null) {
+                setStatus.mutate({ signupId: confirmNoShow.id, status: 'no_show' });
+              }
               setConfirmNoShow(null);
             }}
             onClose={() => setConfirmNoShow(null)}

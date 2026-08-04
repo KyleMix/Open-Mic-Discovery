@@ -2,6 +2,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 
+import { clearCachedData } from '@/lib/query-client';
 import { getSupabase } from '@/lib/supabase';
 import { userError } from '@/lib/user-error';
 import type { Database } from '@/types/database.types';
@@ -85,6 +86,9 @@ export async function signOut(): Promise<void> {
   if (error) {
     throw authError(error, 'Sign out failed. Try again.');
   }
+  // Never leave the previous account's cached data behind for the next
+  // sign-in on this device.
+  await clearCachedData().catch(() => null);
 }
 
 /** Native Sign in with Apple (iOS only), exchanged for a Supabase session. */
