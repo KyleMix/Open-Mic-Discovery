@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 import { requestPasswordReset } from '@/features/auth/api';
 import { validateEmail } from '@/features/auth/validation';
-import { Body, Button, ErrorText, Field, Screen, Title } from '@/components/ui';
+import { Body, Button, ErrorText, Field, FormScreen, Screen, Title } from '@/components/ui';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -45,7 +45,7 @@ export default function ForgotPasswordScreen() {
   }
 
   return (
-    <Screen>
+    <FormScreen>
       <Title>Reset your password</Title>
       <Body>Enter your email and we send a link that lets you set a new one.</Body>
       <Field
@@ -54,11 +54,15 @@ export default function ForgotPasswordScreen() {
         autoComplete="email"
         inputMode="email"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={(v) => {
+          setEmail(v);
+          setFieldError(null);
+        }}
+        onBlur={() => setFieldError(email ? validateEmail(email) : null)}
         error={fieldError}
       />
       {error ? <ErrorText>{error}</ErrorText> : null}
       <Button label="Send reset link" busy={busy} disabled={busy || !email} onPress={submit} />
-    </Screen>
+    </FormScreen>
   );
 }

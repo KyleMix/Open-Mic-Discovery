@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { getSupabase } from '@/lib/supabase';
+import { userError } from '@/lib/user-error';
 
 /** The signed-in user's own profile row, or null before onboarding. */
 export function useOwnProfile(userId: string | undefined) {
@@ -14,7 +15,7 @@ export function useOwnProfile(userId: string | undefined) {
         .eq('id', userId!)
         .maybeSingle();
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load your account. Check your connection and try again.');
       }
       return data;
     },
@@ -33,7 +34,7 @@ export function usePerformerDisciplines(userId: string | undefined) {
         .eq('profile_id', userId!)
         .maybeSingle();
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load your performer details. Try again.');
       }
       return data?.disciplines ?? [];
     },
@@ -52,7 +53,7 @@ export function useLatestEula() {
         .limit(1)
         .maybeSingle();
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load the terms. Check your connection and try again.');
       }
       return data;
     },

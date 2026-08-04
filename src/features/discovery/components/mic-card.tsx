@@ -2,7 +2,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Glyph, disciplineGlyphs, signupMethodGlyphs } from '@/components/glyph';
+import {
+  StewardshipBadge,
+  cardStewardship,
+} from '@/features/discovery/components/stewardship-badge';
 import { useSession } from '@/features/auth/session';
+import { formatNextDate } from '@/features/discovery/date-label';
 import { formatMilesFromMeters } from '@/features/discovery/distance';
 import { freshness } from '@/features/discovery/freshness';
 import type { NearbyMic } from '@/features/discovery/queries';
@@ -26,17 +31,8 @@ export const SIGNUP_METHOD_DESCRIPTIONS: Record<NearbyMic['signup_method'], stri
   host_booked: 'The host chooses the lineup.',
 };
 
-export function formatNextDate(startsAt: string | null): string {
-  if (!startsAt) {
-    return 'No upcoming date';
-  }
-  const date = new Date(startsAt);
-  return date.toLocaleDateString(undefined, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  });
-}
+// Re-exported for the screens that already import it from here.
+export { formatNextDate };
 
 export function costLabel(costCents: number): string {
   return costCents === 0 ? 'Free' : `$${(costCents / 100).toFixed(costCents % 100 === 0 ? 0 : 2)}`;
@@ -49,10 +45,13 @@ type Props = {
 
 export function MicCard({ mic, onPress }: Props) {
   const fresh = freshness(mic.last_confirmed_at, new Date());
+  // Present only once migration 20260804000100 adds owner_id to the RPC;
+  // until then the card simply shows no stewardship badge.
+  const stewardship = cardStewardship(mic);
   const recurrence = describeRecurrence(mic.rrule, mic.start_time);
   // Pattern and concrete date together: "Every Tuesday, 8:00 PM" alone hides
   // whether the next night is tomorrow or twelve days out.
-  const nextDate = formatNextDate(mic.next_starts_at);
+  const nextDate = formatNextDate(mic.next_starts_at, mic.timezone);
   const when = recurrence ? `${recurrence} · ${nextDate}` : nextDate;
 
   return (
@@ -101,6 +100,7 @@ export function MicCard({ mic, onPress }: Props) {
             <Glyph name="freshness-badge" size={14} color={fresh.color} />
             <Text style={[styles.metaText, { color: fresh.color }]}>{fresh.label}</Text>
           </View>
+          {stewardship ? <StewardshipBadge ownerId={stewardship.ownerId} variant="card" /> : null}
         </View>
       </View>
     </Pressable>
@@ -125,9 +125,7 @@ function CardStar({ seriesId, title }: { seriesId: string; title: string }) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={
-        active ? `Remove ${title} from favorites` : `Add ${title} to favorites`
-      }
+      accessibilityLabel={active ? `Remove ${title} from favorites` : `Add ${title} to favorites`}
       accessibilityState={{ selected: active }}
       disabled={toggle.isPending || favorites.isPending}
       hitSlop={12}
@@ -199,6 +197,9 @@ const styles = StyleSheet.create({
   metaRow: {
     alignItems: 'center',
     flexDirection: 'row',
+    // The badge is a fourth item; at 375pt the row wraps rather than
+    // shrinking anything.
+    flexWrap: 'wrap',
     gap: spacing.md,
     marginTop: spacing.xs,
   },

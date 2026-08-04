@@ -5,6 +5,11 @@ import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/component
 import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
 import {
+  FLAG_REASON_LABELS,
+  REPORT_REASON_LABELS,
+  REPORT_TARGET_LABELS,
+} from '@/features/safety/labels';
+import {
   useModerateContent,
   useModerationQueue,
   useResolveFlag,
@@ -70,7 +75,7 @@ export default function AdminScreen() {
       {q.reports.map((r) => (
         <View key={r.id} style={styles.item}>
           <Text style={styles.itemTitle}>
-            {r.target_type}: {r.reason}
+            {REPORT_TARGET_LABELS[r.target_type]}: {REPORT_REASON_LABELS[r.reason]}
           </Text>
           {r.details ? <Text style={styles.itemBody}>{r.details}</Text> : null}
           <View style={styles.actions}>
@@ -128,7 +133,7 @@ export default function AdminScreen() {
       {q.flags.map((f) => (
         <View key={f.id} style={styles.item}>
           <Text style={styles.itemTitle}>
-            {f.series?.title ?? 'Listing'}: {f.reason}
+            {f.series?.title ?? 'Listing'}: {FLAG_REASON_LABELS[f.reason]}
           </Text>
           {f.details ? <Text style={styles.itemBody}>{f.details}</Text> : null}
           <View style={styles.actions}>

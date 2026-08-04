@@ -1,7 +1,10 @@
 import { type ReactNode } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -9,27 +12,67 @@ import {
   type TextInputProps,
 } from 'react-native';
 
-import { fonts, minTouchTarget, palette, spacing, type } from '@/theme';
+import { fonts, maxFontScale, minTouchTarget, palette, spacing, type } from '@/theme';
 
 export function Screen({ children }: { children: ReactNode }) {
   return <View style={styles.screen}>{children}</View>;
 }
 
+/**
+ * A Screen for forms: scrolls, and rides above the keyboard so inputs and
+ * the submit button are never covered on small phones.
+ */
+export function FormScreen({ children }: { children: ReactNode }) {
+  return (
+    <KeyboardAvoidingView
+      style={styles.flexBg}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        style={styles.flexBg}
+        contentContainerStyle={styles.formContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        {children}
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
+
+/**
+ * Wraps content that contains a text input (a bottom sheet, or a whole
+ * scrolling screen with grow) so the keyboard pushes it up, not over it.
+ */
+export function KeyboardShift({ children, grow }: { children: ReactNode; grow?: boolean }) {
+  return (
+    <KeyboardAvoidingView
+      style={grow ? styles.flexBg : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      {children}
+    </KeyboardAvoidingView>
+  );
+}
+
 export function Title({ children }: { children: ReactNode }) {
   return (
-    <Text accessibilityRole="header" style={styles.title}>
+    <Text accessibilityRole="header" maxFontSizeMultiplier={maxFontScale} style={styles.title}>
       {children}
     </Text>
   );
 }
 
 export function Body({ children }: { children: ReactNode }) {
-  return <Text style={styles.body}>{children}</Text>;
+  return (
+    <Text maxFontSizeMultiplier={maxFontScale} style={styles.body}>
+      {children}
+    </Text>
+  );
 }
 
 export function ErrorText({ children }: { children: ReactNode }) {
   return (
-    <Text accessibilityRole="alert" style={styles.error}>
+    <Text accessibilityRole="alert" maxFontSizeMultiplier={maxFontScale} style={styles.error}>
       {children}
     </Text>
   );
@@ -39,7 +82,9 @@ export function LoadingView({ label }: { label: string }) {
   return (
     <View style={styles.center} accessibilityLabel={label}>
       <ActivityIndicator color={palette.text} size="large" />
-      <Text style={styles.body}>{label}</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.body}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -49,10 +94,13 @@ type FieldProps = TextInputProps & { label: string; error?: string | null };
 export function Field({ label, error, ...inputProps }: FieldProps) {
   return (
     <View style={styles.field}>
-      <Text style={styles.fieldLabel}>{label}</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.fieldLabel}>
+        {label}
+      </Text>
       <TextInput
         accessibilityLabel={label}
-        placeholderTextColor={palette.textDisabled}
+        maxFontSizeMultiplier={maxFontScale}
+        placeholderTextColor={palette.textFaint}
         style={styles.input}
         {...inputProps}
       />
@@ -88,7 +136,10 @@ export function Button({ label, onPress, disabled, busy, kind = 'primary' }: But
       {busy ? (
         <ActivityIndicator color={kind === 'primary' ? palette.bg : palette.text} />
       ) : (
-        <Text style={[styles.buttonLabel, kind === 'secondary' && styles.buttonLabelSecondary]}>
+        <Text
+          maxFontSizeMultiplier={maxFontScale}
+          style={[styles.buttonLabel, kind === 'secondary' && styles.buttonLabelSecondary]}
+        >
           {label}
         </Text>
       )}
@@ -116,8 +167,12 @@ export function ToggleRow({ label, description, value, onToggle, icon }: ToggleR
     >
       {icon}
       <View style={styles.toggleText}>
-        <Text style={styles.fieldLabel}>{label}</Text>
-        <Text style={styles.caption}>{description}</Text>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.fieldLabel}>
+          {label}
+        </Text>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.caption}>
+          {description}
+        </Text>
       </View>
       <View style={[styles.toggleDot, value && styles.toggleDotActive]} />
     </Pressable>
@@ -130,6 +185,15 @@ const styles = StyleSheet.create({
     backgroundColor: palette.bg,
     padding: spacing.lg,
     gap: spacing.md,
+  },
+  flexBg: {
+    backgroundColor: palette.bg,
+    flex: 1,
+  },
+  formContent: {
+    gap: spacing.md,
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl,
   },
   center: {
     flex: 1,

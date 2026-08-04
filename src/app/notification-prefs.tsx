@@ -10,6 +10,7 @@ import { requestForegroundLocation } from '@/features/discovery/location';
 import { useUpdatePrefs } from '@/features/notifications/queries';
 import { registerPushToken } from '@/lib/notifications';
 import { getSupabase } from '@/lib/supabase';
+import { userError } from '@/lib/user-error';
 import { fonts, palette, spacing, type } from '@/theme';
 
 /** Granular notification opt-outs. Everything here defaults conservative. */
@@ -28,7 +29,7 @@ export default function NotificationPrefsScreen() {
         .eq('profile_id', session!.user.id)
         .maybeSingle();
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load preferences. Check your connection and try again.');
       }
       return data;
     },

@@ -3,20 +3,35 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { ConfirmSheet, DiscardPrompt } from '@/components/confirm-sheet';
+import { useDiscardGuard } from '@/components/discard-guard';
 import { Glyph } from '@/components/glyph';
-import { Body, Button, ErrorText, Field, LoadingView, Screen, Title } from '@/components/ui';
+import {
+  Body,
+  Button,
+  ErrorText,
+  Field,
+  KeyboardShift,
+  LoadingView,
+  Screen,
+  Title,
+} from '@/components/ui';
 import { useSession } from '@/features/auth/session';
 import { freshness } from '@/features/discovery/freshness';
+import { formatRelativeDay } from '@/features/discovery/date-label';
 import { useMicDetail } from '@/features/discovery/queries';
 import { describeRecurrence } from '@/features/discovery/recurrence';
 import { SeriesForm, type SeriesFormValues } from '@/features/producer/components/series-form';
 import { pickAndUploadPoster } from '@/features/producer/poster';
 import {
+  useCancelNight,
   useConfirmSeries,
+  usePauseSeries,
   useSeriesOccurrences,
   useUpdateOccurrence,
   useUpdateSeries,
 } from '@/features/producer/queries';
+import { contactSupport } from '@/lib/support';
 import { fonts, palette, spacing, type, type Discipline } from '@/theme';
 import type { Database } from '@/types/database.types';
 
@@ -29,10 +44,13 @@ export default function ManageSeriesScreen() {
   const occurrences = useSeriesOccurrences(id);
   const confirm = useConfirmSeries();
   const updateSeries = useUpdateSeries();
+  const pauseSeries = usePauseSeries();
   const updateOccurrence = useUpdateOccurrence();
 
   const { session } = useSession();
   const [editing, setEditing] = useState(false);
+  const [editorDirty, setEditorDirty] = useState(false);
+  const [confirmCloseEditor, setConfirmCloseEditor] = useState(false);
   const [posterBusy, setPosterBusy] = useState(false);
   const [posterError, setPosterError] = useState<string | null>(null);
   const [confirmPause, setConfirmPause] = useState(false);
@@ -40,6 +58,18 @@ export default function ManageSeriesScreen() {
     occurrence: Occurrence;
     mode: 'cancel' | 'edit';
   } | null>(null);
+  const { guardElement } = useDiscardGuard({
+    when: editing && editorDirty,
+    title: 'Discard your edits?',
+    body: 'The changes in the editor are not saved. Leaving now loses them.',
+    discardLabel: 'Discard edits',
+  });
+
+  function closeEditor() {
+    setEditing(false);
+    setEditorDirty(false);
+    setConfirmCloseEditor(false);
+  }
 
   if (detail.isPending) {
     return <LoadingView label="Loading your mic" />;
@@ -95,7 +125,12 @@ export default function ManageSeriesScreen() {
           ...(values.venueId ? { venue_id: values.venueId } : {}),
         },
       },
-      { onSuccess: () => setEditing(false) },
+      {
+        onSuccess: () => {
+          setEditing(false);
+          setEditorDirty(false);
+        },
+      },
     );
   }
 
@@ -104,7 +139,7 @@ export default function ManageSeriesScreen() {
       <Stack.Screen
         options={{
           headerShown: true,
-          title: 'Manage',
+          title: series.title,
           headerStyle: { backgroundColor: palette.bg },
           headerTintColor: palette.text,
         }}
@@ -117,10 +152,17 @@ export default function ManageSeriesScreen() {
             now only you can see it.
           </Text>
         ) : series.moderation_status === 'rejected' ? (
-          <Text style={styles.rejectedNote}>
-            This listing was rejected in review and is not public. Edit the wording to resubmit,
-            or contact support.
-          </Text>
+          <>
+            <Text style={styles.rejectedNote}>
+              This listing was rejected in review and is not public. Edit the wording to resubmit,
+              or contact support.
+            </Text>
+            <Button
+              label="Contact support"
+              kind="secondary"
+              onPress={() => contactSupport(`Rejected listing: ${series.title}`)}
+            />
+          </>
         ) : null}
         <Text style={styles.meta}>
           {describeRecurrence(series.rrule, series.start_time) ?? 'Schedule varies'} ·{' '}
@@ -154,14 +196,22 @@ export default function ManageSeriesScreen() {
             <Button
               label={editing ? 'Close editor' : 'Edit mic (all future nights)'}
               kind="secondary"
-              onPress={() => setEditing(!editing)}
+              onPress={() => {
+                if (editing && editorDirty) {
+                  setConfirmCloseEditor(true);
+                } else if (editing) {
+                  closeEditor();
+                } else {
+                  setEditing(true);
+                }
+              }}
             />
           </View>
           <View style={styles.buttonFlex}>
             <Button
               label={series.is_active ? 'Pause listing' : 'Resume listing'}
               kind="secondary"
-              busy={updateSeries.isPending && !editing}
+              busy={(updateSeries.isPending || pauseSeries.isPending) && !editing}
               onPress={() => {
                 if (series.is_active) {
                   setConfirmPause(true);
@@ -229,6 +279,7 @@ export default function ManageSeriesScreen() {
               }
               submitLabel="Save for all future nights"
               onSubmit={submitEdit}
+              onDirtyChange={setEditorDirty}
             />
           </View>
         ) : null}
@@ -245,11 +296,7 @@ export default function ManageSeriesScreen() {
             <View key={occ.id} style={styles.nightRow}>
               <View style={styles.nightInfo}>
                 <Text style={[styles.nightDate, occ.status === 'cancelled' && styles.cancelled]}>
-                  {new Date(occ.starts_at).toLocaleDateString(undefined, {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                  })}
+                  {formatRelativeDay(occ.starts_at, series.timezone)}
                   {occ.override_title ? ` · ${occ.override_title}` : ''}
                 </Text>
                 {occ.status === 'cancelled' ? (
@@ -290,17 +337,33 @@ export default function ManageSeriesScreen() {
         )}
       </ScrollView>
 
+      {confirmCloseEditor ? (
+        <ConfirmSheet
+          title="Discard your edits?"
+          body="The changes in the editor are not saved. Closing it loses them."
+          confirmLabel="Discard edits"
+          onConfirm={closeEditor}
+          onClose={() => setConfirmCloseEditor(false)}
+        />
+      ) : null}
+      {guardElement}
       {nightAction ? (
         <NightModal
           seriesId={series.id}
           occurrence={nightAction.occurrence}
           mode={nightAction.mode}
+          timezone={series.timezone}
           onClose={() => setNightAction(null)}
         />
       ) : null}
 
       {confirmPause ? (
-        <Modal visible transparent animationType="slide" onRequestClose={() => setConfirmPause(false)}>
+        <Modal
+          visible
+          transparent
+          animationType="slide"
+          onRequestClose={() => setConfirmPause(false)}
+        >
           <View style={styles.modalBackdrop}>
             <View style={styles.modalSheet}>
               <Text style={styles.sectionTitle}>Pause this listing?</Text>
@@ -310,12 +373,9 @@ export default function ManageSeriesScreen() {
               </Body>
               <Button
                 label="Pause listing"
-                busy={updateSeries.isPending}
+                busy={pauseSeries.isPending}
                 onPress={() =>
-                  updateSeries.mutate(
-                    { seriesId: series.id, patch: { is_active: false } },
-                    { onSettled: () => setConfirmPause(false) },
-                  )
+                  pauseSeries.mutate(series.id, { onSettled: () => setConfirmPause(false) })
                 }
               />
               <Button label="Back" kind="secondary" onPress={() => setConfirmPause(false)} />
@@ -331,34 +391,43 @@ function NightModal({
   seriesId,
   occurrence,
   mode,
+  timezone,
   onClose,
 }: {
   seriesId: string;
   occurrence: Occurrence;
   mode: 'cancel' | 'edit';
+  timezone: string;
   onClose: () => void;
 }) {
   const update = useUpdateOccurrence();
+  const cancelNight = useCancelNight();
   const [note, setNote] = useState('');
-  const [overrideTitle, setOverrideTitle] = useState(occurrence.override_title ?? '');
-  const [overrideCost, setOverrideCost] = useState(
-    occurrence.override_cost_cents != null ? String(occurrence.override_cost_cents / 100) : '',
-  );
+  const initialTitle = occurrence.override_title ?? '';
+  const initialCost =
+    occurrence.override_cost_cents != null ? String(occurrence.override_cost_cents / 100) : '';
+  const [overrideTitle, setOverrideTitle] = useState(initialTitle);
+  const [overrideCost, setOverrideCost] = useState(initialCost);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const dirty =
+    mode === 'cancel'
+      ? note.trim().length > 0
+      : overrideTitle !== initialTitle || overrideCost !== initialCost;
 
-  const dateLabel = new Date(occurrence.starts_at).toLocaleDateString(undefined, {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
+  function close() {
+    if (dirty) {
+      setConfirmDiscard(true);
+      return;
+    }
+    onClose();
+  }
+
+  const dateLabel = formatRelativeDay(occurrence.starts_at, timezone);
 
   function submit() {
     if (mode === 'cancel') {
-      update.mutate(
-        {
-          occurrenceId: occurrence.id,
-          seriesId,
-          patch: { status: 'cancelled', cancellation_note: note.trim() || null },
-        },
+      cancelNight.mutate(
+        { occurrenceId: occurrence.id, seriesId, note: note.trim() || null, dateLabel },
         { onSuccess: onClose },
       );
     } else {
@@ -379,57 +448,71 @@ function NightModal({
   }
 
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible transparent animationType="slide" onRequestClose={close}>
       <View style={styles.modalBackdrop}>
-        <View style={styles.modalSheet}>
-          <Text style={styles.sectionTitle}>
-            {mode === 'cancel' ? `Cancel ${dateLabel}?` : `Edit ${dateLabel} only`}
-          </Text>
-          {mode === 'cancel' ? (
-            <>
-              <Body>
-                Only this night is cancelled. The rest of the schedule is untouched, and performers
-                see the cancellation on the listing.
-              </Body>
-              <Field
-                label="Reason (shown to performers, optional)"
-                value={note}
-                onChangeText={setNote}
-                placeholder="Venue is closed for a private event"
-              />
-            </>
-          ) : (
-            <>
-              <Body>
-                Changes here apply to this night only. Use the Edit mic button for this and all
-                future nights.
-              </Body>
-              <Field
-                label="Special title (optional)"
-                value={overrideTitle}
-                onChangeText={setOverrideTitle}
-                placeholder="Holiday showcase"
-              />
-              <Field
-                label="Cost for this night ($, optional)"
-                value={overrideCost}
-                onChangeText={setOverrideCost}
-                inputMode="decimal"
-              />
-            </>
-          )}
-          {update.isError ? (
-            <ErrorText>
-              {update.error instanceof Error ? update.error.message : 'Could not save.'}
-            </ErrorText>
-          ) : null}
-          <Button
-            label={mode === 'cancel' ? 'Cancel this night' : 'Save this night'}
-            busy={update.isPending}
-            onPress={submit}
-          />
-          <Button label="Back" kind="secondary" onPress={onClose} />
-        </View>
+        <KeyboardShift>
+          <View style={styles.modalSheet}>
+            {confirmDiscard ? (
+              <DiscardPrompt onDiscard={onClose} onKeep={() => setConfirmDiscard(false)} />
+            ) : (
+              <>
+                <Text style={styles.sectionTitle}>
+                  {mode === 'cancel' ? `Cancel ${dateLabel}?` : `Edit ${dateLabel} only`}
+                </Text>
+                {mode === 'cancel' ? (
+                  <>
+                    <Body>
+                      Only this night is cancelled. The rest of the schedule is untouched, and
+                      performers see the cancellation on the listing.
+                    </Body>
+                    <Field
+                      label="Reason (shown to performers, optional)"
+                      value={note}
+                      onChangeText={setNote}
+                      placeholder="Venue is closed for a private event"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <Body>
+                      Changes here apply to this night only. Use the Edit mic button for this and
+                      all future nights.
+                    </Body>
+                    <Field
+                      label="Special title (optional)"
+                      value={overrideTitle}
+                      onChangeText={setOverrideTitle}
+                      placeholder="Holiday showcase"
+                    />
+                    <Field
+                      label="Cost for this night ($, optional)"
+                      value={overrideCost}
+                      onChangeText={setOverrideCost}
+                      inputMode="decimal"
+                    />
+                  </>
+                )}
+                {update.isError || cancelNight.isError ? (
+                  <ErrorText>
+                    {mode === 'cancel'
+                      ? cancelNight.error instanceof Error
+                        ? cancelNight.error.message
+                        : 'Could not cancel.'
+                      : update.error instanceof Error
+                        ? update.error.message
+                        : 'Could not save.'}
+                  </ErrorText>
+                ) : null}
+                <Button
+                  label={mode === 'cancel' ? 'Cancel this night' : 'Save this night'}
+                  busy={mode === 'cancel' ? cancelNight.isPending : update.isPending}
+                  onPress={submit}
+                />
+                <Button label="Back" kind="secondary" onPress={close} />
+              </>
+            )}
+          </View>
+        </KeyboardShift>
       </View>
     </Modal>
   );
@@ -515,7 +598,7 @@ const styles = StyleSheet.create({
     fontSize: type.body.fontSize,
   },
   cancelled: {
-    color: palette.textDisabled,
+    color: palette.textFaint,
     textDecorationLine: 'line-through',
   },
   cancelledNote: {

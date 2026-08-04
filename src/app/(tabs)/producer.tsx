@@ -6,6 +6,7 @@ import { Glyph } from '@/components/glyph';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
+import { formatRelativeDay } from '@/features/discovery/date-label';
 import { freshness } from '@/features/discovery/freshness';
 import { describeRecurrence } from '@/features/discovery/recurrence';
 import {
@@ -136,9 +137,8 @@ export default function ProducerScreen() {
           const fresh = freshness(item.last_confirmed_at, new Date());
           const confirming = confirm.isPending && confirmingId === item.id;
           const night = nextNights.data?.[item.id];
-          const nightIsToday =
-            night != null &&
-            new Date(night.startsAt).toDateString() === new Date().toDateString();
+          const nightLabel = night ? formatRelativeDay(night.startsAt, item.timezone) : null;
+          const nightIsToday = nightLabel === 'Tonight' || nightLabel === 'Today';
           return (
             <Pressable
               accessibilityRole="button"
@@ -164,17 +164,11 @@ export default function ProducerScreen() {
               </Text>
               {night ? (
                 <Text style={styles.nextNight}>
-                  {nightIsToday
-                    ? 'Tonight'
-                    : `Next: ${new Date(night.startsAt).toLocaleDateString(undefined, {
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric',
-                      })}`}{' '}
-                  · {night.signupCount} signed up
+                  {nightIsToday ? nightLabel : `Next: ${nightLabel}`} · {night.signupCount} signed
+                  up
                 </Text>
               ) : null}
-              {nightIsToday ? (
+              {night && nightIsToday ? (
                 <Button
                   label="Open tonight's list"
                   onPress={() => router.push(`/producer/night/${night.occurrenceId}`)}

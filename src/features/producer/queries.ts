@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { useToast } from '@/components/toast';
 import { getSupabase } from '@/lib/supabase';
+import { userError } from '@/lib/user-error';
 import type { Database } from '@/types/database.types';
 
 type SeriesUpdate = Database['public']['Tables']['mic_series']['Update'];
@@ -21,7 +23,7 @@ export function useMySeries(userId: string | undefined) {
         .is('deleted_at', null)
         .order('title');
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load your mics. Check your connection and try again.');
       }
       return data;
     },
@@ -42,6 +44,7 @@ function useInvalidateSeries() {
 /** One-tap confirm. The server stamps the time and identity; the value sent is ignored. */
 export function useConfirmSeries() {
   const invalidate = useInvalidateSeries();
+  const toast = useToast();
   return useMutation({
     mutationFn: async (seriesId: string) => {
       const { error } = await getSupabase()
@@ -49,10 +52,18 @@ export function useConfirmSeries() {
         .update({ last_confirmed_at: new Date().toISOString() })
         .eq('id', seriesId);
       if (error) {
-        throw new Error(error.message);
+        throw userError(
+          error,
+          'Could not confirm the listing. Check your connection and try again.',
+        );
       }
     },
-    onSuccess: (_d, seriesId) => invalidate(seriesId),
+    onSuccess: (_d, seriesId) => {
+      invalidate(seriesId);
+      // This is the core producer loop; a chip quietly turning green is
+      // too easy to miss to count as confirmation.
+      toast.show('Confirmed. Performers now see this listing as checked today.');
+    },
   });
 }
 
@@ -62,7 +73,7 @@ export function useUpdateSeries() {
     mutationFn: async ({ seriesId, patch }: { seriesId: string; patch: SeriesUpdate }) => {
       const { error } = await getSupabase().from('mic_series').update(patch).eq('id', seriesId);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not save the changes. Try again.');
       }
     },
     onSuccess: (_d, { seriesId }) => invalidate(seriesId),
@@ -86,11 +97,112 @@ export function useUpdateOccurrence() {
         .update(patch)
         .eq('id', occurrenceId);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not save that night. Try again.');
       }
       return seriesId;
     },
     onSuccess: (_d, { seriesId }) => invalidate(seriesId),
+  });
+}
+
+/**
+ * Cancels one night, with Undo on the toast. The screen's confirmation
+ * sheet stays in front of this; the toast is the safety net after it.
+ */
+export function useCancelNight() {
+  const invalidate = useInvalidateSeries();
+  const toast = useToast();
+
+  async function restore(occurrenceId: string, seriesId: string): Promise<void> {
+    const { error } = await getSupabase()
+      .from('mic_occurrences')
+      .update({ status: 'scheduled', cancellation_note: null })
+      .eq('id', occurrenceId)
+      .eq('status', 'cancelled');
+    if (error) {
+      toast.show(
+        userError(error, 'Could not restore the night. Check it on the Manage screen.').message,
+      );
+      return;
+    }
+    invalidate(seriesId);
+    toast.show('The night is back on.');
+  }
+
+  return useMutation({
+    mutationFn: async ({
+      occurrenceId,
+      seriesId,
+      note,
+    }: {
+      occurrenceId: string;
+      seriesId: string;
+      note: string | null;
+      /** Already-formatted night name for the toast, e.g. "Tonight". */
+      dateLabel: string;
+    }) => {
+      const { error } = await getSupabase()
+        .from('mic_occurrences')
+        .update({ status: 'cancelled', cancellation_note: note })
+        .eq('id', occurrenceId);
+      if (error) {
+        throw userError(error, 'Could not cancel that night. Try again.');
+      }
+      return seriesId;
+    },
+    onSuccess: (_d, { occurrenceId, seriesId, dateLabel }) => {
+      invalidate(seriesId);
+      toast.show(`${dateLabel} is cancelled. Performers on the list are notified.`, {
+        label: 'Undo',
+        onPress: () => {
+          void restore(occurrenceId, seriesId);
+        },
+      });
+    },
+  });
+}
+
+/**
+ * Pauses a listing (this app's remove-a-listing action; nights leave the
+ * schedule until resumed), with Undo on the toast. The confirmation sheet
+ * stays in front of this.
+ */
+export function usePauseSeries() {
+  const invalidate = useInvalidateSeries();
+  const toast = useToast();
+
+  async function resume(seriesId: string): Promise<void> {
+    const { error } = await getSupabase()
+      .from('mic_series')
+      .update({ is_active: true })
+      .eq('id', seriesId);
+    if (error) {
+      toast.show(userError(error, 'Could not resume the listing. Try again from My Mics.').message);
+      return;
+    }
+    invalidate(seriesId);
+    toast.show('The listing is live again.');
+  }
+
+  return useMutation({
+    mutationFn: async (seriesId: string) => {
+      const { error } = await getSupabase()
+        .from('mic_series')
+        .update({ is_active: false })
+        .eq('id', seriesId);
+      if (error) {
+        throw userError(error, 'Could not pause the listing. Try again.');
+      }
+    },
+    onSuccess: (_d, seriesId) => {
+      invalidate(seriesId);
+      toast.show('Listing paused. Upcoming nights are off the schedule.', {
+        label: 'Undo',
+        onPress: () => {
+          void resume(seriesId);
+        },
+      });
+    },
   });
 }
 
@@ -123,7 +235,7 @@ export function useCreateSeries() {
           .select('id')
           .single();
         if (error) {
-          throw new Error(error.message);
+          throw userError(error, 'Could not save the venue. Check the address and try again.');
         }
         venueId = data.id;
       }
@@ -138,7 +250,7 @@ export function useCreateSeries() {
         .select('id')
         .single();
       if (seriesError) {
-        throw new Error(seriesError.message);
+        throw userError(seriesError, 'Could not create the listing. Try again.');
       }
       return series.id;
     },
@@ -159,7 +271,7 @@ export function useVenueSearch(query: string) {
         .is('deleted_at', null)
         .limit(12);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Venue search failed. Try again.');
       }
       return data;
     },
@@ -179,7 +291,7 @@ export function useSeriesOccurrences(seriesId: string | undefined) {
         .order('starts_at')
         .limit(10);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load the upcoming nights. Try again.');
       }
       return data;
     },
@@ -194,11 +306,11 @@ export function useOccurrenceContext(occurrenceId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await getSupabase()
         .from('mic_occurrences')
-        .select('id, starts_at, status, override_title, series:mic_series(id, title)')
+        .select('id, starts_at, status, override_title, series:mic_series(id, title, timezone)')
         .eq('id', occurrenceId!)
         .maybeSingle();
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load this night. Try again.');
       }
       return data;
     },
@@ -224,7 +336,7 @@ export function useNextNights(seriesIds: string[]) {
         .gte('starts_at', new Date().toISOString())
         .order('starts_at');
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load the upcoming nights. Try again.');
       }
       const bySeries: Record<string, NextNight> = {};
       for (const row of data) {
@@ -262,7 +374,7 @@ export function useSubmitClaim() {
         if (error.code === '23505') {
           throw new Error('You already have a pending claim on this mic.');
         }
-        throw new Error(error.message);
+        throw userError(error, 'Could not submit the claim. Try again.');
       }
     },
     onSuccess: () => invalidate(),
@@ -281,7 +393,7 @@ export function usePendingClaims(isAdmin: boolean) {
         .eq('status', 'pending')
         .order('created_at');
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load the pending claims. Try again.');
       }
       return data;
     },
@@ -297,7 +409,7 @@ export function useReviewClaim() {
         p_approve: approve,
       });
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not update the claim. Try again.');
       }
     },
     onSuccess: () => invalidate(),
@@ -315,13 +427,13 @@ export function useEnablePerformerRole() {
         .update({ is_performer: true })
         .eq('id', userId);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not turn on performing. Try again.');
       }
       const { error: ppError } = await supabase
         .from('performer_profiles')
         .upsert({ profile_id: userId }, { onConflict: 'profile_id', ignoreDuplicates: true });
       if (ppError) {
-        throw new Error(ppError.message);
+        throw userError(ppError, 'Could not turn on performing. Try again.');
       }
     },
     onSuccess: (_d, userId) => {
@@ -341,13 +453,13 @@ export function useEnableProducerRole() {
         .update({ is_producer: true })
         .eq('id', userId);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not enable the producer role. Try again.');
       }
       const { error: ppError } = await supabase
         .from('producer_profiles')
         .upsert({ profile_id: userId }, { onConflict: 'profile_id', ignoreDuplicates: true });
       if (ppError) {
-        throw new Error(ppError.message);
+        throw userError(ppError, 'Could not enable the producer role. Try again.');
       }
     },
     onSuccess: (_d, userId) => {

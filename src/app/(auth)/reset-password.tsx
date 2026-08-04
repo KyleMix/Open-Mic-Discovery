@@ -4,7 +4,16 @@ import { useEffect, useState } from 'react';
 import { exchangeRecoveryCode, updatePassword } from '@/features/auth/api';
 import { useSession } from '@/features/auth/session';
 import { validatePassword } from '@/features/auth/validation';
-import { Body, Button, ErrorText, Field, LoadingView, Screen, Title } from '@/components/ui';
+import {
+  Body,
+  Button,
+  ErrorText,
+  Field,
+  FormScreen,
+  LoadingView,
+  Screen,
+  Title,
+} from '@/components/ui';
 
 /**
  * Landing screen for the password-reset email link. The link carries a
@@ -84,19 +93,23 @@ export default function ResetPasswordScreen() {
   }
 
   return (
-    <Screen>
+    <FormScreen>
       <Title>Set a new password</Title>
       <Field
         label="New password"
         autoComplete="new-password"
         secureTextEntry
         value={password}
-        onChangeText={setPassword}
+        onChangeText={(v) => {
+          setPassword(v);
+          setFieldError(null);
+        }}
+        onBlur={() => setFieldError(password ? validatePassword(password) : null)}
         error={fieldError}
       />
       <Body>Passwords are at least 10 characters.</Body>
       {error ? <ErrorText>{error}</ErrorText> : null}
       <Button label="Save new password" busy={busy} disabled={busy || !password} onPress={submit} />
-    </Screen>
+    </FormScreen>
   );
 }

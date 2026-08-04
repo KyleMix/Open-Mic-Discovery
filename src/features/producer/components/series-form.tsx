@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import tzLookup from 'tz-lookup';
 
@@ -17,7 +17,15 @@ import {
   type WeekdayCode,
 } from '@/features/producer/rrule-builder';
 import { useVenueSearch } from '@/features/producer/queries';
-import { disciplineAccents, fonts, palette, spacing, type, type Discipline } from '@/theme';
+import {
+  disciplineAccents,
+  fonts,
+  minTouchTarget,
+  palette,
+  spacing,
+  type,
+  type Discipline,
+} from '@/theme';
 import type { Database } from '@/types/database.types';
 
 type SignupMethod = Database['public']['Enums']['signup_method'];
@@ -122,13 +130,15 @@ type Props = {
   error: string | null;
   submitLabel: string;
   onSubmit: (values: SeriesFormValues) => void;
+  /** Fires when entries diverge from (or return to) their initial values. */
+  onDirtyChange?: (dirty: boolean) => void;
 };
 
 function chipStyle(active: boolean) {
   return [styles.chip, active && styles.chipActive];
 }
 
-export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Props) {
+export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDirtyChange }: Props) {
   const [title, setTitle] = useState(existing?.title ?? '');
   const [description, setDescription] = useState(existing?.description ?? '');
   const [disciplines, setDisciplines] = useState<Discipline[]>(existing?.disciplines ?? []);
@@ -157,6 +167,16 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
   );
   const [capacity, setCapacity] = useState(existing?.capacity ? String(existing.capacity) : '');
   const [formError, setFormError] = useState<string | null>(null);
+  // Inline validation for the text fields; the chip-driven requirements
+  // (disciplines, schedule, venue) still surface at submit, next to the
+  // button, because there is no blur moment to hang them on.
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string | null>>({});
+  const setFieldError = (field: string, message: string | null) =>
+    setFieldErrors((cur) => ({ ...cur, [field]: message }));
+  const numberError = (value: string, label: string): string | null =>
+    value.trim() && (!Number.isFinite(Number(value)) || Number(value) < 0)
+      ? `${label} must be a number.`
+      : null;
 
   // Venue. In edit mode the current venue shows with a Change action;
   // picking another listed venue moves the whole series there. Adding a
@@ -189,6 +209,39 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
   const startTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
   const rrule = buildRrule(recurrence);
   const preview = rrule ? describeRecurrence(rrule, startTime) : null;
+
+  // ~20 fields of typed-in work; the parent guards navigation on this so
+  // a stray back tap cannot silently discard it all.
+  const snapshot = JSON.stringify([
+    title,
+    description,
+    disciplines,
+    method,
+    recurrence,
+    biweeklyNextWeek,
+    hour,
+    minute,
+    timezone,
+    signupOpensDays,
+    costDollars,
+    costNote,
+    setLength,
+    capacity,
+    venueId ?? null,
+    venueLabel,
+    addingVenue,
+    venueName,
+    venueAddress,
+    venueNeighborhood,
+    venueCity,
+    venueRegion,
+    pin,
+  ]);
+  const [initialSnapshot] = useState(snapshot);
+  const dirty = snapshot !== initialSnapshot;
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
 
   function toggleIn<T>(list: T[], item: T): T[] {
     return list.includes(item) ? list.filter((x) => x !== item) : [...list, item];
@@ -270,7 +323,12 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
       <Field
         label="Mic name"
         value={title}
-        onChangeText={setTitle}
+        onChangeText={(v) => {
+          setTitle(v);
+          setFieldError('title', null);
+        }}
+        onBlur={() => setFieldError('title', title.trim() ? null : 'Give the mic a name.')}
+        error={fieldErrors.title}
         placeholder="The Basement Open Mic"
       />
 
@@ -494,7 +552,12 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
           <Field
             label="Cost ($)"
             value={costDollars}
-            onChangeText={setCostDollars}
+            onChangeText={(v) => {
+              setCostDollars(v);
+              setFieldError('cost', null);
+            }}
+            onBlur={() => setFieldError('cost', numberError(costDollars, 'Cost'))}
+            error={fieldErrors.cost}
             inputMode="decimal"
           />
         </View>
@@ -502,12 +565,27 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
           <Field
             label="Set length (min)"
             value={setLength}
-            onChangeText={setSetLength}
+            onChangeText={(v) => {
+              setSetLength(v);
+              setFieldError('setLength', null);
+            }}
+            onBlur={() => setFieldError('setLength', numberError(setLength, 'Set length'))}
+            error={fieldErrors.setLength}
             inputMode="numeric"
           />
         </View>
         <View style={styles.pairItem}>
-          <Field label="Spots" value={capacity} onChangeText={setCapacity} inputMode="numeric" />
+          <Field
+            label="Spots"
+            value={capacity}
+            onChangeText={(v) => {
+              setCapacity(v);
+              setFieldError('capacity', null);
+            }}
+            onBlur={() => setFieldError('capacity', numberError(capacity, 'Spots'))}
+            error={fieldErrors.capacity}
+            inputMode="numeric"
+          />
         </View>
       </View>
       <Field
@@ -527,85 +605,83 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit }: Pro
 
       <>
         <Text style={styles.sectionLabel}>Venue</Text>
-        {existing ? (
-          <Body>Changing the venue moves this and all future nights there.</Body>
-        ) : null}
+        {existing ? <Body>Changing the venue moves this and all future nights there.</Body> : null}
         {venueLabel ? (
-            <View style={styles.venuePicked}>
-              <Text style={styles.chipText}>{venueLabel}</Text>
-              <Button
-                label="Change"
-                kind="secondary"
-                onPress={() => {
-                  setVenueId(undefined);
-                  setVenueLabel(null);
-                }}
-              />
-            </View>
-          ) : addingVenue ? (
-            <>
-              <Field label="Venue name" value={venueName} onChangeText={setVenueName} />
-              <Field label="Street address" value={venueAddress} onChangeText={setVenueAddress} />
-              <Field
-                label="Neighborhood (optional)"
-                value={venueNeighborhood}
-                onChangeText={setVenueNeighborhood}
-              />
-              <View style={styles.pairRow}>
-                <View style={[styles.pairItem, { flex: 2 }]}>
-                  <Field label="City" value={venueCity} onChangeText={setVenueCity} />
-                </View>
-                <View style={styles.pairItem}>
-                  <Field
-                    label="State"
-                    value={venueRegion}
-                    onChangeText={setVenueRegion}
-                    autoCapitalize="characters"
-                  />
-                </View>
+          <View style={styles.venuePicked}>
+            <Text style={styles.chipText}>{venueLabel}</Text>
+            <Button
+              label="Change"
+              kind="secondary"
+              onPress={() => {
+                setVenueId(undefined);
+                setVenueLabel(null);
+              }}
+            />
+          </View>
+        ) : addingVenue ? (
+          <>
+            <Field label="Venue name" value={venueName} onChangeText={setVenueName} />
+            <Field label="Street address" value={venueAddress} onChangeText={setVenueAddress} />
+            <Field
+              label="Neighborhood (optional)"
+              value={venueNeighborhood}
+              onChangeText={setVenueNeighborhood}
+            />
+            <View style={styles.pairRow}>
+              <View style={[styles.pairItem, { flex: 2 }]}>
+                <Field label="City" value={venueCity} onChangeText={setVenueCity} />
               </View>
-              <Body>Place the venue so performers can find it.</Body>
-              <PinPicker pin={pin} onChange={placePin} />
-              <Button
-                label="Search existing venues instead"
-                kind="secondary"
-                onPress={() => setAddingVenue(false)}
-              />
-            </>
-          ) : (
-            <>
-              <Field
-                label="Search venues"
-                value={venueQuery}
-                onChangeText={setVenueQuery}
-                placeholder="Venue name or city"
-              />
-              {venueResults.data?.map((v) => (
-                <Pressable
-                  key={v.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Choose ${v.name}`}
-                  onPress={() => {
-                    setVenueId(v.id);
-                    setVenueLabel(`${v.name}, ${v.city}`);
-                  }}
-                  style={styles.venueResult}
-                >
-                  <Text style={styles.chipText}>{v.name}</Text>
-                  <Text style={styles.venueMeta}>
-                    {v.address_line}, {v.city}, {v.region}
-                  </Text>
-                </Pressable>
-              ))}
-              {!existing ? (
-                <Button
-                  label="Venue is not listed: add it"
-                  kind="secondary"
-                  onPress={() => setAddingVenue(true)}
+              <View style={styles.pairItem}>
+                <Field
+                  label="State"
+                  value={venueRegion}
+                  onChangeText={setVenueRegion}
+                  autoCapitalize="characters"
                 />
-              ) : null}
-            </>
-          )}
+              </View>
+            </View>
+            <Body>Place the venue so performers can find it.</Body>
+            <PinPicker pin={pin} onChange={placePin} />
+            <Button
+              label="Search existing venues instead"
+              kind="secondary"
+              onPress={() => setAddingVenue(false)}
+            />
+          </>
+        ) : (
+          <>
+            <Field
+              label="Search venues"
+              value={venueQuery}
+              onChangeText={setVenueQuery}
+              placeholder="Venue name or city"
+            />
+            {venueResults.data?.map((v) => (
+              <Pressable
+                key={v.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Choose ${v.name}`}
+                onPress={() => {
+                  setVenueId(v.id);
+                  setVenueLabel(`${v.name}, ${v.city}`);
+                }}
+                style={styles.venueResult}
+              >
+                <Text style={styles.chipText}>{v.name}</Text>
+                <Text style={styles.venueMeta}>
+                  {v.address_line}, {v.city}, {v.region}
+                </Text>
+              </Pressable>
+            ))}
+            {!existing ? (
+              <Button
+                label="Venue is not listed: add it"
+                kind="secondary"
+                onPress={() => setAddingVenue(true)}
+              />
+            ) : null}
+          </>
+        )}
       </>
 
       {formError ? <ErrorText>{formError}</ErrorText> : null}
@@ -640,7 +716,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.xs,
-    minHeight: 36,
+    minHeight: minTouchTarget,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
   },

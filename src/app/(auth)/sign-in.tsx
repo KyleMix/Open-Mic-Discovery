@@ -3,14 +3,16 @@ import { useState } from 'react';
 import { Platform, Text, View } from 'react-native';
 
 import { signInWithApple, signInWithEmail, signInWithGoogle } from '@/features/auth/api';
+import { validateEmail } from '@/features/auth/validation';
 import { Logo } from '@/components/logo';
-import { Body, Button, ErrorText, Field, Screen } from '@/components/ui';
+import { Body, Button, ErrorText, Field, FormScreen } from '@/components/ui';
 import { palette, spacing } from '@/theme';
 
 export default function SignInScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [busy, setBusy] = useState<'email' | 'apple' | 'google' | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,7 +35,7 @@ export default function SignInScreen() {
   }
 
   return (
-    <Screen>
+    <FormScreen>
       <View style={{ alignItems: 'center', marginVertical: spacing.lg }}>
         <Logo markSize={48} />
       </View>
@@ -44,7 +46,12 @@ export default function SignInScreen() {
         autoComplete="email"
         inputMode="email"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={(v) => {
+          setEmail(v);
+          setEmailError(null);
+        }}
+        onBlur={() => setEmailError(email ? validateEmail(email) : null)}
+        error={emailError}
       />
       <Field
         label="Password"
@@ -90,6 +97,6 @@ export default function SignInScreen() {
         disabled={busy !== null}
         onPress={() => router.replace('/(tabs)')}
       />
-    </Screen>
+    </FormScreen>
   );
 }

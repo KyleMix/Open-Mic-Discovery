@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
+import { useToast } from '@/components/toast';
 import { registerPushToken } from '@/lib/notifications';
 import { getSupabase } from '@/lib/supabase';
+import { userError } from '@/lib/user-error';
 import type { Database } from '@/types/database.types';
 
 export type SignupStatus = Database['public']['Enums']['signup_status'];
@@ -21,7 +23,7 @@ export function useMySignup(occurrenceId: string | undefined, userId: string | u
         .eq('performer_id', userId!)
         .maybeSingle();
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not check your signup. Try again.');
       }
       return data;
     },
@@ -65,7 +67,7 @@ export type MyNight = {
     id: string;
     starts_at: string;
     status: Database['public']['Enums']['occurrence_status'];
-    series: { id: string; title: string } | null;
+    series: { id: string; title: string; timezone: string } | null;
   } | null;
 };
 
@@ -81,13 +83,13 @@ export function useMyNights(userId: string | undefined) {
       const { data, error } = await getSupabase()
         .from('signups')
         .select(
-          'id, status, slot_position, occurrence:mic_occurrences(id, starts_at, status, series:mic_series(id, title))',
+          'id, status, slot_position, occurrence:mic_occurrences(id, starts_at, status, series:mic_series(id, title, timezone))',
         )
         .eq('performer_id', userId!)
         .order('created_at', { ascending: false })
         .limit(100);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load your nights. Try again.');
       }
       return data;
     },
@@ -108,7 +110,7 @@ export function useJoinList() {
         if (error.code === '23505') {
           throw new Error('You are already on this list.');
         }
-        throw new Error(error.message);
+        throw userError(error, 'Could not sign you up. Try again.');
       }
     },
     onSuccess: (_d, { userId }) => {
@@ -122,6 +124,27 @@ export function useJoinList() {
 
 export function useWithdraw() {
   const queryClient = useQueryClient();
+  const toast = useToast();
+
+  // Undo re-signs up (per the withdraw copy, at the end of the list, not
+  // the old slot). Failures come back translated: the window may have
+  // closed between the withdraw and the tap.
+  async function rejoin(occurrenceId: string, userId: string): Promise<void> {
+    const { error } = await getSupabase()
+      .from('signups')
+      .insert({ occurrence_id: occurrenceId, performer_id: userId });
+    if (error && error.code !== '23505') {
+      const friendly =
+        error.code === '42501'
+          ? new Error('Could not put you back on: signups closed for this night.')
+          : userError(error, 'Could not put you back on the list. Try again from the mic page.');
+      toast.show(friendly.message);
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ['signup'] });
+    toast.show('You are back on the list.');
+  }
+
   return useMutation({
     mutationFn: async ({ occurrenceId, userId }: { occurrenceId: string; userId: string }) => {
       const { error } = await getSupabase()
@@ -130,10 +153,20 @@ export function useWithdraw() {
         .eq('occurrence_id', occurrenceId)
         .eq('performer_id', userId);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not withdraw. Try again.');
       }
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['signup'] }),
+    onSuccess: (_d, { occurrenceId, userId }) => {
+      queryClient.invalidateQueries({ queryKey: ['signup'] });
+      // The card reverting to "Sign me up" alone reads as a glitch, not a
+      // confirmation that the spot was given up.
+      toast.show('You are off the list.', {
+        label: 'Undo',
+        onPress: () => {
+          void rejoin(occurrenceId, userId);
+        },
+      });
+    },
   });
 }
 
@@ -151,7 +184,7 @@ export function useRoster(occurrenceId: string | undefined) {
         .order('slot_position', { ascending: true, nullsFirst: false })
         .order('created_at');
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load the list. Try again.');
       }
       return data;
     },
@@ -194,7 +227,7 @@ export function useDrawLottery() {
         p_occurrence_id: occurrenceId,
       });
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'The draw did not run. Try again.');
       }
       return data;
     },
@@ -217,7 +250,7 @@ export function useSetSlotOrder() {
         p_signup_ids: signupIds,
       });
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not reorder the list. Try again.');
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['signup'] }),
@@ -237,7 +270,7 @@ export function useSignupCounts(occurrenceId: string | undefined) {
         p_occurrence_id: occurrenceId!,
       });
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not check how many spots are taken.');
       }
       return data[0] ?? null;
     },
@@ -262,7 +295,7 @@ export function useAddWalkIn() {
         if (error.code === '42501') {
           throw new Error('Only the producer of this mic can add walk-ins.');
         }
-        throw new Error(error.message);
+        throw userError(error, 'Could not add them to the list. Try again.');
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['signup'] }),
@@ -276,7 +309,7 @@ export function useRemoveWalkIn() {
     mutationFn: async (signupId: string) => {
       const { error } = await getSupabase().from('signups').delete().eq('id', signupId);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not remove them from the list. Try again.');
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['signup'] }),
@@ -293,7 +326,7 @@ export function useMarkOnDeck() {
         p_on_deck: onDeck,
       });
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not update on deck. Try again.');
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['signup'] }),
@@ -306,7 +339,7 @@ export function useSetSignupStatus() {
     mutationFn: async ({ signupId, status }: { signupId: string; status: SignupStatus }) => {
       const { error } = await getSupabase().from('signups').update({ status }).eq('id', signupId);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not update their status. Try again.');
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['signup'] }),

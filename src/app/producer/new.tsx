@@ -1,6 +1,8 @@
 import { Stack, useRouter } from 'expo-router';
+import { useState } from 'react';
 import { View } from 'react-native';
 
+import { useDiscardGuard } from '@/components/discard-guard';
 import { Body, Button, Screen, Title } from '@/components/ui';
 import { useSession } from '@/features/auth/session';
 import { SeriesForm, type SeriesFormValues } from '@/features/producer/components/series-form';
@@ -11,6 +13,13 @@ export default function NewSeriesScreen() {
   const router = useRouter();
   const { session } = useSession();
   const create = useCreateSeries();
+  const [dirty, setDirty] = useState(false);
+  const { guardElement, bypassGuard } = useDiscardGuard({
+    when: dirty,
+    title: 'Discard this listing?',
+    body: 'Nothing is saved yet. Leaving now loses everything you entered.',
+    discardLabel: 'Discard it',
+  });
 
   function submit(values: SeriesFormValues) {
     if (!session) {
@@ -37,7 +46,7 @@ export default function NewSeriesScreen() {
           capacity: values.capacity ? Number(values.capacity) : null,
         },
       },
-      { onSuccess: (seriesId) => router.replace(`/producer/${seriesId}`) },
+      { onSuccess: (seriesId) => bypassGuard(() => router.replace(`/producer/${seriesId}`)) },
     );
   }
 
@@ -69,8 +78,10 @@ export default function NewSeriesScreen() {
           }
           submitLabel="Create listing"
           onSubmit={submit}
+          onDirtyChange={setDirty}
         />
       )}
+      {guardElement}
     </View>
   );
 }

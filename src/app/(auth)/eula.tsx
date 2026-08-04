@@ -7,6 +7,7 @@ import { parseEulaMarkdown } from '@/features/auth/eula-markdown';
 import { useLatestEula, useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
 import { getSupabase } from '@/lib/supabase';
+import { userError } from '@/lib/user-error';
 import { useOnboardingStore } from '@/stores/onboarding';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { palette, spacing, type } from '@/theme';
@@ -61,7 +62,7 @@ export default function EulaScreen() {
         .update({ eula_version: version })
         .eq('id', profile.data.id);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not record acceptance. Check your connection and try again.');
       }
       await queryClient.invalidateQueries({ queryKey: ['profile', profile.data.id] });
       router.replace('/(tabs)');

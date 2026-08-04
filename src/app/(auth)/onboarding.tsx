@@ -14,7 +14,16 @@ import { geocodeHomeArea } from '@/features/profile/geocode';
 import { homeAreaError, homeAreaQuery, normalizeHomeArea } from '@/features/profile/home-area';
 import { useOnboardingStore } from '@/stores/onboarding';
 import { disciplineGlyphs, Glyph } from '@/components/glyph';
-import { Body, Button, ErrorText, Field, Screen, Title, ToggleRow } from '@/components/ui';
+import {
+  Body,
+  Button,
+  ErrorText,
+  Field,
+  KeyboardShift,
+  Screen,
+  Title,
+  ToggleRow,
+} from '@/components/ui';
 import { disciplineAccents, palette, spacing, type Discipline } from '@/theme';
 
 const DISCIPLINES: Discipline[] = ['music', 'comedy', 'poetry', 'other'];
@@ -37,6 +46,15 @@ export default function OnboardingScreen() {
   const [errors, setErrors] = useState<Record<string, string | null>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const setFieldError = (field: string, message: string | null) =>
+    setErrors((cur) => ({ ...cur, [field]: message }));
+  const clearFieldError = (field: string) => setFieldError(field, null);
+  const areaOnBlur = () =>
+    setFieldError(
+      'homeArea',
+      homeAreaError(normalizeHomeArea({ city: homeCity, region: homeRegion, postalCode: homeZip })),
+    );
 
   const toggleDiscipline = (d: Discipline) => {
     setDisciplines((current) =>
@@ -94,94 +112,125 @@ export default function OnboardingScreen() {
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Title>Who are you out there?</Title>
-        <Body>Pick everything that applies. Most people in a scene end up doing both.</Body>
-        <ToggleRow
-          label="Performer"
-          description="Find mics, sign up for slots, track where you have played."
-          value={isPerformer}
-          onToggle={setIsPerformer}
-        />
-        <ToggleRow
-          label="Producer"
-          description="Run listings, manage signup lists, post lineups."
-          value={isProducer}
-          onToggle={setIsProducer}
-        />
-        {errors.roles ? <ErrorText>{errors.roles}</ErrorText> : null}
-        {isPerformer ? (
-          <>
-            <Body>What do you perform?</Body>
-            {DISCIPLINES.map((d) => (
-              <ToggleRow
-                key={d}
-                label={d.charAt(0).toUpperCase() + d.slice(1)}
-                description={disciplineDescription(d)}
-                value={disciplines.includes(d)}
-                onToggle={() => toggleDiscipline(d)}
-                icon={
-                  <Glyph
-                    name={disciplineGlyphs[d]}
-                    size={28}
-                    color={disciplines.includes(d) ? disciplineAccents[d] : palette.textDisabled}
-                  />
-                }
+      <KeyboardShift grow>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          <Title>Who are you out there?</Title>
+          <Body>Pick everything that applies. Most people in a scene end up doing both.</Body>
+          <ToggleRow
+            label="Performer"
+            description="Find mics, sign up for slots, track where you have played."
+            value={isPerformer}
+            onToggle={setIsPerformer}
+          />
+          <ToggleRow
+            label="Producer"
+            description="Run listings, manage signup lists, post lineups."
+            value={isProducer}
+            onToggle={setIsProducer}
+          />
+          {errors.roles ? <ErrorText>{errors.roles}</ErrorText> : null}
+          {isPerformer ? (
+            <>
+              <Body>What do you perform?</Body>
+              {DISCIPLINES.map((d) => (
+                <ToggleRow
+                  key={d}
+                  label={d.charAt(0).toUpperCase() + d.slice(1)}
+                  description={disciplineDescription(d)}
+                  value={disciplines.includes(d)}
+                  onToggle={() => toggleDiscipline(d)}
+                  icon={
+                    <Glyph
+                      name={disciplineGlyphs[d]}
+                      size={28}
+                      color={disciplines.includes(d) ? disciplineAccents[d] : palette.textFaint}
+                    />
+                  }
+                />
+              ))}
+            </>
+          ) : null}
+          <Field
+            label="Handle"
+            autoCapitalize="none"
+            value={handle}
+            onChangeText={(v) => {
+              setHandle(v.toLowerCase());
+              clearFieldError('handle');
+            }}
+            onBlur={() => setFieldError('handle', validateHandle(handle))}
+            error={errors.handle}
+            placeholder="lowercase letters, numbers, underscores"
+          />
+          <Field
+            label="Display name"
+            value={displayName}
+            onChangeText={(v) => {
+              setDisplayName(v);
+              clearFieldError('displayName');
+            }}
+            onBlur={() => setFieldError('displayName', validateDisplayName(displayName))}
+            error={errors.displayName}
+          />
+          <Body>
+            Where is home? We use this only to show mics near you. It is never shown on your profile
+            or to anyone else.
+          </Body>
+          <View style={styles.areaRow}>
+            <View style={styles.areaCity}>
+              <Field
+                label="City"
+                value={homeCity}
+                onChangeText={(v) => {
+                  setHomeCity(v);
+                  clearFieldError('homeArea');
+                }}
+                onBlur={areaOnBlur}
+                placeholder="Seattle"
               />
-            ))}
-          </>
-        ) : null}
-        <Field
-          label="Handle"
-          autoCapitalize="none"
-          value={handle}
-          onChangeText={(v) => setHandle(v.toLowerCase())}
-          error={errors.handle}
-          placeholder="lowercase letters, numbers, underscores"
-        />
-        <Field
-          label="Display name"
-          value={displayName}
-          onChangeText={setDisplayName}
-          error={errors.displayName}
-        />
-        <Body>
-          Where is home? We use this only to show mics near you. It is never shown on your
-          profile or to anyone else.
-        </Body>
-        <View style={styles.areaRow}>
-          <View style={styles.areaCity}>
-            <Field label="City" value={homeCity} onChangeText={setHomeCity} placeholder="Seattle" />
+            </View>
+            <View style={styles.areaRegion}>
+              <Field
+                label="State"
+                autoCapitalize="characters"
+                value={homeRegion}
+                onChangeText={(v) => {
+                  setHomeRegion(v);
+                  clearFieldError('homeArea');
+                }}
+                onBlur={areaOnBlur}
+                placeholder="WA"
+              />
+            </View>
           </View>
-          <View style={styles.areaRegion}>
-            <Field
-              label="State"
-              autoCapitalize="characters"
-              value={homeRegion}
-              onChangeText={setHomeRegion}
-              placeholder="WA"
-            />
-          </View>
-        </View>
-        <Field
-          label="Or ZIP code"
-          inputMode="numeric"
-          value={homeZip}
-          onChangeText={setHomeZip}
-          placeholder="98101"
-        />
-        {errors.homeArea ? <ErrorText>{errors.homeArea}</ErrorText> : null}
-        <Field
-          label="Birth year"
-          inputMode="numeric"
-          value={birthYear}
-          onChangeText={setBirthYear}
-          error={errors.birthYear}
-          placeholder="1994"
-        />
-        {error ? <ErrorText>{error}</ErrorText> : null}
-        <Button label="Finish setup" busy={busy} disabled={busy} onPress={submit} />
-      </ScrollView>
+          <Field
+            label="Or ZIP code"
+            inputMode="numeric"
+            value={homeZip}
+            onChangeText={(v) => {
+              setHomeZip(v);
+              clearFieldError('homeArea');
+            }}
+            onBlur={areaOnBlur}
+            placeholder="98101"
+          />
+          {errors.homeArea ? <ErrorText>{errors.homeArea}</ErrorText> : null}
+          <Field
+            label="Birth year"
+            inputMode="numeric"
+            value={birthYear}
+            onChangeText={(v) => {
+              setBirthYear(v);
+              clearFieldError('birthYear');
+            }}
+            onBlur={() => setFieldError('birthYear', validateBirthYear(birthYear, new Date()))}
+            error={errors.birthYear}
+            placeholder="1994"
+          />
+          {error ? <ErrorText>{error}</ErrorText> : null}
+          <Button label="Finish setup" busy={busy} disabled={busy} onPress={submit} />
+        </ScrollView>
+      </KeyboardShift>
     </Screen>
   );
 }

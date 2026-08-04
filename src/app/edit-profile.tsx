@@ -2,7 +2,9 @@ import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { Body, Button, ErrorText, Field, LoadingView, Title } from '@/components/ui';
+import { useDiscardGuard } from '@/components/discard-guard';
+import { useToast } from '@/components/toast';
+import { Body, Button, ErrorText, Field, KeyboardShift, LoadingView, Title } from '@/components/ui';
 import { validateDisplayName } from '@/features/auth/validation';
 import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
@@ -11,12 +13,7 @@ import { pickAndUploadAvatar } from '@/features/profile/avatar';
 import { geocodeHomeArea } from '@/features/profile/geocode';
 import { homeAreaError, homeAreaQuery, normalizeHomeArea } from '@/features/profile/home-area';
 import { useUpdateProfile } from '@/features/profile/queries';
-import {
-  handleError,
-  normalizeHandle,
-  normalizeUrl,
-  urlError,
-} from '@/features/profile/social';
+import { handleError, normalizeHandle, normalizeUrl, urlError } from '@/features/profile/social';
 import { fonts, palette, spacing, type } from '@/theme';
 
 export default function EditProfileScreen() {
@@ -56,6 +53,7 @@ type ProfileRow = NonNullable<ReturnType<typeof useOwnProfile>['data']>;
 
 function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: string }) {
   const router = useRouter();
+  const toast = useToast();
   const update = useUpdateProfile(userId);
 
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url);
@@ -72,6 +70,34 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
   const [errors, setErrors] = useState<Record<string, string | null>>({});
   const [photoBusy, setPhotoBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // The photo saves immediately; every text field only saves on Save, so
+  // back navigation asks before dropping typed-in changes.
+  const dirty =
+    displayName !== profile.display_name ||
+    bio !== (profile.bio ?? '') ||
+    homeCity !== (profile.home_city ?? '') ||
+    homeRegion !== (profile.home_region ?? '') ||
+    homeZip !== (profile.home_postal_code ?? '') ||
+    instagram !== (profile.link_instagram ?? '') ||
+    tiktok !== (profile.link_tiktok ?? '') ||
+    youtube !== (profile.link_youtube ?? '') ||
+    website !== (profile.link_website ?? '');
+  const { guardElement, bypassGuard } = useDiscardGuard({
+    when: dirty,
+    title: 'Discard profile changes?',
+    body: 'Your edits are not saved. Leaving now loses them.',
+    discardLabel: 'Discard changes',
+  });
+
+  const setFieldError = (field: string, message: string | null) =>
+    setErrors((cur) => ({ ...cur, [field]: message }));
+  const clearFieldError = (field: string) => setFieldError(field, null);
+  const areaOnBlur = () =>
+    setFieldError(
+      'homeArea',
+      homeAreaError(normalizeHomeArea({ city: homeCity, region: homeRegion, postalCode: homeZip })),
+    );
 
   async function changePhoto() {
     setPhotoBusy(true);
@@ -122,122 +148,161 @@ function EditProfileForm({ profile, userId }: { profile: ProfileRow; userId: str
         home_city: area.city || null,
         home_region: area.region || null,
         home_postal_code: area.postalCode || null,
-        ...(areaChanged
-          ? { home_lat: coords?.lat ?? null, home_lng: coords?.lng ?? null }
-          : {}),
+        ...(areaChanged ? { home_lat: coords?.lat ?? null, home_lng: coords?.lng ?? null } : {}),
         link_instagram: ig || null,
         link_tiktok: tt || null,
         link_youtube: yt || null,
         link_website: web || null,
       });
-      router.back();
+      toast.show('Profile saved.');
+      bypassGuard(() => router.back());
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save. Try again.');
     }
   }
 
   return (
-    <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled"
-    >
-      <ScreenHeader />
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Change your photo"
-        onPress={changePhoto}
-        disabled={photoBusy}
-        style={styles.avatarWrap}
+    <KeyboardShift grow>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
       >
-        <AvatarCircle url={avatarUrl} name={displayName} size={96} />
-        <Text style={styles.changePhoto}>{photoBusy ? 'Uploading...' : 'Change photo'}</Text>
-      </Pressable>
+        <ScreenHeader />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Change your photo"
+          onPress={changePhoto}
+          disabled={photoBusy}
+          style={styles.avatarWrap}
+        >
+          <AvatarCircle url={avatarUrl} name={displayName} size={96} />
+          <Text style={styles.changePhoto}>{photoBusy ? 'Uploading...' : 'Change photo'}</Text>
+        </Pressable>
 
-      <Field
-        label="Name"
-        value={displayName}
-        onChangeText={setDisplayName}
-        error={errors.displayName}
-      />
-      <Field
-        label="About you (optional)"
-        value={bio}
-        onChangeText={setBio}
-        multiline
-        numberOfLines={3}
-        placeholder="What you play, your style, anything you want people to know."
-      />
-      <Text style={styles.sectionTitle}>Home area</Text>
-      <Body>
-        Used only to show mics near you. Never shown on your profile. Enter city and state, or
-        a ZIP code.
-      </Body>
-      <View style={styles.areaRow}>
-        <View style={styles.areaCity}>
-          <Field label="City" value={homeCity} onChangeText={setHomeCity} placeholder="Seattle" />
+        <Field
+          label="Name"
+          value={displayName}
+          onChangeText={(v) => {
+            setDisplayName(v);
+            clearFieldError('displayName');
+          }}
+          onBlur={() => setFieldError('displayName', validateDisplayName(displayName))}
+          error={errors.displayName}
+        />
+        <Field
+          label="About you (optional)"
+          value={bio}
+          onChangeText={setBio}
+          multiline
+          numberOfLines={3}
+          placeholder="What you play, your style, anything you want people to know."
+        />
+        <Text style={styles.sectionTitle}>Home area</Text>
+        <Body>
+          Used only to show mics near you. Never shown on your profile. Enter city and state, or a
+          ZIP code.
+        </Body>
+        <View style={styles.areaRow}>
+          <View style={styles.areaCity}>
+            <Field
+              label="City"
+              value={homeCity}
+              onChangeText={(v) => {
+                setHomeCity(v);
+                clearFieldError('homeArea');
+              }}
+              onBlur={areaOnBlur}
+              placeholder="Seattle"
+            />
+          </View>
+          <View style={styles.areaRegion}>
+            <Field
+              label="State"
+              autoCapitalize="characters"
+              value={homeRegion}
+              onChangeText={(v) => {
+                setHomeRegion(v);
+                clearFieldError('homeArea');
+              }}
+              onBlur={areaOnBlur}
+              placeholder="WA"
+            />
+          </View>
         </View>
-        <View style={styles.areaRegion}>
-          <Field
-            label="State"
-            autoCapitalize="characters"
-            value={homeRegion}
-            onChangeText={setHomeRegion}
-            placeholder="WA"
-          />
-        </View>
-      </View>
-      <Field
-        label="Or ZIP code"
-        inputMode="numeric"
-        value={homeZip}
-        onChangeText={setHomeZip}
-        placeholder="98101"
-      />
-      {errors.homeArea ? <ErrorText>{errors.homeArea}</ErrorText> : null}
+        <Field
+          label="Or ZIP code"
+          inputMode="numeric"
+          value={homeZip}
+          onChangeText={(v) => {
+            setHomeZip(v);
+            clearFieldError('homeArea');
+          }}
+          onBlur={areaOnBlur}
+          placeholder="98101"
+        />
+        {errors.homeArea ? <ErrorText>{errors.homeArea}</ErrorText> : null}
 
-      <Text style={styles.sectionTitle}>Your links</Text>
-      <Body>Optional. Paste a link or just type your username.</Body>
-      <Field
-        label="Instagram"
-        autoCapitalize="none"
-        autoCorrect={false}
-        value={instagram}
-        onChangeText={setInstagram}
-        error={errors.instagram}
-        placeholder="@yourname"
-      />
-      <Field
-        label="TikTok"
-        autoCapitalize="none"
-        autoCorrect={false}
-        value={tiktok}
-        onChangeText={setTiktok}
-        error={errors.tiktok}
-        placeholder="@yourname"
-      />
-      <Field
-        label="YouTube"
-        autoCapitalize="none"
-        autoCorrect={false}
-        value={youtube}
-        onChangeText={setYoutube}
-        error={errors.youtube}
-        placeholder="youtube.com/@yourname"
-      />
-      <Field
-        label="Website"
-        autoCapitalize="none"
-        autoCorrect={false}
-        value={website}
-        onChangeText={setWebsite}
-        error={errors.website}
-        placeholder="yourname.com"
-      />
+        <Text style={styles.sectionTitle}>Your links</Text>
+        <Body>Optional. Paste a link or just type your username.</Body>
+        <Field
+          label="Instagram"
+          autoCapitalize="none"
+          autoCorrect={false}
+          value={instagram}
+          onChangeText={(v) => {
+            setInstagram(v);
+            clearFieldError('instagram');
+          }}
+          onBlur={() => setFieldError('instagram', handleError(normalizeHandle(instagram)))}
+          error={errors.instagram}
+          placeholder="@yourname"
+        />
+        <Field
+          label="TikTok"
+          autoCapitalize="none"
+          autoCorrect={false}
+          value={tiktok}
+          onChangeText={(v) => {
+            setTiktok(v);
+            clearFieldError('tiktok');
+          }}
+          onBlur={() => setFieldError('tiktok', handleError(normalizeHandle(tiktok)))}
+          error={errors.tiktok}
+          placeholder="@yourname"
+        />
+        <Field
+          label="YouTube"
+          autoCapitalize="none"
+          autoCorrect={false}
+          value={youtube}
+          onChangeText={(v) => {
+            setYoutube(v);
+            clearFieldError('youtube');
+          }}
+          onBlur={() => setFieldError('youtube', urlError(normalizeUrl(youtube)))}
+          error={errors.youtube}
+          placeholder="youtube.com/@yourname"
+        />
+        <Field
+          label="Website"
+          autoCapitalize="none"
+          autoCorrect={false}
+          value={website}
+          onChangeText={(v) => {
+            setWebsite(v);
+            clearFieldError('website');
+          }}
+          onBlur={() => setFieldError('website', urlError(normalizeUrl(website)))}
+          error={errors.website}
+          placeholder="yourname.com"
+        />
 
-      {error ? <ErrorText>{error}</ErrorText> : null}
-      <Button label="Save" busy={update.isPending} disabled={update.isPending} onPress={save} />
-    </ScrollView>
+        {error ? <ErrorText>{error}</ErrorText> : null}
+        <Button label="Save" busy={update.isPending} disabled={update.isPending} onPress={save} />
+        {guardElement}
+      </ScrollView>
+    </KeyboardShift>
   );
 }
 

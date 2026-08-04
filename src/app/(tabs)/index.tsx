@@ -127,7 +127,7 @@ export default function DiscoverScreen() {
         <TextInput
           accessibilityLabel="Search by city or venue"
           placeholder="Search city or venue"
-          placeholderTextColor={palette.textDisabled}
+          placeholderTextColor={palette.textFaint}
           style={styles.searchInput}
           value={search}
           onChangeText={setSearch}
@@ -308,7 +308,7 @@ function SearchResults({
           >
             <Text style={styles.searchResultTitle}>{item.title}</Text>
             <Text style={styles.searchResultMeta}>
-              {item.venue_name}, {item.city} · {formatNextDate(item.next_starts_at)}
+              {item.venue_name}, {item.city} · {formatNextDate(item.next_starts_at, item.timezone)}
             </Text>
             <View style={styles.searchResultFresh}>
               <Glyph name="freshness-badge" size={14} color={fresh.color} />

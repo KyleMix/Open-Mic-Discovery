@@ -11,6 +11,11 @@ export const palette = {
   border: '#2E2E3A',
   text: '#F4F4F6',
   textSecondary: '#A8A8B3',
+  // Faint but still readable: the quietest color allowed for meaningful
+  // text. Passes WCAG AA (4.5:1) on bg, bgElevated, and bgPressed.
+  textFaint: '#8E8E9A',
+  // For genuinely disabled controls only, never for text someone needs to
+  // read: it sits below the 4.5:1 AA floor on elevated surfaces.
   textDisabled: '#63636E',
   danger: '#FF5D5D',
   success: '#4CD97B',
@@ -60,3 +65,10 @@ export const type = {
 
 /** Minimum touch target size per accessibility standards. */
 export const minTouchTarget = 44;
+
+/**
+ * Dynamic type policy: text scales with the system setting, capped so
+ * fixed chrome (buttons, chips, tight rows) grows without breaking.
+ * Applied via maxFontSizeMultiplier on the shared primitives.
+ */
+export const maxFontScale = 1.6;

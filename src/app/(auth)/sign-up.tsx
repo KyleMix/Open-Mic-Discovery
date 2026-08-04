@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 import { signUpWithEmail } from '@/features/auth/api';
 import { validateEmail, validatePassword } from '@/features/auth/validation';
-import { Body, Button, ErrorText, Field, Screen, Title } from '@/components/ui';
+import { Body, Button, ErrorText, Field, FormScreen, Screen, Title } from '@/components/ui';
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -52,7 +52,7 @@ export default function SignUpScreen() {
   }
 
   return (
-    <Screen>
+    <FormScreen>
       <Title>Create your account</Title>
       <Body>
         One account covers both sides of the mic: performing, producing, or both. You pick your
@@ -64,7 +64,11 @@ export default function SignUpScreen() {
         autoComplete="email"
         inputMode="email"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={(v) => {
+          setEmail(v);
+          setFieldErrors((e) => ({ ...e, email: null }));
+        }}
+        onBlur={() => setFieldErrors((e) => ({ ...e, email: validateEmail(email) }))}
         error={fieldErrors.email}
       />
       <Field
@@ -72,12 +76,16 @@ export default function SignUpScreen() {
         autoComplete="new-password"
         secureTextEntry
         value={password}
-        onChangeText={setPassword}
+        onChangeText={(v) => {
+          setPassword(v);
+          setFieldErrors((e) => ({ ...e, password: null }));
+        }}
+        onBlur={() => setFieldErrors((e) => ({ ...e, password: validatePassword(password) }))}
         error={fieldErrors.password}
       />
       <Body>Passwords are at least 10 characters.</Body>
       {error ? <ErrorText>{error}</ErrorText> : null}
       <Button label="Create account" busy={busy} disabled={busy} onPress={submit} />
-    </Screen>
+    </FormScreen>
   );
 }

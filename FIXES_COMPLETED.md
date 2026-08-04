@@ -1,3 +1,121 @@
+# User-friendliness audit fixes: what changed (2026-08-03)
+
+Branch `user-friendliness-fixes`, one commit per fix, implementing all 10
+recommendations from USER_FRIENDLINESS_AUDIT.md plus the three spine items
+(dark-room legibility, error handling and validation, trust surface). Every
+commit passed `npm run typecheck`, `npm run lint`, and `npm test` (121 tests
+at the end, up from 99). No schema or migration changes; two owner calls are
+logged in DECISIONS_NEEDED.md (items 11 and 12) with working placeholders.
+
+## Per-fix summary
+
+1. **Plain-language enums everywhere (audit 1).** Sweep found 4 raw-enum
+   render sites: the roster (both Pro and free branches, showing `no_show`
+   verbatim) and the moderation queue (report target, report reason, flag
+   reason). All render through shared label maps now: new
+   `features/safety/labels.ts` and `features/signups/labels.ts` (a
+   producer-voice roster map, since the performer-voice STATUS_LABELS says
+   "You are in"). The report and flag modals derive their reason lists from
+   the same maps so wording cannot drift. Verification grep for
+   `\{...\.(status|reason|target_type|...)\}` now returns only prop passing
+   and a style name; zero enum values reach a screen.
+
+2. **AA contrast (audit 2).** `textDisabled` #63636E measured 3.31:1 on bg,
+   3.03:1 on bgElevated, 2.66:1 on bgPressed. New `textFaint` #8E8E9A
+   measures 6.07:1 on bg, 5.56:1 on bgElevated, 4.87:1 on bgPressed, all
+   past the 4.5:1 AA floor. Swept 8 of 10 `textDisabled` sites (freshness
+   stale/unknown tiers, both placeholders, inactive tab tint, fact labels,
+   onboarding glyphs, paywall fine print, cancelled dates); the 2 left are
+   the token itself and a genuinely disabled icon, which WCAG 1.4.3
+   exempts. The tokens test now asserts every text color against all three
+   surfaces so a token change cannot silently regress.
+
+3. **Relative dates (audit 3).** "Tonight · 8:00 PM" (or Today, or
+   Tomorrow) on cards, search rows, favorites, the detail Next line, and
+   upcoming profile rows; past history stays absolute. Day boundaries and
+   the 5 PM tonight/today split are computed in the venue's timezone, with
+   7 tests including the fall DST transition and a venue/device midnight
+   mismatch.
+
+4. **Central error translation (audit 4).** New `lib/user-error.ts`:
+   Sentry gets the raw error, the person gets a mapped message (42501,
+   23505, 23503, 23514, PGRST116, network failures) or the caller's
+   action-specific fallback, never the raw string. Sweep count: 66 raw
+   `new Error(error.message)` sites across 14 files, all replaced; auth
+   adds translations for invalid credentials, already registered,
+   unconfirmed email, and rate limits. Confirm grep:
+   `grep -rn "new Error([^')]*\.message)" src/` excluding tests returns 0.
+
+5. **Sticky signup CTA (audit 5).** The detail screen anchors the one
+   primary action ("Sign me up" / "Put my name in the draw" / guest
+   sign-in) in a safe-area footer, gone once signed up or outside the
+   window. The decision is a pure function with 8 tests written first.
+
+6. **Keyboard avoidance (audit 6).** New FormScreen and KeyboardShift
+   primitives; 11 input surfaces covered (4 auth screens, 5 bottom sheets
+   with inputs, onboarding, edit profile, and the night screen's walk-in
+   field).
+
+7. **Optimistic favorites plus toast acks (audit 7).** The star flips
+   instantly with rollback on failure (2 tests) and invalidation is scoped
+   to that user's keys. New accessible ToastProvider (announced to screen
+   readers, optional action): unfavorite gets Undo, confirm-accurate,
+   withdraw, and profile save get visible acknowledgment.
+
+8. **Night-screen glanceability and 44pt targets (audit 8).** Slot numbers
+   at heading size in primary text; roster rows stack identity over
+   actions so all six controls hold 44pt on a 375pt screen; the Pro branch
+   uses the descriptive header; Manage names the mic. Target sweep fixed 4
+   sub-44 sites (roster icons, producer-form chips, profile link chips,
+   plus wrapping); the card star keeps its 48pt-effective hitSlop and map
+   pins were left as marker visuals. Dynamic type: maxFontScale 1.6 token
+   applied to every shared primitive, and the two fixed text columns that
+   would clip became min-widths.
+
+9. **Screen-reader announcements (spine 1).** On-deck, draw results, and
+   status changes are announced on the performer's signup card (realtime
+   arrives with no touch to anchor on), and the producer's draw announces
+   completion since the shuffle is purely visual.
+
+10. **Trust surface (audit 9).** Stewardship badge on the detail screen
+    (Verified host / Host-managed / Community-listed) from `owner_id` plus
+    the `producer_public.verified` view. Working support path: Settings >
+    Help (contact support, read the terms via the new read-only /terms
+    screen) and a live Contact support button on the rejected-listing
+    note. Address is a placeholder pending DECISIONS_NEEDED item 11; card
+    badges need an RPC migration, logged as item 12.
+
+11. **Unsaved-changes guards (audit 10).** Shared ConfirmSheet,
+    DiscardPrompt, and useDiscardGuard (over beforeRemove; the vendored
+    navigation lacks usePreventRemove). 7 surfaces guarded: create
+    listing, the manage editor (back and Close editor), edit profile, and
+    the claim, flag, report, and this-night sheets, including Android
+    hardware back. 3 tests.
+
+12. **Inline validation (spine 2).** 19 fields across 7 forms validate on
+    blur with clear-on-retype, using the existing pure validators; submit
+    checks stay as the backstop. Sign-in email was previously unvalidated
+    entirely.
+
+## Contrast before/after (WCAG 2.x ratios, worst surface)
+
+| Text | Before | After |
+|---|---|---|
+| Freshness stale/unknown label on a card | 3.03:1 (fail) | 5.56:1 |
+| Fact labels, fine print, cancelled dates | 3.03:1 (fail) | 5.56:1 |
+| Placeholders | 3.03:1 (fail) | 5.56:1 |
+| Inactive tab labels | 3.03:1 (fail) | 5.56:1 |
+| Same text on pressed rows | 2.66:1 (fail) | 4.87:1 |
+
+## Explicit non-goals honored
+
+The producer cancellation flow keeps its 4th (confirmation) tap, the
+dark-first palette was not redesigned (only the failing token gained a
+compliant sibling), and the audit's 16-item missing-features list was not
+touched.
+
+---
+
 # UX review fixes: what changed
 
 Branch `ux-fixes`, one commit per fix or tightly related group. Every commit passed `npm run typecheck`, `npm run lint`, and `npm test` (97 tests at the end, up from 84; new suites cover the date-window bound, the EULA renderer, and venue-timezone formatting). No schema or migration changes were made; everything below is client code. Items needing migrations, infra, or product calls are in DECISIONS_NEEDED.md.

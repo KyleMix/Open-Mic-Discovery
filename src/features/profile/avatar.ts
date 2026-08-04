@@ -2,6 +2,7 @@ import { decode } from 'base64-arraybuffer';
 import * as ImagePicker from 'expo-image-picker';
 
 import { getSupabase } from '@/lib/supabase';
+import { userError } from '@/lib/user-error';
 
 /**
  * Opens the photo library, square-crops, and uploads to the avatars bucket
@@ -40,7 +41,7 @@ export async function pickAndUploadAvatar(userId: string): Promise<string | null
     .from('avatars')
     .upload(path, body, { contentType: 'image/jpeg', upsert: true });
   if (error) {
-    throw new Error(error.message);
+    throw userError(error, 'Could not upload the photo. Try again.');
   }
   const { data } = supabase.storage.from('avatars').getPublicUrl(path);
   return `${data.publicUrl}?v=${Date.now()}`;

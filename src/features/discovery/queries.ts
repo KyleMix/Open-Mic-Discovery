@@ -1,6 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { getSupabase } from '@/lib/supabase';
+import { userError } from '@/lib/user-error';
 import { filtersToRpcArgs, type DiscoveryFilters } from '@/stores/filters';
 import type { Database } from '@/types/database.types';
 
@@ -16,7 +17,7 @@ export function useNearbyMics(filters: DiscoveryFilters, center: { lat: number; 
         filtersToRpcArgs(filters, center),
       );
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load mics. Check your connection and try again.');
       }
       return data;
     },
@@ -34,7 +35,7 @@ export function useSearchMics(query: string) {
     queryFn: async (): Promise<SearchResult[]> => {
       const { data, error } = await getSupabase().rpc('search_mics', { p_query: trimmed });
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Search failed. Check your connection and try again.');
       }
       return data;
     },
@@ -58,15 +59,26 @@ export function useMicDetail(seriesId: string | undefined) {
           .limit(6),
       ]);
       if (seriesRes.error) {
-        throw new Error(seriesRes.error.message);
+        throw userError(seriesRes.error, 'Could not load this listing. Try again.');
       }
       if (occurrencesRes.error) {
-        throw new Error(occurrencesRes.error.message);
+        throw userError(occurrencesRes.error, 'Could not load this listing. Try again.');
       }
       if (!seriesRes.data) {
         return null;
       }
-      return { series: seriesRes.data, occurrences: occurrencesRes.data };
+      // Stewardship: claimed listings show who stands behind them. A
+      // failed lookup degrades to "Host-managed", never an error.
+      let ownerVerified = false;
+      if (seriesRes.data.owner_id) {
+        const { data: producerRow } = await supabase
+          .from('producer_public')
+          .select('verified')
+          .eq('profile_id', seriesRes.data.owner_id)
+          .maybeSingle();
+        ownerVerified = producerRow?.verified ?? false;
+      }
+      return { series: seriesRes.data, occurrences: occurrencesRes.data, ownerVerified };
     },
   });
 }
@@ -89,7 +101,7 @@ export function useFlagListing() {
         details: input.details,
       });
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not submit the flag. Try again.');
       }
     },
     onSuccess: (_data, input) => {
