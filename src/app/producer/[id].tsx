@@ -24,7 +24,9 @@ import { describeRecurrence } from '@/features/discovery/recurrence';
 import { SeriesForm, type SeriesFormValues } from '@/features/producer/components/series-form';
 import { pickAndUploadPoster } from '@/features/producer/poster';
 import {
+  useCancelNight,
   useConfirmSeries,
+  usePauseSeries,
   useSeriesOccurrences,
   useUpdateOccurrence,
   useUpdateSeries,
@@ -42,6 +44,7 @@ export default function ManageSeriesScreen() {
   const occurrences = useSeriesOccurrences(id);
   const confirm = useConfirmSeries();
   const updateSeries = useUpdateSeries();
+  const pauseSeries = usePauseSeries();
   const updateOccurrence = useUpdateOccurrence();
 
   const { session } = useSession();
@@ -208,7 +211,7 @@ export default function ManageSeriesScreen() {
             <Button
               label={series.is_active ? 'Pause listing' : 'Resume listing'}
               kind="secondary"
-              busy={updateSeries.isPending && !editing}
+              busy={(updateSeries.isPending || pauseSeries.isPending) && !editing}
               onPress={() => {
                 if (series.is_active) {
                   setConfirmPause(true);
@@ -370,12 +373,9 @@ export default function ManageSeriesScreen() {
               </Body>
               <Button
                 label="Pause listing"
-                busy={updateSeries.isPending}
+                busy={pauseSeries.isPending}
                 onPress={() =>
-                  updateSeries.mutate(
-                    { seriesId: series.id, patch: { is_active: false } },
-                    { onSettled: () => setConfirmPause(false) },
-                  )
+                  pauseSeries.mutate(series.id, { onSettled: () => setConfirmPause(false) })
                 }
               />
               <Button label="Back" kind="secondary" onPress={() => setConfirmPause(false)} />
@@ -401,6 +401,7 @@ function NightModal({
   onClose: () => void;
 }) {
   const update = useUpdateOccurrence();
+  const cancelNight = useCancelNight();
   const [note, setNote] = useState('');
   const initialTitle = occurrence.override_title ?? '';
   const initialCost =
@@ -425,12 +426,8 @@ function NightModal({
 
   function submit() {
     if (mode === 'cancel') {
-      update.mutate(
-        {
-          occurrenceId: occurrence.id,
-          seriesId,
-          patch: { status: 'cancelled', cancellation_note: note.trim() || null },
-        },
+      cancelNight.mutate(
+        { occurrenceId: occurrence.id, seriesId, note: note.trim() || null, dateLabel },
         { onSuccess: onClose },
       );
     } else {
@@ -495,14 +492,20 @@ function NightModal({
                     />
                   </>
                 )}
-                {update.isError ? (
+                {update.isError || cancelNight.isError ? (
                   <ErrorText>
-                    {update.error instanceof Error ? update.error.message : 'Could not save.'}
+                    {mode === 'cancel'
+                      ? cancelNight.error instanceof Error
+                        ? cancelNight.error.message
+                        : 'Could not cancel.'
+                      : update.error instanceof Error
+                        ? update.error.message
+                        : 'Could not save.'}
                   </ErrorText>
                 ) : null}
                 <Button
                   label={mode === 'cancel' ? 'Cancel this night' : 'Save this night'}
-                  busy={update.isPending}
+                  busy={mode === 'cancel' ? cancelNight.isPending : update.isPending}
                   onPress={submit}
                 />
                 <Button label="Back" kind="secondary" onPress={close} />

@@ -105,6 +105,107 @@ export function useUpdateOccurrence() {
   });
 }
 
+/**
+ * Cancels one night, with Undo on the toast. The screen's confirmation
+ * sheet stays in front of this; the toast is the safety net after it.
+ */
+export function useCancelNight() {
+  const invalidate = useInvalidateSeries();
+  const toast = useToast();
+
+  async function restore(occurrenceId: string, seriesId: string): Promise<void> {
+    const { error } = await getSupabase()
+      .from('mic_occurrences')
+      .update({ status: 'scheduled', cancellation_note: null })
+      .eq('id', occurrenceId)
+      .eq('status', 'cancelled');
+    if (error) {
+      toast.show(
+        userError(error, 'Could not restore the night. Check it on the Manage screen.').message,
+      );
+      return;
+    }
+    invalidate(seriesId);
+    toast.show('The night is back on.');
+  }
+
+  return useMutation({
+    mutationFn: async ({
+      occurrenceId,
+      seriesId,
+      note,
+    }: {
+      occurrenceId: string;
+      seriesId: string;
+      note: string | null;
+      /** Already-formatted night name for the toast, e.g. "Tonight". */
+      dateLabel: string;
+    }) => {
+      const { error } = await getSupabase()
+        .from('mic_occurrences')
+        .update({ status: 'cancelled', cancellation_note: note })
+        .eq('id', occurrenceId);
+      if (error) {
+        throw userError(error, 'Could not cancel that night. Try again.');
+      }
+      return seriesId;
+    },
+    onSuccess: (_d, { occurrenceId, seriesId, dateLabel }) => {
+      invalidate(seriesId);
+      toast.show(`${dateLabel} is cancelled. Performers on the list are notified.`, {
+        label: 'Undo',
+        onPress: () => {
+          void restore(occurrenceId, seriesId);
+        },
+      });
+    },
+  });
+}
+
+/**
+ * Pauses a listing (this app's remove-a-listing action; nights leave the
+ * schedule until resumed), with Undo on the toast. The confirmation sheet
+ * stays in front of this.
+ */
+export function usePauseSeries() {
+  const invalidate = useInvalidateSeries();
+  const toast = useToast();
+
+  async function resume(seriesId: string): Promise<void> {
+    const { error } = await getSupabase()
+      .from('mic_series')
+      .update({ is_active: true })
+      .eq('id', seriesId);
+    if (error) {
+      toast.show(userError(error, 'Could not resume the listing. Try again from My Mics.').message);
+      return;
+    }
+    invalidate(seriesId);
+    toast.show('The listing is live again.');
+  }
+
+  return useMutation({
+    mutationFn: async (seriesId: string) => {
+      const { error } = await getSupabase()
+        .from('mic_series')
+        .update({ is_active: false })
+        .eq('id', seriesId);
+      if (error) {
+        throw userError(error, 'Could not pause the listing. Try again.');
+      }
+    },
+    onSuccess: (_d, seriesId) => {
+      invalidate(seriesId);
+      toast.show('Listing paused. Upcoming nights are off the schedule.', {
+        label: 'Undo',
+        onPress: () => {
+          void resume(seriesId);
+        },
+      });
+    },
+  });
+}
+
 export type CreateSeriesInput = {
   series: Omit<SeriesInsert, 'venue_id' | 'created_by'>;
   /** Either an existing venue id, or a new venue to create. */

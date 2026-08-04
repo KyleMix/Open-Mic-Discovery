@@ -31,6 +31,9 @@ export function useToast(): ToastApi {
 }
 
 const TOAST_MS = 4000;
+// With an action attached (Undo), the timer must be long enough to read,
+// decide, and reach the button: 8 seconds, above the 7-second floor.
+const TOAST_ACTION_MS = 8000;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<ToastState>(null);
@@ -40,9 +43,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     if (timer.current) {
       clearTimeout(timer.current);
     }
+    // One toast at a time: a new message replaces the old outright.
     setToast({ message, action });
     AccessibilityInfo.announceForAccessibility(message);
-    timer.current = setTimeout(() => setToast(null), TOAST_MS);
+    timer.current = setTimeout(() => setToast(null), action ? TOAST_ACTION_MS : TOAST_MS);
   }, []);
 
   const api = useMemo(() => ({ show }), [show]);
@@ -81,6 +85,16 @@ function ToastBar({ toast, onDone }: { toast: NonNullable<ToastState>; onDone: (
             </Text>
           </Pressable>
         ) : null}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss message"
+          onPress={onDone}
+          style={styles.action}
+        >
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.dismissLabel}>
+            ✕
+          </Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -115,11 +129,16 @@ const styles = StyleSheet.create({
   action: {
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: minTouchTarget - 8,
+    minHeight: minTouchTarget,
     minWidth: minTouchTarget,
   },
   actionLabel: {
     color: palette.warning,
+    fontFamily: fonts.semibold,
+    fontSize: type.body.fontSize,
+  },
+  dismissLabel: {
+    color: palette.textSecondary,
     fontFamily: fonts.semibold,
     fontSize: type.body.fontSize,
   },

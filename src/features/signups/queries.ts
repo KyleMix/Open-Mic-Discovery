@@ -125,6 +125,26 @@ export function useJoinList() {
 export function useWithdraw() {
   const queryClient = useQueryClient();
   const toast = useToast();
+
+  // Undo re-signs up (per the withdraw copy, at the end of the list, not
+  // the old slot). Failures come back translated: the window may have
+  // closed between the withdraw and the tap.
+  async function rejoin(occurrenceId: string, userId: string): Promise<void> {
+    const { error } = await getSupabase()
+      .from('signups')
+      .insert({ occurrence_id: occurrenceId, performer_id: userId });
+    if (error && error.code !== '23505') {
+      const friendly =
+        error.code === '42501'
+          ? new Error('Could not put you back on: signups closed for this night.')
+          : userError(error, 'Could not put you back on the list. Try again from the mic page.');
+      toast.show(friendly.message);
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ['signup'] });
+    toast.show('You are back on the list.');
+  }
+
   return useMutation({
     mutationFn: async ({ occurrenceId, userId }: { occurrenceId: string; userId: string }) => {
       const { error } = await getSupabase()
@@ -136,11 +156,16 @@ export function useWithdraw() {
         throw userError(error, 'Could not withdraw. Try again.');
       }
     },
-    onSuccess: () => {
+    onSuccess: (_d, { occurrenceId, userId }) => {
       queryClient.invalidateQueries({ queryKey: ['signup'] });
       // The card reverting to "Sign me up" alone reads as a glitch, not a
       // confirmation that the spot was given up.
-      toast.show('You are off the list.');
+      toast.show('You are off the list.', {
+        label: 'Undo',
+        onPress: () => {
+          void rejoin(occurrenceId, userId);
+        },
+      });
     },
   });
 }
