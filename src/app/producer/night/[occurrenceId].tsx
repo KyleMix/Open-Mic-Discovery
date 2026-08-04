@@ -22,6 +22,7 @@ import {
   Title,
 } from '@/components/ui';
 import { useSession } from '@/features/auth/session';
+import { formatRelativeDay } from '@/features/discovery/date-label';
 import { useOccurrenceContext } from '@/features/producer/queries';
 import { useProStatus } from '@/features/pro/use-pro';
 import { ReportModal } from '@/features/safety/components/report-modal';
@@ -72,9 +73,10 @@ export default function NightScreen() {
 
   // A host running two mics needs the screen to say which night this is.
   const headerTitle = context.data?.series
-    ? `${context.data.override_title ?? context.data.series.title} · ${new Date(
+    ? `${context.data.override_title ?? context.data.series.title} · ${formatRelativeDay(
         context.data.starts_at,
-      ).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}`
+        context.data.series.timezone,
+      )}`
     : 'The list';
 
   // Waiting for the entitlement too: rendering the paid controls to a free

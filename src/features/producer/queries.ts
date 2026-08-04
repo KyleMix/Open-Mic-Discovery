@@ -52,7 +52,10 @@ export function useConfirmSeries() {
         .update({ last_confirmed_at: new Date().toISOString() })
         .eq('id', seriesId);
       if (error) {
-        throw userError(error, 'Could not confirm the listing. Check your connection and try again.');
+        throw userError(
+          error,
+          'Could not confirm the listing. Check your connection and try again.',
+        );
       }
     },
     onSuccess: (_d, seriesId) => {
@@ -202,7 +205,7 @@ export function useOccurrenceContext(occurrenceId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await getSupabase()
         .from('mic_occurrences')
-        .select('id, starts_at, status, override_title, series:mic_series(id, title)')
+        .select('id, starts_at, status, override_title, series:mic_series(id, title, timezone)')
         .eq('id', occurrenceId!)
         .maybeSingle();
       if (error) {

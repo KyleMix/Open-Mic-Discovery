@@ -18,6 +18,7 @@ import {
 } from '@/components/ui';
 import { useSession } from '@/features/auth/session';
 import { freshness } from '@/features/discovery/freshness';
+import { formatRelativeDay } from '@/features/discovery/date-label';
 import { useMicDetail } from '@/features/discovery/queries';
 import { describeRecurrence } from '@/features/discovery/recurrence';
 import { SeriesForm, type SeriesFormValues } from '@/features/producer/components/series-form';
@@ -292,11 +293,7 @@ export default function ManageSeriesScreen() {
             <View key={occ.id} style={styles.nightRow}>
               <View style={styles.nightInfo}>
                 <Text style={[styles.nightDate, occ.status === 'cancelled' && styles.cancelled]}>
-                  {new Date(occ.starts_at).toLocaleDateString(undefined, {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                  })}
+                  {formatRelativeDay(occ.starts_at, series.timezone)}
                   {occ.override_title ? ` · ${occ.override_title}` : ''}
                 </Text>
                 {occ.status === 'cancelled' ? (
@@ -352,6 +349,7 @@ export default function ManageSeriesScreen() {
           seriesId={series.id}
           occurrence={nightAction.occurrence}
           mode={nightAction.mode}
+          timezone={series.timezone}
           onClose={() => setNightAction(null)}
         />
       ) : null}
@@ -393,11 +391,13 @@ function NightModal({
   seriesId,
   occurrence,
   mode,
+  timezone,
   onClose,
 }: {
   seriesId: string;
   occurrence: Occurrence;
   mode: 'cancel' | 'edit';
+  timezone: string;
   onClose: () => void;
 }) {
   const update = useUpdateOccurrence();
@@ -421,11 +421,7 @@ function NightModal({
     onClose();
   }
 
-  const dateLabel = new Date(occurrence.starts_at).toLocaleDateString(undefined, {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
+  const dateLabel = formatRelativeDay(occurrence.starts_at, timezone);
 
   function submit() {
     if (mode === 'cancel') {
