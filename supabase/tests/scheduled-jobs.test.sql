@@ -13,7 +13,7 @@
 -- an environment without it cannot run this product correctly, and a test
 -- that skipped itself there would report success for a broken deployment.
 begin;
-select plan(12);
+select plan(16);
 
 -- cron.job does not exist at all when the extension failed to install, and a
 -- missing relation would abort the file rather than fail a test. This keeps
@@ -111,6 +111,22 @@ select is(
 select is(
   pg_temp.job_schedule('drain-notification-outbox'), '* * * * *',
   'the drain runs every minute, because an on-deck notice is worthless late'
+);
+select is(
+  pg_temp.job_count('push-sender'), 0,
+  'the duplicate push-sender minute job is unscheduled: one drain, not two'
+);
+
+-- ---------------------------------------------------------------------------
+-- The trust loop pair.
+-- ---------------------------------------------------------------------------
+select is(
+  pg_temp.job_count('confirm-nudges'), 1,
+  'the confirm-nudge job is scheduled'
+);
+select is(
+  pg_temp.job_count('auto-pause-stale'), 1,
+  'the stale-listing auto-pause job is scheduled'
 );
 
 -- The functions the jobs name must actually exist, so a rename cannot leave a

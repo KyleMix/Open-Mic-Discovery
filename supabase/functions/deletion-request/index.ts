@@ -107,6 +107,20 @@ Deno.serve(async (req) => {
         error: 'That confirmation link is invalid or has expired. Request a new one.',
       });
     }
+    // The avatar image can only be removed through the Storage API; the
+    // database forbids direct storage deletes. Best effort with the service
+    // role, before the account row disappears: a storage hiccup must not
+    // block the deletion itself.
+    try {
+      const { data: files } = await service.storage.from('avatars').list(userData.user.id);
+      if (files && files.length > 0) {
+        await service.storage
+          .from('avatars')
+          .remove(files.map((file) => `${userData.user.id}/${file.name}`));
+      }
+    } catch {
+      // Storage unavailable; proceed with the deletion.
+    }
     const { error: deleteError } = await service.rpc('delete_account_web', {
       p_user_id: userData.user.id,
     });

@@ -108,7 +108,8 @@ export default function SettingsScreen() {
 }
 
 function DeleteConfirmModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  const deleteAccount = useDeleteAccount();
+  const { session } = useSession();
+  const deleteAccount = useDeleteAccount(session?.user.id);
   const [confirmText, setConfirmText] = useState('');
 
   return (

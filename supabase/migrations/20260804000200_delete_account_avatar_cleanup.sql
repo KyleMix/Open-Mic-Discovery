@@ -1,19 +1,20 @@
--- Account deletion also removes the user's avatar objects.
+-- Account deletion scrubs every personal column, including the ones added
+-- since the shared deletion body was extracted: stage_name and the Spotify
+-- and Apple Music links.
 --
--- delete_account nulled profiles.avatar_url but left the image itself in
--- the public avatars bucket, where anyone who recorded the URL (or guessed
--- the uid-prefixed path) could fetch it forever. That contradicts the
--- in-app promise that deletion removes personal data immediately, and the
--- privacy disclosures filed with both stores. Deleting the storage.objects
--- row revokes all access through the storage API, which is the only read
--- path for bucket content.
+-- The avatar image itself is removed through the Storage API, not here.
+-- Deleting storage.objects rows from SQL is forbidden by the storage
+-- service (storage.protect_delete raises), and would only orphan the file
+-- in the bucket anyway. The in-app path removes the user's avatar folder
+-- with their own session before calling delete_account
+-- (src/features/safety/queries.ts); the web path does the same with the
+-- service role in supabase/functions/deletion-request before calling
+-- delete_account_web.
 --
 -- The improvement lands in private.delete_account_for, the body shared by
 -- the in-app path (delete_account) and the web path (delete_account_web),
 -- so both paths keep the identical end state that
--- supabase/tests/deletion.test.sql asserts. The scrub also covers the
--- fields added since the shared body was extracted: stage_name and the
--- Spotify and Apple Music links.
+-- supabase/tests/deletion.test.sql asserts.
 
 create or replace function private.delete_account_for(v_uid uuid)
 returns void
@@ -40,11 +41,6 @@ begin
   update public.producer_profiles
   set contact_email = null, contact_phone = null, payout_ref = null
   where profile_id = v_uid;
-
-  -- The avatar image is personal data; the profile row only held the URL.
-  delete from storage.objects
-  where bucket_id = 'avatars'
-    and (storage.foldername(name))[1] = v_uid::text;
 
   -- 22 hex chars (88 bits) of the uuid keep the anonymized handle unique
   -- within the 30-char handle limit; short prefixes have collided.

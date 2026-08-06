@@ -75,13 +75,15 @@ select is(
 -- ---------------------------------------------------------------------------
 -- Avatar storage policies
 -- ---------------------------------------------------------------------------
+-- Read as the test role: the storage service hides bucket rows from the API
+-- roles, so this asserted NULL when run as anon.
+reset role;
 select is(
   (select public from storage.buckets where id = 'avatars'),
   true,
   'avatars bucket exists and is public'
 );
 
-reset role;
 set local role authenticated;
 select set_config(
   'request.jwt.claims',

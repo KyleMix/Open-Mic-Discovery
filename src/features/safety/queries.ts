@@ -83,10 +83,27 @@ export function useBlockedUsers(userId: string | undefined) {
 }
 
 /** Deletes the account server side, then ends the local session. */
-export function useDeleteAccount() {
+export function useDeleteAccount(userId: string | undefined) {
   return useMutation({
     mutationFn: async () => {
-      const { error } = await getSupabase().rpc('delete_account');
+      const supabase = getSupabase();
+      // The avatar image can only be removed through the Storage API (the
+      // database forbids direct storage deletes), and only while this
+      // session still exists. Best effort: a failure here must not leave
+      // someone unable to delete their account over a leftover image.
+      if (userId) {
+        try {
+          const { data: files } = await supabase.storage.from('avatars').list(userId);
+          if (files && files.length > 0) {
+            await supabase.storage
+              .from('avatars')
+              .remove(files.map((file) => `${userId}/${file.name}`));
+          }
+        } catch {
+          // Offline or storage unavailable; the account deletion still runs.
+        }
+      }
+      const { error } = await supabase.rpc('delete_account');
       if (error) {
         throw userError(error, 'Could not delete the account. Try again, or contact support.');
       }
