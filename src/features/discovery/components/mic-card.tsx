@@ -73,6 +73,7 @@ type Props = {
 };
 
 export function MicCard({ mic, onPress }: Props) {
+  const { session } = useSession();
   const fresh = freshness(mic.last_confirmed_at, new Date());
   // Present only once migration 20260804000100 adds owner_id to the RPC;
   // until then the card simply shows no stewardship badge.
@@ -84,79 +85,84 @@ export function MicCard({ mic, onPress }: Props) {
   const nextDate = formatNextDate(mic.next_starts_at, mic.timezone);
   const when = recurrence ? `${recurrence} · ${nextDate}` : nextDate;
 
+  // The favorite star is a sibling overlay, not a child: a button nested in
+  // a button is invalid HTML, and react-native-web renders both as <button>.
   return (
-    <PressableScale
-      accessibilityRole="button"
-      accessibilityLabel={`${mic.title} at ${mic.venue_name}. ${when}. ${
-        SIGNUP_METHOD_LABELS[mic.signup_method]
-      }. ${costLabel(mic.cost_cents)}. ${fresh.label}.`}
-      onPress={onPress}
-      style={styles.card}
-    >
-      <View style={styles.accents}>
-        {(mic.disciplines as Discipline[]).map((d) => (
-          <View key={d} style={[styles.accentBar, { backgroundColor: disciplineAccents[d] }]} />
-        ))}
-      </View>
-      {mic.poster_url ? (
-        <Image
-          source={{ uri: mic.poster_url }}
-          accessibilityLabel={`${mic.title} poster`}
-          style={styles.poster}
-          contentFit="cover"
-          transition={150}
-        />
-      ) : null}
-      <View style={styles.body}>
-        <View style={styles.titleRow}>
-          <Text numberOfLines={1} style={styles.title}>
-            {mic.title}
-          </Text>
-          <View style={styles.glyphRow}>
-            {(mic.disciplines as Discipline[]).map((d) => (
-              <Glyph key={d} name={disciplineGlyphs[d]} size={16} color={disciplineAccents[d]} />
-            ))}
-            <CardStar seriesId={mic.series_id} title={mic.title} />
-          </View>
+    <View>
+      <PressableScale
+        accessibilityRole="button"
+        accessibilityLabel={`${mic.title} at ${mic.venue_name}. ${when}. ${
+          SIGNUP_METHOD_LABELS[mic.signup_method]
+        }. ${costLabel(mic.cost_cents)}. ${fresh.label}.`}
+        onPress={onPress}
+        style={styles.card}
+      >
+        <View style={styles.accents}>
+          {(mic.disciplines as Discipline[]).map((d) => (
+            <View key={d} style={[styles.accentBar, { backgroundColor: disciplineAccents[d] }]} />
+          ))}
         </View>
-        <Text numberOfLines={1} style={styles.venue}>
-          {mic.venue_name}
-          {mic.neighborhood ? `, ${mic.neighborhood}` : ''}
-          {mic.distance_m != null ? ` (${formatMilesFromMeters(mic.distance_m)})` : ''}
-        </Text>
-        <Text style={styles.when}>{when}</Text>
-        {/* A guest is the reason someone picks one night over another, so it
-            belongs on the card rather than only on the mic page. */}
-        {mic.featured_name ? (
-          <Text numberOfLines={1} style={styles.featured}>
-            Featuring {mic.featured_name}
-          </Text>
+        {mic.poster_url ? (
+          <Image
+            source={{ uri: mic.poster_url }}
+            accessibilityLabel={`${mic.title} poster`}
+            style={styles.poster}
+            contentFit="cover"
+            transition={150}
+          />
         ) : null}
-        <View style={styles.metaRow}>
-          <View style={styles.metaItem}>
-            <Glyph
-              name={signupMethodGlyphs[mic.signup_method]}
-              size={14}
-              color={palette.textSecondary}
-            />
-            <Text style={styles.metaText}>{SIGNUP_METHOD_LABELS[mic.signup_method]}</Text>
+        <View style={styles.body}>
+          <View style={styles.titleRow}>
+            <Text numberOfLines={1} style={styles.title}>
+              {mic.title}
+            </Text>
+            <View style={styles.glyphRow}>
+              {(mic.disciplines as Discipline[]).map((d) => (
+                <Glyph key={d} name={disciplineGlyphs[d]} size={16} color={disciplineAccents[d]} />
+              ))}
+              {session ? <View style={styles.starSpacer} /> : null}
+            </View>
           </View>
-          <Text style={styles.metaText}>{costLabel(mic.cost_cents)}</Text>
-          <View style={styles.metaItem}>
-            <Glyph name="freshness-badge" size={14} color={fresh.color} />
-            <Text style={[styles.metaText, { color: fresh.color }]}>{fresh.label}</Text>
-          </View>
-          {stewardship ? <StewardshipBadge ownerId={stewardship.ownerId} variant="card" /> : null}
-          {/* Full is the one state worth interrupting the row for: it changes
-              whether signing up gets you a slot or a place in the queue. */}
-          {spots ? (
-            <Text style={[styles.metaText, spots.tone !== 'plain' && styles.spotsAlert]}>
-              {spots.label}
+          <Text numberOfLines={1} style={styles.venue}>
+            {mic.venue_name}
+            {mic.neighborhood ? `, ${mic.neighborhood}` : ''}
+            {mic.distance_m != null ? ` (${formatMilesFromMeters(mic.distance_m)})` : ''}
+          </Text>
+          <Text style={styles.when}>{when}</Text>
+          {/* A guest is the reason someone picks one night over another, so it
+            belongs on the card rather than only on the mic page. */}
+          {mic.featured_name ? (
+            <Text numberOfLines={1} style={styles.featured}>
+              Featuring {mic.featured_name}
             </Text>
           ) : null}
+          <View style={styles.metaRow}>
+            <View style={styles.metaItem}>
+              <Glyph
+                name={signupMethodGlyphs[mic.signup_method]}
+                size={14}
+                color={palette.textSecondary}
+              />
+              <Text style={styles.metaText}>{SIGNUP_METHOD_LABELS[mic.signup_method]}</Text>
+            </View>
+            <Text style={styles.metaText}>{costLabel(mic.cost_cents)}</Text>
+            <View style={styles.metaItem}>
+              <Glyph name="freshness-badge" size={14} color={fresh.color} />
+              <Text style={[styles.metaText, { color: fresh.color }]}>{fresh.label}</Text>
+            </View>
+            {stewardship ? <StewardshipBadge ownerId={stewardship.ownerId} variant="card" /> : null}
+            {/* Full is the one state worth interrupting the row for: it changes
+              whether signing up gets you a slot or a place in the queue. */}
+            {spots ? (
+              <Text style={[styles.metaText, spots.tone !== 'plain' && styles.spotsAlert]}>
+                {spots.label}
+              </Text>
+            ) : null}
+          </View>
         </View>
-      </View>
-    </PressableScale>
+      </PressableScale>
+      <CardStar seriesId={mic.series_id} title={mic.title} />
+    </View>
   );
 }
 
@@ -195,11 +201,20 @@ function CardStar({ seriesId, title }: { seriesId: string; title: string }) {
 }
 
 const styles = StyleSheet.create({
+  // Overlaid on the card's top-right corner, where the title row reserves
+  // its spot with starSpacer, so the tap targets never nest.
   star: {
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 24,
     minWidth: 24,
+    position: 'absolute',
+    right: spacing.md,
+    top: spacing.md,
+    zIndex: 1,
+  },
+  starSpacer: {
+    width: 24,
   },
   card: {
     backgroundColor: palette.bgElevated,
