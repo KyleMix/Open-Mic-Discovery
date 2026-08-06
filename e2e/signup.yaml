@@ -1,5 +1,5 @@
 # Maestro smoke flow: performer signs up for a night and withdraws.
-appId: com.openmicfinder.app
+appId: com.openmicexplorer.app
 ---
 - launchApp
 - runFlow:
@@ -7,7 +7,7 @@ appId: com.openmicfinder.app
       visible: 'Sign in'
     commands:
       - tapOn: 'Email'
-      - inputText: 'performer@demo.openmic.local'
+      - inputText: 'performer@demo.openmicexplorer.local'
       - tapOn: 'Password'
       - inputText: 'demo-pass-1234'
       - tapOn: 'Sign in'

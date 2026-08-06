@@ -8,7 +8,9 @@ create view blocked_profiles as
     b.blocked_id,
     b.created_at as blocked_at,
     p.handle,
-    p.display_name
+    -- The public stage name, aliased for the client: display_name itself is
+    -- private and appears in no view.
+    p.stage_name as display_name
   from blocks b
   join profiles p on p.id = b.blocked_id
   where b.blocker_id = auth.uid();

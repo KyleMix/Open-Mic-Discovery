@@ -1,0 +1,85 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen } from '@testing-library/react-native';
+import type { ReactElement } from 'react';
+
+import { MicCard, type MicCardMic } from './mic-card';
+import type { SearchResult } from '@/features/discovery/queries';
+
+// The card carries the favorite star, which reads the session and the
+// favorites query; a signed-out session keeps both quiet in this test.
+jest.mock('@/features/auth/session', () => ({ useSession: () => ({ session: null }) }));
+jest.mock('@/lib/supabase', () => ({ getSupabase: jest.fn() }));
+
+function renderCard(element: ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return render(<QueryClientProvider client={queryClient}>{element}</QueryClientProvider>);
+}
+
+/**
+ * Shaped like a row from search_mics, not from mics_near. Typing this as
+ * SearchResult is the point: if search ever stops returning something the card
+ * draws, this file stops compiling instead of quietly rendering a thinner card
+ * the way it used to.
+ */
+const SEARCH_ROW: SearchResult = {
+  series_id: 'series-1',
+  title: 'The Log Cabin',
+  disciplines: ['comedy'],
+  signup_method: 'first_come',
+  cost_cents: 0,
+  rrule: 'FREQ=WEEKLY;INTERVAL=2;BYDAY=MO',
+  start_time: '19:00:00',
+  timezone: 'America/Los_Angeles',
+  last_confirmed_at: new Date().toISOString(),
+  venue_id: 'venue-1',
+  venue_name: 'The Log Cabin',
+  neighborhood: 'Downtown',
+  city: 'Olympia',
+  region: 'WA',
+  lat: 47.0379,
+  lng: -122.9007,
+  distance_m: 2253,
+  next_starts_at: '2026-08-11T02:00:00.000Z',
+  poster_url: null as unknown as string,
+  featured_name: null as unknown as string,
+  capacity: null as unknown as number,
+  spots_left: null as unknown as number,
+  owner_id: null as unknown as string,
+};
+
+describe('MicCard from a search result', () => {
+  it('renders the same details a nearby result shows', async () => {
+    // A search row satisfies the card's prop type by structure alone.
+    const mic: MicCardMic = SEARCH_ROW;
+    await renderCard(<MicCard mic={mic} onPress={jest.fn()} />);
+
+    expect(screen.getByText('The Log Cabin')).toBeTruthy();
+    // Schedule, not just the next date: this was missing from search results.
+    expect(screen.getByText(/Every other Monday, 7:00\s?PM/i)).toBeTruthy();
+    // Signup method, cost, and freshness were all missing too.
+    expect(screen.getByText('Walk-in list')).toBeTruthy();
+    expect(screen.getByText('Free')).toBeTruthy();
+    expect(screen.getByText(/Confirmed today/i)).toBeTruthy();
+    // Neighborhood and distance in one line.
+    expect(screen.getByText(/The Log Cabin, Downtown \(1\.4 mi\)/)).toBeTruthy();
+  });
+
+  it('labels the card for screen readers with the mic and venue', async () => {
+    await renderCard(<MicCard mic={SEARCH_ROW} onPress={jest.fn()} />);
+    expect(screen.getByLabelText(/^The Log Cabin at The Log Cabin\./)).toBeTruthy();
+  });
+
+  it('names the guest when the night has one, since that is the draw', async () => {
+    await renderCard(
+      <MicCard mic={{ ...SEARCH_ROW, featured_name: 'Nia Guest' }} onPress={jest.fn()} />,
+    );
+    expect(screen.getByText('Featuring Nia Guest')).toBeTruthy();
+  });
+
+  it('and says nothing at all when it does not', async () => {
+    await renderCard(<MicCard mic={SEARCH_ROW} onPress={jest.fn()} />);
+    expect(screen.queryByText(/Featuring/)).toBeNull();
+  });
+});

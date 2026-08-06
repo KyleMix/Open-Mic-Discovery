@@ -47,15 +47,21 @@ export function useConfirmSeries() {
   const toast = useToast();
   return useMutation({
     mutationFn: async (seriesId: string) => {
-      const { error } = await getSupabase()
+      const { data, error } = await getSupabase()
         .from('mic_series')
         .update({ last_confirmed_at: new Date().toISOString() })
-        .eq('id', seriesId);
+        .eq('id', seriesId)
+        .select('id');
       if (error) {
         throw userError(
           error,
           'Could not confirm the listing. Check your connection and try again.',
         );
+      }
+      // Row level security filters denied rows out of an update rather than
+      // raising, so zero rows back means the write was refused, not applied.
+      if (!data || data.length === 0) {
+        throw new Error('Could not confirm this mic. You may no longer manage it.');
       }
     },
     onSuccess: (_d, seriesId) => {
@@ -71,9 +77,16 @@ export function useUpdateSeries() {
   const invalidate = useInvalidateSeries();
   return useMutation({
     mutationFn: async ({ seriesId, patch }: { seriesId: string; patch: SeriesUpdate }) => {
-      const { error } = await getSupabase().from('mic_series').update(patch).eq('id', seriesId);
+      const { data, error } = await getSupabase()
+        .from('mic_series')
+        .update(patch)
+        .eq('id', seriesId)
+        .select('id');
       if (error) {
         throw userError(error, 'Could not save the changes. Try again.');
+      }
+      if (!data || data.length === 0) {
+        throw new Error('Could not save these changes. You may no longer manage this mic.');
       }
     },
     onSuccess: (_d, { seriesId }) => invalidate(seriesId),
@@ -92,12 +105,16 @@ export function useUpdateOccurrence() {
       seriesId: string;
       patch: OccurrenceUpdate;
     }) => {
-      const { error } = await getSupabase()
+      const { data, error } = await getSupabase()
         .from('mic_occurrences')
         .update(patch)
-        .eq('id', occurrenceId);
+        .eq('id', occurrenceId)
+        .select('id');
       if (error) {
         throw userError(error, 'Could not save that night. Try again.');
+      }
+      if (!data || data.length === 0) {
+        throw new Error('Could not save this night. You may no longer manage this mic.');
       }
       return seriesId;
     },
@@ -287,7 +304,10 @@ export function useSeriesOccurrences(seriesId: string | undefined) {
         .from('mic_occurrences')
         .select('*')
         .eq('series_id', seriesId!)
-        .gte('starts_at', new Date().toISOString())
+        // Reaches back half a day, not to now: a mic that started an hour ago
+        // is the one most likely to need the controls, and filtering on the
+        // start time alone made a running show disappear from its own list.
+        .gte('starts_at', new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString())
         .order('starts_at')
         .limit(10);
       if (error) {
@@ -307,6 +327,29 @@ export function useOccurrenceContext(occurrenceId: string | undefined) {
       const { data, error } = await getSupabase()
         .from('mic_occurrences')
         .select('id, starts_at, status, override_title, series:mic_series(id, title, timezone)')
+        .eq('id', occurrenceId!)
+        .maybeSingle();
+      if (error) {
+        throw userError(error, 'Could not load this night. Try again.');
+      }
+      return data;
+    },
+  });
+}
+
+/**
+ * One night plus the parts of its series the night screen needs: the method
+ * decides how a headcount is worded, and the timezone decides what "tonight"
+ * means.
+ */
+export function useNightContext(occurrenceId: string | undefined) {
+  return useQuery({
+    queryKey: ['producer', 'night', occurrenceId],
+    enabled: !!occurrenceId,
+    queryFn: async () => {
+      const { data, error } = await getSupabase()
+        .from('mic_occurrences')
+        .select('*, series:mic_series(id, title, signup_method, timezone, set_length_minutes)')
         .eq('id', occurrenceId!)
         .maybeSingle();
       if (error) {
@@ -350,6 +393,44 @@ export function useNextNights(seriesIds: string[]) {
       }
       return bySeries;
     },
+  });
+}
+
+/**
+ * Ending the show. The server clears every on-deck flag with it: "you are on
+ * deck" is a promise you are about to be called up, and after the show it is
+ * not true of anybody.
+ */
+export function useEndShow() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (occurrenceId: string) => {
+      const { error } = await getSupabase().rpc('end_show', { p_occurrence_id: occurrenceId });
+      if (error) {
+        throw new Error(error.message);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['producer'] });
+      return queryClient.invalidateQueries({ queryKey: ['signup'] });
+    },
+  });
+}
+
+/** For the host who ended the night while people were still waiting to go up. */
+export function useReopenShow() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (occurrenceId: string) => {
+      const { error } = await getSupabase()
+        .from('mic_occurrences')
+        .update({ live_ended_at: null })
+        .eq('id', occurrenceId);
+      if (error) {
+        throw new Error(error.message);
+      }
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['producer'] }),
   });
 }
 
@@ -448,12 +529,16 @@ export function useEnableProducerRole() {
   return useMutation({
     mutationFn: async (userId: string) => {
       const supabase = getSupabase();
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .update({ is_producer: true })
-        .eq('id', userId);
+        .eq('id', userId)
+        .select('id');
       if (error) {
         throw userError(error, 'Could not enable the producer role. Try again.');
+      }
+      if (!data || data.length === 0) {
+        throw new Error('Could not enable producer tools on this account.');
       }
       const { error: ppError } = await supabase
         .from('producer_profiles')

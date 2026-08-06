@@ -83,24 +83,16 @@ select is(
 select set_config('request.jwt.claims',
   '{"sub":"00000000-0000-4000-a000-000000000001","role":"authenticated"}', true);
 
--- Give p1 an avatar object so deletion has something to scrub.
-reset role;
-insert into storage.objects (bucket_id, name, owner)
-values ('avatars', '00000000-0000-4000-a000-000000000001/avatar.jpg',
-        '00000000-0000-4000-a000-000000000001');
-set local role authenticated;
-select set_config('request.jwt.claims',
-  '{"sub":"00000000-0000-4000-a000-000000000001","role":"authenticated"}', true);
-
 select lives_ok($$select delete_account()$$, 'a user can delete their own account');
 
 reset role;
+-- The avatar image itself is removed through the Storage API by the caller
+-- (the app or the deletion Edge Function); SQL can only prove the profile
+-- no longer points at it.
 select is(
-  (select count(*)::int from storage.objects
-   where bucket_id = 'avatars'
-     and (storage.foldername(name))[1] = '00000000-0000-4000-a000-000000000001'),
-  0,
-  'deletion removes the avatar object from the public bucket'
+  (select avatar_url from profiles where id = '00000000-0000-4000-a000-000000000001'),
+  null,
+  'deletion clears the avatar URL from the profile'
 );
 select is(
   (select count(*)::int from auth.users where id = '00000000-0000-4000-a000-000000000001'),

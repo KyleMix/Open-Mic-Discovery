@@ -20,8 +20,13 @@ import { useSession } from '@/features/auth/session';
 import { freshness } from '@/features/discovery/freshness';
 import { formatRelativeDay } from '@/features/discovery/date-label';
 import { useMicDetail } from '@/features/discovery/queries';
+import { eventDate } from '@/features/discovery/local-time';
 import { describeRecurrence } from '@/features/discovery/recurrence';
+import { liveWindow } from '@/features/live/window';
+import { useSeriesAttendance } from '@/features/plans/queries';
+import { attendanceSummary } from '@/features/plans/summary';
 import { SeriesForm, type SeriesFormValues } from '@/features/producer/components/series-form';
+import { isWalkIn, signupOpensInterval } from '@/features/producer/signup-opens';
 import { pickAndUploadPoster } from '@/features/producer/poster';
 import {
   useCancelNight,
@@ -42,6 +47,7 @@ export default function ManageSeriesScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const detail = useMicDetail(id);
   const occurrences = useSeriesOccurrences(id);
+  const attendance = useSeriesAttendance(id);
   const confirm = useConfirmSeries();
   const updateSeries = useUpdateSeries();
   const pauseSeries = usePauseSeries();
@@ -70,6 +76,16 @@ export default function ManageSeriesScreen() {
     setEditorDirty(false);
     setConfirmCloseEditor(false);
   }
+
+  // Headcounts arrive as one row per night; the rows below look them up.
+  const counts = new Map((attendance.data ?? []).map((a) => [a.occurrence_id, a]));
+
+  // The one night, if any, the host can be running right now.
+  const liveTonight = (occurrences.data ?? []).find(
+    (o) =>
+      o.status === 'scheduled' &&
+      liveWindow(o.starts_at, new Date(), o.live_ended_at).state === 'open',
+  );
 
   if (detail.isPending) {
     return <LoadingView label="Loading your mic" />;
@@ -117,7 +133,7 @@ export default function ManageSeriesScreen() {
           rrule: values.rrule,
           start_time: values.startTime,
           timezone: values.timezone,
-          signup_opens: `${values.signupOpensDays} days`,
+          signup_opens: signupOpensInterval(values.signupOpensMinutes),
           cost_cents: Math.round(Number(values.costDollars || '0') * 100),
           cost_note: values.costNote || null,
           set_length_minutes: values.setLengthMinutes ? Number(values.setLengthMinutes) : null,
@@ -144,7 +160,11 @@ export default function ManageSeriesScreen() {
           headerTintColor: palette.text,
         }}
       />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+      >
         <Text style={styles.title}>{series.title}</Text>
         {series.moderation_status === 'pending' ? (
           <Text style={styles.heldNote}>
@@ -172,6 +192,23 @@ export default function ManageSeriesScreen() {
           <Glyph name="freshness-badge" size={16} color={fresh.color} />
           <Text style={[styles.meta, { color: fresh.color }]}>{fresh.label}</Text>
         </View>
+        {/* The night in front of them, before anything else on the screen.
+            Live used to be buried on the list screen, which is not where a
+            host looks an hour before the door. */}
+        {liveTonight ? (
+          <View style={styles.liveBox}>
+            <Text style={styles.liveTitle}>Tonight is live</Text>
+            <Body>
+              {eventDate(liveTonight.starts_at, series.timezone)}. Run the room from here: the
+              running order, a silent set timer, and on deck notices.
+            </Body>
+            <Button
+              label="Go live"
+              onPress={() => router.push(`/producer/live/${liveTonight.id}`)}
+            />
+          </View>
+        ) : null}
+
         <Body>
           One tap keeps your listing trusted: confirming updates the freshness badge every performer
           sees.
@@ -194,7 +231,7 @@ export default function ManageSeriesScreen() {
           </View>
           <View style={styles.buttonFlex}>
             <Button
-              label={editing ? 'Close editor' : 'Edit mic (all future nights)'}
+              label={editing ? 'Close editor' : 'Edit mic'}
               kind="secondary"
               onPress={() => {
                 if (editing && editorDirty) {
@@ -209,7 +246,7 @@ export default function ManageSeriesScreen() {
           </View>
           <View style={styles.buttonFlex}>
             <Button
-              label={series.is_active ? 'Pause listing' : 'Resume listing'}
+              label={series.is_active ? 'Pause' : 'Resume'}
               kind="secondary"
               busy={(updateSeries.isPending || pauseSeries.isPending) && !editing}
               onPress={() => {
@@ -225,6 +262,13 @@ export default function ManageSeriesScreen() {
             />
           </View>
         </View>
+
+        <Text style={styles.sectionTitle}>Lineup</Text>
+        <Button
+          label="Host and featured artist"
+          kind="secondary"
+          onPress={() => router.push(`/producer/credits/${series.id}`)}
+        />
 
         <Text style={styles.sectionTitle}>Poster</Text>
         {series.poster_url ? (
@@ -299,11 +343,26 @@ export default function ManageSeriesScreen() {
                   {formatRelativeDay(occ.starts_at, series.timezone)}
                   {occ.override_title ? ` · ${occ.override_title}` : ''}
                 </Text>
+                {occ.featured_name ? (
+                  <Text style={styles.featured}>Featuring {occ.featured_name}</Text>
+                ) : null}
+                {occ.live_ended_at ? <Text style={styles.nightCount}>Show ended</Text> : null}
                 {occ.status === 'cancelled' ? (
                   <Text style={styles.cancelledNote}>
                     Cancelled{occ.cancellation_note ? `: ${occ.cancellation_note}` : ''}
                   </Text>
-                ) : null}
+                ) : (
+                  <Text style={styles.nightCount}>
+                    {attendanceSummary(
+                      counts.get(occ.id) ?? {
+                        plan_count: 0,
+                        performer_plan_count: 0,
+                        signup_count: 0,
+                      },
+                      isWalkIn(series.signup_method),
+                    )}
+                  </Text>
+                )}
               </View>
               {occ.status === 'cancelled' ? (
                 <Button
@@ -319,11 +378,28 @@ export default function ManageSeriesScreen() {
                 />
               ) : (
                 <View style={styles.nightActions}>
-                  <Button label="List" onPress={() => router.push(`/producer/night/${occ.id}`)} />
+                  {liveWindow(occ.starts_at, new Date(), occ.live_ended_at).state === 'open' ? (
+                    <Button
+                      label="Go live"
+                      onPress={() => router.push(`/producer/live/${occ.id}`)}
+                    />
+                  ) : null}
+                  <Button
+                    label="List"
+                    kind="secondary"
+                    onPress={() => router.push(`/producer/night/${occ.id}`)}
+                  />
                   <Button
                     label="This night"
                     kind="secondary"
                     onPress={() => setNightAction({ occurrence: occ, mode: 'edit' })}
+                  />
+                  <Button
+                    label="Lineup"
+                    kind="secondary"
+                    onPress={() =>
+                      router.push(`/producer/credits/${series.id}?occurrence=${occ.id}`)
+                    }
                   />
                   <Button
                     label="Cancel"
@@ -350,9 +426,9 @@ export default function ManageSeriesScreen() {
       {nightAction ? (
         <NightModal
           seriesId={series.id}
+          timezone={series.timezone}
           occurrence={nightAction.occurrence}
           mode={nightAction.mode}
-          timezone={series.timezone}
           onClose={() => setNightAction(null)}
         />
       ) : null}
@@ -389,15 +465,15 @@ export default function ManageSeriesScreen() {
 
 function NightModal({
   seriesId,
+  timezone,
   occurrence,
   mode,
-  timezone,
   onClose,
 }: {
   seriesId: string;
+  timezone: string | null;
   occurrence: Occurrence;
   mode: 'cancel' | 'edit';
-  timezone: string;
   onClose: () => void;
 }) {
   const update = useUpdateOccurrence();
@@ -406,13 +482,20 @@ function NightModal({
   const initialTitle = occurrence.override_title ?? '';
   const initialCost =
     occurrence.override_cost_cents != null ? String(occurrence.override_cost_cents / 100) : '';
+  const initialFeaturedName = occurrence.featured_name ?? '';
+  const initialFeaturedNote = occurrence.featured_note ?? '';
   const [overrideTitle, setOverrideTitle] = useState(initialTitle);
   const [overrideCost, setOverrideCost] = useState(initialCost);
+  const [featuredName, setFeaturedName] = useState(initialFeaturedName);
+  const [featuredNote, setFeaturedNote] = useState(initialFeaturedNote);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const dirty =
     mode === 'cancel'
       ? note.trim().length > 0
-      : overrideTitle !== initialTitle || overrideCost !== initialCost;
+      : overrideTitle !== initialTitle ||
+        overrideCost !== initialCost ||
+        featuredName !== initialFeaturedName ||
+        featuredNote !== initialFeaturedNote;
 
   function close() {
     if (dirty) {
@@ -440,6 +523,8 @@ function NightModal({
             override_cost_cents: overrideCost.trim()
               ? Math.round(Number(overrideCost) * 100)
               : null,
+            featured_name: featuredName.trim() || null,
+            featured_note: featuredNote.trim() || null,
           },
         },
         { onSuccess: onClose },
@@ -489,6 +574,23 @@ function NightModal({
                       value={overrideCost}
                       onChangeText={setOverrideCost}
                       inputMode="decimal"
+                    />
+                    {/* A named guest is what pulls performers to one night over
+                        another, so it shows on the listing and on the card in
+                        Discover, not just here. */}
+                    <Field
+                      label="Featured artist (optional)"
+                      value={featuredName}
+                      onChangeText={setFeaturedName}
+                      placeholder="Nia Guest"
+                      maxLength={80}
+                    />
+                    <Field
+                      label="A line about them (optional)"
+                      value={featuredNote}
+                      onChangeText={setFeaturedNote}
+                      placeholder="Headlining before her tour"
+                      maxLength={200}
                     />
                   </>
                 )}
@@ -603,6 +705,28 @@ const styles = StyleSheet.create({
   },
   cancelledNote: {
     color: palette.danger,
+    fontSize: type.caption.fontSize,
+  },
+  liveBox: {
+    backgroundColor: palette.bgElevated,
+    borderColor: palette.success,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: spacing.sm,
+    padding: spacing.md,
+  },
+  liveTitle: {
+    color: palette.success,
+    fontFamily: fonts.semibold,
+    fontSize: type.heading.fontSize,
+  },
+  nightCount: {
+    color: palette.textSecondary,
+    fontSize: type.caption.fontSize,
+  },
+  featured: {
+    color: palette.success,
+    fontFamily: fonts.medium,
     fontSize: type.caption.fontSize,
   },
   nightActions: {

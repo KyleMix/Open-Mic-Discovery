@@ -4,6 +4,7 @@ import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Body, Button, ErrorText, Field, KeyboardShift, LoadingView, Title } from '@/components/ui';
 import { useSession } from '@/features/auth/session';
+import { LEGAL_LINKS, openLegalLink } from '@/features/legal/links';
 import { useBlockedUsers, useDeleteAccount, useUnblockUser } from '@/features/safety/queries';
 import { SUPPORT_EMAIL, contactSupport } from '@/lib/support';
 import { fonts, palette, spacing, type } from '@/theme';
@@ -14,6 +15,7 @@ export default function SettingsScreen() {
   const blocked = useBlockedUsers(session?.user.id);
   const unblock = useUnblockUser();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [legalError, setLegalError] = useState<string | null>(null);
 
   if (!session) {
     return <LoadingView label="Settings" />;
@@ -38,12 +40,16 @@ export default function SettingsScreen() {
         onPress={() => router.push('/notification-prefs')}
       />
 
-      <Text style={styles.sectionTitle}>Subscriptions</Text>
-      <Button
-        label="Producer Pro and Restore Purchases"
-        kind="secondary"
-        onPress={() => router.push('/paywall')}
-      />
+      <Text style={styles.sectionTitle}>Legal</Text>
+      {legalError ? <ErrorText>{legalError}</ErrorText> : null}
+      {Object.values(LEGAL_LINKS).map((link) => (
+        <Button
+          key={link.url}
+          label={link.label}
+          kind="secondary"
+          onPress={async () => setLegalError(await openLegalLink(link.url))}
+        />
+      ))}
 
       <Text style={styles.sectionTitle}>Blocked users</Text>
       {blocked.isPending ? (
@@ -80,7 +86,7 @@ export default function SettingsScreen() {
       <Button
         label="Contact support"
         kind="secondary"
-        onPress={() => contactSupport('Open Mic Finder support')}
+        onPress={() => contactSupport('Open Mic Explorer support')}
       />
       <Button label="Read the terms" kind="secondary" onPress={() => router.push('/terms')} />
       <Button
@@ -102,7 +108,8 @@ export default function SettingsScreen() {
 }
 
 function DeleteConfirmModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  const deleteAccount = useDeleteAccount();
+  const { session } = useSession();
+  const deleteAccount = useDeleteAccount(session?.user.id);
   const [confirmText, setConfirmText] = useState('');
 
   return (

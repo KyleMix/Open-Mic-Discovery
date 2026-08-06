@@ -46,6 +46,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "attendance_log_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "my_upcoming_nights"
+            referencedColumns: ["occurrence_id"]
+          },
+          {
+            foreignKeyName: "attendance_log_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "occurrence_attendance"
+            referencedColumns: ["occurrence_id"]
+          },
+          {
+            foreignKeyName: "attendance_log_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "occurrence_spots"
+            referencedColumns: ["occurrence_id"]
+          },
+          {
             foreignKeyName: "attendance_log_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
@@ -64,6 +85,74 @@ export type Database = {
             columns: ["series_id"]
             isOneToOne: false
             referencedRelation: "mic_series"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_log_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "my_upcoming_nights"
+            referencedColumns: ["series_id"]
+          },
+        ]
+      }
+      attendance_plans: {
+        Row: {
+          created_at: string
+          occurrence_id: string
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          occurrence_id: string
+          profile_id: string
+        }
+        Update: {
+          created_at?: string
+          occurrence_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_plans_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "mic_occurrences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_plans_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "my_upcoming_nights"
+            referencedColumns: ["occurrence_id"]
+          },
+          {
+            foreignKeyName: "attendance_plans_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "occurrence_attendance"
+            referencedColumns: ["occurrence_id"]
+          },
+          {
+            foreignKeyName: "attendance_plans_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "occurrence_spots"
+            referencedColumns: ["occurrence_id"]
+          },
+          {
+            foreignKeyName: "attendance_plans_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_plans_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -85,16 +174,19 @@ export type Database = {
       }
       blocks: {
         Row: {
+          blocked_display_name: string | null
           blocked_id: string
           blocker_id: string
           created_at: string
         }
         Insert: {
+          blocked_display_name?: string | null
           blocked_id: string
           blocker_id: string
           created_at?: string
         }
         Update: {
+          blocked_display_name?: string | null
           blocked_id?: string
           blocker_id?: string
           created_at?: string
@@ -197,6 +289,13 @@ export type Database = {
             referencedRelation: "mic_series"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "claim_requests_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "my_upcoming_nights"
+            referencedColumns: ["series_id"]
+          },
         ]
       }
       device_push_tokens: {
@@ -294,6 +393,13 @@ export type Database = {
             referencedRelation: "mic_series"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "favorites_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "my_upcoming_nights"
+            referencedColumns: ["series_id"]
+          },
         ]
       }
       listing_flags: {
@@ -366,6 +472,141 @@ export type Database = {
             referencedRelation: "mic_series"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "listing_flags_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "my_upcoming_nights"
+            referencedColumns: ["series_id"]
+          },
+        ]
+      }
+      mic_credits: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          link_apple_music: string | null
+          link_instagram: string | null
+          link_spotify: string | null
+          link_tiktok: string | null
+          link_website: string | null
+          link_youtube: string | null
+          moderation_status: Database["public"]["Enums"]["moderation_status"]
+          name: string | null
+          occurrence_id: string | null
+          profile_id: string | null
+          role: Database["public"]["Enums"]["credit_role"]
+          series_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          link_apple_music?: string | null
+          link_instagram?: string | null
+          link_spotify?: string | null
+          link_tiktok?: string | null
+          link_website?: string | null
+          link_youtube?: string | null
+          moderation_status?: Database["public"]["Enums"]["moderation_status"]
+          name?: string | null
+          occurrence_id?: string | null
+          profile_id?: string | null
+          role: Database["public"]["Enums"]["credit_role"]
+          series_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          link_apple_music?: string | null
+          link_instagram?: string | null
+          link_spotify?: string | null
+          link_tiktok?: string | null
+          link_website?: string | null
+          link_youtube?: string | null
+          moderation_status?: Database["public"]["Enums"]["moderation_status"]
+          name?: string | null
+          occurrence_id?: string | null
+          profile_id?: string | null
+          role?: Database["public"]["Enums"]["credit_role"]
+          series_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mic_credits_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mic_credits_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mic_credits_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "mic_occurrences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mic_credits_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "my_upcoming_nights"
+            referencedColumns: ["occurrence_id"]
+          },
+          {
+            foreignKeyName: "mic_credits_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "occurrence_attendance"
+            referencedColumns: ["occurrence_id"]
+          },
+          {
+            foreignKeyName: "mic_credits_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "occurrence_spots"
+            referencedColumns: ["occurrence_id"]
+          },
+          {
+            foreignKeyName: "mic_credits_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mic_credits_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mic_credits_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "mic_series"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mic_credits_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "my_upcoming_nights"
+            referencedColumns: ["series_id"]
+          },
         ]
       }
       mic_occurrences: {
@@ -373,7 +614,10 @@ export type Database = {
           cancellation_note: string | null
           created_at: string
           doors_at: string | null
+          featured_name: string | null
+          featured_note: string | null
           id: string
+          live_ended_at: string | null
           local_date: string
           override_cost_cents: number | null
           override_title: string | null
@@ -387,7 +631,10 @@ export type Database = {
           cancellation_note?: string | null
           created_at?: string
           doors_at?: string | null
+          featured_name?: string | null
+          featured_note?: string | null
           id?: string
+          live_ended_at?: string | null
           local_date: string
           override_cost_cents?: number | null
           override_title?: string | null
@@ -401,7 +648,10 @@ export type Database = {
           cancellation_note?: string | null
           created_at?: string
           doors_at?: string | null
+          featured_name?: string | null
+          featured_note?: string | null
           id?: string
+          live_ended_at?: string | null
           local_date?: string
           override_cost_cents?: number | null
           override_title?: string | null
@@ -425,6 +675,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "mic_series"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mic_occurrences_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "my_upcoming_nights"
+            referencedColumns: ["series_id"]
           },
         ]
       }
@@ -772,11 +1029,14 @@ export type Database = {
           is_admin: boolean
           is_performer: boolean
           is_producer: boolean
+          link_apple_music: string | null
           link_instagram: string | null
+          link_spotify: string | null
           link_tiktok: string | null
           link_website: string | null
           link_youtube: string | null
           moderation_status: Database["public"]["Enums"]["moderation_status"]
+          stage_name: string
           updated_at: string
         }
         Insert: {
@@ -799,11 +1059,14 @@ export type Database = {
           is_admin?: boolean
           is_performer?: boolean
           is_producer?: boolean
+          link_apple_music?: string | null
           link_instagram?: string | null
+          link_spotify?: string | null
           link_tiktok?: string | null
           link_website?: string | null
           link_youtube?: string | null
           moderation_status?: Database["public"]["Enums"]["moderation_status"]
+          stage_name: string
           updated_at?: string
         }
         Update: {
@@ -826,11 +1089,14 @@ export type Database = {
           is_admin?: boolean
           is_performer?: boolean
           is_producer?: boolean
+          link_apple_music?: string | null
           link_instagram?: string | null
+          link_spotify?: string | null
           link_tiktok?: string | null
           link_website?: string | null
           link_youtube?: string | null
           moderation_status?: Database["public"]["Enums"]["moderation_status"]
+          stage_name?: string
           updated_at?: string
         }
         Relationships: [
@@ -954,6 +1220,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "signups_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "my_upcoming_nights"
+            referencedColumns: ["occurrence_id"]
+          },
+          {
+            foreignKeyName: "signups_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "occurrence_attendance"
+            referencedColumns: ["occurrence_id"]
+          },
+          {
+            foreignKeyName: "signups_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "occurrence_spots"
+            referencedColumns: ["occurrence_id"]
+          },
+          {
             foreignKeyName: "signups_performer_id_fkey"
             columns: ["performer_id"]
             isOneToOne: false
@@ -990,6 +1277,66 @@ export type Database = {
           proj4text?: string | null
           srid?: number
           srtext?: string | null
+        }
+        Relationships: []
+      }
+      test_kit_objects: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          row_id: string
+          scenario: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: string
+          row_id: string
+          scenario?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          row_id?: string
+          scenario?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_kit_objects_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_kit_objects_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_kit_settings: {
+        Row: {
+          enabled: boolean
+          id: boolean
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          id?: boolean
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          id?: boolean
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1088,7 +1435,22 @@ export type Database = {
           display_name: string | null
           handle: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "blocks_blocked_id_fkey"
+            columns: ["blocked_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blocks_blocked_id_fkey"
+            columns: ["blocked_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       geography_columns: {
         Row: {
@@ -1131,6 +1493,160 @@ export type Database = {
           type?: string | null
         }
         Relationships: []
+      }
+      mic_credit_public: {
+        Row: {
+          avatar_url: string | null
+          handle: string | null
+          id: string | null
+          link_apple_music: string | null
+          link_instagram: string | null
+          link_spotify: string | null
+          link_tiktok: string | null
+          link_website: string | null
+          link_youtube: string | null
+          name: string | null
+          occurrence_id: string | null
+          profile_id: string | null
+          role: Database["public"]["Enums"]["credit_role"] | null
+          series_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mic_credits_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "mic_occurrences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mic_credits_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "my_upcoming_nights"
+            referencedColumns: ["occurrence_id"]
+          },
+          {
+            foreignKeyName: "mic_credits_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "occurrence_attendance"
+            referencedColumns: ["occurrence_id"]
+          },
+          {
+            foreignKeyName: "mic_credits_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "occurrence_spots"
+            referencedColumns: ["occurrence_id"]
+          },
+          {
+            foreignKeyName: "mic_credits_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mic_credits_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mic_credits_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "mic_series"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mic_credits_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "my_upcoming_nights"
+            referencedColumns: ["series_id"]
+          },
+        ]
+      }
+      my_upcoming_nights: {
+        Row: {
+          cancellation_note: string | null
+          cost_cents: number | null
+          disciplines: Database["public"]["Enums"]["discipline"][] | null
+          featured_name: string | null
+          last_confirmed_at: string | null
+          neighborhood: string | null
+          occurrence_id: string | null
+          occurrence_status:
+            Database["public"]["Enums"]["occurrence_status"] | null
+          on_deck_at: string | null
+          planning: boolean | null
+          poster_url: string | null
+          rrule: string | null
+          series_id: string | null
+          signup_method: Database["public"]["Enums"]["signup_method"] | null
+          signup_status: Database["public"]["Enums"]["signup_status"] | null
+          slot_position: number | null
+          start_time: string | null
+          starts_at: string | null
+          timezone: string | null
+          title: string | null
+          venue_name: string | null
+        }
+        Relationships: []
+      }
+      occurrence_attendance: {
+        Row: {
+          occurrence_id: string | null
+          performer_plan_count: number | null
+          plan_count: number | null
+          series_id: string | null
+          signup_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mic_occurrences_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "mic_series"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mic_occurrences_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "my_upcoming_nights"
+            referencedColumns: ["series_id"]
+          },
+        ]
+      }
+      occurrence_spots: {
+        Row: {
+          capacity: number | null
+          occurrence_id: string | null
+          planning_performers: number | null
+          series_id: string | null
+          spots_left: number | null
+          taken: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mic_occurrences_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "mic_series"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mic_occurrences_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "my_upcoming_nights"
+            referencedColumns: ["series_id"]
+          },
+        ]
       }
       performer_public: {
         Row: {
@@ -1192,6 +1708,60 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_roster: {
+        Row: {
+          created_at: string | null
+          handle: string | null
+          is_performer: boolean | null
+          occurrence_id: string | null
+          profile_id: string | null
+          stage_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_plans_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "mic_occurrences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_plans_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "my_upcoming_nights"
+            referencedColumns: ["occurrence_id"]
+          },
+          {
+            foreignKeyName: "attendance_plans_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "occurrence_attendance"
+            referencedColumns: ["occurrence_id"]
+          },
+          {
+            foreignKeyName: "attendance_plans_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "occurrence_spots"
+            referencedColumns: ["occurrence_id"]
+          },
+          {
+            foreignKeyName: "attendance_plans_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_plans_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       producer_public: {
         Row: {
           contact_email: string | null
@@ -1230,50 +1800,55 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string | null
-          display_name: string | null
           handle: string | null
           id: string | null
           is_performer: boolean | null
           is_producer: boolean | null
+          link_apple_music: string | null
           link_instagram: string | null
+          link_spotify: string | null
           link_tiktok: string | null
           link_website: string | null
           link_youtube: string | null
+          stage_name: string | null
         }
         Insert: {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
-          display_name?: string | null
           handle?: string | null
           id?: string | null
           is_performer?: boolean | null
           is_producer?: boolean | null
+          link_apple_music?: string | null
           link_instagram?: string | null
+          link_spotify?: string | null
           link_tiktok?: string | null
           link_website?: string | null
           link_youtube?: string | null
+          stage_name?: string | null
         }
         Update: {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
-          display_name?: string | null
           handle?: string | null
           id?: string | null
           is_performer?: boolean | null
           is_producer?: boolean | null
+          link_apple_music?: string | null
           link_instagram?: string | null
+          link_spotify?: string | null
           link_tiktok?: string | null
           link_website?: string | null
           link_youtube?: string | null
+          stage_name?: string | null
         }
         Relationships: []
       }
       signup_roster: {
         Row: {
           created_at: string | null
-          display_name: string | null
           guest_name: string | null
           handle: string | null
           id: string | null
@@ -1281,6 +1856,7 @@ export type Database = {
           on_deck_at: string | null
           performer_id: string | null
           slot_position: number | null
+          stage_name: string | null
           status: Database["public"]["Enums"]["signup_status"] | null
         }
         Relationships: [
@@ -1290,6 +1866,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "mic_occurrences"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signups_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "my_upcoming_nights"
+            referencedColumns: ["occurrence_id"]
+          },
+          {
+            foreignKeyName: "signups_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "occurrence_attendance"
+            referencedColumns: ["occurrence_id"]
+          },
+          {
+            foreignKeyName: "signups_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "occurrence_spots"
+            referencedColumns: ["occurrence_id"]
           },
           {
             foreignKeyName: "signups_performer_id_fkey"
@@ -1508,6 +2105,11 @@ export type Database = {
           }
       dearmor: { Args: { "": string }; Returns: string }
       delete_account: { Args: never; Returns: undefined }
+      delete_account_web: { Args: { p_user_id: string }; Returns: undefined }
+      deletion_request_allowed: {
+        Args: { p_email_key: string; p_ip_key: string }
+        Returns: boolean
+      }
       diag:
         | {
             Args: { msg: unknown }
@@ -1530,10 +2132,11 @@ export type Database = {
         Args: { p_occurrence_id: string }
         Returns: {
           created_at: string
+          guest_name: string | null
           id: string
           occurrence_id: string
           on_deck_at: string | null
-          performer_id: string
+          performer_id: string | null
           slot_position: number | null
           status: Database["public"]["Enums"]["signup_status"]
           updated_at: string
@@ -1576,6 +2179,7 @@ export type Database = {
         | { Args: { schema_name: string; table_name: string }; Returns: string }
         | { Args: { table_name: string }; Returns: string }
       enablelongtransactions: { Args: never; Returns: string }
+      end_show: { Args: { p_occurrence_id: string }; Returns: string }
       equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
       fail:
         | { Args: never; Returns: string }
@@ -1708,11 +2312,13 @@ export type Database = {
           p_start_hour?: number
         }
         Returns: {
+          capacity: number
           city: string
           cost_cents: number
           description: string
           disciplines: Database["public"]["Enums"]["discipline"][]
           distance_m: number
+          featured_name: string
           is_active: boolean
           last_confirmed_at: string
           lat: number
@@ -1722,11 +2328,14 @@ export type Database = {
           next_occurrence_id: string
           next_starts_at: string
           next_status: Database["public"]["Enums"]["occurrence_status"]
+          owner_id: string
+          poster_url: string
           region: string
           rrule: string
           series_id: string
           set_length_minutes: number
           signup_method: Database["public"]["Enums"]["signup_method"]
+          spots_left: number
           start_time: string
           timezone: string
           title: string
@@ -1857,19 +2466,31 @@ export type Database = {
         | { Args: never; Returns: string[] }
         | { Args: { "": string }; Returns: string[] }
       search_mics: {
-        Args: { p_limit?: number; p_query: string }
+        Args: {
+          p_lat?: number
+          p_limit?: number
+          p_lng?: number
+          p_query: string
+        }
         Returns: {
+          capacity: number
           city: string
           cost_cents: number
           disciplines: Database["public"]["Enums"]["discipline"][]
+          distance_m: number
+          featured_name: string
           last_confirmed_at: string
           lat: number
           lng: number
+          neighborhood: string
           next_starts_at: string
+          owner_id: string
+          poster_url: string
           region: string
           rrule: string
           series_id: string
           signup_method: Database["public"]["Enums"]["signup_method"]
+          spots_left: number
           start_time: string
           timezone: string
           title: string
@@ -1881,10 +2502,12 @@ export type Database = {
         Args: { p_occurrence_id: string; p_signup_ids: string[] }
         Returns: undefined
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       signup_counts: {
         Args: { p_occurrence_id: string }
         Returns: {
-          capacity: number | null
+          capacity: number
           taken: number
         }[]
       }
@@ -2505,6 +3128,29 @@ export type Database = {
         Args: { geom: unknown; move: number; wrap: number }
         Returns: unknown
       }
+      test_kit_fill_roster: {
+        Args: { p_count?: number; p_occurrence_id: string }
+        Returns: Json
+      }
+      test_kit_reset: { Args: never; Returns: Json }
+      test_kit_restart_night: {
+        Args: { p_occurrence_id: string }
+        Returns: Json
+      }
+      test_kit_seed_scenario: {
+        Args: { p_scenario: string; p_timezone?: string }
+        Returns: Json
+      }
+      test_kit_set_enabled: { Args: { p_enabled: boolean }; Returns: Json }
+      test_kit_set_roles: {
+        Args: { p_performer: boolean; p_producer: boolean }
+        Returns: Json
+      }
+      test_kit_shift_occurrence: {
+        Args: { p_minutes_from_now?: number; p_occurrence_id: string }
+        Returns: Json
+      }
+      test_kit_status: { Args: never; Returns: Json }
       throws_ok: { Args: { "": string }; Returns: string }
       todo:
         | { Args: { how_many: number }; Returns: boolean[] }
@@ -2530,6 +3176,7 @@ export type Database = {
     Enums: {
       age_restriction: "all_ages" | "eighteen_plus" | "twenty_one_plus"
       claim_status: "pending" | "approved" | "rejected"
+      credit_role: "host" | "featured"
       discipline: "music" | "comedy" | "poetry" | "other"
       experience_level: "new" | "developing" | "experienced" | "professional"
       flag_reason:
@@ -2699,6 +3346,7 @@ export const Constants = {
     Enums: {
       age_restriction: ["all_ages", "eighteen_plus", "twenty_one_plus"],
       claim_status: ["pending", "approved", "rejected"],
+      credit_role: ["host", "featured"],
       discipline: ["music", "comedy", "poetry", "other"],
       experience_level: ["new", "developing", "experienced", "professional"],
       flag_reason: [

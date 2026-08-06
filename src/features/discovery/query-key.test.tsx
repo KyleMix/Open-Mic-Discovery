@@ -1,0 +1,120 @@
+/**
+ * The discovery query key must describe the query, not the whole UI store.
+ *
+ * The filters store carries members that do not change which mics the server
+ * would return: `view` (map or list), `disciplinesSeeded` (a one-time
+ * bookkeeping flag), and the quick-pick `dateBound` (applied client side).
+ * If any of them reached the TanStack Query key, every toggle would produce
+ * a second key, the same rows would be fetched and stored again, and the
+ * AsyncStorage persister would write both copies.
+ *
+ * The fix under test: the Discover screen passes
+ * `selectDiscoveryFilters(store)` to `useNearbyMics`, so only the six
+ * server-relevant members ever reach the key. These tests exercise that
+ * projection directly rather than the live store, so the store's async
+ * persist rehydration cannot race the assertions.
+ */
+import { renderHook, waitFor } from '@testing-library/react-native';
+
+import { getSupabase } from '@/lib/supabase';
+import {
+  DEFAULT_FILTERS,
+  selectDiscoveryFilters,
+  useFiltersStore,
+  type DiscoveryFilters,
+} from '@/stores/filters';
+import { createTestQueryClient, createWrapper } from '@/test/query-harness';
+import { createFakeSupabase } from '@/test/supabase-fake';
+
+import { useNearbyMics } from './queries';
+
+jest.mock('@/lib/supabase', () => ({ getSupabase: jest.fn() }));
+
+const CENTER = { lat: 47.6062, lng: -122.3321 };
+
+beforeEach(() => {
+  jest.mocked(getSupabase).mockReturnValue(
+    createFakeSupabase(() => ({ data: [], error: null })).client,
+  );
+});
+
+/** The key the discovery query actually registers, as TanStack Query hashes it. */
+async function discoveryKey(filters: DiscoveryFilters): Promise<string> {
+  const client = createTestQueryClient();
+  const wrapper = createWrapper(client);
+  await renderHook(() => useNearbyMics(filters, CENTER), { wrapper });
+  const [query] = client.getQueryCache().getAll();
+  // Let the fetch settle before reading. Otherwise it resolves after the test
+  // has moved on, and React warns about a state update outside act().
+  await waitFor(() => expect(query.state.fetchStatus).toBe('idle'));
+  const hash = query.queryHash;
+  client.clear();
+  return hash;
+}
+
+describe('the discovery query key', () => {
+  it('drops every UI-only store member in the projection', () => {
+    // The store still carries view and friends; the projection is what keeps
+    // them out of the key. If the store gains a new server-relevant member,
+    // add it to selectDiscoveryFilters and to this list.
+    const projected = selectDiscoveryFilters({
+      ...useFiltersStore.getState(),
+      ...DEFAULT_FILTERS,
+    });
+    expect(Object.keys(projected).sort()).toEqual([
+      'days',
+      'disciplines',
+      'freeOnly',
+      'methods',
+      'radiusKm',
+      'timeOfDay',
+    ]);
+  });
+
+  it('is unchanged when the view toggles between map and list', async () => {
+    const state = useFiltersStore.getState();
+    const listKey = await discoveryKey(selectDiscoveryFilters({ ...state, ...DEFAULT_FILTERS }));
+    // What the screen passes after a view toggle: same filters, new store
+    // object with a different view member.
+    const mapKey = await discoveryKey(
+      selectDiscoveryFilters({ ...state, ...DEFAULT_FILTERS, view: 'map' } as DiscoveryFilters),
+    );
+    expect(mapKey).toBe(listKey);
+  });
+
+  it('does not fork the cache when the view toggles', async () => {
+    // One set of filters, one cached result. Toggling the map on and off is a
+    // rendering choice, not a different question for the server.
+    const client = createTestQueryClient();
+    const wrapper = createWrapper(client);
+    const state = useFiltersStore.getState();
+
+    await renderHook(
+      () => useNearbyMics(selectDiscoveryFilters({ ...state, ...DEFAULT_FILTERS }), CENTER),
+      { wrapper },
+    );
+    await renderHook(
+      () =>
+        useNearbyMics(
+          selectDiscoveryFilters({
+            ...state,
+            ...DEFAULT_FILTERS,
+            view: 'map',
+          } as DiscoveryFilters),
+          CENTER,
+        ),
+      { wrapper },
+    );
+
+    expect(client.getQueryCache().getAll()).toHaveLength(1);
+    client.clear();
+  });
+
+  it('still changes when a real filter changes', async () => {
+    // The other half of the contract: narrowing the key must not go so far
+    // that genuinely different questions collide.
+    const before = await discoveryKey(DEFAULT_FILTERS);
+    const after = await discoveryKey({ ...DEFAULT_FILTERS, freeOnly: true });
+    expect(after).not.toBe(before);
+  });
+});

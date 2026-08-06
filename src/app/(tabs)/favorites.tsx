@@ -1,27 +1,32 @@
 import { useRouter } from 'expo-router';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 
-import { Glyph } from '@/components/glyph';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
+import { SignUpPrompt } from '@/features/auth/components/sign-up-prompt';
 import { useSession } from '@/features/auth/session';
-import { formatNextDate } from '@/features/discovery/components/mic-card';
-import { freshness } from '@/features/discovery/freshness';
-import { describeRecurrence } from '@/features/discovery/recurrence';
-import { useFavorites, useToggleFavorite } from '@/features/favorites/queries';
-import { fonts, palette, spacing, type } from '@/theme';
+import { OfflineBanner } from '@/components/offline-banner';
+import { MicCard } from '@/features/discovery/components/mic-card';
+import { useFavorites } from '@/features/favorites/queries';
+import { palette, spacing, type Discipline } from '@/theme';
 
 export default function FavoritesScreen() {
   const router = useRouter();
   const { session } = useSession();
   const favorites = useFavorites(session?.user.id);
-  const toggle = useToggleFavorite();
 
   if (!session) {
     return (
       <Screen>
         <Title>Favorites</Title>
-        <Body>Sign in to save the mics you love and get reminded on the day.</Body>
-        <Button label="Sign in" onPress={() => router.push('/(auth)/sign-in')} />
+        <SignUpPrompt
+          title="Keep the mics you actually go to"
+          reason="Favorites live with your account, so they follow you to any device."
+          perks={[
+            'A nudge on the morning of a mic you saved',
+            'Told when a new mic opens near you',
+            'One weekly summary of what is on',
+          ]}
+        />
       </Screen>
     );
   }
@@ -52,59 +57,49 @@ export default function FavoritesScreen() {
 
   return (
     <View style={styles.container}>
+      <OfflineBanner />
       <FlatList
         data={favorites.data}
         keyExtractor={(f) => f.series_id}
         contentContainerStyle={styles.list}
-        ListHeaderComponent={
-          toggle.isError ? (
-            <ErrorText>Could not update that favorite. Try again.</ErrorText>
-          ) : null
+        refreshControl={
+          <RefreshControl
+            refreshing={favorites.isFetching}
+            onRefresh={favorites.refetch}
+            tintColor={palette.textSecondary}
+          />
         }
         renderItem={({ item }) => {
           const s = item.series;
           if (!s) {
             return null;
           }
-          const fresh = freshness(s.last_confirmed_at, new Date());
+          // Same card as Discover and search (its own star removes the
+          // favorite), so a saved mic reads identically to the one saved.
           return (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`${s.title}`}
+            <MicCard
+              mic={{
+                series_id: s.id,
+                title: s.title,
+                disciplines: s.disciplines as Discipline[],
+                signup_method: s.signup_method,
+                cost_cents: s.cost_cents,
+                rrule: s.rrule,
+                start_time: s.start_time,
+                timezone: s.timezone,
+                last_confirmed_at: s.last_confirmed_at,
+                venue_name: s.venue?.name ?? '',
+                neighborhood: s.venue?.neighborhood ?? s.venue?.city ?? null,
+                distance_m: null,
+                next_starts_at: item.next_starts_at,
+                poster_url: s.poster_url,
+                // Favorites read the series, not a night, so there is no
+                // guest to name and no night to count spots against.
+                featured_name: null,
+                spots_left: null,
+              }}
               onPress={() => router.push(`/mic/${s.id}`)}
-              style={({ pressed }) => [
-                styles.card,
-                pressed && { backgroundColor: palette.bgPressed },
-              ]}
-            >
-              <View style={styles.cardBody}>
-                <Text style={styles.cardTitle} numberOfLines={1}>
-                  {s.title}
-                </Text>
-                <Text style={styles.cardMeta}>
-                  {s.venue?.name}, {s.venue?.city} ·{' '}
-                  {describeRecurrence(s.rrule, s.start_time) ?? 'Schedule varies'}
-                </Text>
-                <Text style={styles.nextDate}>
-                  Next: {formatNextDate(item.next_starts_at, s.timezone)}
-                </Text>
-                <View style={styles.freshRow}>
-                  <Glyph name="freshness-badge" size={14} color={fresh.color} />
-                  <Text style={[styles.cardMeta, { color: fresh.color }]}>{fresh.label}</Text>
-                </View>
-              </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Remove ${s.title} from favorites`}
-                disabled={toggle.isPending}
-                onPress={() =>
-                  toggle.mutate({ userId: session.user.id, seriesId: s.id, favorite: false })
-                }
-                style={styles.unfavorite}
-              >
-                <Text style={styles.star}>★</Text>
-              </Pressable>
-            </Pressable>
+            />
           );
         }}
       />
@@ -120,47 +115,5 @@ const styles = StyleSheet.create({
   list: {
     gap: spacing.sm,
     padding: spacing.md,
-  },
-  card: {
-    alignItems: 'center',
-    backgroundColor: palette.bgElevated,
-    borderColor: palette.border,
-    borderRadius: 14,
-    borderWidth: 1,
-    flexDirection: 'row',
-    padding: spacing.md,
-  },
-  cardBody: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  cardTitle: {
-    color: palette.text,
-    fontFamily: fonts.medium,
-    fontSize: type.body.fontSize,
-  },
-  cardMeta: {
-    color: palette.textSecondary,
-    fontSize: type.caption.fontSize,
-  },
-  nextDate: {
-    color: palette.text,
-    fontFamily: fonts.medium,
-    fontSize: type.caption.fontSize,
-  },
-  freshRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.xs,
-  },
-  unfavorite: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 44,
-    minWidth: 44,
-  },
-  star: {
-    color: palette.warning,
-    fontSize: 22,
   },
 });

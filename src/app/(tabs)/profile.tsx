@@ -1,14 +1,16 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { signOut } from '@/features/auth/api';
 import { useOwnProfile } from '@/features/auth/queries';
+import { SignUpPrompt } from '@/features/auth/components/sign-up-prompt';
 import { useSession } from '@/features/auth/session';
 import { formatRelativeDay } from '@/features/discovery/date-label';
 import { AvatarCircle } from '@/features/profile/avatar-circle';
 import { homeAreaLabel } from '@/features/profile/home-area';
 import { buildSocialLinks } from '@/features/profile/social';
+import { SocialLinkRow } from '@/components/social-links';
 import { STATUS_LABELS } from '@/features/signups/components/signup-card';
 import { useMyNights, type MyNight } from '@/features/signups/queries';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
@@ -20,12 +22,20 @@ export default function ProfileScreen() {
   const profile = useOwnProfile(session?.user.id);
   const [error, setError] = useState<string | null>(null);
 
+  // Browsing is open, so this tab is reachable with no account at all.
   if (!session) {
     return (
       <Screen>
-        <Title>Profile</Title>
-        <Body>Sign in to set up your profile, save favorites, and sign up for slots.</Body>
-        <Button label="Sign in" onPress={() => router.push('/(auth)/sign-in')} />
+        <Title>Your profile</Title>
+        <SignUpPrompt
+          title="Perform under your stage name"
+          reason="Your stage name is what producers and other performers see on the list, never your email."
+          perks={[
+            'Sign up for slots and track where you have played',
+            'Save mics and get reminded the day of',
+            'Link your Instagram, TikTok, or site so people can find you',
+          ]}
+        />
       </Screen>
     );
   }
@@ -56,9 +66,9 @@ export default function ProfileScreen() {
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
       <View style={styles.header}>
-        <AvatarCircle url={p.avatar_url} name={p.display_name} size={72} />
+        <AvatarCircle url={p.avatar_url} name={p.stage_name} size={72} />
         <View style={styles.headerText}>
-          <Title>{p.display_name}</Title>
+          <Title>{p.stage_name}</Title>
           <Text style={styles.handle}>@{p.handle}</Text>
         </View>
       </View>
@@ -90,21 +100,7 @@ export default function ProfileScreen() {
           Home area: {homeAreaLabel(p)} (only you can see this)
         </Text>
       ) : null}
-      {links.length > 0 ? (
-        <View style={styles.linkRow}>
-          {links.map((link) => (
-            <Pressable
-              key={link.key}
-              accessibilityRole="link"
-              accessibilityLabel={`Open ${link.label}`}
-              onPress={() => Linking.openURL(link.url).catch(() => null)}
-              style={({ pressed }) => [styles.linkChip, pressed && styles.linkChipPressed]}
-            >
-              <Text style={styles.linkChipLabel}>{link.label}</Text>
-            </Pressable>
-          ))}
-        </View>
-      ) : null}
+      <SocialLinkRow links={links} />
       {p.is_performer ? (
         <MyNights userId={p.id} onOpenMic={(id) => router.push(`/mic/${id}`)} />
       ) : null}
@@ -113,6 +109,9 @@ export default function ProfileScreen() {
       <Button label="Settings" kind="secondary" onPress={() => router.push('/settings')} />
       {p.is_admin ? (
         <Button label="Moderation queue" kind="secondary" onPress={() => router.push('/admin')} />
+      ) : null}
+      {p.is_admin ? (
+        <Button label="Testing tools" kind="secondary" onPress={() => router.push('/test-kit')} />
       ) : null}
       <Button
         label="Sign out"
@@ -312,29 +311,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-  },
-  linkRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  linkChip: {
-    alignItems: 'center',
-    backgroundColor: palette.bgElevated,
-    borderColor: palette.border,
-    borderRadius: 22,
-    borderWidth: 1,
-    justifyContent: 'center',
-    minHeight: minTouchTarget,
-    paddingHorizontal: spacing.md,
-  },
-  linkChipPressed: {
-    backgroundColor: palette.bgPressed,
-  },
-  linkChipLabel: {
-    color: palette.text,
-    fontFamily: fonts.medium,
-    fontSize: type.caption.fontSize,
   },
   privateNote: {
     color: palette.textSecondary,

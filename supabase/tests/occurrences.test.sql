@@ -65,21 +65,28 @@ select bag_eq(
 );
 
 -- Cancellations survive regeneration.
+-- The night to cancel is picked dynamically: a hardcoded date only exists
+-- while it is still inside the generator's from-today horizon.
+create temp table cancel_target as
+  select local_date from mic_occurrences
+  where series_id = '20000000-0000-4000-c000-0000000000e1'::uuid
+    and local_date >= current_date
+  order by local_date limit 1;
 update mic_occurrences set status = 'cancelled', cancellation_note = 'venue flooded'
 where series_id = '20000000-0000-4000-c000-0000000000e1'::uuid
-  and local_date = '2026-08-04';
+  and local_date = (select local_date from cancel_target);
 select private.generate_occurrences('20000000-0000-4000-c000-0000000000e1'::uuid, 130);
 select is(
   (select status from mic_occurrences
    where series_id = '20000000-0000-4000-c000-0000000000e1'::uuid
-     and local_date = '2026-08-04'),
+     and local_date = (select local_date from cancel_target)),
   'cancelled'::occurrence_status,
   'a cancelled night is never clobbered by the generator'
 );
 select is(
   (select count(*)::int from mic_occurrences
    where series_id = '20000000-0000-4000-c000-0000000000e1'::uuid
-     and local_date = '2026-08-04'),
+     and local_date = (select local_date from cancel_target)),
   1,
   'and no duplicate is created for that date'
 );

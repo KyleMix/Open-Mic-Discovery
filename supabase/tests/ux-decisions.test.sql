@@ -17,9 +17,9 @@ values
    '23:59', 'UTC', 'first_come', '30 days', 3, 'approved');
 insert into auth.users (id, email) values
   ('00000000-0000-4000-a000-000000000021', 'ux1@t.local');
-insert into profiles (id, handle, display_name, home_city, home_region,
+insert into profiles (id, handle, display_name, stage_name, home_city, home_region,
                       is_performer, eula_version, moderation_status) values
-  ('00000000-0000-4000-a000-000000000021', 'ux_perf', 'UX Perf', 'Seattle', 'WA',
+  ('00000000-0000-4000-a000-000000000021', 'ux_perf', 'UX Perf', 'UX Perf', 'Seattle', 'WA',
    true, '1.0', 'approved');
 
 create temp table ux_occ as

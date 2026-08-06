@@ -2,56 +2,54 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 
 import { exchangeRecoveryCode, updatePassword } from '@/features/auth/api';
+import { useSession } from '@/features/auth/session';
 import { validatePassword } from '@/features/auth/validation';
-import {
-  Body,
-  Button,
-  ErrorText,
-  Field,
-  FormScreen,
-  LoadingView,
-  Screen,
-  Title,
-} from '@/components/ui';
+import { Body, Button, ErrorText, Field, LoadingView, Screen, Title } from '@/components/ui';
 
 /**
- * Landing screen for the password-reset email link. The link carries a
- * one-time code; exchanging it signs the person in just enough to set a
- * new password. Without a valid code (opened by hand, or an expired link)
- * the screen says so instead of dead-ending.
+ * Landing screen for the emailed reset link. The link carries a one-time
+ * code; exchanging it signs the person in with a recovery session, and the
+ * form here sets the new password. The auth gate leaves this screen alone
+ * so the recovery session is not bounced into the app mid-reset.
  */
 export default function ResetPasswordScreen() {
   const router = useRouter();
-  const { code } = useLocalSearchParams<{ code?: string }>();
-  const [exchange, setExchange] = useState<'working' | 'done' | 'failed'>(
-    code ? 'working' : 'failed',
-  );
+  const { session, ready } = useSession();
+  const params = useLocalSearchParams<{ code?: string; error_description?: string }>();
+  const code = typeof params.code === 'string' ? params.code : undefined;
+  const linkError =
+    typeof params.error_description === 'string' ? params.error_description : undefined;
+
   const [exchangeError, setExchangeError] = useState<string | null>(null);
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
-    if (!code) {
+    if (!ready || session || !code) {
       return;
     }
-    exchangeRecoveryCode(code)
-      .then(() => mounted && setExchange('done'))
-      .catch((e) => {
-        if (mounted) {
-          setExchange('failed');
-          setExchangeError(e instanceof Error ? e.message : null);
-        }
-      });
+    let cancelled = false;
+    exchangeRecoveryCode(code).catch((e) => {
+      if (!cancelled) {
+        setExchangeError(e instanceof Error ? e.message : 'Could not open the reset link.');
+      }
+    });
     return () => {
-      mounted = false;
+      cancelled = true;
     };
-  }, [code]);
+  }, [ready, session, code]);
+
+  // Waiting on the exchange is derived: a code with no session and no error
+  // means it is still in flight (success lands as a session change).
+  const exchanging = ready && !session && !!code && !exchangeError && !linkError;
 
   async function submit() {
-    const passwordError = validatePassword(password);
+    const passwordError =
+      validatePassword(password) ?? (password !== confirm ? 'Passwords do not match.' : null);
     setFieldError(passwordError);
     if (passwordError) {
       return;
@@ -60,7 +58,7 @@ export default function ResetPasswordScreen() {
     setError(null);
     try {
       await updatePassword(password);
-      router.replace('/(tabs)');
+      setDone(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not update the password.');
     } finally {
@@ -68,47 +66,62 @@ export default function ResetPasswordScreen() {
     }
   }
 
-  if (exchange === 'working') {
-    return <LoadingView label="Checking your reset link" />;
+  if (!ready || exchanging) {
+    return <LoadingView label="Opening your reset link" />;
   }
-  // Only a successful code exchange unlocks the form. An existing session
-  // is not enough: updateUser needs no current password, so accepting a
-  // session here would let anyone holding an unlocked device (or any app
-  // firing the openmic:// scheme) silently take over the account.
-  if (exchange !== 'done') {
+
+  if (done) {
+    return (
+      <Screen>
+        <Title>Password updated</Title>
+        <Body>You are signed in with your new password.</Body>
+        <Button label="Continue" onPress={() => router.replace('/(tabs)')} />
+      </Screen>
+    );
+  }
+
+  if (!session) {
     return (
       <Screen>
         <Title>Reset link problem</Title>
         <Body>
           {exchangeError ??
-            'This screen only works from the link in a password reset email. Request a new one and open it on this device.'}
+            linkError ??
+            'This reset link is incomplete, expired, or was requested on another device.'}
         </Body>
         <Button
           label="Request a new link"
           onPress={() => router.replace('/(auth)/forgot-password')}
+        />
+        <Button
+          label="Back to sign in"
+          kind="secondary"
+          onPress={() => router.replace('/(auth)/sign-in')}
         />
       </Screen>
     );
   }
 
   return (
-    <FormScreen>
+    <Screen>
       <Title>Set a new password</Title>
       <Field
         label="New password"
         autoComplete="new-password"
         secureTextEntry
         value={password}
-        onChangeText={(v) => {
-          setPassword(v);
-          setFieldError(null);
-        }}
-        onBlur={() => setFieldError(password ? validatePassword(password) : null)}
+        onChangeText={setPassword}
         error={fieldError}
       />
-      <Body>Passwords are at least 10 characters.</Body>
+      <Field
+        label="Type it again"
+        autoComplete="new-password"
+        secureTextEntry
+        value={confirm}
+        onChangeText={setConfirm}
+      />
       {error ? <ErrorText>{error}</ErrorText> : null}
-      <Button label="Save new password" busy={busy} disabled={busy || !password} onPress={submit} />
-    </FormScreen>
+      <Button label="Save new password" busy={busy} disabled={busy} onPress={submit} />
+    </Screen>
   );
 }

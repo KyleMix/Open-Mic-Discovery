@@ -16,15 +16,14 @@ API entries for its own modules; app-level declarations below).
 | User content (bio, listings, signups, favorites) | App functionality                        |                                                                                                                                                                                                            |
 | Year of birth                                    | App functionality (age gate)             | Never public                                                                                                                                                                                               |
 | Device push token                                | App functionality (notifications)        | Deleted with the account                                                                                                                                                                                   |
-| Purchase history (Producer Pro subscription)     | App functionality (unlocks Pro features) | RevenueCat processes the subscription: entitlement status and an app user id, linked to the account                                                                                                        |
 
 ## Not collected
 
-Browsing history, contacts, photos beyond the chosen profile photo, health, financial info (payment details stay with Apple), search history outside the app, identifiers for tracking.
+Browsing history, purchase history (the app sells nothing), contacts, photos, health, financial info, search history outside the app, identifiers for tracking.
 
 ## Tracking
 
-None. No data is used to track users across apps or websites. No third-party advertising SDKs. RevenueCat and Sentry act as service providers only; neither is used for tracking or advertising.
+None. No data is used to track users across apps or websites. No third-party advertising SDKs. Sentry acts as a service provider only; it is not used for tracking or advertising.
 
 ## Deletion
 

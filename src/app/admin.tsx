@@ -105,7 +105,7 @@ export default function AdminScreen() {
         <ModerationItem
           key={p.id}
           title={`Profile @${p.handle}`}
-          body={`${p.display_name}${p.bio ? `: ${p.bio}` : ''}`}
+          body={`${p.stage_name}${p.bio ? `: ${p.bio}` : ''}`}
           busy={moderate.isPending}
           onDecide={(approve) => moderate.mutate({ target: 'profile', targetId: p.id, approve })}
         />

@@ -1,13 +1,21 @@
-import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, StyleSheet, Text, View } from 'react-native';
 
 import { Body, Button, ErrorText } from '@/components/ui';
+import { SignUpPrompt } from '@/features/auth/components/sign-up-prompt';
 import { useOwnProfile } from '@/features/auth/queries';
+import { eventDate, eventDateShort, eventTime } from '@/features/discovery/local-time';
 import { useSession } from '@/features/auth/session';
 import { formatRelativeDay } from '@/features/discovery/date-label';
-import { useEnablePerformerRole } from '@/features/producer/queries';
-import { useJoinList, useMySignup, useSignupCounts, useWithdraw } from '@/features/signups/queries';
+import { useEnablePerformerRole } from '@/features/profile/queries';
+import { spotsDetail } from '@/features/signups/capacity';
+import {
+  useJoinList,
+  useMySignup,
+  useNightSpots,
+  useSignupCounts,
+  useWithdraw,
+} from '@/features/signups/queries';
 import { signupWindow } from '@/features/signups/window';
 import { fonts, palette, spacing, type } from '@/theme';
 import type { Database } from '@/types/database.types';
@@ -33,27 +41,27 @@ const STATUS_HINTS: Partial<Record<Database['public']['Enums']['signup_status'],
 
 type Props = {
   occurrence: Occurrence;
+  /** The mic's IANA timezone; night labels render in venue-local time. */
+  timezone: string | null;
   signupMethod: Database['public']['Enums']['signup_method'];
   signupOpens: string;
   signupCloses: string;
   costCents?: number;
-  /** Series IANA timezone so the night label is venue-local, not device-local. */
-  timezone?: string;
 };
 
 /** The "I am on the list" moment: signup state and actions for a night. */
 export function SignupCard({
   occurrence,
+  timezone,
   signupMethod,
   signupOpens,
   signupCloses,
   costCents = 0,
-  timezone,
 }: Props) {
-  const router = useRouter();
   const { session } = useSession();
   const profile = useOwnProfile(session?.user.id);
   const mySignup = useMySignup(occurrence.id, session?.user.id);
+  const spots = useNightSpots(occurrence.id);
   const join = useJoinList();
   const withdraw = useWithdraw();
   const enablePerformer = useEnablePerformerRole();
@@ -92,15 +100,23 @@ export function SignupCard({
   let content: React.ReactNode;
   if (!session) {
     content = (
-      <>
-        <Body>Sign in to get on the list for {nightLabel}.</Body>
-        <Button label="Sign in" onPress={() => router.push('/(auth)/sign-in')} />
-      </>
+      <SignUpPrompt
+        title={`Get on the list for ${nightLabel}`}
+        reason="Your spot on a signup list needs a name attached to it, so this one does need an account."
+        perks={[
+          'Your slot number, live, as the list fills',
+          'A heads up when you are on deck',
+          'Save this mic and get reminded the day of',
+        ]}
+      />
     );
   } else if (profile.data && !profile.data.is_performer) {
     content = (
       <>
-        <Body>Signing up for slots needs the performer role on your account.</Body>
+        <Body>
+          Signing up needs the performer role. One tap turns it on; it sits alongside any other role
+          you have.
+        </Body>
         {enablePerformer.isError ? (
           <ErrorText>
             {enablePerformer.error instanceof Error
@@ -109,7 +125,7 @@ export function SignupCard({
           </ErrorText>
         ) : null}
         <Button
-          label="I perform: turn it on"
+          label="Turn on performing"
           busy={enablePerformer.isPending}
           onPress={() => enablePerformer.mutate(session.user.id)}
         />
@@ -170,9 +186,23 @@ export function SignupCard({
       </>
     );
   } else if (window.state === 'not_yet') {
+    // The time matters as much as the date, and for a walk-in list it is the
+    // whole answer: a list opening an hour before a 7 PM show read as "open
+    // Monday, Aug 10", which is the same day as the mic and says nothing.
+    const opensIso = window.opensAt.toISOString();
+    const opensOnEventDay =
+      eventDateShort(opensIso, timezone) === eventDateShort(occurrence.starts_at, timezone);
     content = (
       <Body>
-        Signups for {nightLabel} open {formatRelativeDay(window.opensAt.toISOString(), timezone)}.
+        Signups for {nightLabel} open{' '}
+        {opensOnEventDay
+          ? `at ${eventTime(opensIso, timezone)}`
+          : `${eventDate(opensIso, timezone, {
+              weekday: 'long',
+              month: 'short',
+              day: 'numeric',
+            })} at ${eventTime(opensIso, timezone)}`}
+        .
       </Body>
     );
   } else if (window.state === 'closed') {
@@ -218,7 +248,23 @@ export function SignupCard({
     );
   }
 
-  return <View style={styles.card}>{content}</View>;
+  // Shown in every state, including before signups open and after they close:
+  // "how full is this" is the question, and the answer does not depend on
+  // whether this particular person can act on it yet.
+  const fullness = spots.data
+    ? spotsDetail(spots.data.spots_left, spots.data.capacity, spots.data.planning_performers ?? 0)
+    : null;
+
+  return (
+    <View style={styles.card}>
+      {fullness ? (
+        <Text style={[styles.spots, (spots.data?.spots_left ?? 1) <= 0 && styles.spotsFull]}>
+          {fullness}
+        </Text>
+      ) : null}
+      {content}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -234,6 +280,14 @@ const styles = StyleSheet.create({
     color: palette.success,
     fontFamily: fonts.semibold,
     fontSize: type.heading.fontSize,
+  },
+  spots: {
+    color: palette.textSecondary,
+    fontSize: type.caption.fontSize,
+  },
+  spotsFull: {
+    color: palette.danger,
+    fontFamily: fonts.medium,
   },
   onDeck: {
     color: palette.warning,

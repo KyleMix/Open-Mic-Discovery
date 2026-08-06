@@ -126,6 +126,25 @@ as $$
   select (string_to_array(name, '/'))[1:array_length(string_to_array(name, '/'), 1) - 1];
 $$;
 
+-- The real storage service forbids deleting object rows from SQL (the API
+-- is the only honest delete path: a row delete would orphan the file), and
+-- hides bucket rows from the API roles behind RLS. Emulate both so the
+-- pgTAP suite behaves here exactly as it does against the full stack.
+create or replace function storage.protect_delete()
+returns trigger
+language plpgsql
+as $$
+begin
+  raise exception 'Direct deletion from storage tables is not allowed. Use the Storage API instead.'
+    using errcode = '42501',
+          hint = 'This prevents accidental data loss from orphaned objects.';
+end;
+$$;
+create trigger objects_protect_delete
+  before delete on storage.objects
+  for each row execute function storage.protect_delete();
+alter table storage.buckets enable row level security;
+
 grant usage on schema storage to anon, authenticated, service_role;
 grant select on storage.buckets to anon, authenticated, service_role;
 grant all on storage.objects to anon, authenticated, service_role;

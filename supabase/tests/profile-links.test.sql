@@ -1,6 +1,6 @@
 -- Social links and avatar storage tests.
 begin;
-select plan(12);
+select plan(18);
 
 -- Seeded demo users: p1 performer 00000000-...-0001, p2 producer ...-0002.
 
@@ -75,13 +75,15 @@ select is(
 -- ---------------------------------------------------------------------------
 -- Avatar storage policies
 -- ---------------------------------------------------------------------------
+-- Read as the test role: the storage service hides bucket rows from the API
+-- roles, so this asserted NULL when run as anon.
+reset role;
 select is(
   (select public from storage.buckets where id = 'avatars'),
   true,
   'avatars bucket exists and is public'
 );
 
-reset role;
 set local role authenticated;
 select set_config(
   'request.jwt.claims',
@@ -118,6 +120,39 @@ select throws_ok(
     values ('avatars', 'anonymous/avatar.jpg')$$,
   '42501', null,
   'anon cannot upload avatars'
+);
+
+-- ---------------------------------------------------------------------------
+-- Spotify and Apple Music. Stored as full https URLs rather than handles:
+-- neither service publishes a stable username format, and both hand out share
+-- links that already carry the artist id.
+-- ---------------------------------------------------------------------------
+select has_column('public', 'profiles', 'link_spotify', 'profiles has link_spotify');
+select has_column('public', 'profiles', 'link_apple_music', 'profiles has link_apple_music');
+
+select has_column('public', 'public_profiles', 'link_spotify',
+  'link_spotify reaches readers through public_profiles');
+select has_column('public', 'public_profiles', 'link_apple_music',
+  'link_apple_music reaches readers through public_profiles');
+
+-- Back to the owning role: by this point the file is running as anon, and an
+-- update that row level security filters to zero rows never reaches the check
+-- constraint, so the assertion would pass for the wrong reason.
+reset role;
+
+-- The constraints have to match link_youtube and link_website, so anything the
+-- client's normalizeUrl produces is accepted and anything it rejects is too.
+select throws_ok(
+  $$update public.profiles set link_spotify = 'http://open.spotify.com/artist/x'
+      where handle = 'demo_performer'$$,
+  '23514', null,
+  'a plain http Spotify link is refused, as it is for every other link column'
+);
+select throws_ok(
+  $$update public.profiles set link_apple_music = 'notalink'
+      where handle = 'demo_performer'$$,
+  '23514', null,
+  'a bare word is refused as an Apple Music link'
 );
 
 select * from finish();

@@ -1,8 +1,10 @@
+import * as Haptics from 'expo-haptics';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
 import { useToast } from '@/components/toast';
 import { registerPushToken } from '@/lib/notifications';
+import { uniqueChannelTopic } from '@/lib/realtime';
 import { getSupabase } from '@/lib/supabase';
 import { userError } from '@/lib/user-error';
 import type { Database } from '@/types/database.types';
@@ -96,6 +98,31 @@ export function useMyNights(userId: string | undefined) {
   });
 }
 
+/**
+ * How full a night is. Public: the whole point is that someone browsing sees
+ * the pressure before they tap. Counts only, never who.
+ */
+export function useNightSpots(occurrenceId: string | undefined) {
+  return useQuery({
+    queryKey: ['signup', 'spots', occurrenceId],
+    enabled: !!occurrenceId,
+    // The number moves as people sign up, and a stale one is the reason
+    // someone taps expecting a slot and lands on a waitlist.
+    staleTime: 15_000,
+    queryFn: async () => {
+      const { data, error } = await getSupabase()
+        .from('occurrence_spots')
+        .select('capacity, taken, spots_left, planning_performers')
+        .eq('occurrence_id', occurrenceId!)
+        .maybeSingle();
+      if (error) {
+        throw new Error(error.message);
+      }
+      return data;
+    },
+  });
+}
+
 export function useJoinList() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -113,11 +140,17 @@ export function useJoinList() {
         throw userError(error, 'Could not sign you up. Try again.');
       }
     },
+    // Getting on the list is the moment the whole app exists for. A tap
+    // confirms it landed without the person having to read anything.
     onSuccess: (_d, { userId }) => {
-      queryClient.invalidateQueries({ queryKey: ['signup'] });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => null);
       // First signup is the moment push starts mattering (status changes,
       // on deck); ask for permission here, not at app launch.
       registerPushToken(userId, { promptIfNeeded: true });
+      return queryClient.invalidateQueries({ queryKey: ['signup'] });
+    },
+    onError: () => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => null);
     },
   });
 }
@@ -194,8 +227,12 @@ export function useRoster(occurrenceId: string | undefined) {
     if (!occurrenceId) {
       return;
     }
-    const channel = getSupabase()
-      .channel(`signups-${occurrenceId}`)
+    const supabase = getSupabase();
+    // Own topic per subscription: a shared one would be handed back already
+    // joined after a remount, and adding the callback would throw. See
+    // src/lib/realtime.ts.
+    const channel = supabase
+      .channel(uniqueChannelTopic('signups', occurrenceId))
       .on(
         'postgres_changes',
         {
@@ -212,7 +249,7 @@ export function useRoster(occurrenceId: string | undefined) {
       )
       .subscribe();
     return () => {
-      getSupabase().removeChannel(channel);
+      supabase.removeChannel(channel);
     };
   }, [occurrenceId, queryClient]);
 
@@ -337,9 +374,18 @@ export function useSetSignupStatus() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ signupId, status }: { signupId: string; status: SignupStatus }) => {
-      const { error } = await getSupabase().from('signups').update({ status }).eq('id', signupId);
+      const { data, error } = await getSupabase()
+        .from('signups')
+        .update({ status })
+        .eq('id', signupId)
+        .select('id');
       if (error) {
         throw userError(error, 'Could not update their status. Try again.');
+      }
+      // Row level security filters denied rows out of an update rather than
+      // raising, so zero rows back means the write was refused, not applied.
+      if (!data || data.length === 0) {
+        throw new Error('Could not update this signup. You may no longer manage this night.');
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['signup'] }),

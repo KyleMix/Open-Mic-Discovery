@@ -34,10 +34,10 @@ describe('auth validation', () => {
     expect(validateDisplayName('x'.repeat(61))).not.toBeNull();
   });
 
-  it('age-gates under-17 birth years', () => {
+  it('age-gates under-18 birth years', () => {
     expect(validateBirthYear('1994', NOW)).toBeNull();
-    expect(validateBirthYear('2009', NOW)).toBeNull();
-    expect(validateBirthYear('2010', NOW)).not.toBeNull();
+    expect(validateBirthYear('2008', NOW)).toBeNull();
+    expect(validateBirthYear('2009', NOW)).not.toBeNull();
     expect(validateBirthYear('2031', NOW)).not.toBeNull();
     expect(validateBirthYear('abcd', NOW)).not.toBeNull();
   });

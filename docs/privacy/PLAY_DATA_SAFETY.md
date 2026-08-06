@@ -19,6 +19,5 @@ Source of truth for the Play Console Data safety section.
 | User-generated content           | Yes                         | No     | Yes      | App functionality (listings, bios, signups)                                                                                                                              |
 | Date of birth (year)             | Yes                         | No     | No       | Age gating                                                                                                                                                               |
 | Device or other IDs (push token) | Yes                         | No     | Yes      | Notifications                                                                                                                                                            |
-| Purchase history (Producer Pro)  | Yes (subscribers only)      | No     | Yes      | App functionality; RevenueCat processes subscription status and an app user id as a service provider                                                                     |
 
-No data sold. No data shared with third parties for their own use; RevenueCat (subscriptions) and Sentry (crash reports, not linked to identity) act as service providers only. No advertising or analytics SDKs.
+No data sold. No data shared with third parties for their own use; Sentry (crash reports, not linked to identity) acts as a service provider only. No purchases exist in the app. No advertising or analytics SDKs.

@@ -68,6 +68,7 @@ as $$
 declare
   v_title text;
   v_prefs record;
+  v_spot  text;
 begin
   if tg_op = 'UPDATE'
      and new.performer_id is not null
@@ -79,6 +80,10 @@ begin
       from public.mic_occurrences o
       join public.mic_series s on s.id = o.series_id
       where o.id = new.occurrence_id;
+      v_spot := case
+        when new.slot_position is not null and new.status in ('confirmed', 'drawn')
+        then ' You are number ' || new.slot_position || '.'
+        else '' end;
       insert into public.notification_outbox (profile_id, kind, title, body, payload)
       values (
         new.performer_id,
@@ -91,8 +96,12 @@ begin
           when 'performed' then 'Marked as performed. Nice set.'
           when 'no_show' then 'You were marked as a no-show.'
           else 'Your signup status changed.'
-        end,
-        jsonb_build_object('occurrence_id', new.occurrence_id, 'status', new.status)
+        end || v_spot,
+        jsonb_build_object(
+          'occurrence_id', new.occurrence_id,
+          'status', new.status,
+          'slot_position', new.slot_position
+        )
       );
     end if;
   end if;
@@ -152,7 +161,7 @@ create policy "signups producer guest insert" on signups
   with check (
     guest_name is not null
     and performer_id is null
-    and (private.owns_occurrence_series(occurrence_id) or private.is_admin())
+    and (private.owns_occurrence_series(occurrence_id) or (select private.is_admin()))
     and exists (
       select 1 from public.mic_occurrences o
       where o.id = occurrence_id and o.status = 'scheduled'
@@ -162,11 +171,13 @@ create policy "signups producer guest delete" on signups
   for delete to authenticated
   using (
     guest_name is not null
-    and (private.owns_occurrence_series(occurrence_id) or private.is_admin())
+    and (private.owns_occurrence_series(occurrence_id) or (select private.is_admin()))
   );
 
--- Roster view: guests appear by their given name.
-create or replace view signup_roster
+-- Roster view: guests appear by their given name. Dropped rather than
+-- replaced because the column list changes shape here.
+drop view if exists signup_roster;
+create view signup_roster
 with (security_invoker = on) as
   select
     sg.id,
@@ -176,7 +187,9 @@ with (security_invoker = on) as
     sg.slot_position,
     sg.created_at,
     p.handle,
-    p.display_name,
+    -- stage_name is the public identity; display_name never appears in a
+    -- view (stage-name.test.sql enforces it).
+    p.stage_name,
     sg.on_deck_at,
     sg.guest_name
   from signups sg
