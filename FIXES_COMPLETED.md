@@ -99,13 +99,13 @@ logged in DECISIONS_NEEDED.md (items 11 and 12) with working placeholders.
 
 ## Contrast before/after (WCAG 2.x ratios, worst surface)
 
-| Text | Before | After |
-|---|---|---|
-| Freshness stale/unknown label on a card | 3.03:1 (fail) | 5.56:1 |
+| Text                                     | Before        | After  |
+| ---------------------------------------- | ------------- | ------ |
+| Freshness stale/unknown label on a card  | 3.03:1 (fail) | 5.56:1 |
 | Fact labels, fine print, cancelled dates | 3.03:1 (fail) | 5.56:1 |
-| Placeholders | 3.03:1 (fail) | 5.56:1 |
-| Inactive tab labels | 3.03:1 (fail) | 5.56:1 |
-| Same text on pressed rows | 2.66:1 (fail) | 4.87:1 |
+| Placeholders                             | 3.03:1 (fail) | 5.56:1 |
+| Inactive tab labels                      | 3.03:1 (fail) | 5.56:1 |
+| Same text on pressed rows                | 2.66:1 (fail) | 4.87:1 |
 
 ## Explicit non-goals honored
 
@@ -173,6 +173,7 @@ Owner setup required to activate two of them in production: vault secrets
 `openmic://reset-password` in the hosted auth redirect list.
 
 ## Skipped, with reasons
+
 - Map callouts, marker accessibility labels, and region-driven refetch: a map-view rework beyond a per-fix change; the list is the primary surface. Recommend as its own task.
 - Drag-to-reorder: blocked on New Architecture-compatible drag libraries per ARCHITECTURE.md; the chevrons remain.
 - Poster remove action, duplicated screen headings, keyboard avoiding views on auth forms, claims queue relocation into /admin: low-severity polish left untouched to keep the diff reviewable; none is riskier than a small follow-up.

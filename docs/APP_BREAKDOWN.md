@@ -58,20 +58,20 @@ Two roles share one account (dual role is the common case in real scenes, not an
 
 ## 3. Tech stack and hard pins
 
-| Layer | Choice |
-|---|---|
-| Client | Expo SDK 57 (`~57.0.8`), React Native 0.86, React 19.2.3, TypeScript `~6.0.3` strict |
-| Routing | Expo Router, file-based, typed routes on, React Compiler experiment on |
-| Server state | TanStack Query v5 (all Supabase data lives here) |
-| Client state | Zustand v5 (UI-only state; server data never enters Zustand) |
-| Backend | Supabase: Postgres 17 + PostGIS, Auth, Storage, Realtime, Edge Functions |
-| Maps | react-native-maps 1.27.2 with supercluster clustering (in-house component, not the unmaintained wrapper lib) |
-| Location | expo-location, foreground only, requested in context |
-| Notifications | expo-notifications + Expo Push, driven by a database outbox |
-| Payments | RevenueCat (`react-native-purchases`) for Producer Pro only |
-| Errors | Sentry via `@sentry/react-native`, inert without a DSN |
-| Build/ship | EAS Build, Submit, Update (development, preview, production channels) |
-| Tests | Jest + jest-expo + React Native Testing Library; pgTAP for the database; Maestro YAML for e2e |
+| Layer         | Choice                                                                                                       |
+| ------------- | ------------------------------------------------------------------------------------------------------------ |
+| Client        | Expo SDK 57 (`~57.0.8`), React Native 0.86, React 19.2.3, TypeScript `~6.0.3` strict                         |
+| Routing       | Expo Router, file-based, typed routes on, React Compiler experiment on                                       |
+| Server state  | TanStack Query v5 (all Supabase data lives here)                                                             |
+| Client state  | Zustand v5 (UI-only state; server data never enters Zustand)                                                 |
+| Backend       | Supabase: Postgres 17 + PostGIS, Auth, Storage, Realtime, Edge Functions                                     |
+| Maps          | react-native-maps 1.27.2 with supercluster clustering (in-house component, not the unmaintained wrapper lib) |
+| Location      | expo-location, foreground only, requested in context                                                         |
+| Notifications | expo-notifications + Expo Push, driven by a database outbox                                                  |
+| Payments      | RevenueCat (`react-native-purchases`) for Producer Pro only                                                  |
+| Errors        | Sentry via `@sentry/react-native`, inert without a DSN                                                       |
+| Build/ship    | EAS Build, Submit, Update (development, preview, production channels)                                        |
+| Tests         | Jest + jest-expo + React Native Testing Library; pgTAP for the database; Maestro YAML for e2e                |
 
 ### Pins that must move together (do not violate)
 
@@ -325,4 +325,4 @@ Each prompt is written to stand alone in a fresh Claude session on this repo. Pa
 
 ---
 
-*Generated 2026-07-29 from the repo state at migration `20260728001500`, 128 pgTAP assertions, 84 Jest cases.*
+_Generated 2026-07-29 from the repo state at migration `20260728001500`, 128 pgTAP assertions, 84 Jest cases._

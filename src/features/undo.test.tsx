@@ -32,7 +32,8 @@ function installSupabase(queue: DbResult[]): Call[] {
           return chain;
         };
       }
-      chain.then = (resolve: (value: DbResult) => void) => resolve(queue.shift() ?? { error: null });
+      chain.then = (resolve: (value: DbResult) => void) =>
+        resolve(queue.shift() ?? { error: null });
       return chain;
     },
   });
@@ -101,7 +102,12 @@ describe('withdraw undo', () => {
 describe('cancel-a-night undo', () => {
   it('reverses the cancellation by restoring the scheduled status', async () => {
     const { calls, result } = await setup(useCancelNight, [{ error: null }, { error: null }]);
-    result.current.mutate({ occurrenceId: 'o1', seriesId: 's1', note: 'PA broke', dateLabel: 'Tonight' });
+    result.current.mutate({
+      occurrenceId: 'o1',
+      seriesId: 's1',
+      note: 'PA broke',
+      dateLabel: 'Tonight',
+    });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(calls[0]).toMatchObject({
       table: 'mic_occurrences',

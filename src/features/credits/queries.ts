@@ -172,7 +172,14 @@ export function usePersonSearch(query: string) {
       }
       return data.flatMap((row) =>
         row.id && row.handle && row.stage_name
-          ? [{ id: row.id, handle: row.handle, stage_name: row.stage_name, avatar_url: row.avatar_url }]
+          ? [
+              {
+                id: row.id,
+                handle: row.handle,
+                stage_name: row.stage_name,
+                avatar_url: row.avatar_url,
+              },
+            ]
           : [],
       );
     },

@@ -6,15 +6,15 @@ jest.mock('@sentry/react-native', () => ({ captureException: jest.fn() }));
 
 describe('userError', () => {
   it('maps known Postgres codes to plain language', () => {
-    expect(userError({ code: '42501', message: 'new row violates row-level security' }, 'x').message).toContain(
-      'not allowed',
-    );
+    expect(
+      userError({ code: '42501', message: 'new row violates row-level security' }, 'x').message,
+    ).toContain('not allowed');
     expect(userError({ code: '23505', message: 'duplicate key value' }, 'x').message).toContain(
       'already exists',
     );
-    expect(userError({ code: 'PGRST116', message: 'JSON object requested' }, 'x').message).toContain(
-      'could not be found',
-    );
+    expect(
+      userError({ code: 'PGRST116', message: 'JSON object requested' }, 'x').message,
+    ).toContain('could not be found');
   });
 
   it('recognizes network failures regardless of code', () => {

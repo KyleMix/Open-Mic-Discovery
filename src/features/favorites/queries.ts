@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseMutationResult,
+} from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 
 import { useToast } from '@/components/toast';
@@ -58,7 +63,10 @@ export function useFavorites(userId: string | undefined) {
           .neq('status', 'cancelled')
           .order('starts_at');
         if (occError) {
-          throw userError(occError, 'Could not load favorites. Check your connection and try again.');
+          throw userError(
+            occError,
+            'Could not load favorites. Check your connection and try again.',
+          );
         }
         for (const occ of occurrences) {
           if (!nextBySeries[occ.series_id]) {
@@ -162,7 +170,12 @@ export function useToggleFavorite() {
         // A stub row keeps every star in sync instantly; the settled
         // refetch fills in the joined series details.
         return [
-          { series_id: seriesId, created_at: new Date().toISOString(), series: null, next_starts_at: null },
+          {
+            series_id: seriesId,
+            created_at: new Date().toISOString(),
+            series: null,
+            next_starts_at: null,
+          },
           ...old,
         ];
       });

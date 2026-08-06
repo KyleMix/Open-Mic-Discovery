@@ -186,8 +186,8 @@ export default function DiscoverScreen() {
       ) : null}
       {!searching && !manualCenter && !profileCenter && !profile.isPending ? (
         <Text style={styles.locationNote}>
-          Showing the default Seattle area, not your own. Use the locate button, or search your
-          city and tap Show mics near it.
+          Showing the default Seattle area, not your own. Use the locate button, or search your city
+          and tap Show mics near it.
         </Text>
       ) : null}
 

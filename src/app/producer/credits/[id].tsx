@@ -77,7 +77,9 @@ export default function CreditsScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.page}>
-      <Stack.Screen options={{ headerShown: true, title: occurrenceId ? 'This night' : 'Lineup' }} />
+      <Stack.Screen
+        options={{ headerShown: true, title: occurrenceId ? 'This night' : 'Lineup' }}
+      />
       <Title>{occurrenceId ? 'Just this night' : 'Every night'}</Title>
       <Body>
         {occurrenceId

@@ -14,9 +14,9 @@ describe('formatInZone', () => {
   });
 
   it('keeps the venue-local calendar date', () => {
-    expect(
-      formatInZone(ISO, 'America/Los_Angeles', { month: 'short', day: 'numeric' }),
-    ).toContain('4');
+    expect(formatInZone(ISO, 'America/Los_Angeles', { month: 'short', day: 'numeric' })).toContain(
+      '4',
+    );
   });
 
   it('falls back to device-local on an unknown zone', () => {

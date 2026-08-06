@@ -1036,13 +1036,7 @@ const styles = StyleSheet.create({
  * to a listing that already stands on its own, and a spinner or an error
  * banner here would interrupt the thing someone actually came to read.
  */
-function MicCredits({
-  seriesId,
-  occurrenceId,
-}: {
-  seriesId: string;
-  occurrenceId: string | null;
-}) {
+function MicCredits({ seriesId, occurrenceId }: { seriesId: string; occurrenceId: string | null }) {
   const credits = useSeriesCredits(seriesId);
   if (!credits.data || credits.data.length === 0) {
     return null;

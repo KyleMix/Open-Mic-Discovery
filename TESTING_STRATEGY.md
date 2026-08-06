@@ -136,7 +136,7 @@ is whether the thing starts and can be driven.
 
 ### The shape of the fake
 
-`createFakeSupabase(handler)` takes a function that receives the *intent* of a
+`createFakeSupabase(handler)` takes a function that receives the _intent_ of a
 call (which table, which verb, single or not) and returns a reply. Tests then
 assert on what the hook did with that reply.
 
@@ -210,10 +210,10 @@ it), the correct assertion is written and marked `test.failing`. Jest passes
 the test while the body fails and turns the file **red the moment someone fixes
 the source**, which is the prompt to delete the marker.
 
-| Defect | File | Smallest fix |
-| --- | --- | --- |
-| Day bucketing reads the host timezone, not the mic's | `src/features/discovery/order.timezone.test.ts` | Add `timezone` to `Sortable` and bucket with `Intl.DateTimeFormat('en-CA', { timeZone })` |
-| Discovery query key captures `view` and `disciplinesSeeded` | `src/features/discovery/query-key.test.tsx` | Select in the screen instead of passing the whole store |
+| Defect                                                      | File                                            | Smallest fix                                                                              |
+| ----------------------------------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Day bucketing reads the host timezone, not the mic's        | `src/features/discovery/order.timezone.test.ts` | Add `timezone` to `Sortable` and bucket with `Intl.DateTimeFormat('en-CA', { timeZone })` |
+| Discovery query key captures `view` and `disciplinesSeeded` | `src/features/discovery/query-key.test.tsx`     | Select in the screen instead of passing the whole store                                   |
 
 Both were verified by temporarily applying the fix and confirming the marked
 tests go red while the existing suites stay green.

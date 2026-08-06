@@ -35,9 +35,9 @@ describe('routeForPushPayload', () => {
 
   it('prefers the series it was handed over a lookup', async () => {
     getSupabase().maybeSingle.mockClear();
-    await expect(
-      routeForPushPayload({ series_id: 'abc', occurrence_id: 'occ-1' }),
-    ).resolves.toBe('/mic/abc');
+    await expect(routeForPushPayload({ series_id: 'abc', occurrence_id: 'occ-1' })).resolves.toBe(
+      '/mic/abc',
+    );
     expect(getSupabase().maybeSingle).not.toHaveBeenCalled();
   });
 

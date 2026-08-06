@@ -201,11 +201,11 @@ export default function NightScreen() {
                 off the waitlist instead: both keep everyone else where they are.
               </Body>
             ) : (
-            <Button
-              label={shuffling ? 'Drawing...' : 'Draw the lottery'}
-              busy={!!shuffling || draw.isPending}
-              onPress={startDraw}
-            />
+              <Button
+                label={shuffling ? 'Drawing...' : 'Draw the lottery'}
+                busy={!!shuffling || draw.isPending}
+                onPress={startDraw}
+              />
             )}
           </View>
         ) : null}

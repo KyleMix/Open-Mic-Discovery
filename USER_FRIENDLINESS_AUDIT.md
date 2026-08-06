@@ -8,21 +8,21 @@ Method: three parallel code-reading passes (status/language/control/consistency,
 
 ## 1. Scorecard
 
-| # | Category | Score |
-|---|----------|-------|
-| 1 | Visibility of system status | Partial |
-| 2 | Match to the real world | Pass |
-| 3 | User control and freedom | Partial |
-| 4 | Consistency | Partial |
-| 5 | Error prevention and recovery | Partial |
-| 6 | Recognition over recall | Partial |
-| 7 | Efficiency for repeat users | Pass |
-| 8 | Minimalist, scannable design | Pass |
-| 9 | Onboarding and time-to-value | Partial |
-| 10 | Accessibility (WCAG 2.2 AA) | Partial (does not meet AA today) |
-| 11 | Performance and perceived speed | Partial |
-| 12 | Mobile ergonomics | Partial |
-| 13 | Trust signals | Partial |
+| #   | Category                        | Score                            |
+| --- | ------------------------------- | -------------------------------- |
+| 1   | Visibility of system status     | Partial                          |
+| 2   | Match to the real world         | Pass                             |
+| 3   | User control and freedom        | Partial                          |
+| 4   | Consistency                     | Partial                          |
+| 5   | Error prevention and recovery   | Partial                          |
+| 6   | Recognition over recall         | Partial                          |
+| 7   | Efficiency for repeat users     | Pass                             |
+| 8   | Minimalist, scannable design    | Pass                             |
+| 9   | Onboarding and time-to-value    | Partial                          |
+| 10  | Accessibility (WCAG 2.2 AA)     | Partial (does not meet AA today) |
+| 11  | Performance and perceived speed | Partial                          |
+| 12  | Mobile ergonomics               | Partial                          |
+| 13  | Trust signals                   | Partial                          |
 
 ## 2. Overall grade and the three biggest gaps
 
@@ -43,6 +43,7 @@ The three biggest gaps:
 **Loading states: effectively complete.** A shared `LoadingView` (spinner + plain-language label, `src/components/ui.tsx:38-45`) covers every screen-level read: discovery (`src/app/(tabs)/index.tsx:193`), search (`:271`), favorites, My Mics, profile, mic detail, roster, analytics, admin, paywall, EULA, reset-link exchange. The shared `Button` has a first-class `busy` prop that disables, swaps in a spinner, and sets `accessibilityState.busy` (`ui.tsx:72-97`), and it is wired to nearly every mutation, including per-row scoping on the dashboard confirm (`src/app/(tabs)/producer.tsx:137`). Search avoids spinner flicker with `keepPreviousData` (`src/features/discovery/queries.ts:33`). The lottery draw shows a visible name-shuffle animation plus a "Drawing..." label (`src/app/producer/night/[occurrenceId].tsx:140-142,195-199`).
 
 Weak spots:
+
 - Favorite stars have no busy or optimistic state anywhere: the star is disabled and visually frozen for the whole round trip, then flips only after a refetch (`src/app/mic/[id].tsx:447-460`, `src/features/discovery/components/mic-card.tsx:126-142`, `src/features/favorites/queries.ts:80-123`).
 - Notification toggles do not move until the server refetch lands; `ToggleRow` has no busy or disabled prop at all (`src/app/notification-prefs.tsx:59-66`, `src/components/ui.tsx:99-125`).
 - Roster icon actions (on deck, move, performed, no-show) have no busy, disabled, or pressed feedback (`src/app/producer/night/[occurrenceId].tsx:221-251,387-408`).
@@ -58,6 +59,7 @@ Weak spots:
 The language work is the strongest part of the app. One shared map translates every enum: `lottery` is "Name draw", `first_come` is "Walk-in list", `reserved_slot` is "Book ahead", `host_booked` is "Invite only", consumed across discovery, detail, filters, and the producer form (`src/features/discovery/components/mic-card.tsx:14-27`). Detail screens add scene-voice explainers ("The list fills in signup order. Sign up early, show up, you are on.", `src/app/mic/[id].tsx:34-40`). Statuses are humanized with what-happens-next hints (`src/features/signups/components/signup-card.tsx:22-37`). RRULEs render as "Every Tuesday, 8:00 PM" with a null fallback of "Schedule varies" (`src/features/discovery/recurrence.ts`), distances read in miles despite km storage (`src/features/discovery/distance.ts:12-21`), costs read "Free" or "$5", and venue-local times carry a note when the zone differs from the device (`src/app/mic/[id].tsx:186-188`). Information order on the detail screen is when, then how to sign up, then cost facts, then where (`src/app/mic/[id].tsx:140-291`). No ISO timestamps reach any screen.
 
 Exceptions that keep this from being flawless:
+
 - No relative dates for performers. A mic starting in four hours reads "Fri, Mar 7", not "Tonight, 8 PM" (`mic-card.tsx:29-39`); "Tonight" phrasing exists only on filter chips, empty states, and the producer dashboard (`src/app/(tabs)/producer.tsx:139-141`).
 - Raw enums leak on the producer roster ("no_show", "first_come" verbatim, `src/app/producer/night/[occurrenceId].tsx:108,217`) and the admin queue ("profile: sexual_content", `src/app/admin.tsx:72-74,130-132`), even though the label maps already exist.
 - The signup-opens date formats device-local while the rest of the detail screen is venue-local (`signup-card.tsx:167-171`).
@@ -68,6 +70,7 @@ Exceptions that keep this from being flawless:
 **Destructive actions are well confirmed.** Withdraw uses a two-step inline confirm that states the cost ("Withdrawing gives up your spot (Slot 3). Re-signing up later puts you at the end of the list.", `signup-card.tsx:127-159`). Cancel-a-night, pause, re-draw, no-show, and account deletion (type DELETE to confirm) all have deliberate confirmation sheets with honest copy (`src/app/producer/[id].tsx:302-325,382-435`, `night/[occurrenceId].tsx:322-345`, `src/app/settings.tsx:87-121`). One true undo exists: cancelled nights show a "Restore" button (`producer/[id].tsx:261-272`). Blocking is reversible from Settings.
 
 Gaps:
+
 - **No form preserves a draft or warns before discard, anywhere.** The ~20-field series form is dropped silently by the header back button on create and by the "Close editor" toggle on edit (`src/features/producer/components/series-form.tsx:132-174`, `src/app/producer/new.tsx:46-53`, `producer/[id].tsx:154-158`). Android hardware back wipes a typed-out claim or flag (`src/app/mic/[id].tsx:354-362,493-499`). No `beforeRemove` guard or draft persistence exists in the codebase.
 - Unfavoriting is a single tap with no confirm and no undo (`src/app/(tabs)/favorites.tsx:94-104`).
 - Irreversibles with no UI: marking performed/no-show removes all buttons from the row with no way back (`night/[occurrenceId].tsx:219-238`); `useRemoveWalkIn` exists but no screen calls it (`src/features/signups/queries.ts:272-284`); listings can be paused but never deleted or archived despite `deleted_at` in the schema; posters can be replaced but not removed; handles are set once at onboarding and are not editable; roles can be turned on but never off.
@@ -79,6 +82,7 @@ Gaps:
 **One idiom at the primitive level.** `Pressable` is used exclusively (zero Touchable*), all colors and spacing come from tokens (`src/theme/tokens.ts`), and the 7 shared primitives in `src/components/ui.tsx` carry accessibility roles by default.
 
 **But no shared Card, Chip, Modal, or SectionTitle exists**, and each is reimplemented per file:
+
 - 14 distinct card-style declarations across 13 files, split between radius 12 and radius 14 with no rule (`mic/[id].tsx:617-624`, `mic-card.tsx:153-160`, `favorites.tsx:122-130`, `producer.tsx:246-253`, `signup-card.tsx:222-229`, and 9 more).
 - 4 chip implementations with different geometry: filter-bar and filter-sheet are near-verbatim copies of each other (radius 22, height 44), while the producer form's chips are radius 18 at **36px height, below the app's own `minTouchTarget = 44`** (`series-form.tsx:635-646`), and profile has a fourth flavor.
 - 6 hand-rolled copies of the same bottom-sheet modal; only the filter sheet supports backdrop dismiss (`filter-sheet.tsx:78-83` vs the other five).
@@ -109,13 +113,13 @@ Gaps:
 
 Tap counts, measured from app launch (Discover is the default tab, list view is the default, centered on home area, sorted soonest-then-nearest with the performer's disciplines pre-selected):
 
-| Loop | Taps | Target | Verdict |
-|------|------|--------|---------|
-| Performer finds tonight's mics | **1** (the "Tonight" chip; 0 taps already shows soonest-first near home) | ≤2 | Pass |
-| Performer signs up for a slot | **2** (mic card, then "Sign me up") | ≤3 | Pass |
-| Producer marks a cancellation | **4** (My Mics tab, series card, "Cancel" on the night row, "Cancel this night" confirm) | ≤3 | Miss by one; the 4th tap is a justified destructive confirm |
-| Producer confirms listing accurate | 2 (My Mics tab, "Confirm accurate" on the card) | n/a | Excellent |
-| Producer opens tonight's roster | 2 (My Mics tab, "Open tonight's list") | n/a | Excellent |
+| Loop                               | Taps                                                                                     | Target | Verdict                                                     |
+| ---------------------------------- | ---------------------------------------------------------------------------------------- | ------ | ----------------------------------------------------------- |
+| Performer finds tonight's mics     | **1** (the "Tonight" chip; 0 taps already shows soonest-first near home)                 | ≤2     | Pass                                                        |
+| Performer signs up for a slot      | **2** (mic card, then "Sign me up")                                                      | ≤3     | Pass                                                        |
+| Producer marks a cancellation      | **4** (My Mics tab, series card, "Cancel" on the night row, "Cancel this night" confirm) | ≤3     | Miss by one; the 4th tap is a justified destructive confirm |
+| Producer confirms listing accurate | 2 (My Mics tab, "Confirm accurate" on the card)                                          | n/a    | Excellent                                                   |
+| Producer opens tonight's roster    | 2 (My Mics tab, "Open tonight's list")                                                   | n/a    | Excellent                                                   |
 
 **Defaults are smart:** location pre-filled from home area, sort is soonest-upcoming, disciplines pre-seeded, list view default with map one tap away, venue timezone from the pin, signup-opens preserved on edit.
 
@@ -126,6 +130,7 @@ Tap counts, measured from app launch (Discover is the default tab, list view is 
 Mic cards carry exactly the decision set: accent bar + discipline glyphs, title, star, venue + neighborhood + distance, recurrence + concrete next date, then method · cost · freshness (`mic-card.tsx:72-104`). Details live one tap deeper. Filters are two plain rows plus an "All filters" sheet with one labeled question per section. No feature bloat: no social feed, no joke bank, primary screens each do one job.
 
 Hierarchy issues that keep this from being a strong pass:
+
 - On the detail screen with a poster, the signup CTA sits one to one-and-a-half screens down (260px poster + title + freshness + full schedule card before `SignupCard` at `mic/[id].tsx:212-221`).
 - On the night-of roster, the slot position number (the single most important glanceable fact in a dark bar) is 16px, dimmer than the name, in a fixed 22px column (`night/[occurrenceId].tsx:449-454`); a performer's own slot is buried mid-sentence (`signup-card.tsx:113-118`).
 
@@ -141,11 +146,11 @@ Hierarchy issues that keep this from being a strong pass:
 
 **Contrast: tested, but the test misses the failures.** `tokens.test.ts` asserts text and secondary text against `bg` (both pass: 17.9 and 8.3) and accents at 3:1. Not tested and failing at 4.5:1:
 
-| Pair | Ratio |
-|------|-------|
-| `textDisabled` #63636E on `bg` | 3.31 |
-| `textDisabled` on `bgElevated` (cards) | 3.03 |
-| `textDisabled` on `bgPressed` | 2.66 |
+| Pair                                                | Ratio       |
+| --------------------------------------------------- | ----------- |
+| `textDisabled` #63636E on `bg`                      | 3.31        |
+| `textDisabled` on `bgElevated` (cards)              | 3.03        |
+| `textDisabled` on `bgPressed`                       | 2.66        |
 | `border` on `bg` / `bgElevated` (non-text, 3:1 bar) | 1.47 / 1.34 |
 
 `textDisabled` is used as meaningful 13px text in 8 places, worst of all the **stale and never-confirmed freshness tiers** (`freshness.ts:19,34`): the tier that most needs reading is the least legible. Also: fact labels on the detail card, inactive tab labels, paywall fine print, placeholders, and cancelled-night dates. Disabled buttons at `opacity: 0.4` drop labels to ~3.5:1 (exempt under 1.4.3, but hostile in a dim room).
@@ -169,6 +174,7 @@ Hierarchy issues that keep this from being a strong pass:
 **Estimated feel:** initial load is spinner-then-content with a visible system-font flash (fonts loaded without awaiting, `_layout.tsx:141-142`; expo-splash-screen is a dependency but never used); search feels instant thanks to debounce + kept results; navigation is stock stack transitions.
 
 **Gaps:**
+
 - **No optimistic UI anywhere**: zero `onMutate`/`setQueryData` in the codebase. The favorite star freezes for the full round trip; roster reorder waits for the server before rows move; every mutation is invalidate-and-refetch, and a star tap refetches the entire two-step favorites query.
 - No pagination: discovery is a hard 100-row cap and search 50, the client never passes `p_limit`, and nothing says "showing 100" (`supabase/migrations/20260803000600_discovery_ranking.sql:17,113`, `filters.ts:176-192`).
 - The roster and admin queue are unvirtualized ScrollView + map, and `useRoster` fetches with no limit at all (`signups/queries.ts:146-157`).
@@ -180,6 +186,7 @@ Hierarchy issues that keep this from being a strong pass:
 **Right instincts:** bottom tab bar; dark-first by explicit design for dim rooms; zero swipe-only or hover-only interactions: every action has a visible button (unfavorite is a button, reorder is chevrons, all modals have explicit close plus `onRequestClose`).
 
 **Gaps for the one-handed-in-a-bar test:**
+
 - The signup CTA is not thumb-anchored: it is inline in the scroll, below a 260px poster and the full schedule card; no sticky footer exists (`mic/[id].tsx:140-221`).
 - **`KeyboardAvoidingView` is used nowhere.** Auth screens put inputs in a non-scrollable `<View>` so the keyboard can cover the submit button on small phones; worse, the claim/flag/report inputs live in bottom-anchored modal sheets (`justifyContent: 'flex-end'`) with a keyboard and no inset handling, the highest-risk combination in the app; the walk-in name field sits mid-ScrollView on the live night screen (`sign-in.tsx`, `mic/[id].tsx:394-401,548-553`, `night/[occurrenceId].tsx:258-278`).
 - Checking the list order at a glance: slot numbers are 16px, secondary-colored, and dimmer than names (`night/[occurrenceId].tsx:449-454`); roster statuses are raw enums at 13px; the roster's six 40px-wide icon targets with 4px gaps invite mis-taps from a thumb holding a drink.
@@ -222,51 +229,61 @@ Sorted by impact, highest first:
 Formatted for a fix-implementation run. Each item is independent unless noted. House rules apply to all: TypeScript strict, no em dashes in user-facing copy, tests alongside the change, `npm run typecheck && npm run lint && npm test` green.
 
 ### 1. Humanize roster and admin enums (trivial effort, high impact)
+
 - **Files:** `src/app/producer/night/[occurrenceId].tsx:108,217`, `src/app/admin.tsx:72-74,130-132`
 - **Change:** replace raw `{row.status}` with the existing `STATUS_LABELS` map (`src/features/signups/components/signup-card.tsx:22-29`); in admin, reuse the existing `FLAG_REASONS`/report reason label maps (`src/app/mic/[id].tsx:42-50`, `report-modal.tsx:15-24`) instead of raw `target_type`/`reason` values. Export the maps from a shared module if needed to avoid a screen-to-screen import.
 - **Done when:** no enum value with an underscore renders on any screen; snapshot/unit test asserts roster rows render "Marked no-show" not "no_show".
 
 ### 2. Fix the failing contrast pairs (low effort, high impact)
+
 - **Files:** `src/theme/tokens.ts`, `src/theme/tokens.test.ts`, `src/features/discovery/freshness.ts:19,34`
 - **Change:** introduce a `textFaint` (or lighten `textDisabled`) with ≥4.5:1 on `bgElevated` (e.g. #8E8E9A ≈ 4.6:1) and use it for every place `textDisabled` is meaningful text: freshness stale/unknown tiers, fact labels (`mic/[id].tsx:661-664`), inactive tab tint, paywall fine print, placeholders, cancelled dates. Keep true-disabled controls on the old token. Extend `tokens.test.ts` to assert text tokens against `bgElevated` and `bgPressed`, not just `bg`.
 - **Done when:** tokens test covers all text-on-surface pairs at 4.5:1 and passes; stale freshness labels are legible.
 
 ### 3. Relative next-night dates (low effort, high impact)
+
 - **Files:** `src/features/discovery/components/mic-card.tsx:29-39` (`formatNextDate`), consumers in `favorites.tsx`, `index.tsx` search rows, `mic/[id].tsx` next-night line, `profile.tsx`
 - **Change:** make `formatNextDate` (and a venue-timezone-aware variant for the detail screen) return "Tonight · 8:00 PM", "Tomorrow · 8:00 PM", else the current "Fri, Mar 7" form. Compute "tonight" against the venue timezone, not the device, mirroring `formatInZone`. Unit-test the boundary at midnight and across DST.
 - **Done when:** a mic occurring today reads "Tonight" on card, search, favorites, and detail; tests cover today/tomorrow/next-week and a venue-timezone mismatch.
 
 ### 4. Central error translation (medium effort, high impact)
+
 - **Files:** new `src/lib/user-error.ts`; all `features/*/queries.ts`; screens keep rendering `error.message`
 - **Change:** add `userMessage(error, fallback)` that maps known Postgres/Supabase codes (42501, 23505, 23503, PGRST116, network failure) to plain language and otherwise returns the caller's context-specific fallback, never the raw message. Replace every `throw new Error(error.message)` with `throw new Error(userMessage(error, '<action-specific fallback>'))`. Keep the existing 5 bespoke mappings. Log the raw error to Sentry before translating.
 - **Done when:** grep shows zero `new Error(error.message)` in `src/features`; unit tests cover the code map and the fallback path; no user-visible string contains "violates", "constraint", or "JWT".
 
 ### 5. Sticky signup CTA on mic detail (low-medium effort, high impact)
+
 - **Files:** `src/app/mic/[id].tsx`
 - **Change:** when a signup action is available (window open, or sign-in prompt for guests), render a safe-area-inset-anchored footer bar with the primary CTA ("Sign me up" / "Put my name in the draw" / "Sign in to get on the list"); keep the full `SignupCard` in place for status detail. Hide the footer once signed up (status shows in the card) and for host-booked/cancelled nights.
 - **Done when:** on a screen with a poster, the CTA is visible without scrolling; footer respects safe-area insets; no overlap with the scroll content (bottom padding increased).
 
 ### 6. Keyboard avoidance (low effort, medium-high impact)
+
 - **Files:** `src/app/(auth)/sign-in.tsx`, `sign-up.tsx`, `forgot-password.tsx`, `reset-password.tsx`, `src/app/mic/[id].tsx` (claim/flag modals), `src/features/safety/components/report-modal.tsx`, `src/app/settings.tsx` (DELETE field), `src/app/producer/night/[occurrenceId].tsx` (walk-in field)
 - **Change:** wrap auth screens in `KeyboardAvoidingView` (behavior padding on iOS) or a scrollable `Screen` variant; wrap the bottom-sheet modal content in `KeyboardAvoidingView` so the input and submit button ride above the keyboard.
 - **Done when:** on a small-viewport simulator, every text input and its submit button remain visible with the keyboard open.
 
 ### 7. Optimistic favorite toggle plus success acknowledgments (medium effort, medium-high impact)
+
 - **Files:** `src/features/favorites/queries.ts:80-123`, `src/components/ui.tsx` (new lightweight toast/confirm primitive), `src/features/producer/queries.ts:55` (confirm-accurate), `src/app/edit-profile.tsx:133`
 - **Change:** add `onMutate` optimistic cache updates (with rollback on error) for `useToggleFavorite` and targeted invalidation instead of the whole `['favorites']` key; add one shared, accessible toast (auto-dismiss, `accessibilityLiveRegion`/announce) used for "Listing confirmed", "Profile saved", "Removed from favorites" with an Undo action on unfavorite.
 - **Done when:** star flips instantly and rolls back on failure; unfavorite offers Undo; confirm-accurate and profile save give visible acknowledgment; tests cover optimistic rollback.
 
 ### 8. Night-screen glanceability and target sizes (medium effort, medium-high impact)
+
 - **Files:** `src/app/producer/night/[occurrenceId].tsx` (styles `slot:449-454`, `iconAction:485-490`, header at `:56-60,92,175`), `src/features/producer/components/series-form.tsx:643`, `src/app/(tabs)/profile.tsx:316-325`
 - **Change:** render slot position at heading size (≥20px) in `palette.text` semibold with a flexible min-width; use `STATUS_LABELS` (item 1); widen `iconAction` to `minWidth: 44` with `spacing.sm` gaps (move overflow actions behind a row tap or action sheet if six no longer fit); apply the computed descriptive `headerTitle` to the Pro branch too; raise series-form chips and profile link chips to `minHeight: minTouchTarget`.
 - **Done when:** slot numbers are the most prominent element of each row; all targets on the night screen and producer form are ≥44px in both dimensions; the Pro roster header names the mic and date.
 
 ### 9. Trust surface completion: badges and a human (medium effort, medium impact)
+
 - **Files:** `src/features/discovery/components/mic-card.tsx`, `src/app/mic/[id].tsx`, `src/app/settings.tsx`, `src/features/discovery/queries.ts` (expose `owner_id`/verified through the existing views if not already selected)
 - **Change:** on the detail screen (and optionally cards), render "Host-managed" when `owner_id` is set (with "Verified host" when the producer's verified flag is true) and "Community-listed" when unclaimed, adjacent to the freshness badge; add a Help section in Settings with a support contact row (mailto or URL from env), a link to re-read the terms, and replace the dead "contact support" copy in `producer/[id].tsx:120-123` with a working affordance.
 - **Done when:** every listing states its stewardship; Settings contains a reachable support path; the rejected-listing note links to it.
 
 ### 10. Unsaved-changes guards on forms (medium effort, medium impact)
+
 - **Files:** `src/features/producer/components/series-form.tsx`, `src/app/producer/new.tsx`, `src/app/producer/[id].tsx:154-158` (Close editor), `src/app/edit-profile.tsx`, claim/flag modals in `src/app/mic/[id].tsx`
 - **Change:** track dirty state; on back navigation, editor close, or `onRequestClose` with non-empty input, show the existing confirm-sheet pattern ("Discard this listing? Your entries will be lost." / Keep editing). For the series create form, optionally persist a draft to the existing AsyncStorage layer keyed per user.
 - **Done when:** no multi-field form can be discarded by a single accidental tap or Android back; a test simulates back-with-dirty-state and asserts the guard.

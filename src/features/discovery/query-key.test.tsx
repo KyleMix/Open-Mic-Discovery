@@ -33,9 +33,9 @@ jest.mock('@/lib/supabase', () => ({ getSupabase: jest.fn() }));
 const CENTER = { lat: 47.6062, lng: -122.3321 };
 
 beforeEach(() => {
-  jest.mocked(getSupabase).mockReturnValue(
-    createFakeSupabase(() => ({ data: [], error: null })).client,
-  );
+  jest
+    .mocked(getSupabase)
+    .mockReturnValue(createFakeSupabase(() => ({ data: [], error: null })).client);
 });
 
 /** The key the discovery query actually registers, as TanStack Query hashes it. */

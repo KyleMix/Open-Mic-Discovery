@@ -48,19 +48,19 @@ exist here," I say that instead of inventing an analogue.
 
 Runtime, 42 entries. Load-bearing ones for testing purposes:
 
-| Package | Version | Why it matters to tests |
-| --- | --- | --- |
-| `expo` | `~57.0.8` | Sets the Jest preset and the module resolver |
-| `react` / `react-native` | `19.2.3` / `0.86.0` | RNTL renders against these |
-| `expo-router` | `~57.0.8` | Every screen is a route module, `main` is `expo-router/entry` (`package.json:3`) |
-| `@supabase/supabase-js` | `^2.111.0` | The entire network boundary |
-| `@tanstack/react-query` | `^5.101.4` | All server state |
-| `@tanstack/query-async-storage-persister` | `^5.101.4` | Cache persisted to device storage |
-| `zustand` | `^5.0.14` | Both client stores |
-| `react-native-maps` | `1.27.2` | Native-only, platform-split for web |
-| `supercluster` | `^8.0.1` | Map marker clustering, pure JS, testable |
-| `react-native-purchases` | `^10.4.4` | RevenueCat, native module |
-| `react-native-reanimated` / `react-native-worklets` | `4.5.0` / `0.10.0` | Pinned pair per `CLAUDE.md` |
+| Package                                             | Version             | Why it matters to tests                                                          |
+| --------------------------------------------------- | ------------------- | -------------------------------------------------------------------------------- |
+| `expo`                                              | `~57.0.8`           | Sets the Jest preset and the module resolver                                     |
+| `react` / `react-native`                            | `19.2.3` / `0.86.0` | RNTL renders against these                                                       |
+| `expo-router`                                       | `~57.0.8`           | Every screen is a route module, `main` is `expo-router/entry` (`package.json:3`) |
+| `@supabase/supabase-js`                             | `^2.111.0`          | The entire network boundary                                                      |
+| `@tanstack/react-query`                             | `^5.101.4`          | All server state                                                                 |
+| `@tanstack/query-async-storage-persister`           | `^5.101.4`          | Cache persisted to device storage                                                |
+| `zustand`                                           | `^5.0.14`           | Both client stores                                                               |
+| `react-native-maps`                                 | `1.27.2`            | Native-only, platform-split for web                                              |
+| `supercluster`                                      | `^8.0.1`            | Map marker clustering, pure JS, testable                                         |
+| `react-native-purchases`                            | `^10.4.4`           | RevenueCat, native module                                                        |
+| `react-native-reanimated` / `react-native-worklets` | `4.5.0` / `0.10.0`  | Pinned pair per `CLAUDE.md`                                                      |
 
 Dev dependencies (`package.json:49-62`): `@testing-library/react-native ^14.0.1`,
 `@types/jest 29.5.14`, `eslint ^9.39.5`, `eslint-config-expo ^57.0.0`,
@@ -247,19 +247,19 @@ and the split is unusually clean where it exists.
 
 **Modules with zero React, zero native, zero network. These run in plain Node today:**
 
-| File | Exports |
-| --- | --- |
-| `src/features/auth/validation.ts` | 6 validators, clock injected at `:39` |
-| `src/features/discovery/order.ts` | `sortSoonestNearest` |
-| `src/features/discovery/distance.ts` | `formatMilesFromMeters`, `radiusLabel`, `RADIUS_CHOICES` |
-| `src/features/discovery/recurrence.ts` | `describeRecurrence`, `formatLocalTime` |
-| `src/features/discovery/freshness.ts` | `freshness(lastConfirmedAt, now)` |
-| `src/features/producer/rrule-builder.ts` | `buildRrule`, `parseRrule`, `computeAnchorDate` |
-| `src/features/profile/home-area.ts` | 4 helpers |
-| `src/features/profile/social.ts` | 5 helpers |
-| `src/features/pro/status.ts` | `resolveProStatus(configured, devBuild, rcEntitled)` |
-| `src/features/signups/window.ts` | `parseIntervalMs`, `signupWindow(..., now)` |
-| `src/theme/tokens.ts` | tokens only |
+| File                                     | Exports                                                  |
+| ---------------------------------------- | -------------------------------------------------------- |
+| `src/features/auth/validation.ts`        | 6 validators, clock injected at `:39`                    |
+| `src/features/discovery/order.ts`        | `sortSoonestNearest`                                     |
+| `src/features/discovery/distance.ts`     | `formatMilesFromMeters`, `radiusLabel`, `RADIUS_CHOICES` |
+| `src/features/discovery/recurrence.ts`   | `describeRecurrence`, `formatLocalTime`                  |
+| `src/features/discovery/freshness.ts`    | `freshness(lastConfirmedAt, now)`                        |
+| `src/features/producer/rrule-builder.ts` | `buildRrule`, `parseRrule`, `computeAnchorDate`          |
+| `src/features/profile/home-area.ts`      | 4 helpers                                                |
+| `src/features/profile/social.ts`         | 5 helpers                                                |
+| `src/features/pro/status.ts`             | `resolveProStatus(configured, devBuild, rcEntitled)`     |
+| `src/features/signups/window.ts`         | `parseIntervalMs`, `signupWindow(..., now)`              |
+| `src/theme/tokens.ts`                    | tokens only                                              |
 
 `src/features/discovery/freshness.ts:1` imports `@/theme`, which is itself pure data,
 so it stays in this list.
@@ -328,16 +328,16 @@ by platform SDKs. Below is every one, with what is actually sent.
 Eight RPC call sites. Argument shapes are generated into
 `src/types/database.types.ts` and enforced only at compile time.
 
-| RPC | Caller | Args | Mutates | Validated on receipt? |
-| --- | --- | --- | --- | --- |
-| `mics_near` | `src/features/discovery/queries.ts:14` | 9 params built by `filtersToRpcArgs` (`src/stores/filters.ts:135-151`) | Nothing, read only | **No.** Return is cast to `NearbyMic[]` and returned raw (`:21`) |
-| `search_mics` | `src/features/discovery/queries.ts:32` | `{ p_query: string }` | Nothing | **No** |
-| `draw_lottery` | `src/features/signups/queries.ts:119` | `{ p_occurrence_id: uuid }` | `signups.status`, `signups.slot_position` for the whole occurrence | **No** on the client. Server checks ownership (`supabase/migrations/20260728000900_signups.sql:98-100`) |
-| `set_slot_order` | `src/features/signups/queries.ts:141` | `{ p_occurrence_id: uuid, p_signup_ids: uuid[] }` | `signups.slot_position` | **No** on the client. Server checks ownership (`.../20260728000900_signups.sql:137-139`) |
-| `mark_on_deck` | `src/features/signups/queries.ts:158` | `{ p_signup_id: uuid, p_on_deck: boolean }` | `signups.on_deck_at`, inserts `notification_outbox` | **No** on client. Server checks ownership and status (`.../20260728001500_on_deck_and_posters.sql:46-51`) |
-| `delete_account` | `src/features/safety/queries.ts:86` | none | Deletes 7 tables' rows, anonymizes `profiles`, deletes `auth.users` | **No**. Server derives identity from `auth.uid()` (`.../20260728001400_home_area.sql:128`) |
-| `moderate_content` | `src/features/safety/queries.ts:143` | `{ p_target, p_target_id, p_approve }` | `moderation_status` on profiles/venues/mic_series | **No** on client. Server checks admin (`.../20260728001000_moderation.sql:125-127`) |
-| `review_claim` | `src/features/producer/queries.ts:240` | `{ p_claim_id: uuid, p_approve: boolean }` | `claim_requests`, `producer_profiles`, `profiles.is_producer`, `mic_series.owner_id` | **No** on client. Server checks admin (`.../20260728000800_producer.sql:125-127`) |
+| RPC                | Caller                                 | Args                                                                   | Mutates                                                                              | Validated on receipt?                                                                                     |
+| ------------------ | -------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `mics_near`        | `src/features/discovery/queries.ts:14` | 9 params built by `filtersToRpcArgs` (`src/stores/filters.ts:135-151`) | Nothing, read only                                                                   | **No.** Return is cast to `NearbyMic[]` and returned raw (`:21`)                                          |
+| `search_mics`      | `src/features/discovery/queries.ts:32` | `{ p_query: string }`                                                  | Nothing                                                                              | **No**                                                                                                    |
+| `draw_lottery`     | `src/features/signups/queries.ts:119`  | `{ p_occurrence_id: uuid }`                                            | `signups.status`, `signups.slot_position` for the whole occurrence                   | **No** on the client. Server checks ownership (`supabase/migrations/20260728000900_signups.sql:98-100`)   |
+| `set_slot_order`   | `src/features/signups/queries.ts:141`  | `{ p_occurrence_id: uuid, p_signup_ids: uuid[] }`                      | `signups.slot_position`                                                              | **No** on the client. Server checks ownership (`.../20260728000900_signups.sql:137-139`)                  |
+| `mark_on_deck`     | `src/features/signups/queries.ts:158`  | `{ p_signup_id: uuid, p_on_deck: boolean }`                            | `signups.on_deck_at`, inserts `notification_outbox`                                  | **No** on client. Server checks ownership and status (`.../20260728001500_on_deck_and_posters.sql:46-51`) |
+| `delete_account`   | `src/features/safety/queries.ts:86`    | none                                                                   | Deletes 7 tables' rows, anonymizes `profiles`, deletes `auth.users`                  | **No**. Server derives identity from `auth.uid()` (`.../20260728001400_home_area.sql:128`)                |
+| `moderate_content` | `src/features/safety/queries.ts:143`   | `{ p_target, p_target_id, p_approve }`                                 | `moderation_status` on profiles/venues/mic_series                                    | **No** on client. Server checks admin (`.../20260728001000_moderation.sql:125-127`)                       |
+| `review_claim`     | `src/features/producer/queries.ts:240` | `{ p_claim_id: uuid, p_approve: boolean }`                             | `claim_requests`, `producer_profiles`, `profiles.is_producer`, `mic_series.owner_id` | **No** on client. Server checks admin (`.../20260728000800_producer.sql:125-127`)                         |
 
 The RPC argument type, quoted from the generated contract that both sides rely on
 (`src/stores/filters.ts:132-151`):
@@ -370,24 +370,24 @@ export function filtersToRpcArgs(
 Direct table reads and writes, bypassing any RPC layer. These are the ones that mutate
 state without a server-side function guarding the call:
 
-| Operation | Site | Table | Server guard |
-| --- | --- | --- | --- |
-| insert | `src/features/auth/api.ts:107,128,137,144` | `profiles`, `performer_profiles`, `producer_profiles`, `notification_prefs` | RLS owner check + `guard_profile_writes` trigger |
-| update | `src/features/producer/queries.ts:49` | `mic_series.last_confirmed_at` | `guard_series_confirm` overwrites the sent value |
-| update | `src/features/producer/queries.ts:63` | `mic_series` arbitrary patch | RLS `series owner update` |
-| update | `src/features/producer/queries.ts:86` | `mic_occurrences` arbitrary patch | RLS `occurrences owner update` |
-| insert | `src/features/producer/queries.ts:118,132` | `venues`, `mic_series` | RLS insert `with check` on `created_by` |
-| insert | `src/features/producer/queries.ts:201` | `claim_requests` | RLS `claims requester insert` |
-| update | `src/features/producer/queries.ts:259,266` | `profiles.is_producer`, `producer_profiles` | RLS owner |
-| insert | `src/features/signups/queries.ts:35` | `signups` | RLS + `signup_lifecycle` trigger |
-| delete | `src/features/signups/queries.ts:56` | `signups` | RLS `signups performer withdraw` |
-| **update** | `src/features/signups/queries.ts:174` | **`signups.status`, arbitrary** | RLS `signups producer update` only |
-| insert | `src/features/discovery/queries.ts:82` | `listing_flags` | RLS |
-| insert | `src/features/safety/queries.ts:19,39` | `reports`, `blocks` | RLS |
-| update | `src/features/safety/queries.ts:162,182` | `reports`, `listing_flags` | RLS admin |
-| update | `src/features/profile/queries.ts:27` | `profiles` arbitrary patch | RLS owner + guard trigger |
-| upsert | `src/features/notifications/queries.ts:13` | `notification_prefs` | RLS owner |
-| upsert | `src/lib/notifications.ts:33` | `device_push_tokens` | RLS owner |
+| Operation  | Site                                       | Table                                                                       | Server guard                                     |
+| ---------- | ------------------------------------------ | --------------------------------------------------------------------------- | ------------------------------------------------ |
+| insert     | `src/features/auth/api.ts:107,128,137,144` | `profiles`, `performer_profiles`, `producer_profiles`, `notification_prefs` | RLS owner check + `guard_profile_writes` trigger |
+| update     | `src/features/producer/queries.ts:49`      | `mic_series.last_confirmed_at`                                              | `guard_series_confirm` overwrites the sent value |
+| update     | `src/features/producer/queries.ts:63`      | `mic_series` arbitrary patch                                                | RLS `series owner update`                        |
+| update     | `src/features/producer/queries.ts:86`      | `mic_occurrences` arbitrary patch                                           | RLS `occurrences owner update`                   |
+| insert     | `src/features/producer/queries.ts:118,132` | `venues`, `mic_series`                                                      | RLS insert `with check` on `created_by`          |
+| insert     | `src/features/producer/queries.ts:201`     | `claim_requests`                                                            | RLS `claims requester insert`                    |
+| update     | `src/features/producer/queries.ts:259,266` | `profiles.is_producer`, `producer_profiles`                                 | RLS owner                                        |
+| insert     | `src/features/signups/queries.ts:35`       | `signups`                                                                   | RLS + `signup_lifecycle` trigger                 |
+| delete     | `src/features/signups/queries.ts:56`       | `signups`                                                                   | RLS `signups performer withdraw`                 |
+| **update** | `src/features/signups/queries.ts:174`      | **`signups.status`, arbitrary**                                             | RLS `signups producer update` only               |
+| insert     | `src/features/discovery/queries.ts:82`     | `listing_flags`                                                             | RLS                                              |
+| insert     | `src/features/safety/queries.ts:19,39`     | `reports`, `blocks`                                                         | RLS                                              |
+| update     | `src/features/safety/queries.ts:162,182`   | `reports`, `listing_flags`                                                  | RLS admin                                        |
+| update     | `src/features/profile/queries.ts:27`       | `profiles` arbitrary patch                                                  | RLS owner + guard trigger                        |
+| upsert     | `src/features/notifications/queries.ts:13` | `notification_prefs`                                                        | RLS owner                                        |
+| upsert     | `src/lib/notifications.ts:33`              | `device_push_tokens`                                                        | RLS owner                                        |
 
 ### 4c. Supabase Realtime (WebSocket)
 
@@ -587,8 +587,8 @@ and `is_admin` cannot be self-granted (`guard_profile_writes`).
 
 **Where authority is weaker (opinion):**
 
-- `set_slot_order` and `useSetSignupStatus` let an authorized producer set *any*
-  `slot_position` or *any* `signup_status`, including transitions that make no sense
+- `set_slot_order` and `useSetSignupStatus` let an authorized producer set _any_
+  `slot_position` or _any_ `signup_status`, including transitions that make no sense
   (`waitlisted` straight to `performed`). `signup_lifecycle` on UPDATE
   (`.../20260728000900_signups.sql:22-27`) pins only `occurrence_id`, `performer_id`,
   and `created_at`. There is no legal-transition table. That is a deliberate
@@ -616,12 +616,12 @@ State advances in four independent places, none of them a loop this repo drives:
 
 **1. Scheduled server jobs (pg_cron).** Four schedules, all in UTC:
 
-| Job | Schedule | Function |
-| --- | --- | --- |
-| `generate-occurrences-nightly` | `17 9 * * *` | `private.generate_occurrences()` (`.../20260728000800_producer.sql:162-166`) |
-| `favorite-reminders` | `0 * * * *` | `private.queue_favorite_reminders()` (`.../20260728001100_retention.sql:120-121`) |
-| `new-mic-alerts` | `30 */4 * * *` | `private.queue_new_mic_alerts()` (`.../20260728001100_retention.sql:122-123`) |
-| `weekly-digest` | `0 17 * * 1` | `private.queue_weekly_digest()` (`.../20260728001100_retention.sql:124-125`) |
+| Job                            | Schedule       | Function                                                                          |
+| ------------------------------ | -------------- | --------------------------------------------------------------------------------- |
+| `generate-occurrences-nightly` | `17 9 * * *`   | `private.generate_occurrences()` (`.../20260728000800_producer.sql:162-166`)      |
+| `favorite-reminders`           | `0 * * * *`    | `private.queue_favorite_reminders()` (`.../20260728001100_retention.sql:120-121`) |
+| `new-mic-alerts`               | `30 */4 * * *` | `private.queue_new_mic_alerts()` (`.../20260728001100_retention.sql:122-123`)     |
+| `weekly-digest`                | `0 17 * * 1`   | `private.queue_weekly_digest()` (`.../20260728001100_retention.sql:124-125`)      |
 
 Both scheduling blocks are wrapped in `exception when others then raise notice`
 (`.../20260728000800_producer.sql:167-168`, `.../20260728001100_retention.sql:126-127`).
@@ -652,21 +652,25 @@ server state.
 ### Sources of nondeterminism, each cited
 
 **`Math.random()`**
+
 - `src/app/producer/night/[occurrenceId].tsx:109`. Also note this comparator is a
   biased shuffle (a random comparator is not a uniform permutation), which is harmless
   since it is decoration, but a test asserting "the shuffle is fair" would be wrong to write.
 
 **SQL `random()`**
+
 - `supabase/migrations/20260728000900_signups.sql:107`, inside
   `row_number() over (order by random())`. This is the real draw. It is unseeded and
   unseedable, so `draw_lottery` cannot be tested for a specific outcome, only for
   invariants (correct counts, capacity respected, positions 1..n contiguous).
 
 **`Date.now()`**
+
 - `src/features/profile/avatar.ts:46` (cache-busting query param)
 - `src/features/producer/poster.ts:47` (same)
 
 **`new Date()` with no injected clock**
+
 - `src/app/mic/[id].tsx:95` (`freshness(series.last_confirmed_at, new Date())`)
 - `src/features/discovery/queries.ts:52` (`.gte('starts_at', new Date().toISOString())`)
 - `src/features/producer/queries.ts:49` (confirm timestamp, subsequently overwritten by the server)
@@ -727,15 +731,15 @@ accumulate across frames because there are no frames.
 **Injected-dependency functions. These are the good ones, and there are more than I
 expected:**
 
-| Seam | Site | What it lets you fake |
-| --- | --- | --- |
-| `resolveProStatus(configured, devBuild, rcEntitled)` | `src/features/pro/status.ts:19` | The entire entitlement decision, with zero RevenueCat involvement. The one deliberate purity boundary in the repo, and it is documented as such at `:12-18` |
-| `freshness(lastConfirmedAt, now)` | `src/features/discovery/freshness.ts:17` | The clock |
-| `signupWindow(startsAt, opens, closes, now)` | `src/features/signups/window.ts:23` | The clock |
-| `validateBirthYear(value, now)` | `src/features/auth/validation.ts:39` | The clock |
-| `computeAnchorDate(choice, today, biweeklyStartsNextWeek)` | `src/features/producer/rrule-builder.ts:96` | The clock and the biweekly parity choice |
-| `dayQuickPick(days, todayIso)` / `sheetFilterCount(filters, todayIso)` | `src/stores/filters.ts:95,117` | Today's weekday |
-| `filtersToRpcArgs(filters, center)` | `src/stores/filters.ts:135` | Both inputs; nothing implicit |
+| Seam                                                                   | Site                                        | What it lets you fake                                                                                                                                       |
+| ---------------------------------------------------------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `resolveProStatus(configured, devBuild, rcEntitled)`                   | `src/features/pro/status.ts:19`             | The entire entitlement decision, with zero RevenueCat involvement. The one deliberate purity boundary in the repo, and it is documented as such at `:12-18` |
+| `freshness(lastConfirmedAt, now)`                                      | `src/features/discovery/freshness.ts:17`    | The clock                                                                                                                                                   |
+| `signupWindow(startsAt, opens, closes, now)`                           | `src/features/signups/window.ts:23`         | The clock                                                                                                                                                   |
+| `validateBirthYear(value, now)`                                        | `src/features/auth/validation.ts:39`        | The clock                                                                                                                                                   |
+| `computeAnchorDate(choice, today, biweeklyStartsNextWeek)`             | `src/features/producer/rrule-builder.ts:96` | The clock and the biweekly parity choice                                                                                                                    |
+| `dayQuickPick(days, todayIso)` / `sheetFilterCount(filters, todayIso)` | `src/stores/filters.ts:95,117`              | Today's weekday                                                                                                                                             |
+| `filtersToRpcArgs(filters, center)`                                    | `src/stores/filters.ts:135`                 | Both inputs; nothing implicit                                                                                                                               |
 
 **Module boundaries reachable by `jest.mock`:** `getSupabase` is a single named export
 from one module (`src/lib/supabase.ts:14`), and all 19 call sites import it by name.
@@ -767,23 +771,23 @@ This is a genuinely good boundary and needs no fakes at all.
 
 ### Places a dependency is hard-wired and hostile
 
-| Problem | Site | Why it hurts |
-| --- | --- | --- |
-| `queryClient` is a module-scope singleton | `src/lib/query-client.ts:9` | Shared across every test in a file. No factory, so cache from one test leaks into the next |
-| `persister` built at module scope | `src/app/_layout.tsx:120` | Importing the root layout touches AsyncStorage |
-| `initSentry()` called at module scope | `src/app/_layout.tsx:122` | Importing the root layout runs Sentry setup. Not inside a component, not inside an effect |
-| `getSupabase()` memoizes forever | `src/lib/supabase.ts:12,15` | `client ??=` means the first call wins for the process lifetime. A test that lets a real client be constructed poisons the module for every later test in that worker |
-| `configured` is module-level mutable state, never reset | `src/features/pro/use-pro.ts:14,16-26` | `ensureConfigured` flips it to `true` once and there is no way back. Any test that reaches it changes behavior for subsequent tests |
-| `apiKey` resolved at import time via `Platform.select` | `src/features/pro/use-pro.ts:9-12` | Cannot be varied per test without module reset |
-| `__DEV__` global read directly | `src/features/pro/use-pro.ts:42,51` | The pure function underneath is fine; the hook is not |
-| zustand store is a module singleton | `src/stores/filters.ts:59` | `disciplinesSeeded` is sticky (`:66-71`) and `reset()` (`:80`) does not clear it, so seeding state survives across tests |
-| `Date.now()` / `new Date()` called inline | `avatar.ts:46`, `poster.ts:47`, `producer/queries.ts:49,178`, `safety/queries.ts:165,185`, `mic/[id].tsx:95` | No clock parameter, so these paths cannot be pinned |
-| `Math.random()` inline | `src/app/producer/night/[occurrenceId].tsx:109` | Not injectable |
-| Native modules imported at module top | `location.ts:1`, `geocode.ts:1`, `avatar.ts:2`, `poster.ts:2`, `calendar.ts:1` | Importing the module pulls the native dependency even to reach a pure export in the same file. `googleCalendarUrl` is pure but lives beside `expo-calendar` |
-| `DEFAULT_CENTER` hard-coded | `src/features/discovery/location.ts:31` | Seattle coordinates baked in |
-| Edge Function has no exported handler | `supabase/functions/push-sender/index.ts:9` | `Deno.serve(async (req) => {...})` at module scope. Nothing is exported. Cannot be unit tested without a Deno runtime and an HTTP request |
-| Bare `fetch` for image bodies | `avatar.ts:33`, `poster.ts:34` | Global, unmocked, outside the `getSupabase` boundary |
-| Screens hold their own logic | `src/app/mic/[id].tsx` (670 lines), `src/app/producer/[id].tsx` (484), `src/features/producer/components/series-form.tsx` (595) | Any assertion about their behavior requires full component rendering with providers |
+| Problem                                                 | Site                                                                                                                            | Why it hurts                                                                                                                                                          |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `queryClient` is a module-scope singleton               | `src/lib/query-client.ts:9`                                                                                                     | Shared across every test in a file. No factory, so cache from one test leaks into the next                                                                            |
+| `persister` built at module scope                       | `src/app/_layout.tsx:120`                                                                                                       | Importing the root layout touches AsyncStorage                                                                                                                        |
+| `initSentry()` called at module scope                   | `src/app/_layout.tsx:122`                                                                                                       | Importing the root layout runs Sentry setup. Not inside a component, not inside an effect                                                                             |
+| `getSupabase()` memoizes forever                        | `src/lib/supabase.ts:12,15`                                                                                                     | `client ??=` means the first call wins for the process lifetime. A test that lets a real client be constructed poisons the module for every later test in that worker |
+| `configured` is module-level mutable state, never reset | `src/features/pro/use-pro.ts:14,16-26`                                                                                          | `ensureConfigured` flips it to `true` once and there is no way back. Any test that reaches it changes behavior for subsequent tests                                   |
+| `apiKey` resolved at import time via `Platform.select`  | `src/features/pro/use-pro.ts:9-12`                                                                                              | Cannot be varied per test without module reset                                                                                                                        |
+| `__DEV__` global read directly                          | `src/features/pro/use-pro.ts:42,51`                                                                                             | The pure function underneath is fine; the hook is not                                                                                                                 |
+| zustand store is a module singleton                     | `src/stores/filters.ts:59`                                                                                                      | `disciplinesSeeded` is sticky (`:66-71`) and `reset()` (`:80`) does not clear it, so seeding state survives across tests                                              |
+| `Date.now()` / `new Date()` called inline               | `avatar.ts:46`, `poster.ts:47`, `producer/queries.ts:49,178`, `safety/queries.ts:165,185`, `mic/[id].tsx:95`                    | No clock parameter, so these paths cannot be pinned                                                                                                                   |
+| `Math.random()` inline                                  | `src/app/producer/night/[occurrenceId].tsx:109`                                                                                 | Not injectable                                                                                                                                                        |
+| Native modules imported at module top                   | `location.ts:1`, `geocode.ts:1`, `avatar.ts:2`, `poster.ts:2`, `calendar.ts:1`                                                  | Importing the module pulls the native dependency even to reach a pure export in the same file. `googleCalendarUrl` is pure but lives beside `expo-calendar`           |
+| `DEFAULT_CENTER` hard-coded                             | `src/features/discovery/location.ts:31`                                                                                         | Seattle coordinates baked in                                                                                                                                          |
+| Edge Function has no exported handler                   | `supabase/functions/push-sender/index.ts:9`                                                                                     | `Deno.serve(async (req) => {...})` at module scope. Nothing is exported. Cannot be unit tested without a Deno runtime and an HTTP request                             |
+| Bare `fetch` for image bodies                           | `avatar.ts:33`, `poster.ts:34`                                                                                                  | Global, unmocked, outside the `getSupabase` boundary                                                                                                                  |
+| Screens hold their own logic                            | `src/app/mic/[id].tsx` (670 lines), `src/app/producer/[id].tsx` (484), `src/features/producer/components/series-form.tsx` (595) | Any assertion about their behavior requires full component rendering with providers                                                                                   |
 
 **The single most important structural fact for a testing strategy:** the
 `features/*/queries.ts` layer, which contains every write in the application, has
@@ -859,7 +863,7 @@ day per day until the app shows nothing upcoming.
 24 hours, so the last-seen listing data renders immediately, then refetches. Filter
 state does **not** survive: `useFiltersStore` resets to `DEFAULT_FILTERS`
 (`src/stores/filters.ts:29-36,60`), so radius, day, and method selections are lost
-while the stale results for the *previous* filters may still be shown from cache for a
+while the stale results for the _previous_ filters may still be shown from cache for a
 moment. The Realtime channel is torn down on unmount and recreated on remount
 (`src/features/signups/queries.ts:107-109`). Any signup status change that happened
 while disconnected is picked up by the refetch, not by a replayed event: there is no
@@ -884,18 +888,18 @@ channels, and long-lived clients.
 
 ### Every creation site and its matching destruction
 
-| Resource | Created | Destroyed | Verdict |
-| --- | --- | --- | --- |
-| Supabase client | `src/lib/supabase.ts:15` (`client ??=`) | **Never** | By design (singleton), but it holds an open Realtime socket and an auth refresh timer for process life |
-| Auth state subscription | `src/features/auth/session.tsx:25` | `:30` `subscription.subscription.unsubscribe()` in the effect cleanup | **Correct.** Also guards a late `getSession()` resolution with a `mounted` flag (`:19,21,29`) |
-| Realtime channel | `src/features/signups/queries.ts:91-106` | `:107-109` `getSupabase().removeChannel(channel)` | **Correct.** Keyed on `occurrenceId`, so switching nights tears down and recreates |
-| Lottery shuffle interval | `src/app/producer/night/[occurrenceId].tsx:108` | `:113-116` in `onSettled`, and `:40-46` on unmount | **Leaks on double-press.** See below |
-| Supercluster index | `src/features/discovery/components/mic-map.tsx:42-54` in `useMemo` | Not disposed | Fine. Plain JS object, no handle to release. Rebuilt whenever `mics` changes (`:55`) |
-| `QueryClient` | `src/lib/query-client.ts:9` at module scope | Never | Intentional |
-| AsyncStorage persister | `src/app/_layout.tsx:120` at module scope | Never | Intentional |
-| Sentry | `src/app/_layout.tsx:122`, `src/lib/sentry.ts:13` | Never | Intentional. No-op without a DSN (`sentry.ts:9-11`) |
-| RevenueCat SDK | `src/features/pro/use-pro.ts:22` inside `ensureConfigured` | Never, and `configured` never resets (`:14,24`) | Intentional for the app; hostile to tests |
-| Uploaded image `ArrayBuffer` | `avatar.ts:31-35`, `poster.ts:30-36` | Garbage collected | Fine |
+| Resource                     | Created                                                            | Destroyed                                                             | Verdict                                                                                                |
+| ---------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Supabase client              | `src/lib/supabase.ts:15` (`client ??=`)                            | **Never**                                                             | By design (singleton), but it holds an open Realtime socket and an auth refresh timer for process life |
+| Auth state subscription      | `src/features/auth/session.tsx:25`                                 | `:30` `subscription.subscription.unsubscribe()` in the effect cleanup | **Correct.** Also guards a late `getSession()` resolution with a `mounted` flag (`:19,21,29`)          |
+| Realtime channel             | `src/features/signups/queries.ts:91-106`                           | `:107-109` `getSupabase().removeChannel(channel)`                     | **Correct.** Keyed on `occurrenceId`, so switching nights tears down and recreates                     |
+| Lottery shuffle interval     | `src/app/producer/night/[occurrenceId].tsx:108`                    | `:113-116` in `onSettled`, and `:40-46` on unmount                    | **Leaks on double-press.** See below                                                                   |
+| Supercluster index           | `src/features/discovery/components/mic-map.tsx:42-54` in `useMemo` | Not disposed                                                          | Fine. Plain JS object, no handle to release. Rebuilt whenever `mics` changes (`:55`)                   |
+| `QueryClient`                | `src/lib/query-client.ts:9` at module scope                        | Never                                                                 | Intentional                                                                                            |
+| AsyncStorage persister       | `src/app/_layout.tsx:120` at module scope                          | Never                                                                 | Intentional                                                                                            |
+| Sentry                       | `src/app/_layout.tsx:122`, `src/lib/sentry.ts:13`                  | Never                                                                 | Intentional. No-op without a DSN (`sentry.ts:9-11`)                                                    |
+| RevenueCat SDK               | `src/features/pro/use-pro.ts:22` inside `ensureConfigured`         | Never, and `configured` never resets (`:14,24`)                       | Intentional for the app; hostile to tests                                                              |
+| Uploaded image `ArrayBuffer` | `avatar.ts:31-35`, `poster.ts:30-36`                               | Garbage collected                                                     | Fine                                                                                                   |
 
 ### The one real leak
 
@@ -952,22 +956,22 @@ Two suites, unrelated to each other, with no shared fixtures.
 
 ### Suite A: Jest, 14 files, 84 assertions
 
-| File | What it asserts | Would it fail if the named feature broke? |
-| --- | --- | --- |
-| `src/features/auth/validation.test.ts` (50 lines) | Email regex, 10-char password floor, handle pattern, display-name bounds, age gate at 17 with an injected `NOW`, role requirement | **Yes.** Real branch coverage on all six validators, including the boundary years 2009/2010 (`:40-41`) |
-| `src/features/discovery/recurrence.test.ts` (48) | Weekly, biweekly, n-weekly, multi-day, monthly ordinals including `-1`, and null-return for unparseable rules | **Yes.** The best test in the repo. Covers the `return null` fallbacks at `:36-40` |
-| `src/features/producer/rrule-builder.test.ts` (52) | RRULE construction, day sorting, null on empty input, plus a round-trip through `describeRecurrence` (`:32-39`) | **Yes.** The round-trip is the strongest assertion here: it pins the producer writer and the discovery reader against each other |
-| `src/features/signups/window.test.ts` (~46) | Postgres interval parsing (`7 days`, `02:00:00`, combined), and the three window states with an injected `now` | **Yes**, for the client mirror. **Note:** it does not verify that the mirror matches the server policy at `.../20260728000900_signups.sql:78-79`. Those two can drift silently |
-| `src/features/discovery/freshness.test.ts` (~27) | Tier boundaries at 0, 14, 15, 45, 46 days; label wording; null handling | **Yes.** Boundaries are exact |
-| `src/features/discovery/order.test.ts` (36) | Soonest-day-first, distance tiebreak, dateless sinks to bottom, input not mutated (`:32-36`) | **Yes**, but see section 6: the assertions are TZ-coupled and the runner pins no TZ |
-| `src/features/discovery/distance.test.ts` (24) | Decimal under 10 mi, rounded at/above, every radius choice labeled, fallback approximation | **Yes** |
-| `src/features/profile/social.test.ts` (101) | Handle extraction from pasted IG/TikTok URLs, `@` stripping, http to https upgrade, `javascript:` left unrewritten (`:57`) and rejected by `urlError` (`:78`), link building | **Yes.** The `javascript:` cases are real security assertions |
-| `src/features/profile/home-area.test.ts` (53) | City+state accepted, bare ZIP accepted, malformed ZIP rejected, city-without-state rejected, normalization, label fallbacks | **Yes** |
-| `src/features/pro/status.test.ts` (22) | All six combinations of (configured, devBuild, rcEntitled), including fail-closed in unconfigured production (`:18-21`) | **Yes.** This is the monetization safety property and it is pinned |
-| `src/stores/filters.test.ts` (94) | Filter-to-RPC-arg mapping including the km-to-m conversion and the time-window expansion, `hasActiveFilters`, ISO weekday, quick picks, sheet badge count | **Yes** |
-| `src/features/calendar/calendar.test.ts` (17) | Google Calendar template URL: UTC stamp format, encoded fields | **Yes** |
-| `src/theme/tokens.test.ts` (37) | WCAG AA 4.5:1 for body text, 3:1 for every discipline accent, 44 pt touch target, one accent per discipline | **Yes.** Would catch a palette change that breaks contrast. Genuinely useful |
-| `src/components/glyph.test.tsx` (23) | Discipline and signup-method glyph maps are complete; `<Glyph>` renders without crashing | **Partly.** The map completeness checks (`:6-17`) would fail. The render check (`:19-22`) only asserts `root` is truthy, so it would pass with a completely wrong glyph, a wrong size, or a missing accessibility treatment. **This is the one assertion in the suite that cannot meaningfully fail.** Note the test name claims "stays hidden from screen readers" but nothing about accessibility is asserted |
+| File                                               | What it asserts                                                                                                                                                              | Would it fail if the named feature broke?                                                                                                                                                                                                                                                                                                                                                                       |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/features/auth/validation.test.ts` (50 lines)  | Email regex, 10-char password floor, handle pattern, display-name bounds, age gate at 17 with an injected `NOW`, role requirement                                            | **Yes.** Real branch coverage on all six validators, including the boundary years 2009/2010 (`:40-41`)                                                                                                                                                                                                                                                                                                          |
+| `src/features/discovery/recurrence.test.ts` (48)   | Weekly, biweekly, n-weekly, multi-day, monthly ordinals including `-1`, and null-return for unparseable rules                                                                | **Yes.** The best test in the repo. Covers the `return null` fallbacks at `:36-40`                                                                                                                                                                                                                                                                                                                              |
+| `src/features/producer/rrule-builder.test.ts` (52) | RRULE construction, day sorting, null on empty input, plus a round-trip through `describeRecurrence` (`:32-39`)                                                              | **Yes.** The round-trip is the strongest assertion here: it pins the producer writer and the discovery reader against each other                                                                                                                                                                                                                                                                                |
+| `src/features/signups/window.test.ts` (~46)        | Postgres interval parsing (`7 days`, `02:00:00`, combined), and the three window states with an injected `now`                                                               | **Yes**, for the client mirror. **Note:** it does not verify that the mirror matches the server policy at `.../20260728000900_signups.sql:78-79`. Those two can drift silently                                                                                                                                                                                                                                  |
+| `src/features/discovery/freshness.test.ts` (~27)   | Tier boundaries at 0, 14, 15, 45, 46 days; label wording; null handling                                                                                                      | **Yes.** Boundaries are exact                                                                                                                                                                                                                                                                                                                                                                                   |
+| `src/features/discovery/order.test.ts` (36)        | Soonest-day-first, distance tiebreak, dateless sinks to bottom, input not mutated (`:32-36`)                                                                                 | **Yes**, but see section 6: the assertions are TZ-coupled and the runner pins no TZ                                                                                                                                                                                                                                                                                                                             |
+| `src/features/discovery/distance.test.ts` (24)     | Decimal under 10 mi, rounded at/above, every radius choice labeled, fallback approximation                                                                                   | **Yes**                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `src/features/profile/social.test.ts` (101)        | Handle extraction from pasted IG/TikTok URLs, `@` stripping, http to https upgrade, `javascript:` left unrewritten (`:57`) and rejected by `urlError` (`:78`), link building | **Yes.** The `javascript:` cases are real security assertions                                                                                                                                                                                                                                                                                                                                                   |
+| `src/features/profile/home-area.test.ts` (53)      | City+state accepted, bare ZIP accepted, malformed ZIP rejected, city-without-state rejected, normalization, label fallbacks                                                  | **Yes**                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `src/features/pro/status.test.ts` (22)             | All six combinations of (configured, devBuild, rcEntitled), including fail-closed in unconfigured production (`:18-21`)                                                      | **Yes.** This is the monetization safety property and it is pinned                                                                                                                                                                                                                                                                                                                                              |
+| `src/stores/filters.test.ts` (94)                  | Filter-to-RPC-arg mapping including the km-to-m conversion and the time-window expansion, `hasActiveFilters`, ISO weekday, quick picks, sheet badge count                    | **Yes**                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `src/features/calendar/calendar.test.ts` (17)      | Google Calendar template URL: UTC stamp format, encoded fields                                                                                                               | **Yes**                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `src/theme/tokens.test.ts` (37)                    | WCAG AA 4.5:1 for body text, 3:1 for every discipline accent, 44 pt touch target, one accent per discipline                                                                  | **Yes.** Would catch a palette change that breaks contrast. Genuinely useful                                                                                                                                                                                                                                                                                                                                    |
+| `src/components/glyph.test.tsx` (23)               | Discipline and signup-method glyph maps are complete; `<Glyph>` renders without crashing                                                                                     | **Partly.** The map completeness checks (`:6-17`) would fail. The render check (`:19-22`) only asserts `root` is truthy, so it would pass with a completely wrong glyph, a wrong size, or a missing accessibility treatment. **This is the one assertion in the suite that cannot meaningfully fail.** Note the test name claims "stays hidden from screen readers" but nothing about accessibility is asserted |
 
 **Coverage shape:** 13 of 14 files test pure functions. There is exactly one component
 test, and it is the weak one. **Zero tests exist for:** any hook in
@@ -1309,14 +1313,14 @@ Proposals only. Nothing in this repository was changed.
 Cannot distinguish a successful write from an RLS-silenced one. Both yield
 `{ error: null }`. Sites: `producer/queries.ts:49,63,86,259`,
 `signups/queries.ts:174`, `profile/queries.ts:27`, `safety/queries.ts:162,182`.
-*Smallest fix:* append `.select('id')` to each update chain and throw when
+_Smallest fix:_ append `.select('id')` to each update chain and throw when
 `data.length === 0`. Roughly 8 one-line edits.
 
 **2. The whole write layer's transport.**
 No injection point. `getSupabase()` is called inline inside each `mutationFn`,
 so a fake requires `jest.mock('@/lib/supabase')`, which tests builder-chain syntax
 rather than behavior.
-*Smallest fix:* have each `queries.ts` module take the client from a single
+_Smallest fix:_ have each `queries.ts` module take the client from a single
 `getClient` indirection that a test can swap, or accept an optional client argument
 defaulting to `getSupabase()`.
 
@@ -1324,27 +1328,27 @@ defaulting to `getSupabase()`.
 Importing it executes `createAsyncStoragePersister` (`:120`) and `initSentry()` (`:122`)
 at module scope, so the `AuthGate` redirect state machine (`:60-95`), which is real
 branching logic with five outcomes, cannot be imported in isolation.
-*Smallest fix:* move both side effects inside `RootLayout` (a `useMemo` and a `useEffect`),
+_Smallest fix:_ move both side effects inside `RootLayout` (a `useMemo` and a `useEffect`),
 and export `AuthGate` as a named export.
 
 **4. `resolveProStatus`'s consumer, `useProStatus`.**
 `configured` is module-level and one-way (`src/features/pro/use-pro.ts:14,24`);
 `apiKey` is resolved at import time (`:9-12`); `__DEV__` is read directly (`:42,51`).
 The first test to touch it changes behavior for every later test in the worker.
-*Smallest fix:* move `configured` into a module-exported `resetPurchasesForTest()`,
+_Smallest fix:_ move `configured` into a module-exported `resetPurchasesForTest()`,
 or keep a `Map` keyed by userId instead of a boolean.
 
 **5. `supabase/functions/push-sender/index.ts`.**
 `Deno.serve(async (req) => {...})` at `:9` with nothing exported. Also outside
 `tsconfig.json` (`:12`) and ESLint (`eslint.config.js:10`), so it is not even
 typechecked today.
-*Smallest fix:* `export async function handler(req: Request, deps): Promise<Response>`
+_Smallest fix:_ `export async function handler(req: Request, deps): Promise<Response>`
 and pass it to `Deno.serve(handler)`. Then remove it from the tsconfig exclude.
 
 **6. `draw_lottery`'s outcome.**
 Uses unseeded SQL `random()` (`.../20260728000900_signups.sql:107`). No specific draw
 result is assertable.
-*Smallest fix:* none needed, and I would not change it. Test the invariants instead:
+_Smallest fix:_ none needed, and I would not change it. Test the invariants instead:
 exactly `min(capacity, entrants)` rows become `drawn`, positions are `1..n` with no
 gaps, the rest are `waitlisted`, no `performed` row is disturbed. Those are all
 determinate. If a seeded draw is ever wanted, add an optional `p_seed` parameter that
@@ -1354,7 +1358,7 @@ calls `setseed()`, defaulting to null.
 `react-native-maps` (`mic-map.tsx:3`) and `expo-image-picker` (`avatar.ts:2`,
 `poster.ts:2`) have no jsdom-safe path. The `.web.tsx` variants are testable but are
 different components with different behavior.
-*Smallest fix:* extract the clustering math (`regionToZoom` at `mic-map.tsx:24-26`, the
+_Smallest fix:_ extract the clustering math (`regionToZoom` at `mic-map.tsx:24-26`, the
 bbox padding at `:57-68`) into a pure module beside the component. That is the part
 worth testing, and it currently cannot be reached without importing the native map.
 
@@ -1362,12 +1366,12 @@ worth testing, and it currently cannot be reached without importing the native m
 Pure and already tested, but it shares a module with `addToCalendar`, which imports
 `expo-calendar` and `react-native` at `calendar.ts:1-2`. The existing test only passes
 because `jest-expo` provides those mocks.
-*Smallest fix:* split `googleCalendarUrl` into `calendar-url.ts` with no imports.
+_Smallest fix:_ split `googleCalendarUrl` into `calendar-url.ts` with no imports.
 
 **9. Timezone-sensitive date logic.**
 `order.ts:13-16` and `filters.ts:84-87` read the host timezone, and Jest pins no `TZ`
 (`package.json:78-84`).
-*Smallest fix:* add `"globalSetup"` or simply `process.env.TZ = 'UTC'` in a
+_Smallest fix:_ add `"globalSetup"` or simply `process.env.TZ = 'UTC'` in a
 `jest.setup.js` referenced by `setupFiles`, so the suite is at least deterministic.
 Separately, and larger, `sortSoonestNearest` should take the mic's `timezone` (already
 returned by `mics_near` at `.../20260728000700_discovery.sql:60`) rather than using
@@ -1377,7 +1381,7 @@ the device's.
 Requires PostGIS and pgTAP, neither available here
 (`select name from pg_available_extensions ...` returned only `citext`), and `pg_prove`
 is not installed. There is no workflow file to run it in.
-*Smallest fix:* a single GitHub Actions workflow running
+_Smallest fix:_ a single GitHub Actions workflow running
 `supabase start && supabase test db` alongside `npm run typecheck && npm run lint && npm test`.
 This is the highest-value change in this whole list: it is where the business logic
 actually lives, and it is the one suite nobody is running.
@@ -1386,7 +1390,7 @@ actually lives, and it is the one suite nobody is running.
 `src/features/signups/window.ts:23` and
 `supabase/migrations/20260728000900_signups.sql:78-79` implement the same rule twice.
 Each is tested against itself. No test compares them.
-*Smallest fix:* a single contract test that feeds the same fixture set through both,
+_Smallest fix:_ a single contract test that feeds the same fixture set through both,
 which requires the pgTAP suite to be runnable from the same CI job as Jest, so this
 depends on item 10.
 
@@ -1394,6 +1398,6 @@ depends on item 10.
 `src/features/signups/queries.ts:87-110` needs a live WebSocket. The handler ignores its
 payload entirely (`:101`), so there is nothing to unit test even with a fake frame; the
 only observable behavior is "two `invalidateQueries` calls fire."
-*Smallest fix:* extract the effect body into an exported
+_Smallest fix:_ extract the effect body into an exported
 `subscribeToRoster(client, occurrenceId, onChange)` so the subscribe/teardown pairing
 can be asserted against a fake client without React.

@@ -59,13 +59,7 @@ export function urlError(normalized: string): string | null {
   return null;
 }
 
-export type SocialKey =
-  | 'instagram'
-  | 'tiktok'
-  | 'youtube'
-  | 'spotify'
-  | 'apple_music'
-  | 'website';
+export type SocialKey = 'instagram' | 'tiktok' | 'youtube' | 'spotify' | 'apple_music' | 'website';
 
 export type SocialLink = {
   key: SocialKey;

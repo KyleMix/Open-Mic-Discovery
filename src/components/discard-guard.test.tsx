@@ -55,7 +55,10 @@ describe('useDiscardGuard', () => {
   it('keeps the screen when the person backs out of discarding', async () => {
     await render(<Harness when />);
     await act(async () => {
-      mockListeners.beforeRemove({ preventDefault: jest.fn(), data: { action: { type: 'GO_BACK' } } });
+      mockListeners.beforeRemove({
+        preventDefault: jest.fn(),
+        data: { action: { type: 'GO_BACK' } },
+      });
     });
     await act(async () => {
       fireEvent.press(screen.getByText('Back'));
