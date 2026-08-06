@@ -3,7 +3,7 @@
 --
 -- p2 owns the Rusty Fret series (…0001); p1 is an unrelated performer.
 begin;
-select plan(18);
+select plan(20);
 
 -- ---------------------------------------------------------------------------
 -- Shape and guards
@@ -60,6 +60,42 @@ select is(
   'approved',
   'an ordinary performer name is published without waiting on a moderator'
 );
+
+-- ---------------------------------------------------------------------------
+-- An admin's own writes are trusted: they are the review. Before
+-- 20260806000300 the guard skipped admins entirely, so their rows kept the
+-- 'pending' default and the owner's own credits never reached the listing.
+-- ---------------------------------------------------------------------------
+select set_config('request.jwt.claims',
+  '{"sub":"00000000-0000-4000-a000-000000000004","role":"authenticated"}', true);
+
+-- owner_id stays null: the admin demo account holds no producer profile,
+-- and a null owner leaves the series creator-managed, same as a claim-in-
+-- waiting listing.
+insert into public.mic_series (id, venue_id, created_by, title, disciplines, rrule,
+                               anchor_date, start_time, timezone, signup_method)
+values ('20000000-0000-4000-c000-00000000000a', '10000000-0000-4000-b000-000000000001',
+        '00000000-0000-4000-a000-000000000004',
+        'Admin Showcase', '{comedy}', 'FREQ=WEEKLY;BYDAY=WE', current_date,
+        '20:00', 'America/Los_Angeles', 'first_come');
+select is(
+  (select moderation_status::text from public.mic_series
+    where id = '20000000-0000-4000-c000-00000000000a'),
+  'approved',
+  'an admin-created series is approved on the spot'
+);
+
+insert into public.mic_credits (series_id, role, name, created_by)
+values ('20000000-0000-4000-c000-00000000000a', 'featured', 'Trusted Guest',
+        '00000000-0000-4000-a000-000000000004');
+select is(
+  (select moderation_status::text from public.mic_credits where name = 'Trusted Guest'),
+  'approved',
+  'an admin-added credit publishes immediately instead of waiting on themselves'
+);
+
+select set_config('request.jwt.claims',
+  '{"sub":"00000000-0000-4000-a000-000000000002","role":"authenticated"}', true);
 
 insert into public.mic_credits (series_id, role, name, created_by)
 values ('20000000-0000-4000-c000-000000000009', 'featured', 'kys comedy hour',
