@@ -37,8 +37,11 @@ export function useMySignup(occurrenceId: string | undefined, userId: string | u
     if (!userId) {
       return;
     }
+    // A unique topic per subscription: the signup card and the sticky footer
+    // both run this hook on the mic page, and supabase-js hands a repeated
+    // topic the same already-subscribed channel, which throws on .on().
     const channel = getSupabase()
-      .channel(`signups-mine-${userId}`)
+      .channel(uniqueChannelTopic('signups-mine', userId))
       .on(
         'postgres_changes',
         {
