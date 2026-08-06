@@ -28,6 +28,17 @@ export type DiscoveryFilters = {
   timeOfDay: TimeOfDay | null;
 };
 
+/**
+ * The members that actually select rows on the server, projected for the
+ * discovery query key. UI-only state (view, the seeding flag, the quick-pick
+ * date bound) must never reach the key: every extra member forks the cache
+ * and doubles what the persister writes.
+ */
+export function selectDiscoveryFilters(state: DiscoveryFilters): DiscoveryFilters {
+  const { disciplines, days, radiusKm, freeOnly, methods, timeOfDay } = state;
+  return { disciplines, days, radiusKm, freeOnly, methods, timeOfDay };
+}
+
 export const DEFAULT_FILTERS: DiscoveryFilters = {
   disciplines: [],
   days: [],

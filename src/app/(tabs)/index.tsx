@@ -27,7 +27,7 @@ import { geocodeHomeArea } from '@/features/profile/geocode';
 import { homeAreaLabel } from '@/features/profile/home-area';
 import { sortSoonestNearest } from '@/features/discovery/order';
 import { useNearbyMics, useSearchMics } from '@/features/discovery/queries';
-import { useFiltersStore } from '@/stores/filters';
+import { selectDiscoveryFilters, useFiltersStore } from '@/stores/filters';
 import { fonts, minTouchTarget, palette, spacing, type, type Discipline } from '@/theme';
 
 export default function DiscoverScreen() {
@@ -75,7 +75,9 @@ export default function DiscoverScreen() {
   // One search RPC per pause in typing, not one per keystroke.
   const debouncedSearch = useDebounced(search, 300);
 
-  const nearby = useNearbyMics(filters, center);
+  // Only the server-relevant members reach the query key; passing the whole
+  // store forked the cache on every map/list toggle.
+  const nearby = useNearbyMics(selectDiscoveryFilters(filters), center);
   const searchResults = useSearchMics(debouncedSearch, center);
   const searching = search.trim().length >= 2;
 
