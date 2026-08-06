@@ -8,19 +8,27 @@
 -- row revokes all access through the storage API, which is the only read
 -- path for bucket content.
 --
--- The function body is otherwise identical to 20260728001400_home_area.sql.
+-- The improvement lands in private.delete_account_for, the body shared by
+-- the in-app path (delete_account) and the web path (delete_account_web),
+-- so both paths keep the identical end state that
+-- supabase/tests/deletion.test.sql asserts. The scrub also covers the
+-- fields added since the shared body was extracted: stage_name and the
+-- Spotify and Apple Music links.
 
-create or replace function delete_account()
+create or replace function private.delete_account_for(v_uid uuid)
 returns void
 language plpgsql
 security definer
 set search_path = ''
 as $$
-declare
-  v_uid uuid := auth.uid();
 begin
   if v_uid is null then
     raise exception 'not signed in' using errcode = '42501';
+  end if;
+  if not exists (
+    select 1 from public.profiles where id = v_uid and deleted_at is null
+  ) then
+    raise exception 'account not found or already deleted' using errcode = 'P0002';
   end if;
   delete from public.favorites where profile_id = v_uid;
   delete from public.attendance_log where profile_id = v_uid;
@@ -38,9 +46,12 @@ begin
   where bucket_id = 'avatars'
     and (storage.foldername(name))[1] = v_uid::text;
 
+  -- 22 hex chars (88 bits) of the uuid keep the anonymized handle unique
+  -- within the 30-char handle limit; short prefixes have collided.
   update public.profiles
-  set handle = ('deleted_' || substr(v_uid::text, 1, 8))::public.citext,
+  set handle = ('deleted_' || right(replace(v_uid::text, '-', ''), 22))::public.citext,
       display_name = 'Deleted user',
+      stage_name = 'Deleted user',
       avatar_url = null,
       bio = null,
       home_city = null,
@@ -54,6 +65,8 @@ begin
       link_tiktok = null,
       link_youtube = null,
       link_website = null,
+      link_spotify = null,
+      link_apple_music = null,
       deleted_at = now()
   where id = v_uid;
 

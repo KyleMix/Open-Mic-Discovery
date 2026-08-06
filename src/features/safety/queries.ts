@@ -105,7 +105,7 @@ export function useModerationQueue(isAdmin: boolean) {
       const [profiles, venues, series, reports, flags] = await Promise.all([
         supabase
           .from('profiles')
-          .select('id, handle, display_name, bio')
+          .select('id, handle, stage_name, display_name, bio')
           .eq('moderation_status', 'pending')
           .is('deleted_at', null),
         supabase
@@ -160,16 +160,22 @@ export function useResolveReport() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: { reportId: string; adminId: string; actioned: boolean }) => {
-      const { error } = await getSupabase()
+      const { data, error } = await getSupabase()
         .from('reports')
         .update({
           status: input.actioned ? 'actioned' : 'dismissed',
           resolved_by: input.adminId,
           resolved_at: new Date().toISOString(),
         })
-        .eq('id', input.reportId);
+        .eq('id', input.reportId)
+        .select('id');
       if (error) {
         throw userError(error, 'Could not resolve the report. Try again.');
+      }
+      // Row level security filters denied rows out of an update rather than
+      // raising, so zero rows back means the write was refused, not applied.
+      if (!data || data.length === 0) {
+        throw new Error('Could not resolve this report. It may already be resolved.');
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['moderation'] }),

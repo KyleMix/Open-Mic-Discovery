@@ -4,7 +4,8 @@
  * errors inline without throwing.
  */
 
-export const MINIMUM_AGE = 17;
+// Mirrors the server-side gate in supabase/migrations/20260729000200_age_gate_18.sql.
+export const MINIMUM_AGE = 18;
 export const HANDLE_PATTERN = /^[a-z0-9_]{3,30}$/;
 
 export function validateEmail(email: string): string | null {
@@ -46,7 +47,7 @@ export function validateBirthYear(value: string, now: Date): string | null {
     return 'Enter your four-digit birth year.';
   }
   if (currentYear - year < MINIMUM_AGE) {
-    return `You must be at least ${MINIMUM_AGE} to use Open Mic Finder.`;
+    return `You must be at least ${MINIMUM_AGE} to use Open Mic Explorer.`;
   }
   return null;
 }

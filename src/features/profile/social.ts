@@ -59,8 +59,17 @@ export function urlError(normalized: string): string | null {
   return null;
 }
 
+export type SocialKey =
+  | 'instagram'
+  | 'tiktok'
+  | 'youtube'
+  | 'spotify'
+  | 'apple_music'
+  | 'website';
+
 export type SocialLink = {
-  key: 'instagram' | 'tiktok' | 'youtube' | 'website';
+  key: SocialKey;
+  /** Names the destination for screen readers, since the button is a logo. */
   label: string;
   url: string;
 };
@@ -70,6 +79,8 @@ type SocialColumns = {
   link_tiktok: string | null;
   link_youtube: string | null;
   link_website: string | null;
+  link_spotify?: string | null;
+  link_apple_music?: string | null;
 };
 
 /** Tappable links for a profile, in display order. Empty fields drop out. */
@@ -91,6 +102,14 @@ export function buildSocialLinks(profile: SocialColumns): SocialLink[] {
   }
   if (profile.link_youtube) {
     links.push({ key: 'youtube', label: 'YouTube', url: profile.link_youtube });
+  }
+  // Music before website: for a musician these are the links that matter, and
+  // a personal site is the catch-all people scan for last.
+  if (profile.link_spotify) {
+    links.push({ key: 'spotify', label: 'Spotify', url: profile.link_spotify });
+  }
+  if (profile.link_apple_music) {
+    links.push({ key: 'apple_music', label: 'Apple Music', url: profile.link_apple_music });
   }
   if (profile.link_website) {
     links.push({ key: 'website', label: 'Website', url: profile.link_website });

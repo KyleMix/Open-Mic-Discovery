@@ -5,6 +5,7 @@ import { useToast } from '@/components/toast';
 import { registerPushToken } from '@/lib/notifications';
 import { getSupabase } from '@/lib/supabase';
 import { userError } from '@/lib/user-error';
+import type { Database } from '@/types/database.types';
 
 export type FavoriteItem = {
   series_id: string;
@@ -15,11 +16,14 @@ export type FavoriteItem = {
     id: string;
     title: string;
     disciplines: string[];
+    signup_method: Database['public']['Enums']['signup_method'];
+    cost_cents: number;
     rrule: string;
     start_time: string;
     timezone: string;
     last_confirmed_at: string | null;
-    venue: { name: string; city: string } | null;
+    poster_url: string | null;
+    venue: { name: string; city: string; neighborhood: string | null } | null;
   } | null;
 };
 
@@ -32,7 +36,9 @@ export function useFavorites(userId: string | undefined) {
       const { data, error } = await supabase
         .from('favorites')
         .select(
-          'series_id, created_at, series:mic_series(id, title, disciplines, rrule, start_time, timezone, last_confirmed_at, venue:venues(name, city))',
+          // Everything the discovery card draws, so a favorite renders as the same
+          // card as the mic it was saved from.
+          'series_id, created_at, series:mic_series(id, title, disciplines, signup_method, cost_cents, rrule, start_time, timezone, last_confirmed_at, poster_url, venue:venues(name, city, neighborhood))',
         )
         .eq('profile_id', userId!)
         .order('created_at', { ascending: false });

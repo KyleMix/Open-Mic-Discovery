@@ -3,9 +3,10 @@ import type { Database } from '@/types/database.types';
 type SignupStatus = Database['public']['Enums']['signup_status'];
 
 /**
- * Producer-voice status names for the roster. The performer-voice map
- * (STATUS_LABELS in signup-card) says "You are in"; a host reading the
- * list needs the third person.
+ * Plain-language names for signup statuses, shared by the performer's
+ * signup card and the producer's roster so the wording never drifts.
+ * The performer-voice map (STATUS_LABELS in signup-card) says "You are
+ * in"; a host reading the list needs the third person.
  */
 export const ROSTER_STATUS_LABELS: Record<SignupStatus, string> = {
   requested: 'In the draw',
@@ -15,6 +16,8 @@ export const ROSTER_STATUS_LABELS: Record<SignupStatus, string> = {
   performed: 'Performed',
   no_show: 'Marked no-show',
 };
+
+export const STATUS_LABELS = ROSTER_STATUS_LABELS;
 
 /** The sticky footer's action labels, shared so wording never drifts. */
 export const CTA_LABELS = {

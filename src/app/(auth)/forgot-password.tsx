@@ -40,6 +40,7 @@ export default function ForgotPasswordScreen() {
           device and it brings you back here to set a new password.
         </Body>
         <Button label="Back to sign in" onPress={() => router.replace('/(auth)/sign-in')} />
+        <Button label="Send it again" kind="secondary" busy={busy} onPress={submit} />
       </Screen>
     );
   }

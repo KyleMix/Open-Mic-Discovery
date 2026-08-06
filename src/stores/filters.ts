@@ -58,6 +58,7 @@ type FiltersState = DiscoveryFilters & {
   setRadiusKm: (km: number) => void;
   setFreeOnly: (freeOnly: boolean) => void;
   toggleMethod: (m: SignupMethod) => void;
+  setMethods: (methods: SignupMethod[]) => void;
   setTimeOfDay: (t: TimeOfDay | null) => void;
   reset: () => void;
 };
@@ -105,6 +106,7 @@ export const useFiltersStore = create<FiltersState>()(
       setRadiusKm: (radiusKm) => set({ radiusKm }),
       setFreeOnly: (freeOnly) => set({ freeOnly }),
       toggleMethod: (m) => set((s) => ({ methods: toggle(s.methods, m) })),
+      setMethods: (methods) => set({ methods }),
       setTimeOfDay: (timeOfDay) => set({ timeOfDay }),
       reset: () => set({ ...DEFAULT_FILTERS, dateBound: null }),
     }),

@@ -21,10 +21,12 @@ import {
   Screen,
   Title,
 } from '@/components/ui';
-import { useSession } from '@/features/auth/session';
 import { formatRelativeDay } from '@/features/discovery/date-label';
-import { useOccurrenceContext } from '@/features/producer/queries';
-import { useProStatus } from '@/features/pro/use-pro';
+import { liveWindow } from '@/features/live/window';
+import { useNightAttendance, usePlanRoster } from '@/features/plans/queries';
+import { attendanceSummary } from '@/features/plans/summary';
+import { useNightContext, useOccurrenceContext } from '@/features/producer/queries';
+import { isWalkIn } from '@/features/producer/signup-opens';
 import { ReportModal } from '@/features/safety/components/report-modal';
 import { ROSTER_STATUS_LABELS } from '@/features/signups/labels';
 import {
@@ -36,7 +38,7 @@ import {
   useSetSlotOrder,
   type RosterRow,
 } from '@/features/signups/queries';
-import { fonts, minTouchTarget, palette, spacing, type } from '@/theme';
+import { disciplineAccents, fonts, minTouchTarget, palette, spacing, type } from '@/theme';
 
 /**
  * The producer's live list for one night: running order, lottery draw with
@@ -46,8 +48,6 @@ import { fonts, minTouchTarget, palette, spacing, type } from '@/theme';
 export default function NightScreen() {
   const router = useRouter();
   const { occurrenceId } = useLocalSearchParams<{ occurrenceId: string }>();
-  const { session } = useSession();
-  const pro = useProStatus(session?.user.id);
   const roster = useRoster(occurrenceId);
   const context = useOccurrenceContext(occurrenceId);
   const draw = useDrawLottery();
@@ -79,9 +79,7 @@ export default function NightScreen() {
       )}`
     : 'The list';
 
-  // Waiting for the entitlement too: rendering the paid controls to a free
-  // producer for a beat, then yanking them, reads as a broken screen.
-  if (roster.isPending || pro.isPending) {
+  if (roster.isPending) {
     return <LoadingView label="Loading the list" />;
   }
   if (roster.isError) {
@@ -100,44 +98,11 @@ export default function NightScreen() {
   );
   const pending = rows.filter((r) => r.status === 'requested');
   const waitlist = rows.filter((r) => r.status === 'waitlisted');
-  const canManage = pro.data?.entitled ?? false;
-
-  // Free producers see the list; running it (draw, order, statuses) is Pro.
-  if (pro.data && !canManage) {
-    return (
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <Stack.Screen
-          options={{
-            headerShown: true,
-            title: headerTitle,
-            headerStyle: { backgroundColor: palette.bg },
-            headerTintColor: palette.text,
-          }}
-        />
-        <Text style={styles.sectionTitle}>
-          {rows.length} {rows.length === 1 ? 'performer' : 'performers'} signed up
-        </Text>
-        {rows.map((row) => (
-          <View key={row.id} style={styles.row}>
-            <Text style={styles.slot}>{row.slot_position ?? '·'}</Text>
-            <View style={styles.rowBody}>
-              <Text style={styles.name}>
-                {row.display_name ?? row.handle ?? row.guest_name ?? 'Performer'}
-                {row.guest_name ? ' (walk-in)' : ''}
-              </Text>
-              <Text style={styles.meta}>{row.status ? ROSTER_STATUS_LABELS[row.status] : ''}</Text>
-            </View>
-          </View>
-        ))}
-        <Body>
-          Running the list, drawing lotteries, reordering, and marking performed or no-show are part
-          of Producer Pro.
-        </Body>
-        <Button label="See Producer Pro" onPress={() => router.push('/paywall')} />
-      </ScrollView>
-    );
-  }
-
+  // Once somebody has been called up, the draw is closed server side: it
+  // would renumber everyone still waiting on top of the positions the people
+  // who already went up are holding. Say so here rather than offering a
+  // button that only fails.
+  const showStarted = rows.some((r) => r.status === 'performed' || r.status === 'no_show');
   function startDraw() {
     if (!occurrenceId || roster.data == null) {
       return;
@@ -208,6 +173,13 @@ export default function NightScreen() {
           }}
         />
 
+        <LiveEntry
+          occurrenceId={occurrenceId}
+          onOpen={() => router.push(`/producer/live/${occurrenceId}`)}
+        />
+
+        <WhoIsComing occurrenceId={occurrenceId} />
+
         {pending.length > 0 ? (
           <View style={styles.drawBox}>
             <Text style={styles.sectionTitle}>
@@ -215,7 +187,7 @@ export default function NightScreen() {
             </Text>
             {pending.map((r) => (
               <Text key={r.id} style={styles.pendingName}>
-                {r.display_name ?? r.handle ?? 'Performer'}
+                {r.stage_name ?? r.handle ?? 'Performer'}
               </Text>
             ))}
             {draw.isError ? (
@@ -223,11 +195,18 @@ export default function NightScreen() {
                 {draw.error instanceof Error ? draw.error.message : 'Draw failed.'}
               </ErrorText>
             ) : null}
+            {showStarted ? (
+              <Body>
+                The show has started, so the draw is closed. Reorder the list or promote somebody
+                off the waitlist instead: both keep everyone else where they are.
+              </Body>
+            ) : (
             <Button
               label={shuffling ? 'Drawing...' : 'Draw the lottery'}
               busy={!!shuffling || draw.isPending}
               onPress={startDraw}
             />
+            )}
           </View>
         ) : null}
 
@@ -241,7 +220,7 @@ export default function NightScreen() {
                 <Text style={styles.slot}>{row.slot_position ?? '·'}</Text>
                 <View style={styles.rowBody}>
                   <Text style={styles.name}>
-                    {row.display_name ?? row.handle ?? row.guest_name ?? 'Performer'}
+                    {row.stage_name ?? row.handle ?? row.guest_name ?? 'Performer'}
                     {row.guest_name ? ' (walk-in)' : ''}
                   </Text>
                   <Text style={row.on_deck_at ? styles.onDeckMeta : styles.meta}>
@@ -258,8 +237,8 @@ export default function NightScreen() {
                   <IconAction
                     label={
                       row.on_deck_at
-                        ? `Take ${row.display_name ?? 'performer'} off deck`
-                        : `Put ${row.display_name ?? 'performer'} on deck and notify them`
+                        ? `Take ${row.stage_name ?? 'performer'} off deck`
+                        : `Put ${row.stage_name ?? 'performer'} on deck and notify them`
                     }
                     icon={row.on_deck_at ? 'megaphone' : 'megaphone-outline'}
                     color={row.on_deck_at ? palette.warning : palette.text}
@@ -289,12 +268,22 @@ export default function NightScreen() {
                   />
                   {row.performer_id ? (
                     <IconAction
-                      label={`Report or block ${row.display_name ?? 'performer'}`}
+                      label={`Report or block ${row.stage_name ?? 'performer'}`}
                       icon="flag-outline"
                       onPress={() => setReporting(row)}
                     />
                   ) : null}
                 </View>
+              ) : row.status === 'performed' || row.status === 'no_show' ? (
+                <IconAction
+                  label={`Undo and put ${row.stage_name ?? 'performer'} back on the list`}
+                  icon="arrow-undo"
+                  onPress={() => {
+                    if (row.id != null) {
+                      setStatus.mutate({ signupId: row.id, status: 'confirmed' });
+                    }
+                  }}
+                />
               ) : null}
             </View>
           ))
@@ -335,7 +324,7 @@ export default function NightScreen() {
                 <Text style={styles.slot}>·</Text>
                 <View style={styles.rowBody}>
                   <Text style={styles.name}>
-                    {row.display_name ?? row.handle ?? row.guest_name ?? 'Performer'}
+                    {row.stage_name ?? row.handle ?? row.guest_name ?? 'Performer'}
                     {row.guest_name ? ' (walk-in)' : ''}
                   </Text>
                 </View>
@@ -370,7 +359,7 @@ export default function NightScreen() {
         ) : null}
         {confirmNoShow ? (
           <ConfirmSheet
-            title={`Mark ${confirmNoShow.display_name ?? confirmNoShow.handle ?? 'this performer'} as a no-show?`}
+            title={`Mark ${confirmNoShow.stage_name ?? confirmNoShow.handle ?? 'this performer'} as a no-show?`}
             body="They are notified immediately and the mark stays on this night."
             confirmLabel="Mark no-show"
             onConfirm={() => {
@@ -401,7 +390,7 @@ export default function NightScreen() {
             targetType="profile"
             targetId={reporting.performer_id}
             blockableUserId={reporting.performer_id}
-            targetLabel={reporting.display_name ?? 'this performer'}
+            targetLabel={reporting.stage_name ?? 'this performer'}
           />
         ) : null}
       </ScrollView>
@@ -433,6 +422,72 @@ function ConfirmSheet({
         </View>
       </View>
     </Modal>
+  );
+}
+
+/**
+ * The way in to running the night.
+ *
+ * Hidden until an hour before the door. A button offering to start a show
+ * three days out is an invitation to mark the first performer done for a
+ * night nobody has turned up to yet.
+ */
+function LiveEntry({
+  occurrenceId,
+  onOpen,
+}: {
+  occurrenceId: string | undefined;
+  onOpen: () => void;
+}) {
+  const night = useNightContext(occurrenceId);
+  if (!night.data) {
+    return null;
+  }
+  const window = liveWindow(night.data.starts_at, new Date(), night.data.live_ended_at);
+  if (window.state !== 'open') {
+    return null;
+  }
+  return <Button label="Go live" onPress={onOpen} />;
+}
+
+/**
+ * How the room is shaping up, before it fills.
+ *
+ * On a walk-in night the running order below is empty until people arrive and
+ * sign the sheet, so without this the producer has nothing to plan from. The
+ * names are stage names, which is what the performer was told would be shown.
+ */
+function WhoIsComing({ occurrenceId }: { occurrenceId: string | undefined }) {
+  const night = useNightContext(occurrenceId);
+  const counts = useNightAttendance(occurrenceId);
+  const roster = usePlanRoster(occurrenceId);
+
+  if (counts.isPending || !counts.data) {
+    return null;
+  }
+
+  const method = night.data?.series?.signup_method;
+  const summary = attendanceSummary(counts.data, method ? isWalkIn(method) : false);
+  const names = roster.data ?? [];
+
+  return (
+    <View style={styles.comingBox}>
+      <Text style={styles.sectionTitle}>Who is coming</Text>
+      <Body>{summary}</Body>
+      {names.length > 0 ? (
+        <Text style={styles.pendingName}>
+          {names
+            .map(
+              (n) =>
+                `${n.stage_name ?? n.handle ?? 'Someone'}${n.is_performer ? '' : ' (watching)'}`,
+            )
+            .join(', ')}
+        </Text>
+      ) : null}
+      {night.data?.featured_name ? (
+        <Text style={styles.featured}>Featuring {night.data.featured_name}</Text>
+      ) : null}
+    </View>
   );
 }
 
@@ -468,6 +523,19 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     padding: spacing.lg,
     paddingBottom: spacing.xxl,
+  },
+  comingBox: {
+    backgroundColor: palette.bgElevated,
+    borderColor: palette.border,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: spacing.xs,
+    padding: spacing.md,
+  },
+  featured: {
+    color: disciplineAccents.music,
+    fontFamily: fonts.medium,
+    fontSize: type.caption.fontSize,
   },
   drawBox: {
     backgroundColor: palette.bgElevated,

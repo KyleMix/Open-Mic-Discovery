@@ -7,13 +7,17 @@
 # Docker is available; this script exists for environments where it is not.
 set -euo pipefail
 
-DB=openmic_verify
+DB=openmicexplorer_verify
 cd "$(dirname "$0")/../.."
 
 run_psql() {
   su postgres -c "psql -v ON_ERROR_STOP=1 -q -d $DB -f '$1'"
 }
 
+# Anything still attached blocks the drop. pg_cron's background worker holds a
+# connection to whichever database cron.database_name points at, so this is
+# not only about a stray psql session left open.
+su postgres -c "psql -q -d postgres -c \"select pg_terminate_backend(pid) from pg_stat_activity where datname = '$DB' and pid <> pg_backend_pid()\"" >/dev/null
 su postgres -c "dropdb --if-exists $DB && createdb $DB"
 run_psql scripts/db/shim-supabase.sql
 
@@ -27,4 +31,19 @@ run_psql supabase/seed.sql
 
 echo "pgTAP:"
 su postgres -c "psql -q -d $DB -c 'create extension if not exists pgtap'"
-su postgres -c "pg_prove -d $DB supabase/tests/*.test.sql"
+
+# scheduled-jobs.test.sql asserts the four pg_cron jobs the migrations try to
+# register. pg_cron needs shared_preload_libraries and can only be installed
+# in the one database cron.database_name names, so plenty of otherwise valid
+# local setups cannot run it. Skipping is announced rather than silent: this
+# file is enforced in CI, where the full Supabase stack does have pg_cron, and
+# a machine that skips it has not verified that the nightly occurrence
+# generation and the three retention queues are scheduled at all.
+HAS_CRON=$(su postgres -c "psql -qtAX -d $DB -c \"select count(*) from pg_extension where extname in ('pg_cron','pg_net')\"")
+TESTS=(supabase/tests/*.test.sql)
+if [ "$HAS_CRON" != "2" ]; then
+  echo "SKIPPING supabase/tests/scheduled-jobs.test.sql: pg_cron and pg_net are not both installed here."
+  echo "  The scheduled job assertions run in CI against the full Supabase stack."
+  TESTS=("${TESTS[@]/supabase\/tests\/scheduled-jobs.test.sql}")
+fi
+su postgres -c "pg_prove -d $DB ${TESTS[*]}"

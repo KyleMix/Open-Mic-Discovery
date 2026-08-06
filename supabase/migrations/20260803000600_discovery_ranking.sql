@@ -4,7 +4,15 @@
 -- distance, so the row cap keeps what matters instead of whatever is
 -- physically closest. Same signature and columns as before.
 
-create or replace function mics_near(
+-- The prior definition (spots_and_slot_notices) returns extra columns, and a
+-- changed return type cannot go through CREATE OR REPLACE. The unified
+-- definition in 20260806000100 restores the full column set.
+drop function if exists mics_near(
+  double precision, double precision, integer, discipline[], integer[],
+  boolean, signup_method[], integer, integer, integer
+);
+
+create function mics_near(
   p_lat double precision,
   p_lng double precision,
   p_radius_m integer default 40000,

@@ -2,9 +2,12 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 
+import type { PostgrestError } from '@supabase/supabase-js';
+
 import { clearCachedData } from '@/lib/query-client';
 import { getSupabase } from '@/lib/supabase';
 import { userError } from '@/lib/user-error';
+import { deriveHandleBase, handleWithSuffix, randomHandleSuffix } from './handle';
 import type { Database } from '@/types/database.types';
 
 type Discipline = Database['public']['Enums']['discipline'];
@@ -27,6 +30,9 @@ function authError(error: { code?: string | null; message?: unknown }, fallback:
   }
   if (raw.includes('rate limit')) {
     return new Error('Too many attempts. Wait a minute and try again.');
+  }
+  if (raw.includes('weak password') || raw.includes('password should be')) {
+    return new Error('That password is too weak. Use at least 10 characters.');
   }
   return userError(error, fallback);
 }
@@ -59,7 +65,7 @@ export async function signUpWithEmail(
  * scheme; the reset screen exchanges the code and sets the new password.
  */
 export async function requestPasswordReset(email: string): Promise<void> {
-  const { error } = await getSupabase().auth.resetPasswordForEmail(email, {
+  const { error } = await getSupabase().auth.resetPasswordForEmail(email.trim(), {
     redirectTo: Linking.createURL('reset-password'),
   });
   if (error) {
@@ -70,7 +76,10 @@ export async function requestPasswordReset(email: string): Promise<void> {
 export async function exchangeRecoveryCode(code: string): Promise<void> {
   const { error } = await getSupabase().auth.exchangeCodeForSession(code);
   if (error) {
-    throw authError(error, 'That reset link is invalid or expired. Request a new one.');
+    throw authError(
+      error,
+      'That reset link is expired or was requested on another device. Request a new one.',
+    );
   }
 }
 
@@ -140,13 +149,13 @@ export async function signInWithGoogle(): Promise<void> {
 
 export type OnboardingInput = {
   userId: string;
-  handle: string;
   displayName: string;
   homeCity: string | null;
   homeRegion: string | null;
   homePostalCode: string | null;
   homeLat: number | null;
   homeLng: number | null;
+  stageName: string;
   birthYear: number;
   isPerformer: boolean;
   isProducer: boolean;
@@ -159,28 +168,51 @@ export type OnboardingInput = {
  * the accepted EULA version; the server stamps the acceptance timestamp.
  * The home area (city+state or ZIP, geocoded on device when possible) is
  * required by a database constraint and stays private to the owner.
+ *
+ * stage_name is the public identity; display_name is private and no longer
+ * collected at signup, so it starts as a copy of the stage name and only
+ * diverges if someone sets a private name in Edit profile.
  */
 export async function completeOnboarding(input: OnboardingInput): Promise<void> {
   const supabase = getSupabase();
-  const { error: profileError } = await supabase.from('profiles').insert({
-    id: input.userId,
-    handle: input.handle,
-    display_name: input.displayName,
-    home_city: input.homeCity,
-    home_region: input.homeRegion,
-    home_postal_code: input.homePostalCode,
-    home_lat: input.homeLat,
-    home_lng: input.homeLng,
-    birth_year: input.birthYear,
-    is_performer: input.isPerformer,
-    is_producer: input.isProducer,
-    eula_version: input.eulaVersion,
-  });
-  if (profileError) {
-    if (profileError.code === '23505') {
-      throw new Error('That handle is taken. Try another.');
+
+  // The handle is derived from the stage name, so two people picking the same
+  // stage name is expected rather than exceptional. Retry with a suffix; asking
+  // someone to invent a unique handle is the field this change removed.
+  const base = deriveHandleBase(input.stageName);
+  let lastError: PostgrestError | null = null;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const handle = attempt === 0 ? base : handleWithSuffix(base, randomHandleSuffix());
+    const { error } = await supabase.from('profiles').insert({
+      id: input.userId,
+      handle,
+      display_name: input.displayName,
+      stage_name: input.stageName,
+      home_city: input.homeCity,
+      home_region: input.homeRegion,
+      home_postal_code: input.homePostalCode,
+      home_lat: input.homeLat,
+      home_lng: input.homeLng,
+      birth_year: input.birthYear,
+      is_performer: input.isPerformer,
+      is_producer: input.isProducer,
+      eula_version: input.eulaVersion,
+    });
+    if (!error) {
+      lastError = null;
+      break;
     }
-    throw userError(profileError, 'Could not save your profile. Try again.');
+    lastError = error;
+    if (error.code !== '23505') {
+      break;
+    }
+  }
+  if (lastError) {
+    throw new Error(
+      lastError.code === '23505'
+        ? 'Could not set up your profile. Try a slightly different stage name.'
+        : lastError.message,
+    );
   }
   if (input.isPerformer) {
     const { error } = await supabase.from('performer_profiles').insert({

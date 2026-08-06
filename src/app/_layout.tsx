@@ -5,7 +5,6 @@ import {
   useFonts,
 } from '@expo-google-fonts/poppins';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import * as Sentry from '@sentry/react-native';
 import {
   DarkTheme,
   Stack,
@@ -18,12 +17,12 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, type ReactNode } from 'react';
 
 import { ToastProvider } from '@/components/toast';
-import { Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
+import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { SessionProvider, useSession } from '@/features/auth/session';
 import { useLatestEula, useOwnProfile } from '@/features/auth/queries';
 import { observeNotificationTaps, registerPushToken } from '@/lib/notifications';
-import { queryClient, queryPersister } from '@/lib/query-client';
-import { initSentry } from '@/lib/sentry';
+import { CACHE_BUSTER, queryClient, queryPersister } from '@/lib/query-client';
+import { initSentry, reportError } from '@/lib/sentry';
 import { palette } from '@/theme';
 
 const appTheme = {
@@ -78,14 +77,12 @@ function AuthGate({ children }: { children: ReactNode }) {
       return;
     }
     if (!session) {
-      // Discovery is the wedge: guests can browse the tabs and open listings.
-      // Actions that need an account (favorite, sign up, flag, claim, report)
-      // prompt for sign-in where they happen. The privacy policy is readable
-      // in every auth state; stores require it before an account exists.
-      const inGuestArea =
-        topSegment === '(tabs)' || topSegment === 'mic' || topSegment === 'privacy';
-      if (!inGuestArea && (!inAuthGroup || authScreen === 'eula' || authScreen === 'onboarding')) {
-        router.replace('/(auth)/sign-in');
+      // Browsing is open. Discovery, search, and mic pages all read fine
+      // signed out, and the account is pitched where it actually pays off
+      // (getting on a list, favorites, running a mic) rather than at the door.
+      // Only the two screens that assume a session bounce back out.
+      if (authScreen === 'eula' || authScreen === 'onboarding') {
+        router.replace('/(tabs)');
       }
       return;
     }
@@ -101,9 +98,9 @@ function AuthGate({ children }: { children: ReactNode }) {
       }
       return;
     }
+    // reset-password keeps its recovery session on screen until the new
+    // password is saved; every other auth screen bounces into the app.
     if (inAuthGroup && authScreen !== 'reset-password') {
-      // The reset screen holds a fresh recovery session on purpose; yanking
-      // the person into the tabs before they set a new password breaks it.
       router.replace('/(tabs)');
     }
   }, [
@@ -143,19 +140,28 @@ function AuthGate({ children }: { children: ReactNode }) {
 initSentry();
 
 /**
- * Last-resort catch for render-phase errors anywhere in the tree. Without
- * it a single throwing component takes down the whole app with a white
- * screen instead of one recoverable message.
+ * Last line of defense (Guideline 2.1: no crash paths).
+ *
+ * Expo Router renders this instead of the tree when a render or an effect
+ * throws anywhere below the root. Retry remounts the segment, so a transient
+ * failure (a realtime channel, a bad response) costs a tap rather than a
+ * relaunch. The message is shown because the person seeing it is usually the
+ * one who can report it.
  */
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   useEffect(() => {
-    Sentry.captureException(error);
+    reportError(error);
   }, [error]);
+
   return (
     <Screen>
       <Title>Something went wrong</Title>
-      <ErrorText>The app hit an unexpected error. Your account and data are safe.</ErrorText>
-      <Button label="Try again" onPress={retry} />
+      <Body>
+        That screen could not load. Trying again usually fixes it. If it keeps happening, the
+        details below are worth sending on.
+      </Body>
+      <ErrorText>{error.message}</ErrorText>
+      <Button label="Try again" onPress={() => retry()} />
     </Screen>
   );
 }
@@ -166,14 +172,14 @@ export default function RootLayout() {
   return (
     <PersistQueryClientProvider
       client={queryClient}
-      persistOptions={{ persister: queryPersister, maxAge: 24 * 60 * 60 * 1000 }}
+      persistOptions={{ persister: queryPersister, maxAge: 24 * 60 * 60 * 1000, buster: CACHE_BUSTER }}
     >
       <SessionProvider>
         <ThemeProvider value={appTheme}>
           <StatusBar style="light" />
           <ToastProvider>
             <AuthGate>
-              <Stack screenOptions={{ headerShown: false }}>
+              <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="(auth)" />
               </Stack>

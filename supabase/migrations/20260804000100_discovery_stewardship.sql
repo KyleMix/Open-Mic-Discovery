@@ -128,6 +128,7 @@ as $$
 $$;
 
 drop function if exists search_mics(text, integer);
+drop function if exists search_mics(text, double precision, double precision, integer);
 
 create function search_mics(
   p_query text,

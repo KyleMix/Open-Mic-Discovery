@@ -1,10 +1,4 @@
-import {
-  buildSocialLinks,
-  handleError,
-  normalizeHandle,
-  normalizeUrl,
-  urlError,
-} from './social';
+import { buildSocialLinks, handleError, normalizeHandle, normalizeUrl, urlError } from './social';
 
 describe('normalizeHandle', () => {
   it('strips a leading @', () => {
@@ -97,5 +91,30 @@ describe('buildSocialLinks', () => {
         link_website: null,
       }),
     ).toEqual([]);
+  });
+  it('includes Spotify and Apple Music, with music ahead of a personal site', () => {
+    expect(
+      buildSocialLinks({
+        link_instagram: null,
+        link_tiktok: null,
+        link_youtube: null,
+        link_website: 'https://sage.example',
+        link_spotify: 'https://open.spotify.com/artist/abc',
+        link_apple_music: 'https://music.apple.com/us/artist/abc',
+      }).map((l) => l.key),
+    ).toEqual(['spotify', 'apple_music', 'website']);
+  });
+
+  it('treats the music links as absent when the columns are missing', () => {
+    // Rows selected before these columns existed, and any view that does not
+    // carry them, must not blow up or invent links.
+    expect(
+      buildSocialLinks({
+        link_instagram: 'sage',
+        link_tiktok: null,
+        link_youtube: null,
+        link_website: null,
+      }).map((l) => l.key),
+    ).toEqual(['instagram']);
   });
 });

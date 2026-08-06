@@ -7,7 +7,7 @@ describe('googleCalendarUrl', () => {
       startsAt: new Date('2026-08-04T03:00:00.000Z'),
       endsAt: new Date('2026-08-04T06:00:00.000Z'),
       location: 'The Rusty Fret, 1234 Pike St, Seattle',
-      notes: 'Two songs or ten minutes. Added from Open Mic Finder.',
+      notes: 'Two songs or ten minutes. Added from Open Mic Explorer.',
     });
     expect(url).toContain('https://calendar.google.com/calendar/render?');
     expect(url).toContain('action=TEMPLATE');

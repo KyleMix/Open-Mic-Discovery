@@ -5,6 +5,8 @@
  */
 
 export const palette = {
+  /** Brand green, sampled from the Open Mic Explorer mark. */
+  brand: '#0FFEA7',
   bg: '#0B0B0F',
   bgElevated: '#16161D',
   bgPressed: '#22222B',

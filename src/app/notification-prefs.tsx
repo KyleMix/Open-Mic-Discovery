@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 
+import { SelectField } from '@/components/select';
 import { Body, Button, ErrorText, LoadingView, ToggleRow } from '@/components/ui';
 import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
@@ -11,7 +12,7 @@ import { useUpdatePrefs } from '@/features/notifications/queries';
 import { registerPushToken } from '@/lib/notifications';
 import { getSupabase } from '@/lib/supabase';
 import { userError } from '@/lib/user-error';
-import { fonts, palette, spacing, type } from '@/theme';
+import { palette, spacing } from '@/theme';
 
 /** Granular notification opt-outs. Everything here defaults conservative. */
 export default function NotificationPrefsScreen() {
@@ -47,16 +48,17 @@ export default function NotificationPrefsScreen() {
     );
   }
 
-  const p = prefs.data ?? {
-    profile_id: session.user.id,
-    signup_updates: true,
-    favorite_reminders: true,
-    new_mic_nearby: false,
-    nearby_radius_km: 25,
-    weekly_digest: false,
-    updated_at: '',
+  const p = {
+    signup_updates: prefs.data?.signup_updates ?? true,
+    favorite_reminders: prefs.data?.favorite_reminders ?? true,
+    new_mic_nearby: prefs.data?.new_mic_nearby ?? false,
+    nearby_radius_km: prefs.data?.nearby_radius_km ?? 25,
+    weekly_digest: prefs.data?.weekly_digest ?? false,
   };
 
+  // Send only the preference fields. Spreading the whole row here used to
+  // leak updated_at into the upsert, which the server rejects, so taps on
+  // these toggles failed for anyone missing a prefs row.
   const set = (patch: Partial<typeof p>) => {
     update.mutate({ userId: session.user.id, patch: { ...p, ...patch } });
     // Turning any preference on is an explicit ask for pushes; make sure the
@@ -128,24 +130,17 @@ export default function NotificationPrefsScreen() {
       />
       {locationNote ? <ErrorText>{locationNote}</ErrorText> : null}
       {p.new_mic_nearby ? (
-        <>
-          <Text style={styles.radiusLabel}>How far away counts as near you?</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {[
-              { km: 10, label: '5 miles' },
-              { km: 25, label: '15 miles' },
-              { km: 50, label: '30 miles' },
-              { km: 100, label: '60 miles' },
-            ].map(({ km, label }) => (
-              <Button
-                key={km}
-                label={label}
-                kind={p.nearby_radius_km === km ? 'primary' : 'secondary'}
-                onPress={() => set({ nearby_radius_km: km })}
-              />
-            ))}
-          </ScrollView>
-        </>
+        <SelectField
+          label="How far away counts as near you?"
+          value={p.nearby_radius_km}
+          options={[
+            { value: 10, label: '5 miles' },
+            { value: 25, label: '15 miles' },
+            { value: 50, label: '30 miles' },
+            { value: 100, label: '60 miles' },
+          ]}
+          onChange={(km) => set({ nearby_radius_km: km })}
+        />
       ) : null}
       <ToggleRow
         label="Weekly digest"
@@ -174,10 +169,5 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     padding: spacing.lg,
     paddingBottom: spacing.xxl,
-  },
-  radiusLabel: {
-    color: palette.text,
-    fontFamily: fonts.medium,
-    fontSize: type.body.fontSize,
   },
 });

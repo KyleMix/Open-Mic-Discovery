@@ -34,15 +34,22 @@ import { SIGNUP_METHOD_LABELS, costLabel } from '@/features/discovery/components
 import { StewardshipBadge } from '@/features/discovery/components/stewardship-badge';
 import { freshness } from '@/features/discovery/freshness';
 import { useFlagListing, useMicDetail } from '@/features/discovery/queries';
+import { CreditCard } from '@/features/credits/components/credit-card';
+import { useSeriesCredits } from '@/features/credits/queries';
+import { creditFor, isOverridden } from '@/features/credits/resolve';
 import { useIsFavorite, useToggleFavorite } from '@/features/favorites/queries';
+import { PlanToggle } from '@/features/plans/components/plan-toggle';
 import { useSubmitClaim } from '@/features/producer/queries';
 import { DiscardPrompt } from '@/components/confirm-sheet';
+import { SignUpPrompt } from '@/features/auth/components/sign-up-prompt';
+import { shareMic } from '@/features/discovery/share';
 import { ReportModal } from '@/features/safety/components/report-modal';
 import { FLAG_REASON_LABELS } from '@/features/safety/labels';
 import { SignupCard } from '@/features/signups/components/signup-card';
 import { signupCta } from '@/features/signups/cta';
 import { useJoinList, useMySignup, useSignupCounts } from '@/features/signups/queries';
-import { signupWindow } from '@/features/signups/window';
+import { isWalkIn } from '@/features/producer/signup-opens';
+import { signupOpensClockTime, signupWindow } from '@/features/signups/window';
 import { formatNextDateLong, formatRelativeDay } from '@/features/discovery/date-label';
 import { describeRecurrence, formatLocalTime } from '@/features/discovery/recurrence';
 import { formatInZone, zoneDiffersFromDevice } from '@/features/discovery/timezone';
@@ -139,6 +146,7 @@ function MicDetail({
   const [flagOpen, setFlagOpen] = useState(false);
   const [claimOpen, setClaimOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [savePrompt, setSavePrompt] = useState(false);
 
   function openDirections() {
     if (!venue) {
@@ -164,7 +172,7 @@ function MicDetail({
         startsAt,
         endsAt,
         location: venue ? `${venue.name}, ${venue.address_line}, ${venue.city}` : series.title,
-        notes: `${SIGNUP_METHOD_LABELS[series.signup_method]} · ${costLabel(nextCostCents)}. Added from Open Mic Finder.`,
+        notes: `${SIGNUP_METHOD_LABELS[series.signup_method]} · ${costLabel(nextCostCents)}. Added from Open Mic Explorer.`,
       });
     } catch {
       // The person backed out of the system sheet or the platform refused;
@@ -190,9 +198,39 @@ function MicDetail({
             {(series.disciplines as Discipline[]).map((d) => (
               <Glyph key={d} name={disciplineGlyphs[d]} size={20} color={disciplineAccents[d]} />
             ))}
-            <FavoriteStar seriesId={series.id} />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Share ${series.title}`}
+              onPress={() =>
+                shareMic({
+                  series_id: series.id,
+                  title: series.title,
+                  venue_name: venue?.name ?? null,
+                  next_starts_at: next?.starts_at ?? null,
+                  timezone: series.timezone,
+                }).catch(() => null)
+              }
+              style={styles.iconTap}
+            >
+              <Ionicons name="share-outline" size={24} color={palette.textSecondary} />
+            </Pressable>
+            <FavoriteStar seriesId={series.id} onSignedOutPress={() => setSavePrompt(true)} />
           </View>
         </View>
+
+        {savePrompt ? (
+          <SignUpPrompt
+            title="Save this mic"
+            reason="Favorites live with your account, so they follow you to any device."
+            perks={[
+              'A nudge on the morning it happens',
+              'Told the moment signups open',
+              'Get on the list without leaving the app',
+            ]}
+          />
+        ) : null}
+
+        <MicCredits seriesId={series.id} occurrenceId={next?.id ?? null} />
 
         <View style={styles.freshRow}>
           <Glyph name="freshness-badge" size={16} color={fresh.color} />
@@ -221,6 +259,16 @@ function MicDetail({
             <Text style={styles.nextDate}>Times shown are local to the venue.</Text>
           ) : null}
           {nextTitle ? <Text style={styles.overrideNote}>Special night: {nextTitle}</Text> : null}
+          {/* A guest is the reason to pick this night over the next one, so it
+              sits with the date rather than further down the page. */}
+          {next?.featured_name ? (
+            <>
+              <Text style={styles.featured}>Featuring {next.featured_name}</Text>
+              {next.featured_note ? (
+                <Text style={styles.costNote}>{next.featured_note}</Text>
+              ) : null}
+            </>
+          ) : null}
           {next && next.override_cost_cents != null ? (
             <Text style={styles.overrideNote}>
               This night: {costLabel(next.override_cost_cents)} (usually{' '}
@@ -254,6 +302,16 @@ function MicDetail({
           />
         ) : null}
 
+        {/* Saying you are coming is separate from signing up, and works on
+            nights where there is no list to sign at all. */}
+        {next ? (
+          <PlanToggle
+            occurrence={next}
+            timezone={series.timezone}
+            signupMethod={series.signup_method}
+          />
+        ) : null}
+
         <Card>
           <View style={styles.methodRow}>
             <Glyph name={signupMethodGlyphs[series.signup_method]} size={18} color={palette.text} />
@@ -267,6 +325,21 @@ function MicDetail({
             ) : null}
             {series.capacity ? <Fact label="Spots" value={`${series.capacity} total`} /> : null}
             <Fact label="Starts" value={formatLocalTime(series.start_time)} />
+            {/* A walk-in list is signed at the venue, so when the sheet goes out
+                is the thing a performer plans around. Only shown for walk-in:
+                every other method opens days ahead, where a clock time alone
+                would be meaningless. */}
+            {isWalkIn(series.signup_method)
+              ? (() => {
+                  const opens = signupOpensClockTime(series.start_time, series.signup_opens);
+                  return (
+                    <Fact
+                      label="List opens"
+                      value={opens.dayBefore ? `${opens.time} prev day` : opens.time}
+                    />
+                  );
+                })()
+              : null}
           </View>
           {series.cost_note ? <Text style={styles.costNote}>{series.cost_note}</Text> : null}
         </Card>
@@ -373,10 +446,10 @@ function MicDetail({
       {next ? (
         <SignupFooter
           occurrence={next}
+          timezone={series.timezone}
           signupMethod={series.signup_method}
           signupOpens={series.signup_opens}
           signupCloses={series.signup_closes}
-          timezone={series.timezone}
         />
       ) : null}
     </View>
@@ -589,18 +662,24 @@ function ClaimModal({
   );
 }
 
-function FavoriteStar({ seriesId }: { seriesId: string }) {
-  const router = useRouter();
+function FavoriteStar({
+  seriesId,
+  onSignedOutPress,
+}: {
+  seriesId: string;
+  onSignedOutPress: () => void;
+}) {
   const { session } = useSession();
   const isFavorite = useIsFavorite(session?.user.id, seriesId);
   const toggle = useToggleFavorite();
+  // Signed out the star still shows and still responds. Hiding it hid the
+  // reason to make an account; tapping it now says what saving would do.
   if (!session) {
-    // Guests get the same star; tapping it routes to sign-in.
     return (
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Sign in to add to favorites"
-        onPress={() => router.push('/(auth)/sign-in')}
+        accessibilityLabel="Save this mic"
+        onPress={onSignedOutPress}
         style={{ minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
       >
         <Ionicons name="star-outline" size={24} color={palette.textSecondary} />
@@ -755,6 +834,9 @@ const styles = StyleSheet.create({
     backgroundColor: palette.bg,
     flex: 1,
   },
+  creditStack: {
+    gap: spacing.sm,
+  },
   scroll: {
     backgroundColor: palette.bg,
     flex: 1,
@@ -811,6 +893,12 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
     fontSize: type.title.fontSize,
     lineHeight: type.title.lineHeight,
+  },
+  iconTap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+    minWidth: 44,
   },
   glyphRow: {
     flexDirection: 'row',
@@ -882,6 +970,11 @@ const styles = StyleSheet.create({
     color: palette.textSecondary,
     fontSize: type.caption.fontSize,
   },
+  featured: {
+    color: disciplineAccents.music,
+    fontFamily: fonts.medium,
+    fontSize: type.body.fontSize,
+  },
   venueName: {
     color: palette.text,
     fontFamily: fonts.medium,
@@ -934,3 +1027,47 @@ const styles = StyleSheet.create({
     fontSize: type.body.fontSize,
   },
 });
+
+/**
+ * Who is on the next night. Resolved against that occurrence, so a one-off
+ * guest host shows instead of the regular one, and says so.
+ *
+ * Renders nothing at all while loading or on failure: credits are an addition
+ * to a listing that already stands on its own, and a spinner or an error
+ * banner here would interrupt the thing someone actually came to read.
+ */
+function MicCredits({
+  seriesId,
+  occurrenceId,
+}: {
+  seriesId: string;
+  occurrenceId: string | null;
+}) {
+  const credits = useSeriesCredits(seriesId);
+  if (!credits.data || credits.data.length === 0) {
+    return null;
+  }
+  const host = creditFor(credits.data, 'host', occurrenceId);
+  const featured = creditFor(credits.data, 'featured', occurrenceId);
+  if (!host && !featured) {
+    return null;
+  }
+  return (
+    <View style={styles.creditStack}>
+      {featured ? (
+        <CreditCard
+          credit={featured}
+          role="featured"
+          overridden={isOverridden(credits.data, 'featured', occurrenceId)}
+        />
+      ) : null}
+      {host ? (
+        <CreditCard
+          credit={host}
+          role="host"
+          overridden={isOverridden(credits.data, 'host', occurrenceId)}
+        />
+      ) : null}
+    </View>
+  );
+}

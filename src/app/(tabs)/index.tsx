@@ -1,7 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  FlatList,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
 import { Glyph } from '@/components/glyph';
 import { Body, Button, ErrorText, LoadingView } from '@/components/ui';
@@ -9,6 +17,7 @@ import { freshness } from '@/features/discovery/freshness';
 import { useOwnProfile, usePerformerDisciplines } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
 import { FilterBar } from '@/features/discovery/components/filter-bar';
+import { OfflineBanner } from '@/components/offline-banner';
 import { boundByDate } from '@/features/discovery/date-window';
 import { MicCard, formatNextDate } from '@/features/discovery/components/mic-card';
 import { MicMap } from '@/features/discovery/components/mic-map';
@@ -67,7 +76,7 @@ export default function DiscoverScreen() {
   const debouncedSearch = useDebounced(search, 300);
 
   const nearby = useNearbyMics(filters, center);
-  const searchResults = useSearchMics(debouncedSearch);
+  const searchResults = useSearchMics(debouncedSearch, center);
   const searching = search.trim().length >= 2;
 
   // The list leads with what is happening soonest, closest first. The
@@ -123,6 +132,7 @@ export default function DiscoverScreen() {
 
   return (
     <View style={styles.container}>
+      <OfflineBanner />
       <View style={styles.searchRow}>
         <TextInput
           accessibilityLabel="Search by city or venue"
@@ -224,6 +234,15 @@ export default function DiscoverScreen() {
                 <MicCard mic={item} onPress={() => openMic(item.series_id)} />
               )}
               contentContainerStyle={styles.list}
+              // Freshness is the product, so a way to ask for it again is the
+              // first thing anyone reaches for on this screen.
+              refreshControl={
+                <RefreshControl
+                  refreshing={nearby.isFetching}
+                  onRefresh={nearby.refetch}
+                  tintColor={palette.textSecondary}
+                />
+              }
             />
           )}
         </>

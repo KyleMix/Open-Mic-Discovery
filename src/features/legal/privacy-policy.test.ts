@@ -23,7 +23,7 @@ describe('privacy policy content', () => {
     for (const required of [
       'Home area',
       'background location',
-      'RevenueCat',
+      'sells nothing',
       'Sentry',
       'Supabase',
       'Delete account',

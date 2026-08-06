@@ -43,7 +43,7 @@ notes and demo-account plan in the repo root `REVIEW_NOTES.md`.
       with the rest, then regenerate types (`npm run db:types` against the
       hosted project) and commit them.
 - [ ] `supabase link` then `supabase db push` to apply all migrations.
-- [ ] Run the pgTAP suite against a staging copy if possible (151 tests
+- [ ] Run the pgTAP suite against a staging copy if possible (358 tests
       currently pass locally via `scripts/db/verify-local.sh`).
 - [ ] Deploy the push-sender Edge Function:
       `supabase functions deploy push-sender`.
@@ -73,15 +73,6 @@ notes and demo-account plan in the repo root `REVIEW_NOTES.md`.
 
 - [ ] Sentry: create the project, copy the DSN (becomes
       `EXPO_PUBLIC_SENTRY_DSN`).
-- [ ] RevenueCat:
-  - [ ] Create the project and both store app configs.
-  - [ ] Create the monthly Producer Pro subscription product in App Store
-        Connect (with its required review screenshot and localized
-        description) and in Play Console.
-  - [ ] Create the `producer_pro` entitlement in RevenueCat and attach
-        both products to it.
-  - [ ] Copy the iOS and Android public API keys (become
-        `EXPO_PUBLIC_REVENUECAT_IOS_KEY` / `_ANDROID_KEY`).
 - [ ] Google Maps: create an API key restricted to Android and the package
       name plus SHA-1 of the EAS build keystore, then set it in `app.json`
       at `android.config.googleMaps.apiKey`. iOS uses Apple Maps, no key.
@@ -153,9 +144,7 @@ notes and demo-account plan in the repo root `REVIEW_NOTES.md`.
         updates on two devices at once, on-deck push, status pushes.
   - [ ] Push notifications arrive with the branded icon and deep-link to
         the right mic from cold start.
-  - [ ] Producer Pro: buy on a sandbox/license-tester account, delete and
-        reinstall the app, Restore Purchases works. Both platforms. This
-        exact cycle is what reviewers try.
+  - [ ] Purchases: none exist in the app; there is nothing to test here.
   - [ ] Account deletion end to end, then confirm the email can register
         again.
   - [ ] Offline: airplane mode keeps cached listings readable; writes
@@ -171,7 +160,7 @@ notes and demo-account plan in the repo root `REVIEW_NOTES.md`.
 - [ ] App Information: name, subtitle, category (Entertainment, secondary
       Music), content rights declaration.
 - [ ] Pricing: Free. Availability: launch countries.
-- [ ] In-App Purchases: attach the Producer Pro subscription to the app
+- [ ] In-App Purchases: none. The app sells nothing; skip this section.
       submission (first subscription must be submitted with an app
       version), with review screenshot and notes.
 - [ ] Age rating questionnaire: answer honestly to land 17+ (unfiltered
@@ -180,7 +169,7 @@ notes and demo-account plan in the repo root `REVIEW_NOTES.md`.
 - [ ] App Privacy section: enter exactly what
       `../privacy/APPLE_PRIVACY.md` says (data linked to identity: email,
       name, coarse location, user content, birth year, device id/push
-      token, purchase history; no tracking). Set the privacy policy URL.
+      token; no purchases, no tracking). Set the privacy policy URL.
 - [ ] Screenshots: 6.9 inch (required) and 6.5 inch, from the shot list in
       `STORE_LISTING.md`, dark frames, real seeded data.
 - [ ] App Review Information:
@@ -216,7 +205,7 @@ notes and demo-account plan in the repo root `REVIEW_NOTES.md`.
   - [ ] News app: no. Health: no. Government: no.
   - [ ] App access: provide the reviewer credentials from
         `REVIEW_NOTES.md` with step-by-step access notes.
-- [ ] Monetization: create the Producer Pro subscription with a base plan,
+- [ ] Monetization: none. The app sells nothing; skip this section.
       activate it.
 - [ ] Countries and pricing: free, launch countries.
 - [ ] Release path: internal testing (validate install and IAP), then

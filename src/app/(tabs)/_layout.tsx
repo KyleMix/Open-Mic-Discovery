@@ -14,6 +14,8 @@ export default function TabsLayout() {
         tabBarStyle: { backgroundColor: palette.bgElevated, borderTopColor: palette.border },
         tabBarActiveTintColor: disciplineAccents.music,
         tabBarInactiveTintColor: palette.textFaint,
+        // A quick cross-fade between tabs instead of a hard cut.
+        animation: 'fade',
       }}
     >
       <Tabs.Screen
@@ -30,6 +32,13 @@ export default function TabsLayout() {
         options={{
           title: 'Favorites',
           tabBarIcon: ({ color, size }) => <Ionicons name="star" color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="going"
+        options={{
+          title: 'Going',
+          tabBarIcon: ({ color, size }) => <Ionicons name="calendar" color={color} size={size} />,
         }}
       />
       <Tabs.Screen

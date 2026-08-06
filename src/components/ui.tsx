@@ -12,6 +12,7 @@ import {
   type TextInputProps,
 } from 'react-native';
 
+import { PressableScale } from '@/components/pressable-scale';
 import { fonts, maxFontScale, minTouchTarget, palette, spacing, type } from '@/theme';
 
 export function Screen({ children }: { children: ReactNode }) {
@@ -120,16 +121,15 @@ type ButtonProps = {
 export function Button({ label, onPress, disabled, busy, kind = 'primary' }: ButtonProps) {
   const isDisabled = disabled || busy;
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ disabled: !!isDisabled, busy: !!busy }}
       disabled={isDisabled}
       onPress={onPress}
-      style={({ pressed }) => [
+      style={[
         styles.button,
         kind === 'secondary' && styles.buttonSecondary,
-        pressed && styles.buttonPressed,
         isDisabled && styles.buttonDisabled,
       ]}
     >
@@ -143,7 +143,7 @@ export function Button({ label, onPress, disabled, busy, kind = 'primary' }: But
           {label}
         </Text>
       )}
-    </Pressable>
+    </PressableScale>
   );
 }
 
