@@ -121,11 +121,19 @@ select ok(
   (select private.queue_signup_reminders()) >= 1,
   'the show-day nudge queues for a night two hours out'
 );
+-- Scoped to the fixture night, not just to the performer. Receipt One is
+-- signed up to both mics in this file and both series start at 23:59 UTC, so
+-- once the clock passes roughly 21:00 the lottery night is inside the
+-- reminder window too and queues its own day-of nudge. Unscoped, this scalar
+-- subquery then returned two rows and the file aborted mid-plan. It failed
+-- only in the evening, which is the worst kind of red build: it passed all
+-- morning, and nothing in the diff had anything to do with it.
 select ok(
   (select body like 'Tonight at %You are number 1.' from notification_outbox
    where kind = 'signup_reminder'
      and profile_id = '00000000-0000-4000-a000-000000000051'
-     and payload ->> 'phase' = 'day_of'),
+     and payload ->> 'phase' = 'day_of'
+     and payload ->> 'occurrence_id' = (select id from walkin_night)::text),
   'the nudge carries the time and the slot number'
 );
 select is(
@@ -142,10 +150,13 @@ select ok(
   (select private.queue_signup_reminders()) >= 1,
   'the day-before reminder queues for a night a day out'
 );
+-- Scoped for the same reason as the nudge above: the other mic in this
+-- fixture must not be able to decide this assertion.
 select is(
   (select count(*)::int from notification_outbox
    where kind = 'signup_reminder'
      and payload ->> 'phase' = 'day_before'
+     and payload ->> 'occurrence_id' = (select id from walkin_night)::text
      and profile_id in ('00000000-0000-4000-a000-000000000052',
                         '00000000-0000-4000-a000-000000000053')),
   0,

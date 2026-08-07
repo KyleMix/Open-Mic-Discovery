@@ -233,7 +233,11 @@ export default function DiscoverScreen() {
           disabled={locating}
           style={styles.iconButton}
         >
-          <Ionicons name="locate" size={22} color={locating ? palette.textDisabled : palette.text} />
+          <Ionicons
+            name="locate"
+            size={22}
+            color={locating ? palette.textDisabled : palette.text}
+          />
         </Pressable>
         <Pressable
           accessibilityRole="button"

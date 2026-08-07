@@ -2,6 +2,8 @@
 
 Read-only audit of commit `564088c`, 2026-08-07. Twenty findings: 2 Blocker, 4 High, 6 Medium, 8 Low.
 
+One more (F-021) was found later, while re-running the suite during execution rather than during the read-only pass. It is listed with the others below and brings the total to 21.
+
 Severity scale used strictly:
 
 - **Blocker:** store rejection, security hole, data loss, or the app does not build.
@@ -372,6 +374,29 @@ So the code is right and the iOS config over-declares. An unused purpose string 
 **Decision: not fixed, on purpose.** I wrote the risk sentence above before doing the work, and on reaching it I took my own warning seriously. The whole benefit here is tidiness: an unused `NSCalendars*UsageDescription` key costs nothing, is not a rejection reason, and no reviewer has ever failed an app for declaring a purpose string it does not use. The cost of being wrong is a hard crash. On iOS a missing usage string is not a denied permission, it is a `SIGABRT` the instant the framework touches the API, and it would surface only on a physical device running a release build, which is the one thing I cannot test from here. Trading a nonexistent benefit for a crash risk on a primary flow, one month before submission, is a bad trade.
 
 What was done instead: the reasoning is recorded at `src/features/calendar/calendar.ts:1-27`, next to the deliberate legacy import it concerns, so the next person who notices the mismatch in `app.json` finds the answer rather than repeating the analysis. If you want it removed anyway, the note names the exact check: "Add to my calendar" on a real iPhone before merging, simulator not sufficient.
+
+---
+
+### F-021 `signup-receipts.test.sql` fails after roughly 21:00 UTC, and passes the rest of the day
+
+Severity: Medium
+Status: **FIXED**, `supabase/tests/signup-receipts.test.sql`.
+Evidence: `supabase/tests/signup-receipts.test.sql:14-25`, `:40-47`, `:56-57`, `:124-130`
+
+Found while re-running the suite late in the session, not during the read-only pass, which is itself the point: the earlier runs happened to be in the morning.
+
+What the code does. The fixture builds two mic series, "receipt walk-in mic" and "receipt lottery mic", both with `start_time` 23:59 UTC (`:14-25`), and signs performer 51 up to both (`:56-57`). The day-of assertion then reads a single row out of `notification_outbox` filtered only by performer and phase (`:124-130`). Once the wall clock passes roughly 21:00 UTC, the lottery night at 23:59 is also inside the reminder window, `private.queue_signup_reminders()` queues a nudge for it too, and the scalar subquery gets two rows: `ERROR: more than one row returned by a subquery used as an expression`. The transaction aborts and the file dies mid-plan, "You planned 12 tests but ran 7".
+
+Confirmed pre-existing rather than assumed. A git worktree at `564088c`, the commit this audit started from, fails identically at the same hour, so nothing in this audit's batches caused it.
+
+Impact: CI is red for any push merged in the evening UTC and green for the same commit in the morning. That is worse than a consistently failing test, because the natural response to a red build that passes on re-run is to re-run it, and the natural conclusion is that the suite is flaky rather than that a test is wrong.
+
+Fix: scope both cross-talkable assertions to `walkin_night`, the occurrence actually under test, the same pattern `retention.test.sql` already uses for the same class of problem ("Scoped to the fixture mic"). No production code changes.
+
+Verified by forcing the worst case rather than waiting for the clock: with the lottery night moved to 90 minutes out so both mics sit inside the window at once, strictly worse than any real time of day, the fixed file passes all 12 and the version at `HEAD` before the fix still dies at 7.
+
+Cost: Trivial. Two WHERE clauses.
+Risk of fixing: None. Test-only, and it narrows an assertion that was matching more than it meant to.
 
 ---
 

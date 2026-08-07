@@ -41,17 +41,17 @@ score = W_TEXT * text + W_DIST * dist + W_TIME * time + W_CONF * conf
 
 with every component in 0..1:
 
-| Constant | Value | Meaning |
-|---|---|---|
-| `W_TEXT` | 4.0 | Text relevance. Zero while browsing. Full text: `TEXT_FLOOR + (1 - TEXT_FLOOR) * ts_rank_cd(document, query, 32)`. Fuzzy: `FUZZY_CEILING * word_similarity`. |
-| `W_DIST` | 2.0 | Distance decay `0.5 ^ (meters / DIST_HALF_M)`. Neutral 0.5 with no location. |
-| `W_TIME` | 2.5 | Time decay `0.5 ^ (hours_until_start / TIME_HALF_H)`. Zero with no upcoming night, which is what sinks undated listings. |
-| `W_CONF` | 1.0 | `0.7 * freshness + 0.3 * verified`. Freshness uses the badge tiers: confirmed within 14 days scores 1.0, within 45 days 0.5, else 0. |
-| `TEXT_FLOOR` | 0.60 | Guarantees any full text match outranks any fuzzy match on the text component (fuzzy caps at `FUZZY_CEILING` = 0.50). |
-| `DIST_HALF_M` | 15000 | About 9 miles. At 3 miles dist is about 0.8, at 12 miles about 0.4: a strong match 12 miles out beats a weak match at 3. |
-| `TIME_HALF_H` | 72 | A mic in 2 hours scores about 0.98, in 9 days about 0.13. |
-| `START_GRACE` | 60 min | How long after start a night still counts as next. |
-| `FUZZY_WHEN_UNDER` | 5 | Run the fuzzy pass only when full text found fewer rows than this. |
+| Constant           | Value  | Meaning                                                                                                                                                      |
+| ------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `W_TEXT`           | 4.0    | Text relevance. Zero while browsing. Full text: `TEXT_FLOOR + (1 - TEXT_FLOOR) * ts_rank_cd(document, query, 32)`. Fuzzy: `FUZZY_CEILING * word_similarity`. |
+| `W_DIST`           | 2.0    | Distance decay `0.5 ^ (meters / DIST_HALF_M)`. Neutral 0.5 with no location.                                                                                 |
+| `W_TIME`           | 2.5    | Time decay `0.5 ^ (hours_until_start / TIME_HALF_H)`. Zero with no upcoming night, which is what sinks undated listings.                                     |
+| `W_CONF`           | 1.0    | `0.7 * freshness + 0.3 * verified`. Freshness uses the badge tiers: confirmed within 14 days scores 1.0, within 45 days 0.5, else 0.                         |
+| `TEXT_FLOOR`       | 0.60   | Guarantees any full text match outranks any fuzzy match on the text component (fuzzy caps at `FUZZY_CEILING` = 0.50).                                        |
+| `DIST_HALF_M`      | 15000  | About 9 miles. At 3 miles dist is about 0.8, at 12 miles about 0.4: a strong match 12 miles out beats a weak match at 3.                                     |
+| `TIME_HALF_H`      | 72     | A mic in 2 hours scores about 0.98, in 9 days about 0.13.                                                                                                    |
+| `START_GRACE`      | 60 min | How long after start a night still counts as next.                                                                                                           |
+| `FUZZY_WHEN_UNDER` | 5      | Run the fuzzy pass only when full text found fewer rows than this.                                                                                           |
 
 Tie-breaks after the score: sooner night, then nearer, then title.
 
@@ -77,34 +77,34 @@ Each is documented at its site with the measurement; do not undo them casually:
 
 Server-side, measured in this container (Postgres 16), function body percentiles over 30 runs. "Old" is `search_mics`/`mics_near`; both old and new measured as the anon role with RLS applied, on the same synthetic dataset (5,020 series, 3,018 venues, 65,203 occurrences packed into one metro area, which is far denser than any launch city).
 
-| Query | Old p50 / p95 | New p50 / p95 | Notes |
-|---|---|---|---|
-| Browse, 40 km radius | 105.9 / 122.9 ms | 102.1 / 116.7 ms | new adds the full blend, old was a plain sort |
-| "open mic" (about 2,000 matches) | 105.7 / 120.5 ms | 109.8 / 128.7 ms | equal cost, but filters now compose |
-| "olympia" | 55.9 / 59.4 ms | 45.0 / 51.6 ms | |
-| "Olymipa" (typo) | n/a (0 results) | 62.3 / 68.6 ms | old returned nothing at any speed |
-| "zzzzzz" (zero hits) | 14.6 / 15.5 ms | 0.5 / 0.6 ms | GIN miss vs full scans |
-| Tonight window, browse | n/a | 53.1 / 57.1 ms | old had no server date windows |
+| Query                            | Old p50 / p95    | New p50 / p95    | Notes                                         |
+| -------------------------------- | ---------------- | ---------------- | --------------------------------------------- |
+| Browse, 40 km radius             | 105.9 / 122.9 ms | 102.1 / 116.7 ms | new adds the full blend, old was a plain sort |
+| "open mic" (about 2,000 matches) | 105.7 / 120.5 ms | 109.8 / 128.7 ms | equal cost, but filters now compose           |
+| "olympia"                        | 55.9 / 59.4 ms   | 45.0 / 51.6 ms   |                                               |
+| "Olymipa" (typo)                 | n/a (0 results)  | 62.3 / 68.6 ms   | old returned nothing at any speed             |
+| "zzzzzz" (zero hits)             | 14.6 / 15.5 ms   | 0.5 / 0.6 ms     | GIN miss vs full scans                        |
+| Tonight window, browse           | n/a              | 53.1 / 57.1 ms   | old had no server date windows                |
 
 At seed scale (20 series) everything is under 2ms. Keystroke-to-render on a mid-tier Android device could not be measured in this environment; the floor is 250ms debounce + cellular RTT + the numbers above. Measure on device before store submission and record it here.
 
 Corpus outcomes (seed data plus test fixtures; automated in supabase/tests/search-discover.test.sql and src/features/discovery/discover-screen.test.tsx):
 
-| Query | Result |
-|---|---|
-| (empty) | 20 rows, nearby soonest-first blend |
-| `open mic tonight` | client parses to "open mic" + Tonight chip; 4 matches, proximity ranked |
-| `olympia` | 2 city matches (3 with the Capitol Theatre fixture) |
-| `Olymipa` | same mics via the fuzzy pass, labeled "showing close matches" |
-| `tuesday` | Tuesday chip applied, occurrences resolved to Tuesdays |
-| `free 21+` | two chips, no text query left |
-| `capitol theater` | finds Capitol Theatre through the fuzzy pass |
-| `mccrary` | host stage-name match |
-| `zzzzzz` | zero rows; recovery ladder offers wider radius, nearby feed, recenter |
-| `  ` | treated as browsing |
-| `café` / `cafe` | both match Café Río |
-| location denied | home-area center, manual place recenter, fully usable |
-| rapid 10-char typing | exactly one settled request (asserted in the screen test) |
+| Query                | Result                                                                  |
+| -------------------- | ----------------------------------------------------------------------- |
+| (empty)              | 20 rows, nearby soonest-first blend                                     |
+| `open mic tonight`   | client parses to "open mic" + Tonight chip; 4 matches, proximity ranked |
+| `olympia`            | 2 city matches (3 with the Capitol Theatre fixture)                     |
+| `Olymipa`            | same mics via the fuzzy pass, labeled "showing close matches"           |
+| `tuesday`            | Tuesday chip applied, occurrences resolved to Tuesdays                  |
+| `free 21+`           | two chips, no text query left                                           |
+| `capitol theater`    | finds Capitol Theatre through the fuzzy pass                            |
+| `mccrary`            | host stage-name match                                                   |
+| `zzzzzz`             | zero rows; recovery ladder offers wider radius, nearby feed, recenter   |
+| `  `                 | treated as browsing                                                     |
+| `café` / `cafe`      | both match Café Río                                                     |
+| location denied      | home-area center, manual place recenter, fully usable                   |
+| rapid 10-char typing | exactly one settled request (asserted in the screen test)               |
 
 ## Operational notes
 

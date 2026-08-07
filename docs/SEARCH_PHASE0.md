@@ -6,17 +6,17 @@ Date: 2026-08-07. Read-only inventory of the current search implementation, meas
 
 There is exactly one text search surface in the app, plus a browse feed that shares its screen.
 
-| Entry point | Where | What it queries |
-|---|---|---|
-| Search bar | Discover tab, `src/app/(tabs)/index.tsx:144` | `search_mics` RPC once 2+ trimmed chars are typed |
-| Browse feed (default state) | Same screen, below the bar | `mics_near` RPC, always running |
-| Map view | Toggle on the same screen, `mic-map.tsx` | No query of its own: client-side supercluster over the same `mics_near` rows. Panning does not re-query; there is no "search this area" |
-| Filter bar + sheet | `filter-bar.tsx`, `filter-sheet.tsx` | Mutates the Zustand filter store, which re-keys the `mics_near` query. Filters apply to browse only, never to text search |
-| "Show mics near [query]" | Header/empty state of search results | Not a server search: device geocoder (`Location.geocodeAsync`) resolves the text to coordinates and recenters the browse feed |
-| Locate me button | Search row | Foreground location permission, then recenters browse |
-| Deep links | `/mic/[id]` only | No search or query-state deep link exists |
-| Favorites, Going tabs | Own queries by id | No search path |
-| Producer (My Mics) | `useMySeries` | Own listings by owner/creator id. No search input anywhere in producer surfaces |
+| Entry point                 | Where                                        | What it queries                                                                                                                         |
+| --------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Search bar                  | Discover tab, `src/app/(tabs)/index.tsx:144` | `search_mics` RPC once 2+ trimmed chars are typed                                                                                       |
+| Browse feed (default state) | Same screen, below the bar                   | `mics_near` RPC, always running                                                                                                         |
+| Map view                    | Toggle on the same screen, `mic-map.tsx`     | No query of its own: client-side supercluster over the same `mics_near` rows. Panning does not re-query; there is no "search this area" |
+| Filter bar + sheet          | `filter-bar.tsx`, `filter-sheet.tsx`         | Mutates the Zustand filter store, which re-keys the `mics_near` query. Filters apply to browse only, never to text search               |
+| "Show mics near [query]"    | Header/empty state of search results         | Not a server search: device geocoder (`Location.geocodeAsync`) resolves the text to coordinates and recenters the browse feed           |
+| Locate me button            | Search row                                   | Foreground location permission, then recenters browse                                                                                   |
+| Deep links                  | `/mic/[id]` only                             | No search or query-state deep link exists                                                                                               |
+| Favorites, Going tabs       | Own queries by id                            | No search path                                                                                                                          |
+| Producer (My Mics)          | `useMySeries`                                | Own listings by owner/creator id. No search input anywhere in producer surfaces                                                         |
 
 The search bar and the browse feed are mutually exclusive views of the same screen: at 2+ typed characters the filter bar and browse list unmount and the search result list replaces them (`index.tsx:208`).
 
@@ -81,16 +81,16 @@ Every keystroke sequentially scans every series and every venue. The migration t
 
 ## 3. What is searchable, and how
 
-| Field | Matched | How |
-|---|---|---|
-| `mic_series.title` | yes | `ilike '%q%'`, contiguous substring, case-insensitive |
-| `venues.name` | yes | same |
-| `venues.city` | yes | same |
-| `venues.neighborhood` | no | "capitol" returns 0 in a dataset full of Capitol Hill mics |
-| `venues.address_line` | no | |
-| `mic_series.description` | no | |
-| host / producer name | no | not joined at all |
-| region, tags | no | no tags field exists; region unsearched |
+| Field                    | Matched | How                                                        |
+| ------------------------ | ------- | ---------------------------------------------------------- |
+| `mic_series.title`       | yes     | `ilike '%q%'`, contiguous substring, case-insensitive      |
+| `venues.name`            | yes     | same                                                       |
+| `venues.city`            | yes     | same                                                       |
+| `venues.neighborhood`    | no      | "capitol" returns 0 in a dataset full of Capitol Hill mics |
+| `venues.address_line`    | no      |                                                            |
+| `mic_series.description` | no      |                                                            |
+| host / producer name     | no      | not joined at all                                          |
+| region, tags             | no      | no tags field exists; region unsearched                    |
 
 The whole query string must be one contiguous substring of one field: "open mic" matches "Rusty Fret Open Mic", but "open mic tonight" matches nothing. No word splitting, no full text search, no typo tolerance, no accent folding (`unaccent` is not installed; extensions present: postgis, citext, pg_trgm, pg_cron, pg_net).
 
@@ -153,14 +153,14 @@ Environment: Postgres 16.13 in this container, function bodies benchmarked via r
 
 Server-side query time:
 
-| Query | Seed p50 / p95 | Scaled p50 / p95 |
-|---|---|---|
-| `mics_near` defaults (40 km, no filters) | 1.0 / 1.4 ms | 27.8 / 31.5 ms |
-| `mics_near` + day filter | | 25.4 / 26.6 ms |
-| `search_mics` "open mic" | | 31.3 / 32.5 ms |
-| `search_mics` "olympia" | 0.7 / 0.8 ms | 23.8 / 24.9 ms |
-| `search_mics` "ca" (minimum the client sends) | | 21.9 / 22.8 ms |
-| `search_mics` "zzzzzz" (zero hits) | 0.7 / 0.8 ms | 13.5 / 14.0 ms |
+| Query                                         | Seed p50 / p95 | Scaled p50 / p95 |
+| --------------------------------------------- | -------------- | ---------------- |
+| `mics_near` defaults (40 km, no filters)      | 1.0 / 1.4 ms   | 27.8 / 31.5 ms   |
+| `mics_near` + day filter                      |                | 25.4 / 26.6 ms   |
+| `search_mics` "open mic"                      |                | 31.3 / 32.5 ms   |
+| `search_mics` "olympia"                       | 0.7 / 0.8 ms   | 23.8 / 24.9 ms   |
+| `search_mics` "ca" (minimum the client sends) |                | 21.9 / 22.8 ms   |
+| `search_mics` "zzzzzz" (zero hits)            | 0.7 / 0.8 ms   | 13.5 / 14.0 ms   |
 
 Every search is seq-scan bound (plan in section 2) and grows linearly with table size; the floor for a zero-hit query at 5k series is already 13ms of pure scanning. At 20k listings this becomes 50 to 100ms per keystroke of server CPU for every typing user, plus one uncancelled query per debounce window.
 
@@ -168,21 +168,21 @@ Keystroke-to-rendered-results on a mid-tier Android device: not measurable in th
 
 Probe query result counts (search_mics against the seed, Seattle center), with what the user would actually see:
 
-| Probe | Rows | Notes |
-|---|---|---|
-| (empty) | n/a | client never sends < 2 chars; browse feed shows (server returns all 20 if called) |
-| `  ` (whitespace) | n/a | trimmed client-side, treated as empty. Correct today |
-| `open mic tonight` | 0 | contiguous-substring match; "tonight" defeats it |
-| `olympia` | 2 | city match works |
-| `Olymipa` | 0 | no typo tolerance |
-| `tuesday` | 0 | no temporal parsing |
-| `free 21+` | 0 | no qualifier parsing |
-| `capitol theater` | 0 | no such venue in seed; also "capitol" alone returns 0 because neighborhood is unsearched |
-| `mccrary` | 0 | host names are not searchable at all; also no such host in seed |
-| `zzzzzz` | 0 | dead end: "No matches" + geocode escape only |
-| `café` / `cafe` | 0 / 0 | no accented venue in seed; no unaccent either way |
-| location denied | works | home-area center + manual "Show mics near" geocode. Compliant today |
-| rapid typing | one final set | query-key-per-string prevents stale overwrite; no cancellation of superseded requests |
+| Probe              | Rows          | Notes                                                                                    |
+| ------------------ | ------------- | ---------------------------------------------------------------------------------------- |
+| (empty)            | n/a           | client never sends < 2 chars; browse feed shows (server returns all 20 if called)        |
+| `  ` (whitespace)  | n/a           | trimmed client-side, treated as empty. Correct today                                     |
+| `open mic tonight` | 0             | contiguous-substring match; "tonight" defeats it                                         |
+| `olympia`          | 2             | city match works                                                                         |
+| `Olymipa`          | 0             | no typo tolerance                                                                        |
+| `tuesday`          | 0             | no temporal parsing                                                                      |
+| `free 21+`         | 0             | no qualifier parsing                                                                     |
+| `capitol theater`  | 0             | no such venue in seed; also "capitol" alone returns 0 because neighborhood is unsearched |
+| `mccrary`          | 0             | host names are not searchable at all; also no such host in seed                          |
+| `zzzzzz`           | 0             | dead end: "No matches" + geocode escape only                                             |
+| `café` / `cafe`    | 0 / 0         | no accented venue in seed; no unaccent either way                                        |
+| location denied    | works         | home-area center + manual "Show mics near" geocode. Compliant today                      |
+| rapid typing       | one final set | query-key-per-string prevents stale overwrite; no cancellation of superseded requests    |
 
 Fixture gap: the seed contains no theater/theatre venue, no accented venue name, and no host surname worth searching (owners are "Alex Admin", "Pat Producer", "Dana Dual"). The corpus test will need seeded fixtures for `capitol theater`, `mccrary`, and `café`.
 
@@ -190,33 +190,33 @@ Fixture gap: the seed contains no theater/theatre venue, no accented venue name,
 
 Bugs (broken behavior):
 
-| # | Defect | Proposed fix |
-|---|---|---|
-| B1 | Trigram indexes are dead weight: the cross-table OR forces seq scans of both tables on every keystroke (plans captured); linear cost growth with catalog size | Denormalized weighted tsvector + trgm on one searchable surface per series, per the target model |
-| B2 | Paused listings appear in search: `search_mics` never filters `is_active`, does not return the column, so the client cannot filter either (verified live; `mics_near` does filter it) | Add `and s.is_active` to the WHERE |
-| B3 | "Soonest" is bucketed in the viewer's timezone: `sortSoonestNearest` derives the day with host-local getters, not the venue `timezone` the RPC already returns; two `test.failing` cases in `order.timezone.test.ts` document it | Bucket by venue-local date (Intl.DateTimeFormat with the row's timezone), un-mark the failing tests |
-| B4 | Day filter matches a weekday anywhere in a 14-day window while the card shows the single next occurrence: a Tue+Fri mic filtered to Friday displays Tuesday's date; same root cause drops a Tue+Fri mic from "This weekend" (documented limit in `date-window.ts`) | Resolve the next occurrence within the filtered window server-side, per the target model |
-| B5 | Series with no upcoming night still match and are not demoted: undated rows rank among dated ones (verified by cancelling a series' occurrences) | Rank on next occurrence; demote or exclude null-next rows |
-| B6 | Search results ignore every active filter and the radius: chips stay set, results silently stop honoring them (works as coded, but it breaks the visible contract of chips sitting under the same bar, so it reads as broken) | One query path where text and filters compose |
-| B7 | First tap on a search result dismisses the keyboard instead of opening the mic: the results FlatList lacks `keyboardShouldPersistTaps="handled"` | Add the prop |
-| B8 | Search rows lost the distance display the browse cards have (UX 4 shipped "shows miles"; the unified result row renders venue, city, date only), and reuse a bespoke row instead of MicCard | Render distance; converge on MicCard |
+| #   | Defect                                                                                                                                                                                                                                                             | Proposed fix                                                                                        |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| B1  | Trigram indexes are dead weight: the cross-table OR forces seq scans of both tables on every keystroke (plans captured); linear cost growth with catalog size                                                                                                      | Denormalized weighted tsvector + trgm on one searchable surface per series, per the target model    |
+| B2  | Paused listings appear in search: `search_mics` never filters `is_active`, does not return the column, so the client cannot filter either (verified live; `mics_near` does filter it)                                                                              | Add `and s.is_active` to the WHERE                                                                  |
+| B3  | "Soonest" is bucketed in the viewer's timezone: `sortSoonestNearest` derives the day with host-local getters, not the venue `timezone` the RPC already returns; two `test.failing` cases in `order.timezone.test.ts` document it                                   | Bucket by venue-local date (Intl.DateTimeFormat with the row's timezone), un-mark the failing tests |
+| B4  | Day filter matches a weekday anywhere in a 14-day window while the card shows the single next occurrence: a Tue+Fri mic filtered to Friday displays Tuesday's date; same root cause drops a Tue+Fri mic from "This weekend" (documented limit in `date-window.ts`) | Resolve the next occurrence within the filtered window server-side, per the target model            |
+| B5  | Series with no upcoming night still match and are not demoted: undated rows rank among dated ones (verified by cancelling a series' occurrences)                                                                                                                   | Rank on next occurrence; demote or exclude null-next rows                                           |
+| B6  | Search results ignore every active filter and the radius: chips stay set, results silently stop honoring them (works as coded, but it breaks the visible contract of chips sitting under the same bar, so it reads as broken)                                      | One query path where text and filters compose                                                       |
+| B7  | First tap on a search result dismisses the keyboard instead of opening the mic: the results FlatList lacks `keyboardShouldPersistTaps="handled"`                                                                                                                   | Add the prop                                                                                        |
+| B8  | Search rows lost the distance display the browse cards have (UX 4 shipped "shows miles"; the unified result row renders venue, city, date only), and reuse a bespoke row instead of MicCard                                                                        | Render distance; converge on MicCard                                                                |
 
 Design gaps (works as written, serves the user poorly):
 
-| # | Gap | Proposed fix |
-|---|---|---|
-| D1 | Only title, venue name, and city are searchable: neighborhood, address, description, and host name are not ("capitol" finds nothing in Capitol Hill) | Weighted tsvector over all card-relevant text fields |
-| D2 | Whole-query contiguous substring matching: "open mic tonight" and any reordered words fail | websearch-style tokenized full text matching |
-| D3 | No typo tolerance ("Olymipa" -> 0) although pg_trgm is installed | Trigram similarity second pass supplementing full text |
-| D4 | No accent folding (café vs cafe) | unaccent in the text pipeline |
-| D5 | No temporal or qualifier token parsing ("tonight", "tuesday", "free", "21+") | Small closed-set parser emitting visible chips |
-| D6 | Ranking has no time-to-next-occurrence, no confidence signals, and prefix-match is the only text grading | Weighted blend (text, distance decay, time proximity, confidence) with named constants |
-| D7 | Zero results is nearly a dead end: only the geocode escape is offered; nothing suggests a wider radius, wider dates, or a spelling fix; zero-result queries are not logged | Recovery ladder + zero-result logging |
-| D8 | No recent searches, no saved searches | Local persistence + named saved searches |
-| D9 | Hidden defaults: performer disciplines pre-seed the filter, radius default lives only in the sheet | Visible dismissible chips for every applied constraint |
-| D10 | Age filter absent entirely (venues carry `age_restriction`; no UI or RPC param) | Add to filter set per target model |
-| D11 | Map cannot search the visible region; panning never re-queries | Post-rebuild candidate; out of minimum scope |
-| D12 | First search shows a full-screen spinner instead of skeletons; error surfaces only after ~3s of silent retries | Skeleton rows; tune retry for search |
+| #   | Gap                                                                                                                                                                        | Proposed fix                                                                           |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| D1  | Only title, venue name, and city are searchable: neighborhood, address, description, and host name are not ("capitol" finds nothing in Capitol Hill)                       | Weighted tsvector over all card-relevant text fields                                   |
+| D2  | Whole-query contiguous substring matching: "open mic tonight" and any reordered words fail                                                                                 | websearch-style tokenized full text matching                                           |
+| D3  | No typo tolerance ("Olymipa" -> 0) although pg_trgm is installed                                                                                                           | Trigram similarity second pass supplementing full text                                 |
+| D4  | No accent folding (café vs cafe)                                                                                                                                           | unaccent in the text pipeline                                                          |
+| D5  | No temporal or qualifier token parsing ("tonight", "tuesday", "free", "21+")                                                                                               | Small closed-set parser emitting visible chips                                         |
+| D6  | Ranking has no time-to-next-occurrence, no confidence signals, and prefix-match is the only text grading                                                                   | Weighted blend (text, distance decay, time proximity, confidence) with named constants |
+| D7  | Zero results is nearly a dead end: only the geocode escape is offered; nothing suggests a wider radius, wider dates, or a spelling fix; zero-result queries are not logged | Recovery ladder + zero-result logging                                                  |
+| D8  | No recent searches, no saved searches                                                                                                                                      | Local persistence + named saved searches                                               |
+| D9  | Hidden defaults: performer disciplines pre-seed the filter, radius default lives only in the sheet                                                                         | Visible dismissible chips for every applied constraint                                 |
+| D10 | Age filter absent entirely (venues carry `age_restriction`; no UI or RPC param)                                                                                            | Add to filter set per target model                                                     |
+| D11 | Map cannot search the visible region; panning never re-queries                                                                                                             | Post-rebuild candidate; out of minimum scope                                           |
+| D12 | First search shows a full-screen spinner instead of skeletons; error surfaces only after ~3s of silent retries                                                             | Skeleton rows; tune retry for search                                                   |
 
 Compliant today, worth preserving: whitespace treated as empty, no stale-overwrite (key-per-query), `keepPreviousData` while refining, virtualized FlatList, React Compiler memoization, labeled input and chips with `accessibilityState`, location on-demand with graceful manual fallback, useful empty-input browse state, offline cache with banner.
 

@@ -52,9 +52,7 @@ export function useDiscoverFeed(
 
 /** What the empty screen can offer instead of a dead end. */
 export type SearchRecovery =
-  | { kind: 'radius'; count: number; radiusKm: number }
-  | { kind: 'window'; count: number }
-  | null;
+  { kind: 'radius'; count: number; radiusKm: number } | { kind: 'window'; count: number } | null;
 
 /** The next radius step up from the current one, or null at the widest. */
 export function widerRadiusKm(currentKm: number): number | null {

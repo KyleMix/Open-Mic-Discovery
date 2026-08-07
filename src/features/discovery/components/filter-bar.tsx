@@ -3,9 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Glyph, disciplineGlyphs } from '@/components/glyph';
 import { FilterSheet } from '@/features/discovery/components/filter-sheet';
-import {
-  SIGNUP_METHOD_LABELS,
-} from '@/features/discovery/components/mic-card';
+import { SIGNUP_METHOD_LABELS } from '@/features/discovery/components/mic-card';
 import { radiusLabel } from '@/features/discovery/distance';
 import type { WhenFilter } from '@/features/discovery/query-tokens';
 import {
