@@ -200,7 +200,7 @@ Generation is idempotent by construction: `insert ... on conflict (series_id, lo
 
 `venues.location` carries a GiST index (`20260728000300_venues_series.sql:25`). `search_discover` uses `st_dwithin` for the radius bound and half-life distance decay for ranking (`20260807000300_search_discover.sql:258`, `:280`). Distances rank on the sphere, not the spheroid, deliberately.
 
-`profiles.home_location` has **no** index, and two cron jobs run `st_dwithin` against every profile row (`20260728001100_retention.sql:60`, `:91`). See F-008.
+`profiles.home_location` has **no** index, and two cron jobs run `st_dwithin` against every profile row (`20260728001100_retention.sql:60`, `:91`). See F-009.
 
 ---
 
@@ -231,7 +231,7 @@ Read this as: "policy name, what it lets through, in plain words".
 
 **Policies using `true`:** exactly two. `eula_versions` (correct: the terms are public) and `series_search` (justified in the migration header, and the visibility rule is enforced on write instead). No policy grants more than it appears to.
 
-**Grants:** `20260728001200_grants.sql:12` issues `grant all on all tables in schema public to anon, authenticated, service_role` and extends it to future objects with `alter default privileges`. RLS is therefore not a second layer, it is the only layer. The repo knows this and tests it: `supabase/tests/grants-and-rls.test.sql` creates a probe table inside a rolled-back transaction to prove that a new table would be world-writable, and names any table missing RLS. That guard does not extend to views (F-007).
+**Grants:** `20260728001200_grants.sql:12` issues `grant all on all tables in schema public to anon, authenticated, service_role` and extends it to future objects with `alter default privileges`. RLS is therefore not a second layer, it is the only layer. The repo knows this and tests it: `supabase/tests/grants-and-rls.test.sql` creates a probe table inside a rolled-back transaction to prove that a new table would be world-writable, and names any table missing RLS. As of Batch 3 the same guard covers views (F-008): a view defaults to `security_invoker = off`, which runs as the owner and bypasses RLS entirely, so every non-extension view in `public` must now state its setting, and every view that runs as owner must appear on a named allowlist in the test. Ten app views exist; seven run as owner and each carries its own visibility filter, three run as invoker and lean on RLS.
 
 ---
 

@@ -2,7 +2,7 @@
 
 Recommended course of action, from the read-only audit of commit `564088c`, 2026-08-07.
 
-Nothing in this plan has been executed. No application code has been touched.
+Written before any execution. **Batches 1 and 3 have since shipped** and carry a status line and a verification note; the rest is unchanged from the original plan. Section 6 is the live list of what still needs you.
 
 ---
 
@@ -12,7 +12,7 @@ Nothing in this plan has been executed. No application code has been touched.
 
 What stands between here and the App Store is a different kind of work, and it is almost entirely *wiring and decisions rather than engineering*. Two placeholder URLs (`YOUR-PROJECT-REF`, `TODO_TEAM_ID`), one placeholder mailbox, one EAS profile that may or may not inject environment variables, one admin bootstrap whose only lock is a hosted-project auth setting this repository cannot see, and a handful of business decisions nobody but you can make. The honest risk is not that the code is not ready. It is that eight or nine small items, each individually a fifteen-minute fix, are each blocked on an account, a console, a keystore, or an answer from you, and they serialize badly. If you start the store accounts and the Apple Team ID today, the code work is roughly a week. If you start them in three weeks, the code work is still a week and you will miss the date anyway.
 
-One structural caveat on my own confidence: I could not run the pgTAP suite here (no Docker in this environment), so my reading of every RLS policy and definer function is a reading of the SQL, not an observed result. CI runs it, and I have no reason to doubt it. But if you want a second opinion on the database layer specifically, running `npm run db:up && npx supabase test db` locally is the cheapest way to get it.
+One structural caveat, since retired: this paragraph originally said I could not run the pgTAP suite here for lack of Docker, so my reading of the RLS policies was a reading of the SQL rather than an observed result. That turned out to be wrong. The repo ships `scripts/db/verify-local.sh`, a no-Docker path against a system Postgres, and after installing PostGIS and pgTAP the whole thing runs in three seconds. Every migration now applies from empty and the suite passes here, not just in CI. Two of the findings below were sharpened by querying the catalog instead of grepping migrations, and one of them (F-008) was corrected outright.
 
 ---
 
@@ -22,7 +22,7 @@ One structural caveat on my own confidence: I could not run the pgTAP suite here
 
 **Two: make the build you submit actually work (F-002, F-006, F-019).** The production EAS profile declares no `environment`, so I cannot tell from the repo whether a production build gets `EXPO_PUBLIC_SUPABASE_URL` at all. If it does not, the app you upload launches to an error screen on every device, and you find out from a reviewer. Meanwhile the TestFlight profile inherits the preview environment, so the build you validate is not the build you ship. And the web deletion page posts to a hostname that does not resolve, which is a Play policy rejection on its own. These are three one-line edits plus a verification step, and together they are the difference between a submission and a wasted review cycle.
 
-**Three: extend the RLS guard to views (F-008).** This is the only item in the top three that fixes nothing broken today, and I am putting it here anyway. This codebase's entire security posture rests on a single load-bearing assumption: `anon` holds `grant all` on everything in `public`, so row level security is not a layer, it is the only layer. The team clearly knows this, and wrote a pgTAP test that names any table missing RLS. But a Postgres view defaults to `security_invoker = off`, which means it runs as `postgres` and bypasses RLS on its base tables entirely, and the guard checks `relkind = 'r'` only. All fourteen existing views are annotated correctly by hand. The fifteenth is a coin flip, and it will be added in a hurry, three days before submission, by someone who is tired. One pgTAP block converts a perfect-so-far discipline into an invariant, and it costs half an hour.
+**Three: extend the RLS guard to views (F-008).** This is the only item in the top three that fixes nothing broken today, and I am putting it here anyway. This codebase's entire security posture rests on a single load-bearing assumption: `anon` holds `grant all` on everything in `public`, so row level security is not a layer, it is the only layer. The team clearly knows this, and wrote a pgTAP test that names any table missing RLS. But a Postgres view defaults to `security_invoker = off`, which means it runs as `postgres` and bypasses RLS on its base tables entirely, and the guard checks `relkind = 'r'` only. I originally wrote here that all the existing views were annotated correctly by hand and only the next one was a coin flip. Querying the catalog rather than grepping the migrations showed otherwise: `blocked_profiles` already relied on the implicit default, with a prose comment where a catalog setting should have been. Nothing was exposed, the choice it made was the right one, but the coin was already in the air. One pgTAP block turns the discipline into an invariant, and it cost half an hour.
 
 ---
 
@@ -102,8 +102,9 @@ Dependencies: this batch is gated on the Apple Developer account (Team ID), the 
 
 ### Batch 3: Shrink the public surface and make the RLS guard total
 
-Closes: **F-007, F-008, F-014**
+Closes: **F-008, F-014, and the substance of F-007**
 Estimated: half a day.
+Status: **DONE, with one item deliberately stopped short of.** Shipped as `supabase/migrations/20260807000500_paused_listings_and_view_semantics.sql` with a paired down script and three new pgTAP assertions. The revoke half of F-007 is not done, because it turned out to be a bigger act than estimated: see "What changed against the estimate" below, and decision 12 in section 6.
 
 Files: `supabase/migrations/<new>_retire_legacy_discovery_rpcs.sql`, `supabase/migrations/down/<same>.down.sql`, `supabase/tests/grants-and-rls.test.sql`, `supabase/tests/rls.test.sql`.
 Migrations: one new forward, one down.
@@ -119,9 +120,30 @@ Verification you run:
 - Prove the guard bites: add `create view public.guard_probe as select * from profiles;` inside a scratch migration, run the suite, watch it fail, then delete the scratch migration.
 - Open Discover in the app, search, filter, and clear filters. Nothing should change, because the client only calls `search_discover`.
 
-Rollback: the down script re-grants execute on both functions. The pgTAP additions are test-only and cannot break production.
+Rollback: the down script restores all three objects in full, including the unparenthesized OR chain. Rolling back reopens the paused-listing leak, which the down script says out loud rather than quietly declining to undo. The pgTAP additions are test-only and cannot break production.
 
-The one thing to check before merging: whether any build already in the field calls `mics_near` or `search_mics`. From this repository, none does. If a TestFlight build from an earlier commit is still installed on someone's phone, revoking will break its Discover tab. Given you have not shipped publicly, I expect this is a non-issue, but it is worth thirty seconds of thought rather than zero.
+**What changed against the estimate.** I priced the revoke on the basis that the client no longer calls either legacy RPC, so removing them from the API roles would be invisible. True of the client, false of the test suite: five pgTAP files exercise `mics_near` and `search_mics` *specifically as `anon`*, about forty assertions. Revoking fails all five, and the only honest responses are to delete those assertions or to rewrite them under a role that still holds execute. Rewriting them as `postgres` is the worse option, because several exist to prove RLS behaviour *through* the RPC as an anonymous caller and `postgres` bypasses RLS, so they would go on passing while testing nothing.
+
+Deleting forty assertions is a retirement decision, not a cleanup, and it was not in the estimate. Per the protocol, it stops here. What did get done is the part that actually mattered: the paused-listing leak is closed, so the defect is gone whether or not the functions are ever retired, and the five test files stay meaningful in the meantime.
+
+**A correction to the audit, found while doing this.** FINDINGS said every view carried an explicit `security_invoker` clause and called the discipline "currently perfect". That was wrong, and wrong because I grepped the migrations instead of querying the catalog. `blocked_profiles` had no setting at all and leaned on the default, with only a prose comment to explain the choice. The choice was right and nothing was exposed, but the situation the finding calls "one mistake away" was already here rather than hypothetical. Both the annotation and the guard are now in place.
+
+**What was actually run, and what it proved.** `scripts/db/verify-local.sh` from empty: all 57 migrations apply, seed loads, 429 assertions pass across 32 files. Then, with the down migration applied, `grants-and-rls.test.sql` fails exactly two of 16 and names the offenders:
+
+```
+# Failed test 13: "every view in public states its security_invoker setting instead of inheriting one"
+#     Unexpected records:
+#         (blocked_profiles)
+# Failed test 16: "and switching it off removes it from search_mics, as it already does from mics_near"
+#     Unexpected records:
+#         ("Rusty Fret Open Mic")
+```
+
+Test 15, "an active listing is findable by name", still passes under the down migration, which is what makes test 16 a real exclusion rather than a search term that matches nothing.
+
+The allowlist assertion is not exercised by either state, so it was proven separately. Creating `create view leaky_probe with (security_invoker = off) as select id, home_lat, home_lng, birth_year from profiles` inside a rolled-back transaction is caught by name, and `has_table_privilege('anon', 'public.leaky_probe', 'SELECT')` returns true on it. That is the exposure the guard exists to prevent, home coordinates and birth years readable by an anonymous caller, demonstrated rather than asserted.
+
+`npm run typecheck`, `npm run lint`, and `npm test` (478 tests) are green and unaffected.
 
 ---
 
@@ -204,7 +226,7 @@ Rollback: revert the commit. The only functional change is the calendar plugin c
 | --- | --- | --- | --- | --- |
 | 1. Close the admin backdoor | F-001 | 0.5 day | Very high | Nothing |
 | 2. Wire the launch endpoints | F-002, F-004, F-005, F-006, F-019 | 1 day | Very high | Accounts, keystore, your decisions |
-| 3. Shrink the public surface | F-007, F-008, F-014 | 0.5 day | Medium now, high later | Nothing |
+| 3. Shrink the public surface | F-008, F-014, F-007 part | 0.5 day | Medium now, high later | Nothing |
 | 4. Recurrence and credits | F-010, F-011, F-015 | 1 to 2 days | Medium | Nothing |
 | 5. Scheduled-job indexes | F-009, F-013 | 2 hours | Low now, medium at scale | Nothing |
 | 6. Document truth | F-003, F-012, F-016, F-017, F-018, F-020 | 0.5 day | Low, but it is the rejection surface | Google Cloud console, an iOS device |
@@ -241,7 +263,7 @@ Cutting scope is part of the job. Each of these is a real improvement that I am 
 
 ## 6. Open decisions that need you, not me
 
-You already knew about the first two. There are eleven.
+You already knew about the first two. There are twelve.
 
 1. **The support inbox address.** `src/lib/support.ts:8` is a placeholder. It appears in Settings, on the rejected-listing note, and inside the published privacy policy. Recommendation: a shared mailbox on the product domain, not a personal address, so it survives you being on holiday during review. (F-005)
 
@@ -264,6 +286,8 @@ You already knew about the first two. There are eleven.
 10. **Who answers the 24-hour moderation promise?** Three EULA versions and the on-screen copy in the admin queue commit you to reviewing reported content within 24 hours. That is a staffing commitment, not a code one, and Apple will hold you to the text you wrote. Decide who is on call and what happens when they are not.
 
 11. **Who owns the Google Cloud billing account behind the Maps key, and who verifies the restriction?** F-003 is not fixable in this repository. Somebody needs console access, the release SHA-1 from the EAS keystore, and the willingness to check it again after the keystore is regenerated.
+
+12. **Retire `mics_near` and `search_mics`, or keep them?** New, from Batch 3. Both are dead to the client, and the correctness defect in `search_mics` is now fixed, so there is no urgency. Retiring them properly means revoking execute from `public`, `anon`, and `authenticated` and deleting about forty pgTAP assertions across five files in the same commit, because those tests exist to exercise these functions as `anon`. The coverage is genuinely redundant now that `search-discover.test.sql` holds 21 anon-role assertions over the live path, but deleting tests is the kind of thing that should be a decision rather than a side effect. Three options: retire now and delete the tests, keep them indefinitely as a supported public API and add the missing `is_active` assertions to their own files, or revoke now and drop the definitions one release later. I would take the first, after Batch 2 ships, because carrying two unused public query paths through launch means two more things a reviewer or a scraper can find. Not before launch either way; there is nothing broken to fix.
 
 ---
 

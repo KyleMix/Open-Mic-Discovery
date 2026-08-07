@@ -156,6 +156,7 @@ Risk of fixing: Low. Being explicit cannot be worse than being implicit.
 ### F-007 Two dead public RPCs remain granted to anon, and one of them returns paused listings
 
 Severity: Medium
+Status: **PARTLY FIXED in Batch 3.** The paused-listing leak is closed: `search_mics` now filters `s.is_active`, with an assertion in `grants-and-rls.test.sql` that pauses a seeded listing and proves it disappears. The revoke half is **deferred and needs a decision**, see the note at the end of this entry.
 Evidence: `supabase/migrations/20260806000100_discovery_unified.sql:233-241`, `:245-246`, `:148-151`; `src/features/discovery/queries.ts:40`, `:88`, `:99`
 
 What the code does. `search_discover` is the only discovery RPC the client calls (verified: it is the sole match across `src/`). `mics_near` and `search_mics` are still defined and still granted to `anon, authenticated, service_role`. The effective `search_mics` body filters nothing but the text match: no `s.is_active`, no radius, no discipline filter (`:233-235`). `mics_near` does filter `s.is_active` (`:121`).
@@ -169,11 +170,16 @@ Fix: `revoke execute` on both from `anon` and `authenticated`, leave the definit
 Cost: Small. One migration.
 Risk of fixing: Low, but confirm no external consumer (a scraper, a partner, an old build still in the field) is calling them. Old app builds on people's phones are the real question: if any shipped build calls `mics_near`, revoking breaks it. From this repository, none has.
 
+**Why the revoke was deferred.** I estimated this batch on the basis that the client no longer calls either function, so revoking would be invisible. That was true of the client and false of the test suite. Five pgTAP files exercise these two RPCs *specifically as `anon`*: `discovery.test.sql`, `posters-discovery.test.sql`, `search-card-fields.test.sql`, `search-distance.test.sql`, and `search-indexes.test.sql`, roughly forty assertions between them. Revoking makes all five fail, and the only honest ways forward are to delete those assertions or to rewrite them under a role that still holds execute. Rewriting them as `postgres` would be worse than deleting them: several exist to prove RLS behaviour *through* the RPC as an anonymous caller, and `postgres` bypasses RLS, so they would keep passing while testing nothing.
+
+Deleting forty assertions is a deliberate retirement, not a cleanup, and it was not in the estimate, so it stops here rather than expanding silently. The good news is that the coverage is genuinely redundant: `search-discover.test.sql` holds 21 assertions as `anon` over the live path, including "Paused mics never search", accent folding, typo tolerance, day and date filters, and filter composition. See PLAN.md decision 12.
+
 ---
 
 ### F-008 The RLS guard covers tables but not views, and the default for a view bypasses RLS
 
 Severity: Medium
+Status: **FIXED in Batch 3**, and it turned out to be slightly worse than written below. See the correction at the end of this entry.
 Evidence: `supabase/migrations/20260728001200_grants.sql:12`, `:23-24`; `supabase/tests/grants-and-rls.test.sql:51-60`; no match for `security_invoker` anywhere in `supabase/tests/`
 
 What the code does. The blanket grant plus `alter default privileges` means every object created in `public` by a later migration is automatically reachable by `anon`. The repo understands this and defends it with a pgTAP test that names any table missing row level security, and even creates a probe table inside a rolled-back transaction to demonstrate the exposure (`grants-and-rls.test.sql:103-118`). That is genuinely good work.
@@ -188,6 +194,12 @@ Fix: add a pgTAP assertion listing any view in `public` whose `reloptions` lack 
 
 Cost: Small. One pgTAP block.
 Risk of fixing: Low.
+
+**Correction.** I wrote above that "every one of the fourteen views in the repo carries an explicit `with (security_invoker = ...)` clause" and that "the discipline is currently perfect". Both statements were wrong, and they were wrong because I checked by grepping the migrations rather than by querying the catalog. Querying it found that `blocked_profiles` (`20260803000400_blocked_profiles.sql:6`) carries no setting at all and relies on the default, defending the choice in a prose comment at lines 17 and 18 instead. The choice is correct, owner semantics is exactly what that view needs, and `where b.blocker_id = auth.uid()` is a real filter, so nothing was exposed. But it was the tenth view relying on an implicit default, which is the situation this finding says is one mistake away from bad, and it was already here rather than hypothetical.
+
+Fixed by `alter view blocked_profiles set (security_invoker = off)` plus two pgTAP assertions: every non-extension view in `public` must state its setting, and every view that runs as owner must be on a named, commented allowlist. Extension views are excluded via `pg_depend` ownership rather than by name, so installing or removing PostGIS or pgTAP never needs an edit.
+
+Both assertions were confirmed to bite. With the down migration applied, the first fails and names `blocked_profiles`. For the second, creating `create view leaky_probe with (security_invoker = off) as select id, home_lat, home_lng, birth_year from profiles` inside a rolled-back transaction is caught by name, and `has_table_privilege('anon', 'public.leaky_probe', 'SELECT')` returns true on it, which is the exposure the guard prevents stated as a fact rather than a worry.
 
 ---
 
@@ -280,6 +292,7 @@ The primary key is `(profile_id, series_id)`, so lookups by `profile_id` are ind
 ### F-014 One function does not pin `search_path`
 
 Severity: Low
+Status: **FIXED in Batch 3**, `supabase/migrations/20260807000500_paused_listings_and_view_semantics.sql`.
 Evidence: `supabase/migrations/20260728000100_extensions_and_types.sql:28-36`
 
 `private.set_updated_at` is the single function in the repo without a `set search_path` clause. It is not SECURITY DEFINER and its body calls only `now()`, which resolves from `pg_catalog` regardless, so there is no exploitable path. It is worth fixing purely so "every function pins search_path" becomes a rule with no exception, which is a rule you can test. Fix: add `set search_path = ''`. Cost: trivial. Risk: none.

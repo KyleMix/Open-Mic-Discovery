@@ -12,7 +12,7 @@
 -- from the moment it exists, and nothing in the schema objects. These tests
 -- are that objection.
 begin;
-select plan(12);
+select plan(16);
 
 -- ---------------------------------------------------------------------------
 -- The exception that proves the rule: spatial_ref_sys.
@@ -115,6 +115,95 @@ select ok(
 select ok(
   has_table_privilege('anon', 'public.rls_guard_probe', 'INSERT'),
   'and INSERT, so an unguarded new table is world-writable on creation'
+);
+
+-- ---------------------------------------------------------------------------
+-- The same guard, for views (20260807000500, audit finding F-008).
+--
+-- The table guard above does not reach a view: it filters relkind = 'r', and
+-- a view is 'v'. That matters more for views than for tables, because a view
+-- defaults to security_invoker = off, which means it runs as its owner and
+-- bypasses row level security on its base tables entirely. Paired with the
+-- blanket grant, a view added without a thought is a world-readable window
+-- onto whatever it selects.
+--
+-- Extension-owned views (PostGIS geometry_columns, pgTAP tap_funky, and
+-- friends) are excluded by ownership rather than by name, so installing or
+-- removing an extension never needs an edit here.
+-- ---------------------------------------------------------------------------
+select is_empty(
+  $$ select c.relname::text
+       from pg_class c
+       join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'public'
+        and c.relkind = 'v'
+        and not exists (
+          select 1 from pg_depend d where d.objid = c.oid and d.deptype = 'e'
+        )
+        and not exists (
+          select 1 from unnest(coalesce(c.reloptions, '{}')) o
+           where o like 'security_invoker=%'
+        ) $$,
+  'every view in public states its security_invoker setting instead of inheriting one'
+);
+
+-- Stating it is not the same as choosing well. A view that runs as its owner
+-- carries its own visibility filter instead of borrowing RLS, and that is a
+-- judgement each one has to earn. Naming them here is what makes adding an
+-- eleventh a deliberate act rather than a default.
+select is_empty(
+  $$ select c.relname::text
+       from pg_class c
+       join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'public'
+        and c.relkind = 'v'
+        and exists (
+          select 1 from unnest(coalesce(c.reloptions, '{}')) o
+           where o = 'security_invoker=off'
+        )
+        and c.relname not in (
+          -- Column-limited public projections. Each carries the deleted,
+          -- moderation, and block filters explicitly in its WHERE.
+          'public_profiles', 'performer_public', 'producer_public',
+          'mic_credit_public',
+          -- Counts only, no identities, restricted to publicly visible
+          -- listings. Access by construction, same as series_search.
+          'occurrence_spots',
+          -- Filtered to the series owner, its creator, or an admin.
+          'occurrence_attendance',
+          -- Exists precisely to read profiles a block hides. Filtered to
+          -- `blocker_id = auth.uid()`, so it only ever shows your own list.
+          'blocked_profiles'
+        ) $$,
+  'and every view that runs as its owner is one that was reviewed for it'
+);
+
+-- ---------------------------------------------------------------------------
+-- Paused listings leave text search too (20260807000500, audit finding F-007).
+--
+-- ux-decisions.test.sql already holds this line for mics_near. search_mics
+-- was the path with no filter and no assertion, which is how it stayed broken
+-- through three rewrites of the function around it.
+--
+-- The seed ships no paused listing, so the condition is created here rather
+-- than searched for: an assertion that a paused mic is absent passes for free
+-- when there is no paused mic. This runs as postgres, which is the sharper
+-- test of the two available: row level security is out of the picture, so the
+-- only thing that can exclude the row is the function's own filter.
+-- ---------------------------------------------------------------------------
+select ok(
+  exists (select 1 from search_mics('Rusty Fret') r
+           where r.series_id = '20000000-0000-4000-c000-000000000001'),
+  'an active listing is findable by name, so the next assertion means something'
+);
+
+update mic_series set is_active = false
+ where id = '20000000-0000-4000-c000-000000000001';
+
+select is_empty(
+  $$ select r.title from search_mics('Rusty Fret') r
+      where r.series_id = '20000000-0000-4000-c000-000000000001' $$,
+  'and switching it off removes it from search_mics, as it already does from mics_near'
 );
 
 select * from finish();
