@@ -12,9 +12,6 @@ module.exports = defineConfig([
   {
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
-      // react-native-purchases resolves fine in Metro and TypeScript; the
-      // import plugin's resolver cannot read its export map.
-      'import/no-unresolved': ['error', { ignore: ['^react-native-purchases$'] }],
     },
   },
 ]);

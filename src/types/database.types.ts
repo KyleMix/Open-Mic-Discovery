@@ -3270,7 +3270,7 @@ export type Database = {
         | 'illegal'
         | 'other';
       report_status: 'open' | 'in_review' | 'actioned' | 'dismissed';
-      report_target: 'series' | 'venue' | 'profile' | 'occurrence';
+      report_target: 'series' | 'venue' | 'profile' | 'occurrence' | 'credit';
       signup_method: 'lottery' | 'first_come' | 'reserved_slot' | 'host_booked';
       signup_status: 'requested' | 'confirmed' | 'waitlisted' | 'drawn' | 'performed' | 'no_show';
     };
@@ -3433,7 +3433,7 @@ export const Constants = {
         'other',
       ],
       report_status: ['open', 'in_review', 'actioned', 'dismissed'],
-      report_target: ['series', 'venue', 'profile', 'occurrence'],
+      report_target: ['series', 'venue', 'profile', 'occurrence', 'credit'],
       signup_method: ['lottery', 'first_come', 'reserved_slot', 'host_booked'],
       signup_status: ['requested', 'confirmed', 'waitlisted', 'drawn', 'performed', 'no_show'],
     },

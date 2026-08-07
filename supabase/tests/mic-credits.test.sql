@@ -3,7 +3,7 @@
 --
 -- p2 owns the Rusty Fret series (…0001); p1 is an unrelated performer.
 begin;
-select plan(20);
+select plan(27);
 
 -- ---------------------------------------------------------------------------
 -- Shape and guards
@@ -224,6 +224,83 @@ select throws_ok(
     values ('20000000-0000-4000-c000-000000000001', 'featured', 'Anon Edit')$$,
   '42501', null,
   'anonymous readers cannot add credits'
+);
+
+-- ---------------------------------------------------------------------------
+-- Being credited without consent is reportable and actionable
+-- (20260807000800 and 20260807000900, audit finding F-011).
+--
+-- profile_id points at any profile and the insert policy asks only that the
+-- caller own the series, so a producer can advertise anyone in the app as
+-- their host or feature, complete with avatar and socials, and the person is
+-- never told. That is the association the EULA calls impersonation. It has to
+-- be reportable as itself, not only as a complaint about the whole listing.
+-- ---------------------------------------------------------------------------
+reset role;
+
+-- The credit linking p1 to p2's series, created above. Reused rather than
+-- inserted afresh: mic_credits_one_per_role allows exactly one featured
+-- credit per series, and that row is already the scenario at issue, an
+-- account advertised on someone else's listing without being asked.
+create temp table credited as
+  select id from public.mic_credits
+   where series_id = '20000000-0000-4000-c000-000000000001'
+     and role = 'featured'
+     and occurrence_id is null
+     and profile_id = '00000000-0000-4000-a000-000000000001';
+grant select on credited to anon, authenticated;
+
+select is(
+  (select count(*)::int from credited),
+  1,
+  'the fixture really is one account credited on another producer'
+);
+select ok(
+  exists (select 1 from public.mic_credit_public where id = (select id from credited)),
+  'an approved credit is public, which is what makes the consent question real'
+);
+
+-- p1 reports the credit that names them.
+set local role authenticated;
+select set_config('request.jwt.claims',
+  '{"sub":"00000000-0000-4000-a000-000000000001","role":"authenticated"}', true);
+select lives_ok(
+  format(
+    $$insert into public.reports (reporter_id, target_type, target_id, reason, details)
+      values ('00000000-0000-4000-a000-000000000001', 'credit', %L, 'impersonation',
+              'I am not playing this mic')$$,
+    (select id from credited)),
+  'the person named in a credit can report that credit as itself'
+);
+
+-- A non-admin still cannot action it.
+select throws_ok(
+  format($$select moderate_content('credit', %L, false)$$, (select id from credited)),
+  '42501', null,
+  'and cannot moderate it themselves'
+);
+
+-- The admin can, and rejecting it takes the person off the listing.
+reset role;
+set local role authenticated;
+select set_config('request.jwt.claims',
+  '{"sub":"00000000-0000-4000-a000-000000000004","role":"authenticated"}', true);
+select lives_ok(
+  format($$select moderate_content('credit', %L, false)$$, (select id from credited)),
+  'an admin can action a reported credit, which moderate_content used to refuse'
+);
+
+reset role;
+select is(
+  (select moderation_status::text from public.mic_credits
+    where id = (select id from credited)),
+  'rejected',
+  'the credit is rejected'
+);
+select is_empty(
+  $$ select id from public.mic_credit_public
+      where id = (select id from credited) $$,
+  'and it stops being advertised, so the listing falls back to a typed name'
 );
 
 select * from finish();

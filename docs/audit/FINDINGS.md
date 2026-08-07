@@ -17,7 +17,7 @@ Severity scale used strictly:
 
 One credential-shaped string exists: a Google Maps Android API key at `app.json:118`.
 
-**I am not calling that a launch blocker, and I want to say why I am overriding your instruction here.** An Android Maps SDK key is not a secret. It is compiled into the APK manifest by design, it is extractable from any installed build in under a minute, and Google's own documentation says to protect it with application restrictions rather than by hiding it. Treating it as a leaked credential would send you rotating a key that has to be published anyway. The real risk is different and still real: an *unrestricted* key can be lifted and billed to your account. That is F-003, graded High, with the actual fix attached. If you want it graded Blocker anyway, say so and I will move it.
+**I am not calling that a launch blocker, and I want to say why I am overriding your instruction here.** An Android Maps SDK key is not a secret. It is compiled into the APK manifest by design, it is extractable from any installed build in under a minute, and Google's own documentation says to protect it with application restrictions rather than by hiding it. Treating it as a leaked credential would send you rotating a key that has to be published anyway. The real risk is different and still real: an _unrestricted_ key can be lifted and billed to your account. That is F-003, graded High, with the actual fix attached. If you want it graded Blocker anyway, say so and I will move it.
 
 ---
 
@@ -40,6 +40,7 @@ Two readings, and which I would bet on. Reading one: the hosted project uses the
 Impact: full administrative compromise of the production database, including the moderation queue, every user's private home coordinates and birth year, and the ability to create authenticated accounts at will.
 
 Fix: three parts, all cheap.
+
 1. Make the kill switch default off. Change the column default to `false` and the seed insert to `(true, false)`, and add a migration that sets `enabled = false` on existing rows. The owner turns it on from the test kit screen when they want it, which the screen already supports (`src/app/test-kit.tsx:176-187`).
 2. Gate the owner bootstrap on the email being confirmed: add `and u.email_confirmed_at is not null` to the lookup in `private.bootstrap_owner_profile` and `private.bootstrap_owner_children`.
 3. Add a pgTAP assertion that `test_kit_settings.enabled` is false by default, so this cannot silently regress.
@@ -54,6 +55,7 @@ Risk of fixing: Low. The worst case is the owner has to tap "Switch the test kit
 ### F-002 The web account-deletion page posts to a placeholder URL
 
 Severity: Blocker
+Status: **HARDENED in Batch 6; still needs your project ref to be fully closed.** The page can no longer ship a broken form silently. It reads the endpoint from `data-function-url` on `<body>`, and while that holds the placeholder, or is missing, both buttons disable at load and the page says it is not finished being set up and points at the support address. Verified in all three states (placeholder, real URL, attribute absent). `docs/DEPLOY_WEB.md` now carries the deploy step and a curl that proves the endpoint answers. What remains is entering the real URL, which needs the deployed function.
 Evidence: `web/delete-account/index.html:189`, `:204`
 
 What the code does. The page's only network call targets `https://YOUR-PROJECT-REF.supabase.co/functions/v1/deletion-request`. Every request fails DNS.
@@ -96,6 +98,7 @@ Risk of fixing: Low, but a wrong SHA-1 makes maps render blank on release builds
 ### F-004 Both deep-link association files carry TODO placeholders while both platforms advertise the domain
 
 Severity: High
+Status: **NOT FIXED, blocked on your inputs.** Needs the Apple Team ID and the release SHA-256 from the EAS keystore. Filling in invented values would be worse than the placeholder, which at least reads as unfinished.
 Evidence: `web/.well-known/assetlinks.json:7`, `web/.well-known/apple-app-site-association:5`, `app.json:14`, `app.json:120-133`
 
 What the code does. `app.json:14` declares `associatedDomains: ["applinks:openmicfinder.app"]` and `app.json:120-133` declares an Android intent filter for `https://openmicfinder.app/mic/*` with `autoVerify: true`. The two files that make those declarations work contain `TODO_SHA256_CERT_FINGERPRINT` and `TODO_TEAM_ID.com.openmicexplorer.app`.
@@ -114,6 +117,7 @@ Risk of fixing: Low.
 ### F-005 The only support contact is a placeholder address
 
 Severity: High
+Status: **NOT FIXED, and deliberately not guessed at.** `support@openmicfinder.app` is already the shape I would recommend, a shared mailbox on the product domain. What is missing is not a code change but a mailbox that receives mail. Decision 1.
 Evidence: `src/lib/support.ts:8`, `src/app/settings.tsx:83`, `src/app/producer/[id].tsx:192`, `src/features/legal/privacy-policy.ts:59`, `DECISIONS_NEEDED.md:56-64`
 
 What the code does. `SUPPORT_EMAIL = 'support@openmicfinder.app'` is the single contact point, surfaced in Settings, on the rejected-listing note, and inside the privacy policy text. A test asserts the privacy policy contains it (`src/features/legal/privacy-policy.test.ts:19`).
@@ -134,6 +138,7 @@ Risk of fixing: Low.
 ### F-006 The production EAS profile declares no environment, so it may build with no Supabase configuration
 
 Severity: High
+Status: **FIXED in Batch 6.** Both `production` and `testflight` now declare `channel` and `environment` explicitly rather than inheriting or defaulting. The ambiguity I could not resolve from the repo is gone, because nothing is left implicit. The `eas env:list --environment production` check is now a pre-build item in the submission checklist.
 Evidence: `eas.json:25-28`, `eas.json:11-19`, `src/lib/env.ts:7-14`
 
 What the code does. The `preview` profile sets `"environment": "preview"`; the `production` profile sets only `autoIncrement` and `channel`. `src/lib/env.ts:7-14` throws `Missing environment variable EXPO_PUBLIC_SUPABASE_URL` when the value is absent, and `getSupabase()` is called on the first query.
@@ -163,14 +168,14 @@ What the code does. `search_discover` is the only discovery RPC the client calls
 
 What the code appears intended to do. `20260807000300_search_discover.sql:8` says explicitly "Both existing RPCs are left untouched; no caller breaks." That was correct as a migration-safety decision. It has since become dead surface.
 
-Impact. RLS still hides unapproved and soft-deleted listings, so there is no data leak. What leaks is *paused* listings: a producer who turned their mic off is still returned by a public RPC any anonymous caller can invoke. That is a correctness and trust problem, not a privacy one. Secondarily, it is unaudited attack surface that will be forgotten.
+Impact. RLS still hides unapproved and soft-deleted listings, so there is no data leak. What leaks is _paused_ listings: a producer who turned their mic off is still returned by a public RPC any anonymous caller can invoke. That is a correctness and trust problem, not a privacy one. Secondarily, it is unaudited attack surface that will be forgotten.
 
 Fix: `revoke execute` on both from `anon` and `authenticated`, leave the definitions in place for one release, then drop them. Add the revoke to the existing `supabase/migrations/down/` discipline so it is reversible.
 
 Cost: Small. One migration.
 Risk of fixing: Low, but confirm no external consumer (a scraper, a partner, an old build still in the field) is calling them. Old app builds on people's phones are the real question: if any shipped build calls `mics_near`, revoking breaks it. From this repository, none has.
 
-**Why the revoke was deferred.** I estimated this batch on the basis that the client no longer calls either function, so revoking would be invisible. That was true of the client and false of the test suite. Five pgTAP files exercise these two RPCs *specifically as `anon`*: `discovery.test.sql`, `posters-discovery.test.sql`, `search-card-fields.test.sql`, `search-distance.test.sql`, and `search-indexes.test.sql`, roughly forty assertions between them. Revoking makes all five fail, and the only honest ways forward are to delete those assertions or to rewrite them under a role that still holds execute. Rewriting them as `postgres` would be worse than deleting them: several exist to prove RLS behaviour *through* the RPC as an anonymous caller, and `postgres` bypasses RLS, so they would keep passing while testing nothing.
+**Why the revoke was deferred.** I estimated this batch on the basis that the client no longer calls either function, so revoking would be invisible. That was true of the client and false of the test suite. Five pgTAP files exercise these two RPCs _specifically as `anon`_: `discovery.test.sql`, `posters-discovery.test.sql`, `search-card-fields.test.sql`, `search-distance.test.sql`, and `search-indexes.test.sql`, roughly forty assertions between them. Revoking makes all five fail, and the only honest ways forward are to delete those assertions or to rewrite them under a role that still holds execute. Rewriting them as `postgres` would be worse than deleting them: several exist to prove RLS behaviour _through_ the RPC as an anonymous caller, and `postgres` bypasses RLS, so they would keep passing while testing nothing.
 
 Deleting forty assertions is a deliberate retirement, not a cleanup, and it was not in the estimate, so it stops here rather than expanding silently. The good news is that the coverage is genuinely redundant: `search-discover.test.sql` holds 21 assertions as `anon` over the live path, including "Paused mics never search", accent folding, typo tolerance, day and date filters, and filter composition. See PLAN.md decision 12.
 
@@ -206,6 +211,7 @@ Both assertions were confirmed to bite. With the down migration applied, the fir
 ### F-009 `profiles.home_location` has no spatial index, and two scheduled jobs scan every profile against it
 
 Severity: Medium
+Status: **FIXED in Batch 5**, `supabase/migrations/20260807000600_retention_indexes.sql`. A partial GiST index, asserted by access method rather than by existence, because a btree on a geography column would be created without complaint and could not answer an `st_dwithin`. The digest query rewrite is deliberately not done: index first, measure, then decide.
 Evidence: `supabase/migrations/20260728001100_retention.sql:60`, `:91`; `supabase/migrations/20260728001400_home_area.sql:14-22`; no `home_location` index exists in any migration
 
 What the code does. `private.queue_new_mic_alerts` runs `st_dwithin(p.home_location, fs.location, np.nearby_radius_km * 1000)` joined across all profiles, every four hours. `private.queue_weekly_digest` runs `st_dwithin(p.home_location, v.location, 40000)` across the cross product of profiles and venues, weekly. Neither can use an index because none exists on `profiles.home_location`.
@@ -222,9 +228,10 @@ Risk of fixing: Low. The partial index is small because most rows will have a va
 ### F-010 The biweekly anchor date is computed in the device timezone and read in the venue timezone
 
 Severity: Medium
+Status: **FIXED in Batch 4**, `src/features/producer/rrule-builder.ts` and `src/features/producer/components/series-form.tsx`. The venue zone now decides. Five new tests, built from `Date.UTC` so they hold under every host zone: the first draft used local-component `Date` literals and failed under UTC, which is exactly the coupling CI's second run exists to catch.
 Evidence: `src/features/producer/rrule-builder.ts:98-124`, `supabase/migrations/20260728000400_occurrences_signups.sql:98-102`, `:154-157`
 
-What the code does. `computeAnchorDate` deliberately uses the producer's local calendar date via `getFullYear/getMonth/getDate`, and the docstring explains at length why `toISOString()` was wrong. The generator then interprets `anchor_date` in the *series* timezone, and computes biweekly parity as ISO-week distance from that anchor (`rrule_matches:98-102`).
+What the code does. `computeAnchorDate` deliberately uses the producer's local calendar date via `getFullYear/getMonth/getDate`, and the docstring explains at length why `toISOString()` was wrong. The generator then interprets `anchor_date` in the _series_ timezone, and computes biweekly parity as ISO-week distance from that anchor (`rrule_matches:98-102`).
 
 What the code appears intended to do. The fix that is there solved a real bug: reading the anchor in UTC inverted every alternate week for producers west of Greenwich, and the test suite now runs in `America/Los_Angeles` specifically to keep that bug caught (`scripts/dev/test.mjs:1-22`). That is excellent.
 
@@ -242,6 +249,7 @@ Risk of fixing: Low.
 ### F-011 A producer can attach any account to a mic credit with no consent from that account
 
 Severity: Medium
+Status: **PARTLY FIXED in Batch 4.** A credit is now reportable as itself and actionable by an admin. Consent before publishing is not built and remains post-launch work, as scoped in PLAN.md Batch 4.
 Evidence: `supabase/migrations/20260801001100_mic_credits.sql:31`, `:204-228`
 
 What the code does. `mic_credits.profile_id` is a plain nullable reference to `profiles(id)`. The insert policy requires only that the caller own the series. `mic_credit_public` then joins `public_profiles` and surfaces that person's handle, avatar, stage name, and all six social links against the listing.
@@ -260,11 +268,13 @@ Risk of fixing: Low. Note that adding an enum value is additive-only, which the 
 ### F-012 Age rating guidance contradicts itself across three documents
 
 Severity: Medium
+Status: **FIXED in Batch 6.** All three documents now point at one evidence list instead of at a tier, and the stale 17+ target is gone. The remaining judgement, whether to rate 18+ and avoid the reviewer conversation entirely, is decision 7.
 Evidence: `docs/store/STORE_LISTING.md:10`, `docs/store/SUBMISSION_CHECKLIST.md:166`, `docs/store/SUBMISSION_CHECKLIST.md:200-201`, `docs/COMPLIANCE.md:14`, `docs/COMPLIANCE.md:51`
 
 What the docs say. `STORE_LISTING.md:10` and `COMPLIANCE.md` both target "Apple 16+ under the current tier system". `SUBMISSION_CHECKLIST.md:166` says "answer honestly to land 17+". Apple retired the 17+ tier when it moved to 13+/16+/18+, so the checklist is stale and the two documents disagree about the answer you are aiming for.
 
 What actually drives the answers, from the code:
+
 - User generated content exists (listings, venue notes, bios, stage names, credit names, poster images), so the UGC questions are yes.
 - Comedy is a first-class discipline (`discipline` enum, `20260728000100:8`) and the EULA warns about adult language, so profanity and mature themes are at least infrequent/mild.
 - The app links out to third-party sites (Instagram, TikTok, YouTube, Spotify, Apple Music, arbitrary `https://` websites on profiles and credits) via `src/components/social-links.tsx`, which is an unrestricted-web-access consideration Apple asks about.
@@ -285,6 +295,7 @@ Risk of fixing: Low.
 ### F-013 `favorites` has no index on `series_id`, which the hourly reminder job joins on
 
 Severity: Low
+Status: **FIXED in Batch 5.**
 Evidence: `supabase/migrations/20260728000400_occurrences_signups.sql:297`, `supabase/migrations/20260807000100_signup_receipts_and_reminders.sql:199`
 
 The primary key is `(profile_id, series_id)`, so lookups by `profile_id` are indexed and lookups by `series_id` are not. `queue_favorite_reminders` runs hourly and joins `favorites` to `mic_series` on `series_id`. Fix: `create index favorites_series_idx on favorites (series_id);`. Cost: trivial. Risk: none.
@@ -300,6 +311,7 @@ Evidence: `supabase/migrations/20260728000100_extensions_and_types.sql:28-36`
 ### F-015 `rrule_matches` ignores `INTERVAL` for `FREQ=MONTHLY` and silently drops non-ordinal `BYDAY`
 
 Severity: Low
+Status: **FIXED in Batch 4**, `supabase/migrations/20260807000700_reject_unsupported_rrules.sql`, and it was worse than written below. See the correction at the end of this entry.
 Evidence: `supabase/migrations/20260728000400_occurrences_signups.sql:103-127`
 
 Two divergences from RFC 5545, neither reachable from the producer UI today (`src/features/producer/rrule-builder.ts:29-36` emits only ordinal monthly rules and never an `INTERVAL` for monthly):
@@ -309,9 +321,16 @@ Two divergences from RFC 5545, neither reachable from the producer UI today (`sr
 
 Both become real the first time a rule arrives from anywhere but the builder: a seed file, the test kit, an import, or a hand-written admin fix. Fix: either implement the two cases, or `raise exception` on an RRULE shape the function does not support, so an unsupported rule fails loudly at insert instead of producing an invisible listing. I would take the second: failing loudly is cheaper and matches the rest of this codebase's temperament. Cost: Small. Risk: Low, but check the seed and test-kit rules first so the new exception does not break `db reset`.
 
+**Correction: there was a third case, and it was the worst of them.** `FREQ=WEEKLY;INTERVAL=0` does not return false. It reaches `mod(x, 0)` in the weekly branch and raises **division_by_zero (22012)** from inside `private.rrule_matches`. That function is called per candidate day by `private.generate_occurrences`, which the nightly pg_cron job runs across every active series in a single call, so one such row would have aborted occurrence generation for the entire database, every night, until someone noticed that no new nights were appearing anywhere. Confirmed by observation: with the guard removed, the pgTAP probe for `INTERVAL=0` returns `22012` instead of a clean rejection.
+
+This is also why the guard landed as a boundary trigger rather than as a `raise` inside `rrule_matches`, which is what I originally proposed above. Raising from inside the matcher would have made the blast radius worse, not better: it would have given a single malformed row the same power to kill the nightly run for every other series. Refusing the write keeps bad rules out entirely and leaves the generator unable to be taken down by one row.
+
+Verified both ways. The four supported shapes (multi-day weekly, every-n-weekly, multi-ordinal monthly, last-weekday monthly) still save, so the guard is a filter rather than a wall.
+
 ### F-016 `npm audit` reports 34 advisories, all in build and lint tooling
 
 Severity: Low
+Status: **CLOSED in Batch 6** by recording the triage in `docs/store/SUBMISSION_CHECKLIST.md`, Phase 6, including the warning not to run `npm audit fix --force`. No dependency change.
 Evidence: `npm audit` output, reproduced in REPO-MAP.md section 12
 
 30 moderate, 4 high, 0 critical. Every high advisory (`fastify`, `fast-uri`, `find-my-way`, `js-yaml`) reaches the tree through `@supabase/postgres-meta`, a devDependency, or through `@eslint/eslintrc` and `@expo/xcpretty`. The moderate `uuid` advisory arrives via `xcode` under `@expo/config-plugins`, which runs at prebuild, not at runtime. Nothing in this list is in the shipped app bundle. `npm audit fix --force` would downgrade `expo-splash-screen` to SDK 55 and break the project, so do not run it. Fix: nothing before launch. Record the triage so the next person does not re-litigate it. Cost: none. Risk: none.
@@ -319,6 +338,7 @@ Evidence: `npm audit` output, reproduced in REPO-MAP.md section 12
 ### F-017 Two `expo-doctor` checks could not complete in this environment
 
 Severity: Low
+Status: **CLOSED in Batch 6** by making the networked rerun an explicit pre-build item in `docs/store/SUBMISSION_CHECKLIST.md`, Phase 6. Still needs an unrestricted connection to actually run.
 Evidence: `npx expo-doctor` output, reproduced in REPO-MAP.md section 12
 
 18 of 20 checks pass. The config-schema check failed with `SyntaxError: Unexpected token 'H', "Host not i"... is not valid JSON`, which is a proxy error page reaching a JSON parser, and the React Native Directory check reported "unexpected server response". Both are network failures inside this audit sandbox, not repo defects. I am recording them rather than claiming a clean run I did not get. Fix: re-run `npx expo-doctor` on a machine with unrestricted network before submitting and confirm 20 of 20. Cost: none. Risk: none.
@@ -326,6 +346,7 @@ Evidence: `npx expo-doctor` output, reproduced in REPO-MAP.md section 12
 ### F-018 ESLint carries an exception for a package that is not a dependency
 
 Severity: Low
+Status: **FIXED in Batch 6.** Exception deleted, `npm run lint` still clean.
 Evidence: `eslint.config.js:15-17`, `package.json` (no `react-native-purchases`)
 
 The `import/no-unresolved` rule ignores `react-native-purchases`, which is not in `package.json` and is imported nowhere in `src/`. It is a leftover from a removed in-app-purchase dependency. Leaving it is harmless but it is a small lie in the config, and `docs/COMPLIANCE.md` correctly states the app sells nothing. Fix: delete the exception and the comment above it. Cost: trivial. Risk: none, `npm run lint` proves it.
@@ -333,6 +354,7 @@ The `import/no-unresolved` rule ignores `react-native-purchases`, which is not i
 ### F-019 The TestFlight profile inherits the preview channel and environment
 
 Severity: Low
+Status: **FIXED in Batch 6**, alongside F-006. Both `testflight` and `production` now name `channel` and `environment` explicitly, so the build you validate is the build you ship. Note the consequence: TestFlight now writes to the production backend.
 Evidence: `eas.json:11-24`
 
 `testflight` extends `preview`, so it takes `channel: "preview"` and `environment: "preview"` and overrides only `distribution`. Your last build before submission therefore points at the preview backend and receives preview OTA updates. If that is deliberate (test against preview, ship against production), it is fine and should be written down. If it is not, the app you validate is not the app you submit. Covered by the same edit as F-006. Cost: trivial. Risk: low, but changing it means TestFlight starts writing to the production database, which is a decision, not a cleanup.
@@ -340,11 +362,16 @@ Evidence: `eas.json:11-24`
 ### F-020 The calendar plugin declares iOS purpose strings for a permission the app never requests
 
 Severity: Low
+Status: **DELIBERATELY NOT FIXED.** See the decision at the end of this entry.
 Evidence: `app.json:157-165`, `src/features/calendar/calendar.ts:1-7`, `:50-56`
 
 The `expo-calendar` plugin is configured with `calendarPermission` and `writeOnlyCalendarPermission` strings, which put `NSCalendars*UsageDescription` keys into Info.plist. But `calendar.ts` deliberately uses `expo-calendar/legacy` `createEventInCalendarAsync`, which opens the system event sheet and requires no permission at all, and the header comment says the privacy posture is that calendar permission is never requested. Android is handled correctly and consistently: `blockedPermissions` strips `READ_CALENDAR` and `WRITE_CALENDAR` (`app.json:136-140`), which the legacy API does not need.
 
 So the code is right and the iOS config over-declares. An unused purpose string is not a rejection, but it contradicts your own Data Safety answers and gives a reviewer a question to ask. Fix: drop the two permission strings from the plugin config, keep `writeOnlyAccess`, and rebuild to confirm "Add to my calendar" still opens the sheet on a real iOS device. Cost: Small. Risk: Low, but this one genuinely needs a device check, because if the sheet does turn out to need the entitlement, removing the string breaks the feature silently.
+
+**Decision: not fixed, on purpose.** I wrote the risk sentence above before doing the work, and on reaching it I took my own warning seriously. The whole benefit here is tidiness: an unused `NSCalendars*UsageDescription` key costs nothing, is not a rejection reason, and no reviewer has ever failed an app for declaring a purpose string it does not use. The cost of being wrong is a hard crash. On iOS a missing usage string is not a denied permission, it is a `SIGABRT` the instant the framework touches the API, and it would surface only on a physical device running a release build, which is the one thing I cannot test from here. Trading a nonexistent benefit for a crash risk on a primary flow, one month before submission, is a bad trade.
+
+What was done instead: the reasoning is recorded at `src/features/calendar/calendar.ts:1-27`, next to the deliberate legacy import it concerns, so the next person who notices the mismatch in `app.json` finds the answer rather than repeating the analysis. If you want it removed anyway, the note names the exact check: "Add to my calendar" on a real iPhone before merging, simulator not sufficient.
 
 ---
 

@@ -8,41 +8,41 @@ Everything here is what the code does. Opinions live in FINDINGS.md and PLAN.md.
 
 ## 1. Ground truth
 
-| Thing | Value | Evidence |
-| --- | --- | --- |
-| Expo SDK | `~57.0.9` | `package.json:26` |
-| React Native | `0.86.2` | `package.json:47` |
-| React | `19.2.3` | `package.json:45` |
-| TypeScript | `~6.0.3`, `strict: true`, no `any` (lint error) | `package.json:80`, `tsconfig.json:4`, `eslint.config.js:15` |
-| Package manager | npm (`package-lock.json` present, `npm ci` in CI) | `.github/workflows/ci.yml:26` |
-| Node | 22 in CI, "Node 22+" in the README | `.github/workflows/ci.yml:22`, `README.md:9` |
-| Bundle identifier | `com.openmicexplorer.app` (iOS and Android both) | `app.json:12`, `app.json:115` |
-| App version | `1.0.0`; build numbers come from EAS (`appVersionSource: remote`, `autoIncrement` on testflight and production) | `app.json:5`, `eas.json:4`, `eas.json:23`, `eas.json:27` |
-| EAS project | `b44e6a07-5276-481b-9679-8e3e1e681692`, owner `kylem_ix` | `app.json:196`, `app.json:199` |
-| Android target | `compileSdk 36`, `targetSdk 36` | `app.json:143` |
-| iOS floor | deployment target `16.4` | `app.json:148` |
-| Scheme | `openmicexplorer://`, associated domain `openmicfinder.app` | `app.json:8`, `app.json:14` |
-| Migrations | 55 forward, 2 down scripts | `supabase/migrations/`, `supabase/migrations/down/` |
-| Tests | 68 Jest files (478 tests), 33 pgTAP files (439 planned assertions), 3 Maestro flows | `src/**/*.test.ts*`, `supabase/tests/`, `e2e/` |
+| Thing             | Value                                                                                                           | Evidence                                                    |
+| ----------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Expo SDK          | `~57.0.9`                                                                                                       | `package.json:26`                                           |
+| React Native      | `0.86.2`                                                                                                        | `package.json:47`                                           |
+| React             | `19.2.3`                                                                                                        | `package.json:45`                                           |
+| TypeScript        | `~6.0.3`, `strict: true`, no `any` (lint error)                                                                 | `package.json:80`, `tsconfig.json:4`, `eslint.config.js:15` |
+| Package manager   | npm (`package-lock.json` present, `npm ci` in CI)                                                               | `.github/workflows/ci.yml:26`                               |
+| Node              | 22 in CI, "Node 22+" in the README                                                                              | `.github/workflows/ci.yml:22`, `README.md:9`                |
+| Bundle identifier | `com.openmicexplorer.app` (iOS and Android both)                                                                | `app.json:12`, `app.json:115`                               |
+| App version       | `1.0.0`; build numbers come from EAS (`appVersionSource: remote`, `autoIncrement` on testflight and production) | `app.json:5`, `eas.json:4`, `eas.json:23`, `eas.json:27`    |
+| EAS project       | `b44e6a07-5276-481b-9679-8e3e1e681692`, owner `kylem_ix`                                                        | `app.json:196`, `app.json:199`                              |
+| Android target    | `compileSdk 36`, `targetSdk 36`                                                                                 | `app.json:143`                                              |
+| iOS floor         | deployment target `16.4`                                                                                        | `app.json:148`                                              |
+| Scheme            | `openmicexplorer://`, associated domain `openmicfinder.app`                                                     | `app.json:8`, `app.json:14`                                 |
+| Migrations        | 61 forward, 8 down scripts                                                                                      | `supabase/migrations/`, `supabase/migrations/down/`         |
+| Tests             | 68 Jest files (483 tests), 33 pgTAP files (467 planned assertions), 3 Maestro flows                             | `src/**/*.test.ts*`, `supabase/tests/`, `e2e/`              |
 
 ### EAS build profiles
 
-| Profile | Distribution | Channel | Notes |
-| --- | --- | --- | --- |
-| `development` | internal | development | dev client |
-| `preview` | internal | preview | Android APK, `environment: preview` |
-| `testflight` | store | preview (inherited) | extends preview, `autoIncrement` |
-| `production` | store default | production | `autoIncrement` |
+| Profile       | Distribution  | Channel     | Notes                                                                        |
+| ------------- | ------------- | ----------- | ---------------------------------------------------------------------------- |
+| `development` | internal      | development | dev client                                                                   |
+| `preview`     | internal      | preview     | Android APK, `environment: preview`                                          |
+| `testflight`  | store         | production  | extends preview, then overrides `channel` and `environment`, `autoIncrement` |
+| `production`  | store default | production  | `environment: production`, `autoIncrement`                                   |
 
-Source: `eas.json:5-30`. Note that `testflight` extends `preview` and therefore inherits `channel: preview` and `environment: preview`, not production. That is a real behaviour, not necessarily a defect: see FINDINGS F-018.
+Source: `eas.json`. As originally audited, `testflight` extended `preview` and silently inherited `channel: preview` and `environment: preview`, and `production` named no environment at all, so it was not knowable from the repo whether a production build would receive `EXPO_PUBLIC_SUPABASE_URL`. Both now state `channel` and `environment` explicitly (F-006, F-019). The consequence to keep in mind: TestFlight builds talk to the production backend.
 
 ### Dependency health
 
 No dependency in `package.json` is deprecated or incompatible with SDK 57. Every `expo-*` package is pinned to a `~57.0.x` range, `react-native-reanimated 4.5.1` and `react-native-worklets 0.10.1` move together as ARCHITECTURE.md requires (`package.json:49`, `package.json:53`).
 
-`eslint.config.js:17` carries an `import/no-unresolved` exception for `react-native-purchases`, a package that is not in `package.json` at all. It is a leftover from a removed dependency, harmless, listed in FINDINGS as Low.
+`eslint.config.js` used to carry an `import/no-unresolved` exception for `react-native-purchases`, a package absent from `package.json` entirely, left over from a removed in-app-purchase dependency. Removed (F-018); lint is still clean.
 
-`npm audit` reports 34 advisories (30 moderate, 4 high). All four high advisories reach the tree through `@supabase/postgres-meta` (a devDependency) and lint tooling. None ship in the app bundle. Detail in FINDINGS F-015.
+`npm audit` reports 34 advisories (30 moderate, 4 high). All four high advisories reach the tree through `@supabase/postgres-meta` (a devDependency) and lint tooling. None ship in the app bundle, and `npm audit fix --force` would downgrade `expo-splash-screen` to an SDK 55 version and break the project. Triage recorded in `docs/store/SUBMISSION_CHECKLIST.md`, Phase 6. Detail in FINDINGS F-016.
 
 ---
 
@@ -89,13 +89,13 @@ Only two `Stack.Screen` entries are declared at the root (`src/app/_layout.tsx:2
 
 `AuthGate` in `src/app/_layout.tsx:49-153` is the single decision point.
 
-| State | Behaviour |
-| --- | --- |
-| No session | Browsing is fully open. Discover, search, and mic pages read signed out. Only `eula` and `onboarding` bounce back to the tabs. |
-| Session, no profile row | Redirect to `/(auth)/eula`, except `privacy`. The pre-auth path is recorded via `setReturnTo` so a shared link is not lost. |
-| Profile on an older EULA | Redirect to `/(auth)/eula` to re-accept. |
-| Fully onboarded, inside `(auth)` | Redirect to the recorded return path, or the tabs. `reset-password` is exempt so the recovery session survives. |
-| Profile or EULA query errored | A "Connection trouble" screen with a retry, not a spinner. |
+| State                            | Behaviour                                                                                                                      |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| No session                       | Browsing is fully open. Discover, search, and mic pages read signed out. Only `eula` and `onboarding` bounce back to the tabs. |
+| Session, no profile row          | Redirect to `/(auth)/eula`, except `privacy`. The pre-auth path is recorded via `setReturnTo` so a shared link is not lost.    |
+| Profile on an older EULA         | Redirect to `/(auth)/eula` to re-accept.                                                                                       |
+| Fully onboarded, inside `(auth)` | Redirect to the recorded return path, or the tabs. `reset-password` is exempt so the recovery session survives.                |
+| Profile or EULA query errored    | A "Connection trouble" screen with a retry, not a spinner.                                                                     |
 
 `ErrorBoundary` at `src/app/_layout.tsx:166-182` is the last line of defence and reports to Sentry.
 
@@ -114,13 +114,13 @@ This is the part most likely to be misread, so it is stated plainly.
 
 So any authenticated user can set `is_producer = true` on themselves. That is intentional, because the actual authority checks never consult the role:
 
-| Action | What actually gates it |
-| --- | --- |
-| Create a listing | `series authenticated insert`: `created_by = auth.uid()` only (`20260728000300_venues_series.sql:137-142`). No producer check. |
-| Edit or cancel a night | `owns_occurrence_series(occurrence_id)`, an ownership check on the series (`20260728000400_occurrences_signups.sql:243-258`). |
-| Draw a lottery, reorder slots, mark on deck, end a show | Same ownership check, inside the SECURITY DEFINER RPC body. |
-| Moderate content, review a claim, use the test kit | `private.is_admin()`, which cannot be self-granted. |
-| Join a signup list | `signups performer insert` does require `p.is_performer` (`20260728000900_signups.sql:68-71`), but self-granting it only unlocks an action against yourself. |
+| Action                                                  | What actually gates it                                                                                                                                       |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Create a listing                                        | `series authenticated insert`: `created_by = auth.uid()` only (`20260728000300_venues_series.sql:137-142`). No producer check.                               |
+| Edit or cancel a night                                  | `owns_occurrence_series(occurrence_id)`, an ownership check on the series (`20260728000400_occurrences_signups.sql:243-258`).                                |
+| Draw a lottery, reorder slots, mark on deck, end a show | Same ownership check, inside the SECURITY DEFINER RPC body.                                                                                                  |
+| Moderate content, review a claim, use the test kit      | `private.is_admin()`, which cannot be self-granted.                                                                                                          |
+| Join a signup list                                      | `signups performer insert` does require `p.is_performer` (`20260728000900_signups.sql:68-71`), but self-granting it only unlocks an action against yourself. |
 
 `is_admin` is the only real privilege, and it is protected two ways: the profile guard pins it on every user write, and the only path that sets it is the owner-email bootstrap trigger (`20260801000100_test_kit.sql:55-73`).
 
@@ -183,7 +183,7 @@ Materialised rolling window, `unique (series_id, local_date)`. No insert policy 
 A row is either an account signup (`performer_id`) or a walk-in guest (`guest_name`), never both, enforced by `check ((performer_id is null) <> (guest_name is null))`. Status and slot position are set by the `signup_lifecycle` trigger, never by the client. On update the trigger pins `occurrence_id`, `performer_id`, `guest_name`, and `created_at`.
 
 **`series_search`** (`20260807000200_search_surface.sql:50`)
-One weighted `tsvector` plus an unaccented trigram string per series, maintained by triggers on `mic_series`, `venues`, and `profiles`. Its select policy is unconditional `true`, deliberately: presence in the table *is* the access control, because the sync function only ever writes rows for publicly visible listings and deletes the row the moment that stops being true (`:60-74`). The reason given is measured: a row-condition policy forbids the GIN index as an index condition and turns every search into a sequential scan.
+One weighted `tsvector` plus an unaccented trigram string per series, maintained by triggers on `mic_series`, `venues`, and `profiles`. Its select policy is unconditional `true`, deliberately: presence in the table _is_ the access control, because the sync function only ever writes rows for publicly visible listings and deletes the row the moment that stops being true (`:60-74`). The reason given is measured: a row-condition policy forbids the GIN index as an index condition and turns every search into a sequential scan.
 
 ### Recurrence: what is actually supported
 
@@ -208,26 +208,26 @@ Generation is idempotent by construction: `insert ... on conflict (series_id, lo
 
 Read this as: "policy name, what it lets through, in plain words".
 
-| Table | Policies | Plain reading |
-| --- | --- | --- |
-| `eula_versions` | select `true` to anon and authenticated | Everyone reads the terms. No write policy: versions land via migration only. |
-| `profiles` | owner select/insert/update; admin select/update | Non-owners cannot read the base table at all. No delete policy. Owner update requires `deleted_at is null`. |
-| `performer_profiles`, `producer_profiles`, `notification_prefs`, `device_push_tokens`, `favorites`, `attendance_log` | owner `for all` on `profile_id = auth.uid()` | Strictly personal rows. `producer_profiles` adds an admin select. |
-| `venues` | public select (approved and not deleted); admin select; creator select own pending; authenticated insert with `created_by = auth.uid()`; creator or admin update | Anyone signed in can add a venue. Moderation status is pinned by trigger. |
-| `mic_series` | public select (approved, not deleted); admin select; stakeholder select; authenticated insert with `created_by = auth.uid()`; owner update, with a WITH CHECK that forbids assigning ownership to someone else | Ownership transfer goes through the claim workflow. |
-| `mic_occurrences` | public select via the parent series; stakeholder select; owner update. **No insert policy.** | Nights are server-generated only. |
-| `signups` | performer selects own; producer selects the nights they own; performer insert (self, unblocked, is_performer, window open, not host_booked); performer delete own; producer update; producer guest insert and delete | A performer can never update a signup, only create and withdraw. Guest rows are producer-only in both directions. |
-| `blocks` | owner select/insert/delete on `blocker_id` | You see only your own blocks. `blocked_display_name` is snapshotted by trigger so the unblock list stays readable. |
-| `reports` | reporter insert (self, status open); reporter or admin select; admin update | |
-| `listing_flags` | flagger insert (self, open); flagger or admin select; series owner select; admin update | |
-| `claim_requests` | requester or admin select; requester insert only against an unowned live series; admin update | |
-| `banned_terms` | admin select/insert/delete | |
-| `mic_credits` | series-owner writes; public reads through `mic_credit_public` | |
-| `attendance_plans` | owner select; producer counts via a view | |
-| `series_search` | select `true`, no write policies | See the note above. |
-| `notification_outbox` | RLS on, **zero policies** | Default-deny for every API role. Service role only. Asserted by test. |
-| `test_kit_settings`, `test_kit_objects` | admin select only, no write policies | Writes go through the guarded definer functions. |
-| `private.rate_limit_counters` | RLS on, in the `private` schema, never API-exposed | |
+| Table                                                                                                                | Policies                                                                                                                                                                                                             | Plain reading                                                                                                      |
+| -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `eula_versions`                                                                                                      | select `true` to anon and authenticated                                                                                                                                                                              | Everyone reads the terms. No write policy: versions land via migration only.                                       |
+| `profiles`                                                                                                           | owner select/insert/update; admin select/update                                                                                                                                                                      | Non-owners cannot read the base table at all. No delete policy. Owner update requires `deleted_at is null`.        |
+| `performer_profiles`, `producer_profiles`, `notification_prefs`, `device_push_tokens`, `favorites`, `attendance_log` | owner `for all` on `profile_id = auth.uid()`                                                                                                                                                                         | Strictly personal rows. `producer_profiles` adds an admin select.                                                  |
+| `venues`                                                                                                             | public select (approved and not deleted); admin select; creator select own pending; authenticated insert with `created_by = auth.uid()`; creator or admin update                                                     | Anyone signed in can add a venue. Moderation status is pinned by trigger.                                          |
+| `mic_series`                                                                                                         | public select (approved, not deleted); admin select; stakeholder select; authenticated insert with `created_by = auth.uid()`; owner update, with a WITH CHECK that forbids assigning ownership to someone else       | Ownership transfer goes through the claim workflow.                                                                |
+| `mic_occurrences`                                                                                                    | public select via the parent series; stakeholder select; owner update. **No insert policy.**                                                                                                                         | Nights are server-generated only.                                                                                  |
+| `signups`                                                                                                            | performer selects own; producer selects the nights they own; performer insert (self, unblocked, is_performer, window open, not host_booked); performer delete own; producer update; producer guest insert and delete | A performer can never update a signup, only create and withdraw. Guest rows are producer-only in both directions.  |
+| `blocks`                                                                                                             | owner select/insert/delete on `blocker_id`                                                                                                                                                                           | You see only your own blocks. `blocked_display_name` is snapshotted by trigger so the unblock list stays readable. |
+| `reports`                                                                                                            | reporter insert (self, status open); reporter or admin select; admin update                                                                                                                                          |                                                                                                                    |
+| `listing_flags`                                                                                                      | flagger insert (self, open); flagger or admin select; series owner select; admin update                                                                                                                              |                                                                                                                    |
+| `claim_requests`                                                                                                     | requester or admin select; requester insert only against an unowned live series; admin update                                                                                                                        |                                                                                                                    |
+| `banned_terms`                                                                                                       | admin select/insert/delete                                                                                                                                                                                           |                                                                                                                    |
+| `mic_credits`                                                                                                        | series-owner writes; public reads through `mic_credit_public`                                                                                                                                                        |                                                                                                                    |
+| `attendance_plans`                                                                                                   | owner select; producer counts via a view                                                                                                                                                                             |                                                                                                                    |
+| `series_search`                                                                                                      | select `true`, no write policies                                                                                                                                                                                     | See the note above.                                                                                                |
+| `notification_outbox`                                                                                                | RLS on, **zero policies**                                                                                                                                                                                            | Default-deny for every API role. Service role only. Asserted by test.                                              |
+| `test_kit_settings`, `test_kit_objects`                                                                              | admin select only, no write policies                                                                                                                                                                                 | Writes go through the guarded definer functions.                                                                   |
+| `private.rate_limit_counters`                                                                                        | RLS on, in the `private` schema, never API-exposed                                                                                                                                                                   |                                                                                                                    |
 
 **Policies using `true`:** exactly two. `eula_versions` (correct: the terms are public) and `series_search` (justified in the migration header, and the visibility rule is enforced on write instead). No policy grants more than it appears to.
 
@@ -239,21 +239,21 @@ Read this as: "policy name, what it lets through, in plain words".
 
 ### Public-schema functions callable over the API
 
-| Function | Definer | search_path | Internal authorization | Anon callable |
-| --- | --- | --- | --- | --- |
-| `search_discover` | invoker | `public` | RLS on base tables | yes, intended |
-| `mics_near` | invoker | `public` | RLS on base tables | yes, dead code (F-006) |
-| `search_mics` | invoker | `public` | RLS on base tables | yes, dead code, does not filter `is_active` (F-006) |
-| `signup_counts` | definer | `''` | Restricted to approved, live series; returns counts only, no names | yes, intended |
-| `delete_account` | definer | `''` | `auth.uid()` must be non-null | yes, but no-ops for anon |
-| `delete_account_web` | definer | `''` | service_role or postgres only, and `revoke ... from public, anon, authenticated` | no |
-| `deletion_request_allowed` | definer | `''` | service_role or postgres only, explicitly revoked | no |
-| `moderate_content` | definer | `''` | `private.is_admin()` | granted to authenticated, refuses non-admins |
-| `review_claim` | definer | `''` | `private.is_admin()` | same |
-| `resolve_flag` | definer | `''` | `private.is_admin()` | same |
-| `draw_lottery`, `set_slot_order`, `mark_on_deck`, `end_show` | definer | `''` | `owns_occurrence_series()` or `is_admin()` | same |
-| `my_waitlist_rank` | definer | `''` | Filters on `auth.uid()` in the body | authenticated only |
-| `test_kit_*` (8 functions) | definer | `''` | Every one calls `private.test_kit_guard()`, which requires `is_admin()` **and** the kill switch | authenticated, refuses non-admins |
+| Function                                                     | Definer | search_path | Internal authorization                                                                          | Anon callable                                       |
+| ------------------------------------------------------------ | ------- | ----------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `search_discover`                                            | invoker | `public`    | RLS on base tables                                                                              | yes, intended                                       |
+| `mics_near`                                                  | invoker | `public`    | RLS on base tables                                                                              | yes, dead code (F-006)                              |
+| `search_mics`                                                | invoker | `public`    | RLS on base tables                                                                              | yes, dead code, does not filter `is_active` (F-006) |
+| `signup_counts`                                              | definer | `''`        | Restricted to approved, live series; returns counts only, no names                              | yes, intended                                       |
+| `delete_account`                                             | definer | `''`        | `auth.uid()` must be non-null                                                                   | yes, but no-ops for anon                            |
+| `delete_account_web`                                         | definer | `''`        | service_role or postgres only, and `revoke ... from public, anon, authenticated`                | no                                                  |
+| `deletion_request_allowed`                                   | definer | `''`        | service_role or postgres only, explicitly revoked                                               | no                                                  |
+| `moderate_content`                                           | definer | `''`        | `private.is_admin()`                                                                            | granted to authenticated, refuses non-admins        |
+| `review_claim`                                               | definer | `''`        | `private.is_admin()`                                                                            | same                                                |
+| `resolve_flag`                                               | definer | `''`        | `private.is_admin()`                                                                            | same                                                |
+| `draw_lottery`, `set_slot_order`, `mark_on_deck`, `end_show` | definer | `''`        | `owns_occurrence_series()` or `is_admin()`                                                      | same                                                |
+| `my_waitlist_rank`                                           | definer | `''`        | Filters on `auth.uid()` in the body                                                             | authenticated only                                  |
+| `test_kit_*` (8 functions)                                   | definer | `''`        | Every one calls `private.test_kit_guard()`, which requires `is_admin()` **and** the kill switch | authenticated, refuses non-admins                   |
 
 Every SECURITY DEFINER function in the repo pins `search_path`, with one exception: `private.set_updated_at` (`20260728000100_extensions_and_types.sql:28`), which is not SECURITY DEFINER and touches no tables. Recorded as F-013.
 
@@ -266,10 +266,10 @@ Every SECURITY DEFINER function in the repo pins `search_path`, with one excepti
 
 ### Storage buckets
 
-| Bucket | Public | Policies |
-| --- | --- | --- |
-| `avatars` | yes | Anyone reads. Insert, update, and delete restricted to `(storage.foldername(name))[1] = auth.uid()::text` (`20260728001300:98-125`). |
-| `posters` | yes | Identical pattern (`20260728001500:124-151`). |
+| Bucket    | Public | Policies                                                                                                                             |
+| --------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `avatars` | yes    | Anyone reads. Insert, update, and delete restricted to `(storage.foldername(name))[1] = auth.uid()::text` (`20260728001300:98-125`). |
+| `posters` | yes    | Identical pattern (`20260728001500:124-151`).                                                                                        |
 
 Both are public-read by design: avatars and posters are public content like display names. Writes are folder-scoped to the owner.
 
@@ -338,18 +338,18 @@ Sign-out clears both the query cache and the persisted cache (`src/lib/query-cli
 
 ## 9. Forms and validation
 
-| Form | Client validation | Server validation |
-| --- | --- | --- |
-| Sign up | email shape, password length 10 (`src/features/auth/validation.ts`) | GoTrue email shape, `minimum_password_length = 10` in config |
-| Onboarding | stage name, birth year with an 18 gate, home area, at least one role | `profiles_age_gate` trigger (18, hard failure), `profiles_home_area_present` check constraint, handle format check, `display_name` length check |
-| Edit profile | social handle and URL normalisation (`src/features/profile/social.ts`) | Four column check constraints on handle shape and `https://` prefix, `bio` length 500 |
-| Create or edit listing | `src/features/producer/components/series-form.tsx`, RRULE built from choices, timezone derived from the pin | title 1..120, description 2000, `cardinality(disciplines) > 0`, `cost_cents >= 0`, `capacity > 0`, IANA timezone trigger, banned-term filter |
-| Add a walk-in | name required | `guest_name` length 1..80, the performer-xor-guest check constraint, producer-only insert policy |
-| Report | reason required, details optional | `details` length 1000, `reporter_id = auth.uid()`, `status = 'open'`, 5 per hour rate limit |
-| Flag a listing | reason required | `details` length 500, 5 per hour rate limit |
-| Claim a listing | evidence text | 1000 chars, unowned-series requirement, 3 per day rate limit |
-| Mic credits | link normalisation shared with profile links | Identical column check constraints, banned-term filter on the name |
-| Notification prefs | toggles and a radius | `nearby_radius_km between 1 and 160` |
+| Form                   | Client validation                                                                                           | Server validation                                                                                                                               |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sign up                | email shape, password length 10 (`src/features/auth/validation.ts`)                                         | GoTrue email shape, `minimum_password_length = 10` in config                                                                                    |
+| Onboarding             | stage name, birth year with an 18 gate, home area, at least one role                                        | `profiles_age_gate` trigger (18, hard failure), `profiles_home_area_present` check constraint, handle format check, `display_name` length check |
+| Edit profile           | social handle and URL normalisation (`src/features/profile/social.ts`)                                      | Four column check constraints on handle shape and `https://` prefix, `bio` length 500                                                           |
+| Create or edit listing | `src/features/producer/components/series-form.tsx`, RRULE built from choices, timezone derived from the pin | title 1..120, description 2000, `cardinality(disciplines) > 0`, `cost_cents >= 0`, `capacity > 0`, IANA timezone trigger, banned-term filter    |
+| Add a walk-in          | name required                                                                                               | `guest_name` length 1..80, the performer-xor-guest check constraint, producer-only insert policy                                                |
+| Report                 | reason required, details optional                                                                           | `details` length 1000, `reporter_id = auth.uid()`, `status = 'open'`, 5 per hour rate limit                                                     |
+| Flag a listing         | reason required                                                                                             | `details` length 500, 5 per hour rate limit                                                                                                     |
+| Claim a listing        | evidence text                                                                                               | 1000 chars, unowned-series requirement, 3 per day rate limit                                                                                    |
+| Mic credits            | link normalisation shared with profile links                                                                | Identical column check constraints, banned-term filter on the name                                                                              |
+| Notification prefs     | toggles and a radius                                                                                        | `nearby_radius_km between 1 and 160`                                                                                                            |
 
 Every form has both layers. The one asymmetry worth naming: role booleans have no server-side constraint, which is by design (section 3).
 
@@ -357,15 +357,15 @@ Every form has both layers. The one asymmetry worth naming: role booleans have n
 
 ## 10. Environment variables
 
-| Variable | Read at | Safe in a client bundle? |
-| --- | --- | --- |
-| `EXPO_PUBLIC_SUPABASE_URL` | `src/lib/env.ts:17` | Yes, public by definition |
-| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | `src/lib/env.ts:21` | Yes, the anon key is designed to be published; RLS is what protects data |
-| `EXPO_PUBLIC_SENTRY_DSN` | `src/lib/sentry.ts:9`, `:25`, `:38` | Yes, DSNs are write-only ingest endpoints. Inert when unset. |
-| `EXPO_PUBLIC_AGE_SIGNAL_ENABLED` | `src/features/auth/ageSignal.ts:29` | Yes, a feature flag |
-| `SUPABASE_AUTH_EXTERNAL_*` | `supabase/config.toml`, local stack only | Never bundled |
-| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`, `ALLOWED_ORIGIN`, `DELETE_PAGE_URL`, `RATE_LIMIT_SALT` | Edge Function runtime | Server side only |
-| `push_sender_url`, `push_sender_token` | Supabase Vault, read at run time by `private.invoke_push_sender` | Never in a migration or a bundle |
+| Variable                                                                                                                 | Read at                                                          | Safe in a client bundle?                                                 |
+| ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `EXPO_PUBLIC_SUPABASE_URL`                                                                                               | `src/lib/env.ts:17`                                              | Yes, public by definition                                                |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY`                                                                                          | `src/lib/env.ts:21`                                              | Yes, the anon key is designed to be published; RLS is what protects data |
+| `EXPO_PUBLIC_SENTRY_DSN`                                                                                                 | `src/lib/sentry.ts:9`, `:25`, `:38`                              | Yes, DSNs are write-only ingest endpoints. Inert when unset.             |
+| `EXPO_PUBLIC_AGE_SIGNAL_ENABLED`                                                                                         | `src/features/auth/ageSignal.ts:29`                              | Yes, a feature flag                                                      |
+| `SUPABASE_AUTH_EXTERNAL_*`                                                                                               | `supabase/config.toml`, local stack only                         | Never bundled                                                            |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`, `ALLOWED_ORIGIN`, `DELETE_PAGE_URL`, `RATE_LIMIT_SALT` | Edge Function runtime                                            | Server side only                                                         |
+| `push_sender_url`, `push_sender_token`                                                                                   | Supabase Vault, read at run time by `private.invoke_push_sender` | Never in a migration or a bundle                                         |
 
 **Secret scan:** no service role key, admin key, private key, or JWT exists in tracked source or in any of the 167 commits in history. The one credential-shaped string in the tree is the Google Maps Android API key at `app.json:118`, which is discussed in FINDINGS F-003.
 
@@ -373,14 +373,14 @@ Every form has both layers. The one asymmetry worth naming: role booleans have n
 
 ## 11. External services
 
-| Service | Used for | Failure mode |
-| --- | --- | --- |
-| Supabase (Postgres, Auth, Storage, RLS, RPC, Edge Functions, Realtime, Vault, pg_cron, pg_net) | Everything server side | The app shows cached data and honest error states |
-| Expo Push | Notifications | Every push flow degrades quietly; the outbox just accumulates |
-| Google Maps (Android) | Map tiles | iOS uses Apple Maps with no key |
-| Sentry | Crash reporting, `sendDefaultPii: false`, no user identity attached | Inert without a DSN |
-| Apple and Google OAuth | Optional sign-in | Email and password always works |
-| `tz-lookup` (on device) | Deriving IANA timezone from a venue pin | Manual picker always wins |
+| Service                                                                                        | Used for                                                            | Failure mode                                                  |
+| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Supabase (Postgres, Auth, Storage, RLS, RPC, Edge Functions, Realtime, Vault, pg_cron, pg_net) | Everything server side                                              | The app shows cached data and honest error states             |
+| Expo Push                                                                                      | Notifications                                                       | Every push flow degrades quietly; the outbox just accumulates |
+| Google Maps (Android)                                                                          | Map tiles                                                           | iOS uses Apple Maps with no key                               |
+| Sentry                                                                                         | Crash reporting, `sendDefaultPii: false`, no user identity attached | Inert without a DSN                                           |
+| Apple and Google OAuth                                                                         | Optional sign-in                                                    | Email and password always works                               |
+| `tz-lookup` (on device)                                                                        | Deriving IANA timezone from a venue pin                             | Manual picker always wins                                     |
 
 ---
 
@@ -428,4 +428,6 @@ Files=32, Tests=425,  5 wallclock secs
 Result: PASS
 ```
 
-So every migration applies from empty, the seed loads, and 425 of the 443 planned assertions pass. The 18 skipped assertions are `scheduled-jobs.test.sql`, which needs `pg_cron` and `pg_net`; those run in CI against the full Supabase stack (`.github/workflows/ci.yml:70-114`), which also reports extension availability as a diagnostic before the suite runs.
+So every migration applies from empty, the seed loads, and the suite passes. After the audit's own batches landed, the current numbers are **61 migrations, 449 of 467 planned assertions across 32 files, and 483 unit tests**. The 18 skipped assertions are `scheduled-jobs.test.sql`, which needs `pg_cron` and `pg_net`; those run in CI against the full Supabase stack (`.github/workflows/ci.yml:70-114`), which also reports extension availability as a diagnostic before the suite runs.
+
+One caveat on `npm run format:check`: it fails on six files at `HEAD`, and it failed on them before this audit began (`PROJECT.md`, `SEARCH.md`, `docs/SEARCH_PHASE0.md`, `src/app/(tabs)/index.tsx`, `src/features/discovery/components/filter-bar.tsx`, `src/features/discovery/queries.ts`). None of them was touched here, so they are left alone rather than swept into an unrelated diff. Worth knowing that the check is not currently green, since the README lists it.

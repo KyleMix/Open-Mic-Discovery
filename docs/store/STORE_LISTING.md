@@ -7,7 +7,7 @@
 - Bundle id / package: com.openmicexplorer.app
 - Category: Entertainment (primary), Music (secondary)
 - Monetization: none. No in-app purchases, no subscriptions, no ads.
-- Age rating: Apple 16+ under the current tier system (infrequent/mild mature themes, user generated content); Play: rate honestly through the questionnaire, UGC yes. The in-app age gate is 18 and is the stricter control.
+- Age rating: do not enter a tier from memory. Answer both questionnaires from the evidence list in `SUBMISSION_CHECKLIST.md` (UGC yes, mild profanity yes, unrestricted web access yes, no purchases, no ads, no tracking) and record whatever tier each store returns. The in-app age gate is 18, enforced server side, and is the stricter control either way.
 
 ## Short description (Play, 80 chars)
 

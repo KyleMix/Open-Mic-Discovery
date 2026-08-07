@@ -38,7 +38,7 @@ import { freshness } from '@/features/discovery/freshness';
 import { useFlagListing, useMicDetail } from '@/features/discovery/queries';
 import { CreditCard } from '@/features/credits/components/credit-card';
 import { useSeriesCredits } from '@/features/credits/queries';
-import { creditFor, isOverridden } from '@/features/credits/resolve';
+import { creditFor, creditName, isOverridden, type Credit } from '@/features/credits/resolve';
 import { useIsFavorite, useToggleFavorite } from '@/features/favorites/queries';
 import { PlanToggle } from '@/features/plans/components/plan-toggle';
 import { useSubmitClaim } from '@/features/producer/queries';
@@ -1104,6 +1104,10 @@ const styles = StyleSheet.create({
  */
 function MicCredits({ seriesId, occurrenceId }: { seriesId: string; occurrenceId: string | null }) {
   const credits = useSeriesCredits(seriesId);
+  // Which credit the report sheet is open for, held here rather than on the
+  // page: the sheet needs the credit's own id and name, and nothing above
+  // this component knows which credits resolved for this night.
+  const [reporting, setReporting] = useState<Credit | null>(null);
   if (!credits.data || credits.data.length === 0) {
     return null;
   }
@@ -1119,6 +1123,11 @@ function MicCredits({ seriesId, occurrenceId }: { seriesId: string; occurrenceId
           credit={featured}
           role="featured"
           overridden={isOverridden(credits.data, 'featured', occurrenceId)}
+          // A view column is nullable to the type generator even when the
+          // underlying primary key is not. No id means nothing to report
+          // against, so the affordance is simply not offered rather than
+          // being offered and doing nothing.
+          onReport={featured.id ? () => setReporting(featured) : undefined}
         />
       ) : null}
       {host ? (
@@ -1126,6 +1135,19 @@ function MicCredits({ seriesId, occurrenceId }: { seriesId: string; occurrenceId
           credit={host}
           role="host"
           overridden={isOverridden(credits.data, 'host', occurrenceId)}
+          onReport={host.id ? () => setReporting(host) : undefined}
+        />
+      ) : null}
+      {reporting && reporting.id ? (
+        <ReportModal
+          visible
+          onClose={() => setReporting(null)}
+          targetType="credit"
+          targetId={reporting.id}
+          // Only offer the block when there is an account behind the credit.
+          // A typed-in name is not a person the app knows how to block.
+          blockableUserId={reporting.profile_id ?? undefined}
+          targetLabel={creditName(reporting)}
         />
       ) : null}
     </View>

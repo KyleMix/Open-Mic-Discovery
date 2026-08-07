@@ -161,3 +161,78 @@ describe('computeAnchorDate takes the producer local date, not the UTC one', () 
     );
   });
 });
+
+describe('computeAnchorDate takes the venue date, not the device one', () => {
+  // The second half of the same bug. Using the device date fixed the UTC
+  // case and is still wrong across zones, because the server never reads
+  // this column in the device zone: private.generate_occurrences starts from
+  // `(now() at time zone series.timezone)::date`.
+  //
+  // Built from Date.UTC, not from local components. CI runs this suite twice,
+  // once under UTC and once under America/Los_Angeles, so a fixture written
+  // as `new Date(2026, 7, 2, 22, 0, 0)` would be a different instant in each
+  // run and these expectations would only hold in one of them. The whole
+  // point of the assertions below is that the venue zone decides, so the
+  // fixture must not smuggle the host zone in.
+  //
+  // 2026-08-03T05:00Z is Sunday 22:00 in Seattle and Monday 01:00 in New
+  // York: one instant, two calendar days, which is the case at issue.
+  const SUNDAY_LATE_IN_SEATTLE = new Date(Date.UTC(2026, 7, 3, 5, 0, 0));
+
+  it('anchors a New York mic to Monday when it is already Monday there', () => {
+    // Anchoring to Sunday would put the anchor in the previous ISO week from
+    // the generator's point of view and invert every alternate night of a
+    // biweekly run.
+    expect(
+      computeAnchorDate(
+        { kind: 'biweekly', days: ['MO'] },
+        SUNDAY_LATE_IN_SEATTLE,
+        false,
+        'America/New_York',
+      ),
+    ).toBe('2026-08-03');
+  });
+
+  it('leaves a Seattle mic on Sunday, because there it still is Sunday', () => {
+    expect(
+      computeAnchorDate(
+        { kind: 'biweekly', days: ['SU'] },
+        SUNDAY_LATE_IN_SEATTLE,
+        false,
+        'America/Los_Angeles',
+      ),
+    ).toBe('2026-08-02');
+  });
+
+  it('still shifts a whole week for a biweekly mic that starts next week', () => {
+    expect(
+      computeAnchorDate(
+        { kind: 'biweekly', days: ['MO'] },
+        SUNDAY_LATE_IN_SEATTLE,
+        true,
+        'America/New_York',
+      ),
+    ).toBe('2026-08-10');
+  });
+
+  // The two fallbacks cannot assert a literal date without pinning the host
+  // zone, which is the coupling CI's second run exists to catch. They assert
+  // the shape and the equivalence instead, which is the actual contract:
+  // an unusable zone behaves exactly as no zone, and neither throws.
+  it('falls back to the device date when no zone is known yet', () => {
+    expect(
+      computeAnchorDate({ kind: 'weekly', days: ['SU'] }, SUNDAY_LATE_IN_SEATTLE, false),
+    ).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it('treats a bad zone name as no zone rather than throwing', () => {
+    expect(
+      computeAnchorDate(
+        { kind: 'weekly', days: ['SU'] },
+        SUNDAY_LATE_IN_SEATTLE,
+        false,
+        'Not/AZone',
+      ),
+    ).toBe(computeAnchorDate({ kind: 'weekly', days: ['SU'] }, SUNDAY_LATE_IN_SEATTLE, false));
+  });
+});

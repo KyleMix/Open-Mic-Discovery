@@ -1,0 +1,29 @@
+-- A mic credit becomes a reportable thing.
+--
+-- Audit finding F-011. mic_credits.profile_id is a plain reference to any
+-- profile, and the insert policy asks only that the caller own the series. So
+-- a producer can advertise any user of the app as the host or featured artist
+-- of their mic, and mic_credit_public then surfaces that person's stage name,
+-- avatar, and all six social links against the listing. The person is not
+-- notified, cannot veto it, and will not find out unless they stumble onto
+-- the listing.
+--
+-- That is an association a person did not agree to, on a platform whose EULA
+-- specifically prohibits "impersonation of any person or venue". Until now it
+-- was not even reportable as itself: report_target had no value for it, so
+-- the only recourse was reporting the entire listing, which is a different
+-- claim about a different thing.
+--
+-- This migration only adds the enum value. ALTER TYPE ... ADD VALUE cannot be
+-- used in the same transaction that uses the new value, and the Supabase CLI
+-- runs each migration file in one transaction, so everything that consumes
+-- 'credit' lands in 20260807000900 instead.
+--
+-- Additive only, per the rule in 20260728000100: enum values are never
+-- removed or reordered after ship. The paired down script therefore documents
+-- why it cannot undo this rather than pretending to.
+--
+-- Down migration:
+-- supabase/migrations/down/20260807000800_credit_report_target.down.sql
+
+alter type report_target add value if not exists 'credit';

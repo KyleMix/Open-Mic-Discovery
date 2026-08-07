@@ -97,7 +97,12 @@
       }
     </style>
   </head>
-  <body>
+  <!-- OWNER SETUP: replace the placeholder below at deploy time with
+       https://<project-ref>.supabase.co/functions/v1/deletion-request
+       Until it is replaced the form disables itself and says so, rather than
+       accepting an address and failing DNS. docs/DEPLOY_WEB.md has the step
+       and the curl that verifies it. -->
+  <body data-function-url="https://YOUR-PROJECT-REF.supabase.co/functions/v1/deletion-request">
     <main>
       <h1>Delete your Open Mic Explorer account</h1>
       <p>
@@ -184,9 +189,21 @@
     </main>
 
     <script>
-      // TODO(owner): after deploying the deletion-request Edge Function, set
-      // this to https://<project-ref>.supabase.co/functions/v1/deletion-request
-      var FUNCTION_URL = 'https://YOUR-PROJECT-REF.supabase.co/functions/v1/deletion-request';
+      // OWNER SETUP: set data-function-url on <body> at deploy time to
+      // https://<project-ref>.supabase.co/functions/v1/deletion-request
+      // See docs/DEPLOY_WEB.md, which includes the curl that proves it.
+      //
+      // This used to be a hardcoded YOUR-PROJECT-REF placeholder, which meant
+      // a page deployed before anyone remembered would accept an email
+      // address, fail DNS, and tell the visitor to try again later. Google
+      // Play requires this page to work and a reviewer does try it, so a
+      // silent failure here is a policy rejection.
+      //
+      // Reading it from an attribute keeps the real URL out of the repo, and
+      // an unset or still-placeholder value now disables the form and says so
+      // instead of pretending to work.
+      var FUNCTION_URL = (document.body.getAttribute('data-function-url') || '').trim();
+      var CONFIGURED = FUNCTION_URL !== '' && FUNCTION_URL.indexOf('YOUR-PROJECT-REF') === -1;
 
       var statusBox = document.getElementById('status');
       var requestSection = document.getElementById('request-section');
@@ -198,6 +215,24 @@
         statusBox.textContent = message;
         statusBox.classList.remove('hidden');
         statusBox.classList.toggle('error', Boolean(isError));
+      }
+
+      // Fail loudly, at load, before anyone types an address. The message
+      // names the email path so a real visitor still has a way through, and
+      // it is unmistakable to whoever deployed the page.
+      if (!CONFIGURED) {
+        showStatus(
+          'This page is not finished being set up, so it cannot delete an account right now. ' +
+            'Email support@openmicfinder.app and we will delete it for you.',
+          true,
+        );
+        var requestButton = document.getElementById('request-button');
+        if (requestButton) {
+          requestButton.disabled = true;
+        }
+        if (confirmButton) {
+          confirmButton.disabled = true;
+        }
       }
 
       function post(payload) {

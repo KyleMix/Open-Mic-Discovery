@@ -2,7 +2,7 @@
 
 Recommended course of action, from the read-only audit of commit `564088c`, 2026-08-07.
 
-Written before any execution. **Batches 1 and 3 have since shipped** and carry a status line and a verification note; the rest is unchanged from the original plan. Section 6 is the live list of what still needs you.
+Written before any execution. **Batches 1, 3, 4, 5 and 6 have shipped, and the parts of Batch 2 that do not need external accounts.** Each carries a status line and a verification note; the analysis around them is unchanged from the original plan, including where it turned out to be wrong. Section 6 is the live list of what still needs you.
 
 ---
 
@@ -10,7 +10,7 @@ Written before any execution. **Batches 1 and 3 have since shipped** and carry a
 
 **Yes, this repo is one month from submission, and the gap is smaller than the finding count suggests.** I went looking for the usual reasons a project like this slips and did not find them. There is no missing feature, no half-built screen, no untested subsystem, no naive timestamp, no table without row level security, no `any`, no failing test, and no committed secret. Typecheck, lint, and 478 unit tests all pass clean; 33 pgTAP files with 439 assertions run in CI on every push against a real Postgres with PostGIS. The security model is coherent and, unusually, self-aware: the migration that issues the blanket `grant all` to `anon` is accompanied by a pgTAP test that creates a probe table inside a rolled-back transaction purely to prove how dangerous that grant would be without RLS. That is not a codebase that needs a month of remediation.
 
-What stands between here and the App Store is a different kind of work, and it is almost entirely *wiring and decisions rather than engineering*. Two placeholder URLs (`YOUR-PROJECT-REF`, `TODO_TEAM_ID`), one placeholder mailbox, one EAS profile that may or may not inject environment variables, one admin bootstrap whose only lock is a hosted-project auth setting this repository cannot see, and a handful of business decisions nobody but you can make. The honest risk is not that the code is not ready. It is that eight or nine small items, each individually a fifteen-minute fix, are each blocked on an account, a console, a keystore, or an answer from you, and they serialize badly. If you start the store accounts and the Apple Team ID today, the code work is roughly a week. If you start them in three weeks, the code work is still a week and you will miss the date anyway.
+What stands between here and the App Store is a different kind of work, and it is almost entirely _wiring and decisions rather than engineering_. Two placeholder URLs (`YOUR-PROJECT-REF`, `TODO_TEAM_ID`), one placeholder mailbox, one EAS profile that may or may not inject environment variables, one admin bootstrap whose only lock is a hosted-project auth setting this repository cannot see, and a handful of business decisions nobody but you can make. The honest risk is not that the code is not ready. It is that eight or nine small items, each individually a fifteen-minute fix, are each blocked on an account, a console, a keystore, or an answer from you, and they serialize badly. If you start the store accounts and the Apple Team ID today, the code work is roughly a week. If you start them in three weeks, the code work is still a week and you will miss the date anyway.
 
 One structural caveat, since retired: this paragraph originally said I could not run the pgTAP suite here for lack of Docker, so my reading of the RLS policies was a reading of the SQL rather than an observed result. That turned out to be wrong. The repo ships `scripts/db/verify-local.sh`, a no-Docker path against a system Postgres, and after installing PostGIS and pgTAP the whole thing runs in three seconds. Every migration now applies from empty and the suite passes here, not just in CI. Two of the findings below were sharpened by querying the catalog instead of grepping migrations, and one of them (F-008) was corrected outright.
 
@@ -18,7 +18,7 @@ One structural caveat, since retired: this paragraph originally said I could not
 
 ## 2. The three highest-leverage things to do first
 
-**One: close the admin backdoor (F-001).** Every other finding in this audit is bounded. This one is not. The owner-email bootstrap grants full admin to whoever signs up with one specific address, and the test kit, which is enabled by default in every environment and mints authenticated accounts with a password printed in a migration, sits directly behind that lock. Whether the lock holds depends entirely on a hosted-project auth setting that is not in this repository, and the config file that *is* in this repository turns that setting off. The fix is one migration and two function replacements. The cost of being wrong is the moderation queue, every user's home coordinates, and every user's birth year. Nothing else in this plan has that ratio.
+**One: close the admin backdoor (F-001).** Every other finding in this audit is bounded. This one is not. The owner-email bootstrap grants full admin to whoever signs up with one specific address, and the test kit, which is enabled by default in every environment and mints authenticated accounts with a password printed in a migration, sits directly behind that lock. Whether the lock holds depends entirely on a hosted-project auth setting that is not in this repository, and the config file that _is_ in this repository turns that setting off. The fix is one migration and two function replacements. The cost of being wrong is the moderation queue, every user's home coordinates, and every user's birth year. Nothing else in this plan has that ratio.
 
 **Two: make the build you submit actually work (F-002, F-006, F-019).** The production EAS profile declares no `environment`, so I cannot tell from the repo whether a production build gets `EXPO_PUBLIC_SUPABASE_URL` at all. If it does not, the app you upload launches to an error screen on every device, and you find out from a reviewer. Meanwhile the TestFlight profile inherits the preview environment, so the build you validate is not the build you ship. And the web deletion page posts to a hostname that does not resolve, which is a Play policy rejection on its own. These are three one-line edits plus a verification step, and together they are the difference between a submission and a wasted review cycle.
 
@@ -40,11 +40,13 @@ Files: `supabase/migrations/<new>_lock_down_test_kit.sql`, `supabase/tests/test-
 Migrations: one new forward migration, one paired down script.
 
 What it does:
+
 1. `alter table test_kit_settings alter column enabled set default false;` and `update test_kit_settings set enabled = false;`
 2. `create or replace` both `private.bootstrap_owner_profile` and `private.bootstrap_owner_children` with `and u.email_confirmed_at is not null` added to the owner-email lookup.
 3. Two new pgTAP assertions: the kill switch is off after a fresh reset, and an unconfirmed account matching the owner email does **not** get `is_admin`.
 
 Verification you run:
+
 - `npx supabase db reset` then `npx supabase test db`. The new assertions must pass, and the existing 439 must still pass.
 - Sign in as the owner on a local build. The test kit screen must render, must say the kit is switched off, and must offer "Switch the test kit on". Tap it, confirm a scenario builds, then tap "Remove all test data".
 - Separately, and this is not a code check: open the hosted Supabase dashboard, Authentication, and confirm email confirmation is required. Screenshot it into `docs/store/SUBMISSION_CHECKLIST.md`.
@@ -80,6 +82,7 @@ Files: `web/delete-account/index.html`, `web/.well-known/assetlinks.json`, `web/
 Migrations: none, unless you change the EULA contact address, which forces a new EULA version (see the decision in section 6).
 
 What it does:
+
 1. Replace `FUNCTION_URL` with the real Edge Function URL. Prefer reading it from a `data-function-url` attribute on `<body>` so the value is set at deploy time rather than committed.
 2. Fill in the Apple Team ID in the AASA file and the release SHA-256 fingerprint in `assetlinks.json`.
 3. Set `SUPPORT_EMAIL` to the decided address.
@@ -87,6 +90,7 @@ What it does:
 5. Add a deploy smoke check to `docs/DEPLOY_WEB.md`.
 
 Verification you run:
+
 - `curl -sS -X POST https://<ref>.supabase.co/functions/v1/deletion-request -H 'content-type: application/json' -d '{}'` returns a 400 with `Unknown action`, proving the function is reachable and the URL is right.
 - Walk the whole deletion flow on the live page with a throwaway account: request, open the emailed link, confirm, then try to sign in again and fail.
 - `curl -sS https://openmicfinder.app/.well-known/apple-app-site-association -i` returns 200, `Content-Type: application/json`, and no redirect. Same for `assetlinks.json`.
@@ -110,19 +114,21 @@ Files: `supabase/migrations/<new>_retire_legacy_discovery_rpcs.sql`, `supabase/m
 Migrations: one new forward, one down.
 
 What it does:
+
 1. `revoke execute on function mics_near(...) from anon, authenticated;` and the same for `search_mics(...)`. Keep the definitions for one release, then drop them in a later migration.
 2. Add a pgTAP assertion listing any view in `public` whose `reloptions` lack `security_invoker=on` and which is not on an explicit allowlist. Seed the allowlist with the ten views that are deliberately `off`, each with a one-line comment saying why. Adding an `off` view then requires editing the allowlist, which is the point.
 3. Add two more assertions: `mics_near` and `search_mics` are not executable by `anon`.
 4. Add `set search_path = ''` to `private.set_updated_at`.
 
 Verification you run:
+
 - `npx supabase test db`. The view-guard assertion must pass with the current ten allowlisted views, and must fail if you temporarily add an unannotated view.
 - Prove the guard bites: add `create view public.guard_probe as select * from profiles;` inside a scratch migration, run the suite, watch it fail, then delete the scratch migration.
 - Open Discover in the app, search, filter, and clear filters. Nothing should change, because the client only calls `search_discover`.
 
 Rollback: the down script restores all three objects in full, including the unparenthesized OR chain. Rolling back reopens the paused-listing leak, which the down script says out loud rather than quietly declining to undo. The pgTAP additions are test-only and cannot break production.
 
-**What changed against the estimate.** I priced the revoke on the basis that the client no longer calls either legacy RPC, so removing them from the API roles would be invisible. True of the client, false of the test suite: five pgTAP files exercise `mics_near` and `search_mics` *specifically as `anon`*, about forty assertions. Revoking fails all five, and the only honest responses are to delete those assertions or to rewrite them under a role that still holds execute. Rewriting them as `postgres` is the worse option, because several exist to prove RLS behaviour *through* the RPC as an anonymous caller and `postgres` bypasses RLS, so they would go on passing while testing nothing.
+**What changed against the estimate.** I priced the revoke on the basis that the client no longer calls either legacy RPC, so removing them from the API roles would be invisible. True of the client, false of the test suite: five pgTAP files exercise `mics_near` and `search_mics` _specifically as `anon`_, about forty assertions. Revoking fails all five, and the only honest responses are to delete those assertions or to rewrite them under a role that still holds execute. Rewriting them as `postgres` is the worse option, because several exist to prove RLS behaviour _through_ the RPC as an anonymous caller and `postgres` bypasses RLS, so they would go on passing while testing nothing.
 
 Deleting forty assertions is a retirement decision, not a cleanup, and it was not in the estimate. Per the protocol, it stops here. What did get done is the part that actually mattered: the paused-listing leak is closed, so the defect is gone whether or not the functions are ever retired, and the five test files stay meaningful in the meantime.
 
@@ -149,18 +155,21 @@ The allowlist assertion is not exercised by either state, so it was proven separ
 
 ### Batch 4: Correctness in recurrence and credits
 
-Closes: **F-010, F-011, F-015**
+Closes: **F-010, F-015, and the reportable half of F-011**
 Estimated: one to two days.
+Status: **DONE**, as scoped. Migrations `20260807000700_reject_unsupported_rrules.sql`, `20260807000800_credit_report_target.sql`, `20260807000900_credit_moderation.sql`, each with a down script, plus the venue-timezone anchor fix. Consent-before-publish for credits stays out, as the scope warning at the end of this batch said it would.
 
 Files: `src/features/producer/rrule-builder.ts`, `src/features/producer/components/series-form.tsx`, `src/features/producer/rrule-builder.test.ts`, `supabase/migrations/<new>_credit_reports_and_rrule_strictness.sql`, `src/features/safety/labels.ts`, `src/features/credits/components/credit-card.tsx`, `supabase/tests/mic-credits.test.sql`, `supabase/tests/occurrences.test.sql`.
 Migrations: one new forward (adds `credit` to the `report_target` enum, which is additive-only and therefore allowed by the schema's own rule; and makes `rrule_matches` raise on unsupported shapes).
 
 What it does:
+
 1. Thread the venue timezone into `computeAnchorDate` so the biweekly anchor is the venue's calendar date, not the device's. Add a test that pins the device to `America/Los_Angeles` and the venue to `America/New_York` on a Sunday evening and asserts the anchor and the first generated occurrence.
 2. Make `private.rrule_matches` raise on an RRULE shape it does not implement, instead of silently returning false. Check the seed and the test kit rules first so `db reset` still succeeds.
 3. Add `credit` to `report_target` and put a report action on the credit row, so a person credited without consent has a path that reaches the existing moderation queue.
 
 Verification you run:
+
 - `npm test` (the timezone-pinned suite) and the second CI job that reruns it under `America/Los_Angeles`.
 - Create a biweekly mic in a different timezone from your device and confirm the first four generated nights land on the weeks you expect.
 - `npx supabase test db` for the credit report path and the new rrule exception.
@@ -170,22 +179,45 @@ Rollback: the client change reverts cleanly. The enum addition cannot be rolled 
 
 Scope warning I am giving you now rather than mid-batch: item 3 has a bigger version (notify the linked person, let them unlink, or require acceptance before the link resolves publicly). I am deliberately scoping this batch to the report path only, because that closes the compliance gap at a fraction of the cost. If you want consent-before-publish, that is its own batch and it is post-launch work.
 
+**What was actually run, and what it proved.**
+
+The RRULE guard landed as a boundary trigger, not as a `raise` inside `rrule_matches`, which is a change from the plan above and a change for the better. Raising inside the matcher would have let one malformed row abort `private.generate_occurrences` for every series, since the nightly cron calls it once across the whole database. Refusing the write keeps bad rules out and leaves the generator un-killable by a single row.
+
+That mattered more than expected, because there was a third bad shape I had not found: `FREQ=WEEKLY;INTERVAL=0` did not return false, it raised **division_by_zero** from inside the matcher. Observed directly, by removing the guard and re-running the probe. One such row would have taken down occurrence generation for the entire database every night until somebody noticed no new nights appearing.
+
+Removing the trigger flips exactly the six rejection assertions and leaves the four acceptance assertions green, so the guard is a filter and not a wall:
+
+```
+# Failed test 14: "a monthly rule with a plain weekday is refused..."   have: accepted
+# Failed test 15: "a monthly rule with an INTERVAL is refused..."       have: accepted
+# Failed test 19: "an INTERVAL of zero is refused rather than dividing" have: 22012
+```
+
+The anchor-date fix took two attempts and the suite caught the first one. Written with local-component `Date` literals it passed under America/Los_Angeles and failed under UTC, which is precisely the host coupling CI's second run exists to catch. Rebuilt from `Date.UTC`, the five new tests pass under UTC, America/Los_Angeles, and Australia/Sydney.
+
+Credits: the report path is proven end to end in pgTAP. One account is credited on another producer's listing, the person named reports it as a `credit`, a non-admin is refused with 42501, an admin actions it, and the row leaves `mic_credit_public`. Regenerating the database types made the compiler find the one place that needed updating on its own, because `REPORT_TARGET_LABELS` is a `Record<ReportTarget, string>`.
+
+Totals after this batch: 449 pgTAP assertions across 32 files, 483 unit tests, typecheck and lint clean.
+
 ---
 
 ### Batch 5: Scheduled-job performance
 
 Closes: **F-009, F-013**
 Estimated: two hours.
+Status: **DONE.** `supabase/migrations/20260807000600_retention_indexes.sql` with a down script and three pgTAP assertions. The digest query rewrite is still not done, deliberately: index first, measure, then decide.
 
 Files: `supabase/migrations/<new>_retention_indexes.sql`, `supabase/migrations/down/<same>.down.sql`, `supabase/tests/search-indexes.test.sql`.
 Migrations: one new forward, one down.
 
 What it does:
+
 1. `create index profiles_home_location_gist on profiles using gist (home_location) where home_location is not null;`
 2. `create index favorites_series_idx on favorites (series_id);`
 3. Add pgTAP assertions that both indexes exist, matching the pattern `search-indexes.test.sql` already uses.
 
 Verification you run:
+
 - `npx supabase test db`.
 - On a database with the seed loaded, `explain analyze select private.queue_new_mic_alerts();` before and after, and paste both plans into the PR. The point is to see the sequential scan on `profiles` become an index scan.
 
@@ -193,17 +225,21 @@ Rollback: drop both indexes. Zero risk; indexes do not change results.
 
 I am **not** including the weekly-digest query rewrite here. Index first, measure, and only restructure the query if the plan is still bad. Rewriting a correct query on a hunch is how correct queries stop being correct.
 
+**What was actually run.** Both indexes exist and are asserted, the GiST one by access method rather than by name: a btree on a geography column would be created without complaint, would look right in a schema diff, and could not answer an `st_dwithin`. The partial predicate is asserted too, so the index cannot quietly become a full one. Still outstanding and still deliberate: nobody has run `explain analyze` on the digest at realistic scale. At seed size the plans prove nothing, which is why the rewrite stays unbuilt rather than guessed at.
+
 ---
 
 ### Batch 6: Make the documents tell the truth
 
-Closes: **F-003, F-012, F-016, F-017, F-018, F-020**
+Closes: **F-012, F-016, F-017, F-018**, records **F-003**, decides **F-020**, and picks up **F-006, F-019** and half of **F-002** from Batch 2 because none of those needed an external account after all.
 Estimated: half a day.
+Status: **DONE**, with F-020 deliberately decided rather than executed. See the note at the end of this batch.
 
 Files: `docs/store/SUBMISSION_CHECKLIST.md`, `docs/store/STORE_LISTING.md`, `docs/COMPLIANCE.md`, `eslint.config.js`, `app.json`, `docs/audit/FINDINGS.md`.
 Migrations: none.
 
 What it does:
+
 1. Reconcile the age-rating guidance onto one answer across all three documents, and record the specific questionnaire responses with the code evidence (UGC yes, infrequent mild profanity via the comedy discipline, unrestricted web access via profile and credit links, no gambling, no purchases, no ads, no tracking) rather than a target tier.
 2. Record the Google Maps key restriction as verified, with the date and the SHA-1 fingerprints used.
 3. Record the `npm audit` triage: 34 advisories, all in build and lint tooling, none in the bundle, `npm audit fix --force` would break the project. Write it down so nobody re-litigates it in week three.
@@ -212,26 +248,42 @@ What it does:
 6. Drop the unused iOS calendar purpose strings from the `expo-calendar` plugin config.
 
 Verification you run:
-- `npm run lint` and `npm run typecheck` still pass.
-- **On a real iOS device**, tap "Add to my calendar" on a mic page and confirm the system event sheet still opens. This is the one item in this batch that can actually break something, and it cannot be verified in a simulator or by a test.
-- `npx expo-doctor` prints 20 of 20.
 
-Rollback: revert the commit. The only functional change is the calendar plugin config, and the device check above is what protects it.
+- `npm run lint` and `npm run typecheck` still pass.
+- `npx expo-doctor` prints 20 of 20. Not run here: it needs an unrestricted connection, and it is now a pre-build checklist item instead.
+
+Rollback: revert the commit. Nothing in what shipped changes runtime behaviour except the deletion page's new refusal to run unconfigured, which fails safe by construction.
+
+**The calendar strings were not removed, and that is the finding's answer rather than a gap.** Item 6 above was the plan; on reaching it I took my own risk note seriously and stopped. The benefit is tidiness. The cost of being wrong is a `SIGABRT` on iOS the instant EventKit touches a missing usage string, on a primary flow, visible only on a physical release build, one month before submission. That is a bad trade for a Low finding whose only symptom is a reviewer possibly asking a question. The reasoning is recorded at `src/features/calendar/calendar.ts:1-27`, beside the deliberate legacy import it concerns, so the next person to notice the mismatch finds the answer instead of redoing the analysis.
+
+**Two Batch 2 items came along for free.** Neither needed an external account, so waiting on your Apple Team ID would have been waiting for nothing:
+
+- F-006 and F-019: `production` and `testflight` now both name `channel` and `environment` explicitly. The ambiguity I could not resolve from the repo is gone, because nothing is implicit any more. Note the consequence you now own: TestFlight talks to the production backend.
+- Half of F-002: the deletion page reads its endpoint from `data-function-url` on `<body>` and, while that is unset or still the placeholder, disables both buttons at load and says the page is not finished being set up, pointing at the support address. Verified in all three states (placeholder, real URL, attribute absent). It can no longer ship a form that accepts an email address and fails DNS, which is the shape a Play reviewer would have found.
 
 ---
 
 ## 4. Batch summary
 
-| Batch | Closes | Effort | Risk retired | Blocked on |
-| --- | --- | --- | --- | --- |
-| 1. Close the admin backdoor | F-001 | 0.5 day | Very high | Nothing |
-| 2. Wire the launch endpoints | F-002, F-004, F-005, F-006, F-019 | 1 day | Very high | Accounts, keystore, your decisions |
-| 3. Shrink the public surface | F-008, F-014, F-007 part | 0.5 day | Medium now, high later | Nothing |
-| 4. Recurrence and credits | F-010, F-011, F-015 | 1 to 2 days | Medium | Nothing |
-| 5. Scheduled-job indexes | F-009, F-013 | 2 hours | Low now, medium at scale | Nothing |
-| 6. Document truth | F-003, F-012, F-016, F-017, F-018, F-020 | 0.5 day | Low, but it is the rejection surface | Google Cloud console, an iOS device |
+| Batch                        | Closes                                                    | Status                                  |
+| ---------------------------- | --------------------------------------------------------- | --------------------------------------- |
+| 1. Close the admin backdoor  | F-001                                                     | **Done**                                |
+| 2. Wire the launch endpoints | F-002 (half), F-006, F-019 done; F-004, F-005 blocked     | **Partly done**, rest needs your inputs |
+| 3. Shrink the public surface | F-008, F-014, F-007 substance                             | **Done**; F-007 revoke is decision 12   |
+| 4. Recurrence and credits    | F-010, F-015, F-011 report path                           | **Done** as scoped                      |
+| 5. Scheduled-job indexes     | F-009, F-013                                              | **Done**                                |
+| 6. Document truth            | F-012, F-016, F-017, F-018; F-003 recorded; F-020 decided | **Done**                                |
 
-Total engineering: roughly four to five working days. The calendar risk is entirely in the external dependencies of Batch 2.
+Sixteen of the twenty findings are closed. What is left is four items and none of them is engineering:
+
+| Finding      | What it needs from you                                            |
+| ------------ | ----------------------------------------------------------------- |
+| F-002 (rest) | The deployed Edge Function URL                                    |
+| F-004        | Apple Team ID, EAS release keystore SHA-256                       |
+| F-005        | The support mailbox decision, and a mailbox that receives mail    |
+| F-003        | Google Cloud console access to set and verify the key restriction |
+
+Every one of those is gated on an account or a console, not on code. That was the schedule risk named in section 1, and it is now the entire remaining critical path.
 
 ---
 

@@ -88,14 +88,26 @@ export function parseRrule(rrule: string): RecurrenceChoice | null {
 }
 
 /**
- * The calendar date a person is standing in, not the UTC one.
+ * The calendar date at a given place, not the UTC one.
  *
  * toISOString() converts to UTC first, so any evening west of Greenwich
  * reports tomorrow's date. For an anchor that is not a cosmetic difference:
  * a Sunday evening in Seattle becomes Monday, which is a different ISO week,
  * and the generator computes biweekly parity per ISO week.
+ *
+ * en-CA formats as YYYY-MM-DD, which is the shape the column wants. Same
+ * approach as discovery/date-label.ts, including the fallback: an unknown
+ * zone name on some runtime should degrade to the device date rather than
+ * throw in the middle of saving a listing.
  */
-function localCalendarDate(date: Date): string {
+function calendarDateIn(date: Date, timezone?: string | null): string {
+  if (timezone) {
+    try {
+      return date.toLocaleDateString('en-CA', { timeZone: timezone });
+    } catch {
+      // Unknown zone on this runtime; device-local beats crashing.
+    }
+  }
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
@@ -106,19 +118,34 @@ function localCalendarDate(date: Date): string {
  * recent date works; for biweekly the caller says whether the mic happens
  * this week or next.
  *
- * The date has to be the producer's local one. Read in UTC, a mic set up on
- * a Sunday evening anywhere west of Greenwich anchored to Monday, landing in
- * the next ISO week and inverting every alternate week of the schedule, for
- * good and without saying so.
+ * The date has to be the VENUE's, because that is the zone the generator
+ * reads it in: private.generate_occurrences starts from
+ * `(now() at time zone series.timezone)::date` and computes parity in ISO
+ * weeks from there.
+ *
+ * Two rounds of this bug, and they are different. The first was UTC: read in
+ * UTC, a mic set up on a Sunday evening anywhere west of Greenwich anchored
+ * to Monday, landing in the next ISO week and inverting every alternate week
+ * of the schedule, for good and without saying so. The fix was to use the
+ * device date. That was right for a producer listing a mic in their own city
+ * and still wrong across zones: a producer in Los Angeles listing a New York
+ * mic late on a Sunday anchors to Sunday while the venue is already in
+ * Monday, which is once again the next ISO week. Passing the venue zone
+ * closes both, because the venue zone is the only one the server ever
+ * consults.
+ *
+ * The zone is optional so the device date remains the fallback when the form
+ * has not resolved one yet.
  */
 export function computeAnchorDate(
   choice: RecurrenceChoice,
   today: Date,
   biweeklyStartsNextWeek = false,
+  venueTimezone?: string | null,
 ): string {
   const anchor = new Date(today);
   if (choice.kind === 'biweekly' && biweeklyStartsNextWeek) {
     anchor.setDate(anchor.getDate() + 7);
   }
-  return localCalendarDate(anchor);
+  return calendarDateIn(anchor, venueTimezone);
 }

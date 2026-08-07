@@ -5,12 +5,13 @@
  * feature they do not know will go and listen first, so the links sit right
  * under the name as logos rather than being buried on a profile.
  */
-import { StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AvatarCircle } from '@/features/profile/avatar-circle';
 import { SocialLinkRow } from '@/components/social-links';
 import { buildSocialLinks } from '@/features/profile/social';
-import { fonts, palette, spacing, type } from '@/theme';
+import { fonts, minTouchTarget, palette, spacing, type } from '@/theme';
 
 import { creditName, type Credit, type CreditRole } from '../resolve';
 
@@ -24,10 +25,19 @@ export function CreditCard({
   role,
   /** Says so when tonight differs from what the series usually does. */
   overridden = false,
+  /**
+   * Opens the report flow for this credit. A producer can attach any account
+   * to their listing without asking, which puts that person's name, photo,
+   * and links on a mic they may have nothing to do with. The person it names
+   * needs somewhere to say so, and reporting the whole listing is a different
+   * claim about a different thing.
+   */
+  onReport,
 }: {
   credit: Credit;
   role: CreditRole;
   overridden?: boolean;
+  onReport?: () => void;
 }) {
   const name = creditName(credit);
   const links = buildSocialLinks(credit);
@@ -44,6 +54,18 @@ export function CreditCard({
             {name}
           </Text>
         </View>
+        {onReport ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Report this credit for ${name}`}
+            accessibilityHint="Use this if this person is not actually on this mic"
+            hitSlop={8}
+            onPress={onReport}
+            style={({ pressed }) => [styles.report, pressed && styles.reportPressed]}
+          >
+            <Ionicons name="flag-outline" size={16} color={palette.textFaint} />
+          </Pressable>
+        ) : null}
       </View>
       {links.length > 0 ? <SocialLinkRow links={links} /> : null}
     </View>
@@ -77,5 +99,14 @@ const styles = StyleSheet.create({
     color: palette.text,
     fontFamily: fonts.semibold,
     fontSize: type.body.fontSize,
+  },
+  report: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: minTouchTarget,
+    minWidth: minTouchTarget,
+  },
+  reportPressed: {
+    opacity: 0.6,
   },
 });

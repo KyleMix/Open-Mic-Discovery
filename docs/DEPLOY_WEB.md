@@ -35,15 +35,36 @@ The page must be reachable with no login and no app install.
    supabase secrets set RATE_LIMIT_SALT=<any long random string>
    ```
 
-4. Edit `web/delete-account/index.html` and replace the `FUNCTION_URL`
-   placeholder with the deployed function URL:
+4. Edit `web/delete-account/index.html` and set `data-function-url` on the
+   `<body>` tag to the deployed function URL:
    `https://<project-ref>.supabase.co/functions/v1/deletion-request`.
-5. In the Supabase dashboard under Authentication, Redirect URLs, add
+
+   The page reads that attribute at load. While it still holds the
+   `YOUR-PROJECT-REF` placeholder, or if the attribute is missing, the page
+   disables both buttons and shows "This page is not finished being set up",
+   pointing the visitor at the support address instead. That is deliberate:
+   Google Play requires this page to work and a reviewer does test it, so
+   failing visibly beats accepting an email address and failing DNS.
+
+5. **Prove the endpoint is reachable before announcing the page.** This is the
+   check that would have caught the placeholder shipping:
+
+   ```bash
+   curl -sS -X POST \
+     "https://<project-ref>.supabase.co/functions/v1/deletion-request" \
+     -H 'content-type: application/json' -d '{}'
+   ```
+
+   A correctly deployed function answers `400 {"error":"Unknown action."}`.
+   Anything else, a DNS failure, a 404, or an HTML error page, means step 3 or
+   step 4 is not done.
+
+6. In the Supabase dashboard under Authentication, Redirect URLs, add
    `https://openmicfinder.app/delete-account/` so the magic link may land there.
-6. Verify end to end with a throwaway account: request the link from the page,
+7. Verify end to end with a throwaway account: request the link from the page,
    open it, confirm, then check that signing in fails and the profile row shows
    "Deleted user".
-7. Enter `https://openmicfinder.app/delete-account` in the Play Console Data
+8. Enter `https://openmicfinder.app/delete-account` in the Play Console Data
    Safety form under account deletion.
 
 ## How the deletion flow works

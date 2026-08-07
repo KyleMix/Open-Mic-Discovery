@@ -25,6 +25,7 @@ export const REPORT_TARGET_LABELS: Record<ReportTarget, string> = {
   venue: 'Venue',
   profile: 'Profile',
   occurrence: 'Night',
+  credit: 'Host or featured artist',
 };
 
 export const FLAG_REASON_LABELS: Record<FlagReason, string> = {

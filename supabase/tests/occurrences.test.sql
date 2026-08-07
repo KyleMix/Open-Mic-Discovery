@@ -1,7 +1,7 @@
 -- Occurrence generator tests: recurrence correctness, DST safety,
 -- idempotency, and override/cancellation preservation.
 begin;
-select plan(13);
+select plan(23);
 
 -- A dedicated test series: every Tuesday 20:00 America/Los_Angeles.
 -- The 130-day horizon from late July 2026 crosses the US DST fall-back
@@ -140,6 +140,56 @@ select throws_ok(
   'P0001', 'invalid IANA timezone: PST',
   'non-IANA timezone names are rejected'
 );
+
+-- ---------------------------------------------------------------------------
+-- Unsupported recurrence rules are rejected at the same boundary
+-- (20260807000700, audit finding F-015).
+--
+-- rrule_matches implements a subset on purpose. What it used to do with
+-- anything outside that subset was return false for every candidate day, so
+-- the listing saved cleanly and then generated no nights, forever, with no
+-- error anywhere. These are the shapes that took that path.
+-- ---------------------------------------------------------------------------
+create function pg_temp.try_rrule(p_rrule text) returns text language plpgsql as $fn$
+begin
+  insert into mic_series (venue_id, title, disciplines, rrule, anchor_date,
+                          start_time, timezone, signup_method)
+  values ('10000000-0000-4000-b000-0000000000e1'::uuid, 'rrule probe', '{music}',
+          p_rrule, '2026-01-01', '19:00', 'America/Los_Angeles', 'first_come');
+  return 'accepted';
+exception when others then
+  return sqlstate;
+end;
+$fn$;
+
+-- The silent-nothing case: a monthly rule with no ordinal on the weekday.
+select is(pg_temp.try_rrule('FREQ=MONTHLY;BYDAY=TU'), '23514',
+  'a monthly rule with a plain weekday is refused, not accepted and then ignored');
+
+-- The wrong-cadence case: the monthly branch has no INTERVAL support, so
+-- accepting one promises an every-other-month mic and delivers monthly.
+select is(pg_temp.try_rrule('FREQ=MONTHLY;INTERVAL=2;BYDAY=1TU'), '23514',
+  'a monthly rule with an INTERVAL is refused rather than quietly run monthly');
+
+select is(pg_temp.try_rrule('FREQ=DAILY;BYDAY=MO'), '23514',
+  'a frequency the generator does not implement is refused');
+select is(pg_temp.try_rrule('FREQ=WEEKLY;BYDAY='), '23514',
+  'a rule with no days at all is refused');
+select is(pg_temp.try_rrule('FREQ=WEEKLY;BYDAY=FUNDAY'), '23514',
+  'a weekday that is not one is refused');
+select is(pg_temp.try_rrule('FREQ=WEEKLY;INTERVAL=0;BYDAY=MO'), '23514',
+  'an INTERVAL of zero is refused rather than dividing by it');
+
+-- And the whole supported subset still saves, which is the assertion that
+-- stops the guard from being tightened into a wall.
+select is(pg_temp.try_rrule('FREQ=WEEKLY;BYDAY=TU,FR'), 'accepted',
+  'multi-day weekly rules are still accepted');
+select is(pg_temp.try_rrule('FREQ=WEEKLY;INTERVAL=3;BYDAY=WE'), 'accepted',
+  'every-n-weeks rules are still accepted');
+select is(pg_temp.try_rrule('FREQ=MONTHLY;BYDAY=1SU,3SU'), 'accepted',
+  'multi-ordinal monthly rules are still accepted');
+select is(pg_temp.try_rrule('FREQ=MONTHLY;BYDAY=-1FR'), 'accepted',
+  'last-weekday-of-month rules are still accepted');
 
 select * from finish();
 rollback;

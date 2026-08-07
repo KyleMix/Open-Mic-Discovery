@@ -379,7 +379,11 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
       disciplines,
       signupMethod: method,
       rrule,
-      anchorDate: computeAnchorDate(recurrence, new Date(), biweeklyNextWeek),
+      // The venue's zone, not the device's: the server reads this date in
+      // the series timezone, so a producer listing a mic in another zone
+      // late at night would otherwise anchor to the wrong ISO week and
+      // invert every alternate night of a biweekly schedule.
+      anchorDate: computeAnchorDate(recurrence, new Date(), biweeklyNextWeek, timezone),
       startTime,
       timezone,
       signupOpensMinutes,

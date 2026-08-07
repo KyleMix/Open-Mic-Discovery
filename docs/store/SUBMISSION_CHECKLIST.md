@@ -73,9 +73,24 @@ notes and demo-account plan in the repo root `REVIEW_NOTES.md`.
 
 - [ ] Sentry: create the project, copy the DSN (becomes
       `EXPO_PUBLIC_SENTRY_DSN`).
-- [ ] Google Maps: create an API key restricted to Android and the package
-      name plus SHA-1 of the EAS build keystore, then set it in `app.json`
-      at `android.config.googleMaps.apiKey`. iOS uses Apple Maps, no key.
+- [ ] Google Maps. A key is **already committed** at `app.json`
+      `android.config.googleMaps.apiKey`, and that is normal: an Android Maps
+      SDK key is compiled into the APK manifest by design and is extractable
+      from any installed build in about a minute. It is not a secret and
+      rotating it changes nothing on its own. What matters is the
+      restriction, which cannot be verified from the repository, so it gets
+      checked here (audit finding F-003):
+  - [ ] Application restriction: type "Android apps", package
+        `com.openmicexplorer.app`, with **both** the debug SHA-1 and the EAS
+        release keystore SHA-1 (`eas credentials`).
+  - [ ] API restriction: "Maps SDK for Android" only.
+  - [ ] Billing alert set, so a scraped key shows up as an email rather than
+        as an invoice.
+  - [ ] Verified on a real preview build, not a simulator: a wrong SHA-1
+        renders blank tiles on release builds only.
+  - [ ] Record the date verified here: ______. Re-check after any keystore
+        regeneration, which invalidates the SHA-1.
+  - iOS uses Apple Maps and needs no key.
 - [ ] Expo/EAS:
   - [ ] `eas init` to create the project (writes the project id into
         `app.json`; commit it).
@@ -126,6 +141,32 @@ notes and demo-account plan in the repo root `REVIEW_NOTES.md`.
 
 ## Phase 6: Builds and real-device testing
 
+- [ ] Pre-build checks, all of which run offline except the last:
+  - [ ] `npm run typecheck`, `npm run lint`, `npm test`.
+  - [ ] `npx supabase test db` (or `scripts/db/verify-local.sh` without
+        Docker) so every migration applies from empty and the pgTAP suite
+        passes.
+  - [ ] `npx eas env:list --environment production` shows both
+        `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`. Both
+        the `production` and `testflight` profiles now name that environment
+        explicitly (`eas.json`); without it a build can ship with no backend
+        configured and launch straight to an error screen (audit F-006).
+  - [ ] `npm run check:backend` against the production URL.
+  - [ ] `npx expo-doctor` reports 20 of 20. Two of its checks call out to
+        the network (the config schema check and the React Native Directory
+        check) and fail in sandboxed environments with a proxy error rather
+        than a real finding, so this one has to run on an unrestricted
+        connection (audit F-017).
+  - [ ] `npm audit`: as of the 2026-08-07 audit this reports 34 advisories,
+        30 moderate and 4 high, and **none of them ship in the app bundle**.
+        Every high (`fastify`, `fast-uri`, `find-my-way`, `js-yaml`) arrives
+        through `@supabase/postgres-meta`, a devDependency, or through
+        `@eslint/eslintrc` and `@expo/xcpretty`. The moderate `uuid` advisory
+        arrives via `xcode` under `@expo/config-plugins`, which runs at
+        prebuild. **Do not run `npm audit fix --force`**: it downgrades
+        `expo-splash-screen` to an SDK 55 version and breaks the project.
+        Re-triage only if a new advisory names a runtime dependency
+        (audit F-016).
 - [ ] `eas build --profile production --platform ios` and
       `--platform android`.
 - [ ] Upload to TestFlight (happens via `eas submit` or automatically) and
@@ -163,9 +204,31 @@ notes and demo-account plan in the repo root `REVIEW_NOTES.md`.
 - [ ] In-App Purchases: none. The app sells nothing; skip this section.
       submission (first subscription must be submitted with an app
       version), with review screenshot and notes.
-- [ ] Age rating questionnaire: answer honestly to land 17+ (unfiltered
-      UGC, infrequent mature or suggestive themes, profanity in comedy
-      contexts). Apple rejects dishonest ratings after the fact.
+- [ ] Age rating questionnaire. Answer from the evidence below, not from a
+      target tier. This list used to say "land 17+", a tier Apple retired
+      when it moved to 13+/16+/18+, and it disagreed with `STORE_LISTING.md`,
+      which says 16+. Apple rejects dishonest ratings after the fact, so the
+      answers matter more than the number they produce:
+  - [ ] User generated content: **yes**, and unmoderated-by-default in the
+        sense the questionnaire means. Listings, venue names and parking
+        notes, bios, stage names, credit names, and poster images are all
+        user supplied (`banned_terms` is a first-pass filter, not review).
+  - [ ] Profanity or crude humor: **infrequent/mild**. Comedy is a
+        first-class discipline (the `discipline` enum) and the EULA warns
+        about adult language.
+  - [ ] Unrestricted web access: **yes**. Profiles and credits link out to
+        Instagram, TikTok, YouTube, Spotify, Apple Music, and arbitrary
+        `https://` sites, opened via `src/components/social-links.tsx`.
+  - [ ] Horror, violence, sexual content, gambling, contests, drugs,
+        alcohol references: **none** as app content.
+  - [ ] In-app purchases: **none**. Ads: **none**. Tracking: **none**.
+  - [ ] Whatever tier those answers produce, expect a reviewer who reads the
+        EULA to see "at least 18 years old" and ask why the store rating is
+        lower. The answer is that the in-app gate is the stricter control
+        and is enforced server side
+        (`supabase/migrations/20260729000200_age_gate_18.sql`). Decide
+        before submitting whether you would rather rate 18+ and skip the
+        conversation; that is an owner decision, see `docs/audit/PLAN.md`.
 - [ ] App Privacy section: enter exactly what
       `../privacy/APPLE_PRIVACY.md` says (data linked to identity: email,
       name, coarse location, user content, birth year, device id/push
@@ -197,10 +260,14 @@ notes and demo-account plan in the repo root `REVIEW_NOTES.md`.
   - [ ] Data safety form: enter exactly what
         `../privacy/PLAY_DATA_SAFETY.md` says, including the account
         deletion URL (the hosted `ACCOUNT_DELETION_PAGE.md`).
-  - [ ] Content rating questionnaire (IARC): UGC yes, profanity yes,
-        expect Mature 17+.
-  - [ ] Target audience: 18 and over (or 17 with the age gate explained);
-        never select children.
+  - [ ] Content rating questionnaire (IARC): answer from the same evidence
+        as the Apple questionnaire above (UGC yes, mild profanity yes,
+        unrestricted web access yes, nothing else). IARC tiers are its own
+        scheme and differ by territory, so record what it returns rather
+        than aiming at a number.
+  - [ ] Target audience: 18 and over, matching the in-app gate; never
+        select children. Do not select 17, which the earlier draft of this
+        checklist offered: the gate is 18 and the two should agree.
   - [ ] Ads declaration: no ads.
   - [ ] News app: no. Health: no. Government: no.
   - [ ] App access: provide the reviewer credentials from

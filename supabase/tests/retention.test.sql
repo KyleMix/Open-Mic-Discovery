@@ -1,6 +1,37 @@
 -- Retention queue tests: favorite reminders, new-mic alerts, weekly digest.
 begin;
-select plan(9);
+select plan(12);
+
+-- ---------------------------------------------------------------------------
+-- The indexes these queues need (20260807000600, audit findings F-009, F-013).
+--
+-- Asserted here rather than in search-indexes.test.sql because they exist for
+-- these three functions and nothing else. A cron job has no user waiting on
+-- it, so a lost index shows up as the database being slow for everyone rather
+-- than as a slow screen, and nothing else in the suite would notice.
+--
+-- Checked by access method, not merely by existence: a btree on a geography
+-- column would be created without complaint, would look right in a schema
+-- diff, and could not answer an st_dwithin.
+-- ---------------------------------------------------------------------------
+select ok(
+  exists (
+    select 1 from pg_class i
+      join pg_index x on x.indexrelid = i.oid
+      join pg_am am on am.oid = i.relam
+     where i.relname = 'profiles_home_location_gist' and am.amname = 'gist'
+  ),
+  'profiles.home_location has a GiST index, so the nearby queues are not a seq scan'
+);
+select ok(
+  (select indpred is not null from pg_index
+    where indexrelid = 'profiles_home_location_gist'::regclass),
+  'and it is partial, so profiles with no geocoded home area stay out of it'
+);
+select ok(
+  exists (select 1 from pg_class where relname = 'favorites_series_idx'),
+  'favorites is indexed by series_id, which the hourly reminder join drives on'
+);
 
 -- Fixture: a series with a night today (23:59 UTC so it is still upcoming),
 -- favorited by p1.

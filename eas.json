@@ -20,11 +20,14 @@
     "testflight": {
       "extends": "preview",
       "distribution": "store",
+      "channel": "production",
+      "environment": "production",
       "autoIncrement": true
     },
     "production": {
       "autoIncrement": true,
-      "channel": "production"
+      "channel": "production",
+      "environment": "production"
     }
   },
   "submit": {

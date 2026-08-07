@@ -4,6 +4,21 @@
 // opens the system sheet with no permission at all. Our privacy posture
 // (REVIEW_NOTES, Data Safety answers) is that calendar permission is never
 // requested, so this stays on the permissionless API.
+//
+// A note for the next person who reads app.json and notices that the
+// expo-calendar plugin still declares iOS purpose strings for a permission
+// this file never requests (audit finding F-020). That was examined and left
+// alone on purpose. The strings only put NSCalendars*UsageDescription keys in
+// Info.plist, which costs nothing and is not a review risk. Removing them
+// would be tidier and carries a failure mode that no test in this repo can
+// catch: if any EventKit path behind the system sheet does consult the
+// entitlement, a missing usage string is a hard crash on iOS, not a denied
+// permission, and it would only appear on a physical device. Android is
+// already consistent: blockedPermissions strips READ_CALENDAR and
+// WRITE_CALENDAR, which the legacy API does not need.
+//
+// If you do remove them, verify "Add to my calendar" on a real iPhone before
+// merging. A simulator is not enough.
 import * as Calendar from 'expo-calendar/legacy';
 import { Linking, Platform } from 'react-native';
 
