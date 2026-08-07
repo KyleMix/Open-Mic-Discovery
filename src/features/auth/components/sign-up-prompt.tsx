@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     fontSize: type.body.fontSize,
   },
   footnote: {
-    color: palette.textDisabled,
+    color: palette.textFaint,
     fontSize: type.caption.fontSize,
   },
 });

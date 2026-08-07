@@ -550,11 +550,13 @@ const styles = StyleSheet.create({
   rowCurrent: {
     borderColor: palette.success,
   },
+  // Min width, matching the night screen: two digits or scaled type grow
+  // the column instead of clipping.
   slot: {
     color: palette.textSecondary,
     fontFamily: fonts.semibold,
     fontSize: type.body.fontSize,
-    width: 22,
+    minWidth: 28,
   },
   rowName: {
     color: palette.text,
@@ -567,7 +569,7 @@ const styles = StyleSheet.create({
     textDecorationLine: 'line-through',
   },
   rowNoShow: {
-    color: palette.textDisabled,
+    color: palette.textFaint,
     textDecorationLine: 'line-through',
   },
   rowMeta: {

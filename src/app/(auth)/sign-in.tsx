@@ -88,14 +88,14 @@ export default function SignInScreen() {
         disabled={busy !== null}
         onPress={() => run('google', signInWithGoogle)}
       />
-      <View style={{ marginTop: spacing.md, gap: spacing.md }}>
-        <Link href="/(auth)/sign-up">
-          <Text style={{ color: palette.text }}>New here? Create an account</Text>
-        </Link>
-        <Link href="/(auth)/forgot-password">
-          <Text style={{ color: palette.textSecondary }}>Forgot your password?</Text>
-        </Link>
-      </View>
+      {/* New users arrive here from every commitment CTA, so the way to an
+          account is a full button, not a text link to hunt for. */}
+      <Button
+        label="New here? Create an account"
+        kind="secondary"
+        disabled={busy !== null}
+        onPress={() => router.push('/(auth)/sign-up')}
+      />
       <Button
         label="Browse mics without an account"
         kind="secondary"

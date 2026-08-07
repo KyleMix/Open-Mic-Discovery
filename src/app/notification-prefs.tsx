@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { Stack } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 

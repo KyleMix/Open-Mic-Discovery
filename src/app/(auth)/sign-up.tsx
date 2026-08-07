@@ -1,7 +1,8 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+import { Platform } from 'react-native';
 
-import { signUpWithEmail } from '@/features/auth/api';
+import { signInWithApple, signInWithGoogle, signUpWithEmail } from '@/features/auth/api';
 import { validateEmail, validatePassword } from '@/features/auth/validation';
 import { Body, Button, ErrorText, Field, FormScreen, Screen, Title } from '@/components/ui';
 
@@ -13,7 +14,7 @@ export default function SignUpScreen() {
     email?: string | null;
     password?: string | null;
   }>({});
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<'email' | 'apple' | 'google' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
 
@@ -24,7 +25,7 @@ export default function SignUpScreen() {
     if (emailError || passwordError) {
       return;
     }
-    setBusy(true);
+    setBusy('email');
     setError(null);
     try {
       const { needsEmailConfirmation } = await signUpWithEmail(email.trim(), password);
@@ -35,7 +36,27 @@ export default function SignUpScreen() {
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not create the account.');
     } finally {
-      setBusy(false);
+      setBusy(null);
+    }
+  }
+
+  // Apple and Google create the account on first use, so the buttons belong
+  // on this screen as much as on sign-in; new users used to only find them
+  // by backing out to the password form.
+  async function runProvider(kind: 'apple' | 'google', action: () => Promise<void>) {
+    setBusy(kind);
+    setError(null);
+    try {
+      await action();
+      // Navigation happens in the root gate once the session lands.
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Sign up failed. Try again.';
+      // Backing out of the provider sheet is a choice, not a failure.
+      if (!message.toLowerCase().includes('cancel')) {
+        setError(message);
+      }
+    } finally {
+      setBusy(null);
     }
   }
 
@@ -87,7 +108,34 @@ export default function SignUpScreen() {
       />
       <Body>Passwords are at least 10 characters.</Body>
       {error ? <ErrorText>{error}</ErrorText> : null}
-      <Button label="Create account" busy={busy} disabled={busy} onPress={submit} />
+      <Button
+        label="Create account"
+        busy={busy === 'email'}
+        disabled={busy !== null}
+        onPress={submit}
+      />
+      {Platform.OS === 'ios' ? (
+        <Button
+          label="Continue with Apple"
+          kind="secondary"
+          busy={busy === 'apple'}
+          disabled={busy !== null}
+          onPress={() => runProvider('apple', signInWithApple)}
+        />
+      ) : null}
+      <Button
+        label="Continue with Google"
+        kind="secondary"
+        busy={busy === 'google'}
+        disabled={busy !== null}
+        onPress={() => runProvider('google', signInWithGoogle)}
+      />
+      <Button
+        label="I already have an account"
+        kind="secondary"
+        disabled={busy !== null}
+        onPress={() => router.push('/(auth)/sign-in')}
+      />
       <Body>
         You will review and accept the terms of use next. Curious how your data is handled?
       </Body>

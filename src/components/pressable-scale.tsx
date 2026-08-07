@@ -2,6 +2,7 @@ import { type ReactNode } from 'react';
 import { Pressable, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withSpring,
   withTiming,
@@ -20,6 +21,9 @@ type Props = Omit<PressableProps, 'style' | 'children'> & {
  */
 export function PressableScale({ style, children, onPressIn, onPressOut, ...props }: Props) {
   const pressed = useSharedValue(0);
+  // Every button and card runs through here, so this one check covers most
+  // of the app's motion for people who asked the OS to reduce it.
+  const reduceMotion = useReducedMotion();
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: 1 - pressed.value * 0.03 }],
   }));
@@ -28,11 +32,15 @@ export function PressableScale({ style, children, onPressIn, onPressOut, ...prop
     <Pressable
       {...props}
       onPressIn={(event) => {
-        pressed.value = withTiming(1, { duration: 90 });
+        if (!reduceMotion) {
+          pressed.value = withTiming(1, { duration: 90 });
+        }
         onPressIn?.(event);
       }}
       onPressOut={(event) => {
-        pressed.value = withSpring(0, { damping: 16, stiffness: 300 });
+        if (!reduceMotion) {
+          pressed.value = withSpring(0, { damping: 16, stiffness: 300 });
+        }
         onPressOut?.(event);
       }}
     >
