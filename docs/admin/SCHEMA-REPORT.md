@@ -35,6 +35,18 @@ a caller who is already an admin the guard does nothing at all. So any admin can
 another admin, with no audit trail, from a phone. This is the single largest gap
 against S4 and S5 and it needs a migration whatever else the console does.
 
+> **Fixed, 2026-08-07**, by `20260807001000_admin_is_not_self_serve.sql`.
+> `is_admin` is now pinned by the guard for every write that carries a session,
+> admin or not, so the only paths that can grant it are the owner bootstrap
+> trigger and a caller with no `auth.uid()` (service role, migrations). The fix
+> is in the trigger rather than in a `WITH CHECK` because a policy sees only the
+> proposed row, never the row it replaces, so "is_admin is unchanged" is not
+> expressible as a policy. Consequence, stated plainly: until the console's
+> audited admin management lands there is no in-product way to appoint a second
+> moderator. That costs nothing today, since the only admin path that has ever
+> existed is the single hard-coded owner email. Eleven pgTAP assertions in
+> `supabase/tests/admin-privilege.test.sql`.
+
 **F-C. The blanket grants in `20260728001200_grants.sql` will silently arm every
 new admin table and every new admin RPC for `anon`.** That migration runs
 `grant all on all tables in schema public to anon, authenticated, service_role`
@@ -60,6 +72,20 @@ text, status enum, resolver, and timestamps. It is missing severity, assignee,
 and a resolution note. The brief's `content_reports` proposal would duplicate a
 live table that the mobile app already writes to from two screens. Extend, do not
 add.
+
+> **Extended, 2026-08-07**, by `20260807001100_report_triage.sql`, with one
+> deviation from "three ALTER TABLEs". `severity` is a column on `reports`,
+> derived from the reason by `private.report_severity_for()` and not settable by
+> the reporter. `assigned_to` and `resolution` are **not** columns on `reports`:
+> they live on an admin-only `report_triage` table, because
+> `reports reporter select own` lets a reporter read their own report row, RLS
+> cannot hide columns, and a moderator's internal note must not come back to the
+> person who filed the report. Same reasoning that put private profile columns
+> behind `public_profiles`. Also closed in passing: `resolved_by` and
+> `resolved_at` are now stamped from `auth.uid()` and `now()` on the transition
+> into a resolved state, so the audit stamp stops being a client claim. The
+> existing app client keeps working unchanged. Fifteen pgTAP assertions in
+> `supabase/tests/report-triage.test.sql`.
 
 **F-F. Session policy and MFA are project-wide settings on a project the mobile
 app shares.** S3 (mandatory TOTP), S9 (thirty minute idle, eight hour absolute),
@@ -331,14 +357,20 @@ harassment | hate | sexual_content | violence_threat | impersonation | illegal |
 other`. `report_target` is `series | venue | profile | occurrence | credit`
 (`credit` added by `20260807000800`).
 
-Missing for the console queue: no `severity`, no `assigned_to`, no resolution
-note, and the queue index is `(status, created_at)`, which suits oldest-first
-sorting but not severity ordering.
+Missing for the console queue at the time of this report: no `severity`, no
+`assigned_to`, no resolution note, and the queue index is `(status, created_at)`,
+which suits oldest-first sorting but not severity ordering. **All three added
+2026-08-07** by `20260807001100_report_triage.sql`, with `assigned_to` and
+`resolution` on the admin-only `report_triage` table rather than on `reports`.
+See the note under F-E for why, and section 2.22 for the new table.
 
-Note that resolving a report today happens as a **direct table UPDATE** from the
-client (`useResolveReport` in `src/features/safety/queries.ts` writes `status`,
-`resolved_by`, `resolved_at`), not through an RPC. Under S5 that has to move
-behind a function.
+Note that resolving a report happens as a **direct table UPDATE** from the client
+(`useResolveReport` in `src/features/safety/queries.ts` writes `status`,
+`resolved_by`, `resolved_at`), not through an RPC. Under S5 the mutation still
+has to move behind a function. What did change on 2026-08-07 is that
+`resolved_by` and `resolved_at` are now stamped server side from `auth.uid()` and
+`now()`, so the values are no longer forgeable even though the write path is
+still a table update.
 
 ### 2.10 `listing_flags` (the data-quality queue)
 
@@ -667,6 +699,34 @@ live only in `auth.users`, which no API role can read. Any email reveal in the
 console has to go through the service role, which is exactly where S12's reason
 string and audit row belong.
 
+### 2.22 `report_triage` (added 2026-08-07, after this inventory was taken)
+
+```sql
+revoke all on report_triage from anon;
+revoke delete, truncate on report_triage from authenticated;
+
+alter table report_triage enable row level security;
+
+create policy "report triage admin select" on report_triage
+  for select to authenticated using ((select private.is_admin()));
+create policy "report triage admin insert" on report_triage
+  for insert to authenticated with check ((select private.is_admin()));
+create policy "report triage admin update" on report_triage
+  for update to authenticated using ((select private.is_admin()));
+-- No delete policy, and the DELETE grant is revoked above.
+```
+
+Reading: one row per report, holding `assigned_to` and `resolution`. Moderators
+only, at every verb. The reporter of a report can read their own row on `reports`
+and can read nothing here, which is the whole reason the table exists.
+
+The two `revoke` statements are the F-C pattern in practice, and they are the
+reason this table is worth reading before the audit log is written: without them
+the default privileges from `20260728001200` would have granted `anon` `INSERT`,
+`UPDATE`, `DELETE`, and `TRUNCATE` on a table created today. RLS would still have
+denied every one of those, but S6 asks for the grant not to exist, and a pgTAP
+assertion on `has_table_privilege` is how that stays true.
+
 ---
 
 ## 3. The role model as it stands
@@ -778,8 +838,12 @@ Two caveats:
    argument or a claim through all of them, or add new functions.
 2. `resolve_flag` uses `auth.uid()` for `resolved_by`, so that stamp is
    trustworthy. The `reports` resolution path does not go through an RPC at all,
-   so `resolved_by` there is whatever the client sent. `src/app/admin.tsx` passes
-   `session.user.id`, which happens to be correct, but nothing enforces it.
+   so at the time of this inventory `resolved_by` there was whatever the client
+   sent: `src/app/admin.tsx` passes `session.user.id`, which happens to be
+   correct, but nothing enforced it. **Closed 2026-08-07** by the
+   `reports_guard` trigger in `20260807001100_report_triage.sql`, which stamps
+   both columns server side. The mutation is still a table update rather than an
+   RPC, so S5 is not yet satisfied on this path.
 
 ### 5.2 Trigger and job functions (not API-reachable, all definer, all pinned)
 
@@ -907,15 +971,15 @@ before code.**
 
 ## 9. Data model additions, measured against what exists
 
-| Brief's proposal                                               | Verdict                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `admin_users` (user id, role, active, created by, created at)  | **Build as proposed.** Nothing overlaps. It replaces `private.owner_emails()`, which should then read from it or be retired. Roles: `owner`, `moderator`, `read_only`                                                                                                                                                                                                                                                                                           |
-| `admin_invites` (email, role, token hash, expiry, consumed at) | **Build as proposed.** Nothing overlaps                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `audit_log`                                                    | **Build as proposed**, with the F-C grant caveat and the trigger. Consider `admin.audit_log` rather than `public.audit_log`, so the default privileges in `20260728001200` never touch it and the API cannot see it even in principle                                                                                                                                                                                                                           |
-| `content_reports`                                              | **Do not build. Extend `reports`.** It already has reporter, target type, target id, reason enum, free text, status enum, resolver, resolved at, created at, a queue index, RLS, a rate limit trigger, pgTAP coverage, and two live app screens writing to it. Missing: `severity`, `assigned_to`, `resolution` text. Three `ALTER TABLE` statements beat a parallel table and a data migration, and a second reports table would silently split the queue      |
-| `moderation_actions`                                           | **Probably redundant with `audit_log`.** Every field it proposes (target, action, actor, reason, reversible, reversed by, reversed at) is either in `audit_log` already or is a reversal pointer. My recommendation: one append-only `audit_log` plus a nullable `reverses_audit_id` self-reference, so a reversal is itself an audited action pointing at what it undid. Two tables means two places that can disagree about what happened. Open for your call |
-| `user_sanctions` (user, type, scope, expiry, reason)           | **Build as proposed.** Nothing exists. The hard part is not the table, it is enforcement (below)                                                                                                                                                                                                                                                                                                                                                                |
-| `appeals`                                                      | **Build as proposed**, v2 per the brief's own phasing                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Brief's proposal                                               | Verdict                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `admin_users` (user id, role, active, created by, created at)  | **Build as proposed.** Nothing overlaps. It replaces `private.owner_emails()`, which should then read from it or be retired. Roles: `owner`, `moderator`, `read_only`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `admin_invites` (email, role, token hash, expiry, consumed at) | **Build as proposed.** Nothing overlaps                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `audit_log`                                                    | **Build as proposed**, with the F-C grant caveat and the trigger. Consider `admin.audit_log` rather than `public.audit_log`, so the default privileges in `20260728001200` never touch it and the API cannot see it even in principle                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `content_reports`                                              | **Do not build. Extend `reports`.** It already has reporter, target type, target id, reason enum, free text, status enum, resolver, resolved at, created at, a queue index, RLS, a rate limit trigger, pgTAP coverage, and two live app screens writing to it. Missing: `severity`, `assigned_to`, `resolution` text. Three `ALTER TABLE` statements beat a parallel table and a data migration, and a second reports table would silently split the queue. **Done 2026-08-07** (`20260807001100_report_triage.sql`), with `assigned_to` and `resolution` on an admin-only sibling table instead of on `reports`, because a reporter can read their own report row: see the note under F-E |
+| `moderation_actions`                                           | **Probably redundant with `audit_log`.** Every field it proposes (target, action, actor, reason, reversible, reversed by, reversed at) is either in `audit_log` already or is a reversal pointer. My recommendation: one append-only `audit_log` plus a nullable `reverses_audit_id` self-reference, so a reversal is itself an audited action pointing at what it undid. Two tables means two places that can disagree about what happened. Open for your call                                                                                                                                                                                                                            |
+| `user_sanctions` (user, type, scope, expiry, reason)           | **Build as proposed.** Nothing exists. The hard part is not the table, it is enforcement (below)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `appeals`                                                      | **Build as proposed**, v2 per the brief's own phasing                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 Two additions the brief does not list but v1 needs:
 
@@ -1088,13 +1152,16 @@ a pointer.
 
 Recommended order, if you approve:
 
-1. **App repo, before any console code**: fix F-B (the admin self-promotion
-   hole). One migration, one pgTAP file. It is independent of everything else and
-   it is the worst thing in this report.
+1. ~~**App repo, before any console code**: fix F-B (the admin self-promotion
+   hole).~~ **Done, 2026-08-07**: `20260807001000_admin_is_not_self_serve.sql`
+   plus `supabase/tests/admin-privilege.test.sql`.
 2. **App repo**: `admin_users`, `admin_invites`, `audit_log` (outside `public`),
    the custom access token hook, and the explicit revokes that F-C makes
-   necessary. Plus the three `ALTER TABLE` statements on `reports`. Every one
-   with a pgTAP test in the same commit, per the standing rule.
+   necessary. Every one with a pgTAP test in the same commit, per the standing
+   rule. The `reports` half of this step is **done, 2026-08-07**:
+   `20260807001100_report_triage.sql` plus
+   `supabase/tests/report-triage.test.sql`, which also demonstrates the F-C
+   revoke pattern the audit log will need.
 3. **App repo**: `user_sanctions` and `private.can_act()`, threaded through the
    nine policies in section 9.
 4. **Console repo**: scaffold, gates, queue, audit viewer, admin management.
@@ -1113,7 +1180,8 @@ Answers I need before writing code:
    recommendation: yes. The alternative harms the app.)
 2. **Audit log**: one `audit_log` with a reversal self-reference, or the brief's
    two tables (`audit_log` plus `moderation_actions`)?
-3. **`reports` versus `content_reports`**: confirm extend, not add.
+3. ~~**`reports` versus `content_reports`**: confirm extend, not add.~~
+   **Answered: extend.** Done, see F-E.
 4. **Listing edit history**: build the history table, or narrow v1 feature 2 to
    current state plus prior reports?
 5. **The in-app admin screen**: remove when the console ships, or keep read only?

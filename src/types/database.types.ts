@@ -1103,6 +1103,52 @@ export type Database = {
           },
         ];
       };
+      report_triage: {
+        Row: {
+          assigned_to: string | null;
+          created_at: string;
+          report_id: string;
+          resolution: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          assigned_to?: string | null;
+          created_at?: string;
+          report_id: string;
+          resolution?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          assigned_to?: string | null;
+          created_at?: string;
+          report_id?: string;
+          resolution?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'report_triage_assigned_to_fkey';
+            columns: ['assigned_to'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'report_triage_assigned_to_fkey';
+            columns: ['assigned_to'];
+            isOneToOne: false;
+            referencedRelation: 'public_profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'report_triage_report_id_fkey';
+            columns: ['report_id'];
+            isOneToOne: true;
+            referencedRelation: 'reports';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       reports: {
         Row: {
           created_at: string;
@@ -1112,6 +1158,7 @@ export type Database = {
           reporter_id: string;
           resolved_at: string | null;
           resolved_by: string | null;
+          severity: Database['public']['Enums']['report_severity'];
           status: Database['public']['Enums']['report_status'];
           target_id: string;
           target_type: Database['public']['Enums']['report_target'];
@@ -1124,6 +1171,7 @@ export type Database = {
           reporter_id: string;
           resolved_at?: string | null;
           resolved_by?: string | null;
+          severity?: Database['public']['Enums']['report_severity'];
           status?: Database['public']['Enums']['report_status'];
           target_id: string;
           target_type: Database['public']['Enums']['report_target'];
@@ -1136,6 +1184,7 @@ export type Database = {
           reporter_id?: string;
           resolved_at?: string | null;
           resolved_by?: string | null;
+          severity?: Database['public']['Enums']['report_severity'];
           status?: Database['public']['Enums']['report_status'];
           target_id?: string;
           target_type?: Database['public']['Enums']['report_target'];
@@ -3269,6 +3318,7 @@ export type Database = {
         | 'impersonation'
         | 'illegal'
         | 'other';
+      report_severity: 'low' | 'normal' | 'high' | 'urgent';
       report_status: 'open' | 'in_review' | 'actioned' | 'dismissed';
       report_target: 'series' | 'venue' | 'profile' | 'occurrence' | 'credit';
       signup_method: 'lottery' | 'first_come' | 'reserved_slot' | 'host_booked';
@@ -3432,6 +3482,7 @@ export const Constants = {
         'illegal',
         'other',
       ],
+      report_severity: ['low', 'normal', 'high', 'urgent'],
       report_status: ['open', 'in_review', 'actioned', 'dismissed'],
       report_target: ['series', 'venue', 'profile', 'occurrence', 'credit'],
       signup_method: ['lottery', 'first_come', 'reserved_slot', 'host_booked'],
