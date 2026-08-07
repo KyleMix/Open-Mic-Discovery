@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet } from 'react-native';
 
 import { SelectField } from '@/components/select';
 import { ScreenHeader } from '@/components/screen-header';
+import { SignUpPrompt } from '@/features/auth/components/sign-up-prompt';
 import { Body, Button, ErrorText, LoadingView, ToggleRow } from '@/components/ui';
 import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
@@ -37,7 +38,20 @@ export default function NotificationPrefsScreen() {
     },
   });
 
-  if (!session || prefs.isPending) {
+  if (!session) {
+    return (
+      <>
+        <ScreenHeader title="Notifications" />
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+          <SignUpPrompt
+            title="Reminders need somewhere to land"
+            reason="Notification choices belong to an account, so they follow you to any device."
+          />
+        </ScrollView>
+      </>
+    );
+  }
+  if (prefs.isPending) {
     return (
       <>
         <ScreenHeader title="Notifications" />

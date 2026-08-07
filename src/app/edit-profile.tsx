@@ -359,6 +359,7 @@ function EditProfileForm({
           label="Instagram"
           autoCapitalize="none"
           autoCorrect={false}
+          inputMode="url"
           value={instagram}
           onChangeText={(v) => {
             setInstagram(v);
@@ -372,6 +373,7 @@ function EditProfileForm({
           label="TikTok"
           autoCapitalize="none"
           autoCorrect={false}
+          inputMode="url"
           value={tiktok}
           onChangeText={(v) => {
             setTiktok(v);
@@ -385,6 +387,7 @@ function EditProfileForm({
           label="YouTube"
           autoCapitalize="none"
           autoCorrect={false}
+          inputMode="url"
           value={youtube}
           onChangeText={(v) => {
             setYoutube(v);
@@ -398,6 +401,7 @@ function EditProfileForm({
           label="Spotify"
           autoCapitalize="none"
           autoCorrect={false}
+          inputMode="url"
           value={spotify}
           onChangeText={(v) => {
             setSpotify(v);
@@ -411,6 +415,7 @@ function EditProfileForm({
           label="Apple Music"
           autoCapitalize="none"
           autoCorrect={false}
+          inputMode="url"
           value={appleMusic}
           onChangeText={(v) => {
             setAppleMusic(v);
@@ -424,6 +429,7 @@ function EditProfileForm({
           label="Website"
           autoCapitalize="none"
           autoCorrect={false}
+          inputMode="url"
           value={website}
           onChangeText={(v) => {
             setWebsite(v);

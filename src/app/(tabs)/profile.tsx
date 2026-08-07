@@ -160,7 +160,15 @@ function MyNights({ userId, onOpenMic }: { userId: string; onOpenMic: (id: strin
         new Date(b.occurrence.starts_at).getTime() - new Date(a.occurrence.starts_at).getTime(),
     );
   if (upcoming.length === 0 && past.length === 0) {
-    return null;
+    return (
+      <View style={styles.nightsWrap}>
+        <Text style={styles.sectionTitle}>My nights</Text>
+        <Body>
+          Nights you sign up for land here: your schedule up top, your history under it. Find a mic
+          on the Discover tab to start the list.
+        </Body>
+      </View>
+    );
   }
   const played = past.filter((n) => ['performed', 'confirmed', 'drawn'].includes(n.status));
 

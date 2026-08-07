@@ -53,6 +53,7 @@ export default function ForgotPasswordScreen() {
         label="Email"
         autoCapitalize="none"
         autoComplete="email"
+        textContentType="username"
         inputMode="email"
         value={email}
         onChangeText={(v) => {

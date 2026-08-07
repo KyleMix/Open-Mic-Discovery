@@ -8,6 +8,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -17,6 +18,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Glyph, disciplineGlyphs, signupMethodGlyphs } from '@/components/glyph';
+import { OfflineBanner } from '@/components/offline-banner';
 import {
   Body,
   Button,
@@ -118,16 +120,24 @@ export default function MicDetailScreen() {
         <Screen>
           <Title>Not found</Title>
           <Body>This listing is no longer available.</Body>
+          <NotFoundEscape />
         </Screen>
       ) : (
         <MicDetail
           series={detail.data.series}
           occurrences={detail.data.occurrences}
           ownerVerified={detail.data.ownerVerified}
+          refreshing={detail.isRefetching}
+          onRefresh={detail.refetch}
         />
       )}
     </>
   );
+}
+
+function NotFoundEscape() {
+  const router = useRouter();
+  return <Button label="Find another mic" onPress={() => router.replace('/(tabs)')} />;
 }
 
 type DetailData = NonNullable<ReturnType<typeof useMicDetail>['data']>;
@@ -136,10 +146,14 @@ function MicDetail({
   series,
   occurrences,
   ownerVerified,
+  refreshing,
+  onRefresh,
 }: {
   series: DetailData['series'];
   occurrences: DetailData['occurrences'];
   ownerVerified: boolean;
+  refreshing: boolean;
+  onRefresh: () => void;
 }) {
   const venue = series.venue;
   const fresh = freshness(series.last_confirmed_at, new Date());
@@ -188,7 +202,18 @@ function MicDetail({
 
   return (
     <View style={styles.detailWrap}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <OfflineBanner />
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={palette.textSecondary}
+          />
+        }
+      >
         <Stack.Screen options={{ title: series.title }} />
         {series.poster_url ? (
           <Image

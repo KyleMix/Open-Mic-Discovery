@@ -62,6 +62,7 @@ export default function SignUpScreen() {
         label="Email"
         autoCapitalize="none"
         autoComplete="email"
+        textContentType="username"
         inputMode="email"
         value={email}
         onChangeText={(v) => {
@@ -74,6 +75,7 @@ export default function SignUpScreen() {
       <Field
         label="Password"
         autoComplete="new-password"
+        textContentType="newPassword"
         secureTextEntry
         value={password}
         onChangeText={(v) => {

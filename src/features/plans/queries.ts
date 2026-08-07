@@ -2,6 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { getSupabase } from '@/lib/supabase';
+import { userError } from '@/lib/user-error';
 import type { Database } from '@/types/database.types';
 
 export type UpcomingNight = Database['public']['Views']['my_upcoming_nights']['Row'];
@@ -21,7 +22,7 @@ export function useMyPlan(occurrenceId: string | undefined, userId: string | und
         .eq('profile_id', userId!)
         .maybeSingle();
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not check your plan for this night. Try again.');
       }
       return !!data;
     },
@@ -48,7 +49,7 @@ export function useTogglePlan() {
           .eq('occurrence_id', occurrenceId)
           .eq('profile_id', userId);
         if (error) {
-          throw new Error(error.message);
+          throw userError(error, 'Could not take your plan back. Try again.');
         }
         return;
       }
@@ -64,7 +65,7 @@ export function useTogglePlan() {
         if (error.code === '23505') {
           throw new Error('You are already down as going.');
         }
-        throw new Error(error.message);
+        throw userError(error, 'Could not save that you are going. Try again.');
       }
     },
     onSuccess: (_data, { going }) => {
@@ -93,7 +94,7 @@ export function useUpcomingNights(userId: string | undefined) {
         .gte('starts_at', new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString())
         .order('starts_at');
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load your nights. Try again.');
       }
       return data;
     },
@@ -112,7 +113,7 @@ export function useNightAttendance(occurrenceId: string | undefined) {
         .eq('occurrence_id', occurrenceId!)
         .maybeSingle();
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load the headcount. Try again.');
       }
       return data;
     },
@@ -130,7 +131,7 @@ export function useSeriesAttendance(seriesId: string | undefined) {
         .select('*')
         .eq('series_id', seriesId!);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load the headcount. Try again.');
       }
       return data;
     },
@@ -149,7 +150,7 @@ export function usePlanRoster(occurrenceId: string | undefined) {
         .eq('occurrence_id', occurrenceId!)
         .order('created_at');
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load who is coming. Try again.');
       }
       return data;
     },

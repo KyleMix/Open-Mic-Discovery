@@ -10,7 +10,7 @@
  * first because it keeps working: the person's stage name and links follow
  * their profile instead of going stale in a listing.
  */
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -18,6 +18,7 @@ import { ScreenHeader } from '@/components/screen-header';
 import { Body, Button, ErrorText, Field, LoadingView, Screen, Title } from '@/components/ui';
 import { AvatarCircle } from '@/features/profile/avatar-circle';
 import { useSession } from '@/features/auth/session';
+import { setReturnTo } from '@/stores/return-to';
 import {
   useManageCredits,
   usePersonSearch,
@@ -53,6 +54,8 @@ export default function CreditsScreen() {
   const { id, occurrence } = useLocalSearchParams<{ id: string; occurrence?: string }>();
   const occurrenceId = occurrence ?? null;
   const { session } = useSession();
+  const router = useRouter();
+  const pathname = usePathname();
   const credits = useManageCredits(id);
 
   if (credits.isPending) {
@@ -82,6 +85,13 @@ export default function CreditsScreen() {
         <Screen>
           <Title>Lineup</Title>
           <Body>Sign in to manage this mic.</Body>
+          <Button
+            label="Sign in"
+            onPress={() => {
+              setReturnTo(pathname);
+              router.push('/(auth)/sign-in');
+            }}
+          />
         </Screen>
       </>
     );
@@ -228,6 +238,7 @@ function RoleEditor({
                 label="Instagram"
                 autoCapitalize="none"
                 autoCorrect={false}
+                inputMode="url"
                 value={draft.instagram}
                 onChangeText={(instagram) => setDraft((d) => ({ ...d, instagram }))}
                 error={igError}
@@ -237,6 +248,7 @@ function RoleEditor({
                 label="TikTok"
                 autoCapitalize="none"
                 autoCorrect={false}
+                inputMode="url"
                 value={draft.tiktok}
                 onChangeText={(tiktok) => setDraft((d) => ({ ...d, tiktok }))}
                 error={ttError}
@@ -246,6 +258,7 @@ function RoleEditor({
                 label="YouTube"
                 autoCapitalize="none"
                 autoCorrect={false}
+                inputMode="url"
                 value={draft.youtube}
                 onChangeText={(youtube) => setDraft((d) => ({ ...d, youtube }))}
                 error={ytError}
@@ -255,6 +268,7 @@ function RoleEditor({
                 label="Spotify"
                 autoCapitalize="none"
                 autoCorrect={false}
+                inputMode="url"
                 value={draft.spotify}
                 onChangeText={(spotify) => setDraft((d) => ({ ...d, spotify }))}
                 error={spError}
@@ -264,6 +278,7 @@ function RoleEditor({
                 label="Apple Music"
                 autoCapitalize="none"
                 autoCorrect={false}
+                inputMode="url"
                 value={draft.appleMusic}
                 onChangeText={(appleMusic) => setDraft((d) => ({ ...d, appleMusic }))}
                 error={amError}
@@ -328,6 +343,7 @@ function PersonPicker({
         label="Find them on Open Mic Explorer"
         autoCapitalize="none"
         autoCorrect={false}
+        inputMode="url"
         value={query}
         onChangeText={setQuery}
         placeholder="Search by name or handle"

@@ -2,10 +2,10 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { Body, Button, ErrorText, Field, KeyboardShift, LoadingView, Title } from '@/components/ui';
+import { Body, Button, ErrorText, Field, KeyboardShift, Screen, Title } from '@/components/ui';
 import { ScreenHeader } from '@/components/screen-header';
+import { SignUpPrompt } from '@/features/auth/components/sign-up-prompt';
 import { useSession } from '@/features/auth/session';
-import { LEGAL_LINKS, openLegalLink } from '@/features/legal/links';
 import { useBlockedUsers, useDeleteAccount, useUnblockUser } from '@/features/safety/queries';
 import { SUPPORT_EMAIL, contactSupport } from '@/lib/support';
 import { fonts, palette, spacing, type } from '@/theme';
@@ -16,13 +16,17 @@ export default function SettingsScreen() {
   const blocked = useBlockedUsers(session?.user.id);
   const unblock = useUnblockUser();
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [legalError, setLegalError] = useState<string | null>(null);
 
   if (!session) {
     return (
       <>
         <ScreenHeader title="Settings" />
-        <LoadingView label="Settings" />
+        <Screen>
+          <SignUpPrompt
+            title="Settings live with an account"
+            reason="Blocked users, notification choices, and account controls all belong to an account."
+          />
+        </Screen>
       </>
     );
   }
@@ -40,15 +44,11 @@ export default function SettingsScreen() {
       />
 
       <Text style={styles.sectionTitle}>Legal</Text>
-      {legalError ? <ErrorText>{legalError}</ErrorText> : null}
-      {Object.values(LEGAL_LINKS).map((link) => (
-        <Button
-          key={link.url}
-          label={link.label}
-          kind="secondary"
-          onPress={async () => setLegalError(await openLegalLink(link.url))}
-        />
-      ))}
+      {/* The in-app copies are the source of truth until the hosted pages
+          exist; the old hosted-URL buttons opened a 404. Help below links
+          the same screens, kept here too so Legal is not an empty header. */}
+      <Button label="Terms of use" kind="secondary" onPress={() => router.push('/terms')} />
+      <Button label="Privacy policy" kind="secondary" onPress={() => router.push('/privacy')} />
 
       <Text style={styles.sectionTitle}>Blocked users</Text>
       {blocked.isPending ? (

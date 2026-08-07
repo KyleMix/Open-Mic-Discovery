@@ -66,13 +66,13 @@ export function useEnablePerformerRole() {
         .update({ is_performer: true })
         .eq('id', userId);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not turn on performing. Try again.');
       }
       const { error: ppError } = await supabase
         .from('performer_profiles')
         .upsert({ profile_id: userId }, { onConflict: 'profile_id', ignoreDuplicates: true });
       if (ppError) {
-        throw new Error(ppError.message);
+        throw userError(ppError, 'Could not turn on performing. Try again.');
       }
     },
     onSuccess: (_d, userId) => {
@@ -102,14 +102,14 @@ export function useUpdateRoles(userId: string | undefined) {
         .update({ is_performer: isPerformer, is_producer: isProducer })
         .eq('id', userId);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not update your roles. Try again.');
       }
       if (isPerformer) {
         const { error: ppError } = await supabase
           .from('performer_profiles')
           .upsert({ profile_id: userId, disciplines }, { onConflict: 'profile_id' });
         if (ppError) {
-          throw new Error(ppError.message);
+          throw userError(ppError, 'Could not update your roles. Try again.');
         }
       }
       if (isProducer) {
@@ -117,7 +117,7 @@ export function useUpdateRoles(userId: string | undefined) {
           .from('producer_profiles')
           .upsert({ profile_id: userId }, { onConflict: 'profile_id', ignoreDuplicates: true });
         if (prError) {
-          throw new Error(prError.message);
+          throw userError(prError, 'Could not update your roles. Try again.');
         }
       }
     },

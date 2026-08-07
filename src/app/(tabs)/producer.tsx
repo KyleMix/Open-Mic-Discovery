@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { Glyph } from '@/components/glyph';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
@@ -124,6 +124,13 @@ export default function ProducerScreen() {
         data={series}
         keyExtractor={(s) => s.id}
         contentContainerStyle={styles.list}
+        refreshControl={
+          <RefreshControl
+            refreshing={mySeries.isFetching}
+            onRefresh={mySeries.refetch}
+            tintColor={palette.textSecondary}
+          />
+        }
         ListHeaderComponent={
           <View style={styles.header}>
             <Button label="Add a mic" onPress={() => router.push('/producer/new')} />

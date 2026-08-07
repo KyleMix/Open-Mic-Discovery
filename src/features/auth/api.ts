@@ -208,11 +208,12 @@ export async function completeOnboarding(input: OnboardingInput): Promise<void> 
     }
   }
   if (lastError) {
-    throw new Error(
-      lastError.code === '23505'
-        ? 'Could not set up your profile. Try a slightly different stage name.'
-        : lastError.message,
-    );
+    if (lastError.code === '23505') {
+      throw new Error('Could not set up your profile. Try a slightly different stage name.');
+    }
+    // A raw database string as the first thing a new user ever reads is
+    // the worst possible introduction; translate it like everything else.
+    throw userError(lastError, 'Could not finish setup. Check your connection and try again.');
   }
   if (input.isPerformer) {
     const { error } = await supabase.from('performer_profiles').insert({

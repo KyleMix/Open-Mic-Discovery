@@ -108,17 +108,29 @@ export default function ResetPasswordScreen() {
       <Field
         label="New password"
         autoComplete="new-password"
+        textContentType="newPassword"
         secureTextEntry
         value={password}
-        onChangeText={setPassword}
+        onChangeText={(v) => {
+          setPassword(v);
+          setFieldError(null);
+        }}
+        onBlur={() => setFieldError(validatePassword(password))}
         error={fieldError}
       />
       <Field
         label="Type it again"
         autoComplete="new-password"
+        textContentType="newPassword"
         secureTextEntry
         value={confirm}
-        onChangeText={setConfirm}
+        onChangeText={(v) => {
+          setConfirm(v);
+          setFieldError(null);
+        }}
+        onBlur={() =>
+          setFieldError(confirm && password !== confirm ? 'Passwords do not match.' : null)
+        }
       />
       {error ? <ErrorText>{error}</ErrorText> : null}
       <Button label="Save new password" busy={busy} disabled={busy} onPress={submit} />

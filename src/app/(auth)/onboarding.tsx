@@ -99,7 +99,11 @@ export default function OnboardingScreen() {
         <Field
           label="Stage name"
           value={stageName}
-          onChangeText={setStageName}
+          onChangeText={(v) => {
+            setStageName(v);
+            setErrors((e) => ({ ...e, stageName: null }));
+          }}
+          onBlur={() => setErrors((e) => ({ ...e, stageName: validateDisplayName(stageName) }))}
           error={errors.stageName}
           placeholder="Demi Delta"
         />
@@ -133,7 +137,13 @@ export default function OnboardingScreen() {
           label="Birth year"
           inputMode="numeric"
           value={birthYear}
-          onChangeText={setBirthYear}
+          onChangeText={(v) => {
+            setBirthYear(v);
+            setErrors((e) => ({ ...e, birthYear: null }));
+          }}
+          onBlur={() =>
+            setErrors((e) => ({ ...e, birthYear: validateBirthYear(birthYear, new Date()) }))
+          }
           error={errors.birthYear}
           placeholder="1994"
         />

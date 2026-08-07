@@ -5,6 +5,7 @@ import {
   AccessibilityInfo,
   Modal,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -172,7 +173,17 @@ export default function NightScreen() {
 
   return (
     <KeyboardShift grow>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={roster.isFetching}
+            onRefresh={roster.refetch}
+            tintColor={palette.textSecondary}
+          />
+        }
+      >
         <ScreenHeader title={headerTitle} />
 
         <LiveEntry

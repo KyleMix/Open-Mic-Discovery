@@ -44,6 +44,7 @@ export default function SignInScreen() {
         label="Email"
         autoCapitalize="none"
         autoComplete="email"
+        textContentType="username"
         inputMode="email"
         value={email}
         onChangeText={(v) => {
@@ -56,6 +57,7 @@ export default function SignInScreen() {
       <Field
         label="Password"
         autoComplete="current-password"
+        textContentType="password"
         secureTextEntry
         value={password}
         onChangeText={setPassword}

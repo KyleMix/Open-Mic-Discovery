@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { getSupabase } from '@/lib/supabase';
+import { userError } from '@/lib/user-error';
 import type { Database } from '@/types/database.types';
 
 import type { Credit, CreditRole } from './resolve';
@@ -23,7 +24,7 @@ export function useSeriesCredits(seriesId: string | undefined) {
         .select('*')
         .eq('series_id', seriesId!);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load the lineup. Try again.');
       }
       return data;
     },
@@ -44,7 +45,7 @@ export function useManageCredits(seriesId: string | undefined) {
         .select('*')
         .eq('series_id', seriesId!);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not load the lineup. Try again.');
       }
       return data;
     },
@@ -112,7 +113,7 @@ export function useSetCredit() {
         )
         .select('id');
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not save the lineup. Try again.');
       }
       // Row level security filters denied rows out of a write rather than
       // raising, so zero rows back means it was refused, not applied.
@@ -134,7 +135,7 @@ export function useRemoveCredit() {
         .eq('id', creditId)
         .select('id');
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not remove them from the lineup. Try again.');
       }
       if (!data || data.length === 0) {
         throw new Error('Could not remove this credit. You may no longer manage this mic.');
@@ -168,7 +169,7 @@ export function usePersonSearch(query: string) {
         .or(`handle.ilike.%${trimmed}%,stage_name.ilike.%${trimmed}%`)
         .limit(10);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not search people right now. Try again.');
       }
       return data.flatMap((row) =>
         row.id && row.handle && row.stage_name

@@ -314,6 +314,13 @@ function SearchResults({
       data={state.data}
       keyExtractor={(r) => r.series_id}
       contentContainerStyle={styles.list}
+      refreshControl={
+        <RefreshControl
+          refreshing={state.isFetching}
+          onRefresh={state.refetch}
+          tintColor={palette.textSecondary}
+        />
+      }
       ListHeaderComponent={browseButton}
       renderItem={({ item }) => {
         const fresh = freshness(item.last_confirmed_at, new Date());

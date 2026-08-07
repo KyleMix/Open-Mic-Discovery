@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/screen-header';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
@@ -75,7 +75,17 @@ export default function AdminScreen() {
     q.profiles.length + q.venues.length + q.series.length + q.reports.length + q.flags.length === 0;
 
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl
+          refreshing={queue.isFetching}
+          onRefresh={queue.refetch}
+          tintColor={palette.textSecondary}
+        />
+      }
+    >
       <ScreenHeader title="Moderation queue" />
       <Body>Response target: every item here is actioned within 24 hours.</Body>
       {empty ? <Body>Queue is clear. Nothing needs review.</Body> : null}

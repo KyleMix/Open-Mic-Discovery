@@ -1,8 +1,12 @@
 import * as WebBrowser from 'expo-web-browser';
 
 /**
- * Privacy policy and terms, linked from Settings. They open
- * in the in-app browser, never an external tab.
+ * The hosted privacy policy and terms URLs.
+ *
+ * Currently unmounted: these pages do not exist on the domain yet, so
+ * Settings points at the in-app /privacy and /terms screens instead
+ * (docs/UX_FINDINGS.md, H3). Re-link these once the owner hosts the pages;
+ * they open in the in-app browser, never an external tab.
  */
 export const LEGAL_LINKS = {
   privacyPolicy: { label: 'Privacy Policy', url: 'https://openmicfinder.app/privacy' },

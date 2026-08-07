@@ -407,7 +407,7 @@ export function useEndShow() {
     mutationFn: async (occurrenceId: string) => {
       const { error } = await getSupabase().rpc('end_show', { p_occurrence_id: occurrenceId });
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not end the show. Try again.');
       }
     },
     onSuccess: () => {
@@ -427,7 +427,7 @@ export function useReopenShow() {
         .update({ live_ended_at: null })
         .eq('id', occurrenceId);
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not reopen the show. Try again.');
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['producer'] }),
