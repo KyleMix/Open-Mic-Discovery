@@ -15,7 +15,7 @@ describe('what the Going tab says about a night', () => {
 
   it('prefers the signup, because a slot outranks an intention', () => {
     expect(goingStatusLabel({ ...ROW, signup_status: 'confirmed', slot_position: 3 })).toBe(
-      'On the list, slot 3',
+      'On the list · Slot 3',
     );
   });
 

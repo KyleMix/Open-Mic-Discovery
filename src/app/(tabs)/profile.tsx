@@ -11,7 +11,7 @@ import { AvatarCircle } from '@/features/profile/avatar-circle';
 import { homeAreaLabel } from '@/features/profile/home-area';
 import { buildSocialLinks } from '@/features/profile/social';
 import { SocialLinkRow } from '@/components/social-links';
-import { STATUS_LABELS } from '@/features/signups/components/signup-card';
+import { STATUS_LABELS } from '@/features/signups/labels';
 import { useMyNights, type MyNight } from '@/features/signups/queries';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { disciplineAccents, fonts, minTouchTarget, palette, spacing, type } from '@/theme';
@@ -209,7 +209,9 @@ function NightRow({
     : formatRelativeDay(night.occurrence.starts_at, night.occurrence.series?.timezone);
   const title = night.occurrence.series?.title ?? 'Listing unavailable';
   const label =
-    past && night.status === 'confirmed' ? 'Was on the list' : STATUS_LABELS[night.status];
+    past && (night.status === 'confirmed' || night.status === 'drawn')
+      ? 'Was on the list'
+      : STATUS_LABELS[night.status];
   return (
     <Pressable
       accessibilityRole="button"

@@ -1,4 +1,4 @@
-import { STATUS_LABELS } from '@/features/signups/labels';
+import { STATUS_LABELS, slotLabel } from '@/features/signups/labels';
 import type { Database } from '@/types/database.types';
 
 type SignupStatus = Database['public']['Enums']['signup_status'];
@@ -31,7 +31,7 @@ export function goingStatusLabel(row: GoingRow): string {
   }
   if (row.signup_status) {
     const label = STATUS_LABELS[row.signup_status];
-    return row.slot_position != null ? `${label}, slot ${row.slot_position}` : label;
+    return row.slot_position != null ? `${label} · ${slotLabel(row.slot_position)}` : label;
   }
   if (row.planning) {
     return 'Planning to attend';

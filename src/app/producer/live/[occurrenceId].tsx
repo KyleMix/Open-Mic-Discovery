@@ -12,6 +12,7 @@ import { liveCounts, spotsOpen } from '@/features/live/summary';
 import { clockCaption, clockFace, timerTone } from '@/features/live/timer';
 import { liveWindow } from '@/features/live/window';
 import { useEndShow, useNightContext, useReopenShow } from '@/features/producer/queries';
+import { ROSTER_STATUS_LABELS } from '@/features/signups/labels';
 import {
   useMarkOnDeck,
   useNightSpots,
@@ -374,9 +375,13 @@ export default function LiveScreen() {
             >
               {performerName(row)}
             </Text>
-            {row.status === 'performed' ? <Text style={styles.rowMeta}>done</Text> : null}
-            {row.status === 'no_show' ? <Text style={styles.rowMeta}>no-show</Text> : null}
-            {row.on_deck_at && !isCurrent ? <Text style={styles.onDeckMeta}>on deck</Text> : null}
+            {row.status === 'performed' ? (
+              <Text style={styles.rowMeta}>{ROSTER_STATUS_LABELS.performed}</Text>
+            ) : null}
+            {row.status === 'no_show' ? (
+              <Text style={styles.rowMeta}>{ROSTER_STATUS_LABELS.no_show}</Text>
+            ) : null}
+            {row.on_deck_at && !isCurrent ? <Text style={styles.onDeckMeta}>On deck</Text> : null}
           </View>
         );
       })}

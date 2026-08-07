@@ -1,5 +1,4 @@
-import { STATUS_LABELS } from '@/features/signups/components/signup-card';
-import { ROSTER_STATUS_LABELS } from '@/features/signups/labels';
+import { ROSTER_STATUS_LABELS, STATUS_LABELS } from '@/features/signups/labels';
 import { Constants } from '@/types/database.types';
 
 import { FLAG_REASON_LABELS, REPORT_REASON_LABELS, REPORT_TARGET_LABELS } from './labels';

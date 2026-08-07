@@ -3,12 +3,13 @@ import type { Database } from '@/types/database.types';
 type SignupStatus = Database['public']['Enums']['signup_status'];
 
 /**
- * Plain-language names for signup statuses, shared by the performer's
- * signup card and the producer's roster so the wording never drifts.
- * The performer-voice map (STATUS_LABELS in signup-card) says "You are
- * in"; a host reading the list needs the third person.
+ * The one name each signup status has, everywhere: the signup card, the
+ * sticky footer, the Going tab, profile history, the producer's roster,
+ * and the Live screen all read from this map. "Did I actually get in"
+ * support messages start the moment two screens describe the same state
+ * differently, so no surface carries its own variant.
  */
-export const ROSTER_STATUS_LABELS: Record<SignupStatus, string> = {
+export const STATUS_LABELS: Record<SignupStatus, string> = {
   requested: 'In the draw',
   confirmed: 'On the list',
   waitlisted: 'Waitlisted',
@@ -17,7 +18,17 @@ export const ROSTER_STATUS_LABELS: Record<SignupStatus, string> = {
   no_show: 'Marked no-show',
 };
 
-export const STATUS_LABELS = ROSTER_STATUS_LABELS;
+export const ROSTER_STATUS_LABELS = STATUS_LABELS;
+
+/** The one way a slot number is written. */
+export function slotLabel(slot: number): string {
+  return `Slot ${slot}`;
+}
+
+/** A status with its slot when one is held: "On the list · Slot 4". */
+export function statusWithSlot(status: SignupStatus, slot: number | null): string {
+  return slot != null ? `${STATUS_LABELS[status]} · ${slotLabel(slot)}` : STATUS_LABELS[status];
+}
 
 /** The sticky footer's action labels, shared so wording never drifts. */
 export const CTA_LABELS = {
@@ -36,7 +47,8 @@ export function signupsOpenLabel(opensLabel: string): string {
   return `Signups open ${opensLabel}`;
 }
 
-export const SIGNUPS_CLOSED_LABEL = 'Signups are closed. Walk-ups may be possible at the venue.';
+export const SIGNUPS_CLOSED_LABEL =
+  'Signups are closed. Walk-ups may still be possible at the venue.';
 
 export function spotsTakenLabel(taken: number, capacity: number | null): string {
   if (capacity == null) {

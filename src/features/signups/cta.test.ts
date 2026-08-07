@@ -66,7 +66,7 @@ describe('signupCta', () => {
     });
     expect(signupCta({ ...base, windowState: 'closed' })).toEqual({
       kind: 'status',
-      label: 'Signups are closed. Walk-ups may be possible at the venue.',
+      label: 'Signups are closed. Walk-ups may still be possible at the venue.',
     });
   });
 

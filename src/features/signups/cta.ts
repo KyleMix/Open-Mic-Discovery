@@ -1,10 +1,10 @@
-import { STATUS_LABELS } from '@/features/signups/components/signup-card';
 import {
   CTA_LABELS,
   ENABLE_PERFORMING_DETAIL,
   SIGNUPS_CLOSED_LABEL,
   signupsOpenLabel,
   spotsTakenLabel,
+  statusWithSlot,
 } from '@/features/signups/labels';
 import type { Database } from '@/types/database.types';
 
@@ -58,8 +58,7 @@ export function signupCta(input: Input): SignupCta {
   if (input.myStatus) {
     return {
       kind: 'status',
-      label:
-        STATUS_LABELS[input.myStatus] + (input.mySlot != null ? ` · Slot ${input.mySlot}` : ''),
+      label: statusWithSlot(input.myStatus, input.mySlot),
     };
   }
   // A missing role gets an action, not silence: the footer is the only

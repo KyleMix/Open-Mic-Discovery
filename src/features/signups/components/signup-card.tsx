@@ -11,6 +11,13 @@ import { formatRelativeDay } from '@/features/discovery/date-label';
 import { useEnablePerformerRole } from '@/features/profile/queries';
 import { costLabel } from '@/features/discovery/components/mic-card';
 import { spotsDetail } from '@/features/signups/capacity';
+import {
+  SIGNUPS_CLOSED_LABEL,
+  STATUS_LABELS,
+  slotLabel,
+  spotsTakenLabel,
+  statusWithSlot,
+} from '@/features/signups/labels';
 import { JOIN_LIST_MUTATION_KEY } from '@/features/signups/join-key';
 import {
   useJoinList,
@@ -25,15 +32,6 @@ import { fonts, palette, spacing, type } from '@/theme';
 import type { Database } from '@/types/database.types';
 
 type Occurrence = Database['public']['Tables']['mic_occurrences']['Row'];
-
-export const STATUS_LABELS: Record<Database['public']['Enums']['signup_status'], string> = {
-  requested: 'In the draw',
-  confirmed: 'On the list',
-  waitlisted: 'Waitlisted',
-  drawn: 'You are in: drawn for a spot',
-  performed: 'Performed',
-  no_show: 'Marked no-show',
-};
 
 /** What happens next, for the statuses where that is not obvious. */
 const STATUS_HINTS: Partial<Record<Database['public']['Enums']['signup_status'], string>> = {
@@ -154,10 +152,7 @@ export function SignupCard({
           <Text style={styles.onDeck}>You are on deck. Get ready, you are up soon!</Text>
         ) : null}
         <Text style={styles.status}>
-          {STATUS_LABELS[mySignup.data.status]}
-          {mySignup.data.slot_position != null
-            ? ` · Slot ${mySignup.data.slot_position} in the running order`
-            : ''}
+          {statusWithSlot(mySignup.data.status, mySignup.data.slot_position)}
         </Text>
         {STATUS_HINTS[mySignup.data.status] ? (
           <Body>{STATUS_HINTS[mySignup.data.status]}</Body>
@@ -173,7 +168,7 @@ export function SignupCard({
               <Body>
                 Withdrawing gives up your spot
                 {mySignup.data.slot_position != null
-                  ? ` (Slot ${mySignup.data.slot_position})`
+                  ? ` (${slotLabel(mySignup.data.slot_position)})`
                   : ''}
                 . Re-signing up later puts you at the end of the list.
               </Body>
@@ -220,26 +215,22 @@ export function SignupCard({
       </Body>
     );
   } else if (window.state === 'closed') {
-    content = (
-      <Body>Signups for {nightLabel} are closed. Walk-ups may still be possible at the venue.</Body>
-    );
+    content = <Body>{SIGNUPS_CLOSED_LABEL}</Body>;
   } else {
     content = (
       <>
         <Body>
           {signupMethod === 'lottery'
-            ? `Enter the draw for ${nightLabel}. The host draws the order.`
+            ? `Enter the draw for ${nightLabel}. The host draws before the show, and you get a ` +
+              'notification with the result either way. Not drawn means the waitlist.'
             : `Signups for ${nightLabel} are open.`}
         </Body>
         {counts.data && signupMethod !== 'lottery' ? (
           <Body>
-            {counts.data.capacity != null
-              ? `${counts.data.taken} of ${counts.data.capacity} spots taken${
-                  counts.data.taken >= counts.data.capacity
-                    ? '. Signing up now joins the waitlist.'
-                    : '.'
-                }`
-              : `${counts.data.taken} signed up so far.`}
+            {spotsTakenLabel(counts.data.taken, counts.data.capacity) +
+              (counts.data.capacity != null && counts.data.taken >= counts.data.capacity
+                ? '. Signing up now joins the waitlist.'
+                : '.')}
           </Body>
         ) : null}
         {join.isError ? (

@@ -7,6 +7,7 @@ import { registerPushToken } from '@/lib/notifications';
 import { uniqueChannelTopic } from '@/lib/realtime';
 import { getSupabase } from '@/lib/supabase';
 import { JOIN_LIST_MUTATION_KEY } from '@/features/signups/join-key';
+import { statusWithSlot } from '@/features/signups/labels';
 import { userError } from '@/lib/user-error';
 import type { Database } from '@/types/database.types';
 
@@ -129,12 +130,15 @@ export function useNightSpots(occurrenceId: string | undefined) {
 
 export function useJoinList() {
   const queryClient = useQueryClient();
+  const toast = useToast();
   return useMutation({
     mutationKey: [...JOIN_LIST_MUTATION_KEY],
     mutationFn: async ({ occurrenceId, userId }: { occurrenceId: string; userId: string }) => {
-      const { error } = await getSupabase()
+      const { data, error } = await getSupabase()
         .from('signups')
-        .insert({ occurrence_id: occurrenceId, performer_id: userId });
+        .insert({ occurrence_id: occurrenceId, performer_id: userId })
+        .select('status, slot_position')
+        .single();
       if (error) {
         if (error.code === '42501') {
           throw new Error('Signups are not open for this night.');
@@ -144,11 +148,21 @@ export function useJoinList() {
         }
         throw userError(error, 'Could not sign you up. Try again.');
       }
+      return data;
     },
-    // Getting on the list is the moment the whole app exists for. A tap
-    // confirms it landed without the person having to read anything.
-    onSuccess: (_d, { userId }) => {
+    // Getting on the list is the moment the whole app exists for. The tap
+    // gets a receipt that names the outcome (a full night lands on the
+    // waitlist, not the list), plus a haptic so it registers without
+    // reading anything.
+    onSuccess: (row, { userId }) => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => null);
+      toast.show(
+        row.status === 'requested'
+          ? 'You are in the draw. The host draws before the show.'
+          : row.status === 'waitlisted'
+            ? 'You are on the waitlist. If a spot opens, you move up.'
+            : `${statusWithSlot(row.status, row.slot_position)}.`,
+      );
       // First signup is the moment push starts mattering (status changes,
       // on deck); ask for permission here, not at app launch.
       registerPushToken(userId, { promptIfNeeded: true });
