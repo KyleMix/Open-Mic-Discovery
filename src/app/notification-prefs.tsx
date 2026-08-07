@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 
 import { SelectField } from '@/components/select';
+import { ScreenHeader } from '@/components/screen-header';
 import { Body, Button, ErrorText, LoadingView, ToggleRow } from '@/components/ui';
 import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
@@ -37,11 +38,17 @@ export default function NotificationPrefsScreen() {
   });
 
   if (!session || prefs.isPending) {
-    return <LoadingView label="Loading preferences" />;
+    return (
+      <>
+        <ScreenHeader title="Notifications" />
+        <LoadingView label="Loading preferences" />
+      </>
+    );
   }
   if (prefs.isError) {
     return (
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+        <ScreenHeader title="Notifications" />
         <ErrorText>Could not load preferences.</ErrorText>
         <Button label="Try again" onPress={() => prefs.refetch()} />
       </ScrollView>

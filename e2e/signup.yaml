@@ -9,7 +9,8 @@ appId: com.openmicexplorer.app
     visible: 'Rusty Fret Open Mic.*'
     timeout: 15000
 - tapOn: 'Rusty Fret Open Mic.*'
-# Guest: the footer offers sign-in; sign in as the seeded performer.
+# Guest: the footer offers sign-in; signing in lands back on this mic
+# (the auth funnel records the way back), not on the Discover tab.
 - runFlow:
     when:
       visible: 'Sign in to get on the list'
@@ -20,10 +21,6 @@ appId: com.openmicexplorer.app
       - tapOn: 'Password'
       - inputText: 'demo-pass-1234'
       - tapOn: 'Sign in'
-      - extendedWaitUntil:
-          visible: 'Rusty Fret Open Mic.*'
-          timeout: 15000
-      - tapOn: 'Rusty Fret Open Mic.*'
 # A leftover signup from an earlier run withdraws first, so the flow is
 # repeatable against the same database.
 - extendedWaitUntil:

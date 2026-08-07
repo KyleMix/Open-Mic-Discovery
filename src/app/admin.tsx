@@ -1,6 +1,6 @@
-import { Stack } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { ScreenHeader } from '@/components/screen-header';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
@@ -31,26 +31,42 @@ export default function AdminScreen() {
   const resolveFlag = useResolveFlag();
 
   if (profile.isPending) {
-    return <LoadingView label="Loading" />;
+    return (
+      <>
+        <ScreenHeader title="Moderation queue" />
+        <LoadingView label="Loading" />
+      </>
+    );
   }
   if (!isAdmin || !session) {
     return (
-      <Screen>
-        <Title>Moderation</Title>
-        <Body>This area is for moderators.</Body>
-      </Screen>
+      <>
+        <ScreenHeader title="Moderation queue" />
+        <Screen>
+          <Title>Moderation</Title>
+          <Body>This area is for moderators.</Body>
+        </Screen>
+      </>
     );
   }
   if (queue.isPending) {
-    return <LoadingView label="Loading the queue" />;
+    return (
+      <>
+        <ScreenHeader title="Moderation queue" />
+        <LoadingView label="Loading the queue" />
+      </>
+    );
   }
   if (queue.isError) {
     return (
-      <Screen>
-        <Title>Moderation</Title>
-        <ErrorText>Could not load the queue.</ErrorText>
-        <Button label="Try again" onPress={() => queue.refetch()} />
-      </Screen>
+      <>
+        <ScreenHeader title="Moderation queue" />
+        <Screen>
+          <Title>Moderation</Title>
+          <ErrorText>Could not load the queue.</ErrorText>
+          <Button label="Try again" onPress={() => queue.refetch()} />
+        </Screen>
+      </>
     );
   }
 
@@ -60,14 +76,7 @@ export default function AdminScreen() {
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          title: 'Moderation queue',
-          headerStyle: { backgroundColor: palette.bg },
-          headerTintColor: palette.text,
-        }}
-      />
+      <ScreenHeader title="Moderation queue" />
       <Body>Response target: every item here is actioned within 24 hours.</Body>
       {empty ? <Body>Queue is clear. Nothing needs review.</Body> : null}
 

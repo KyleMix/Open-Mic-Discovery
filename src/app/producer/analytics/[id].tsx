@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { ScreenHeader } from '@/components/screen-header';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { getSupabase } from '@/lib/supabase';
 import { userError } from '@/lib/user-error';
@@ -33,15 +34,23 @@ export default function AnalyticsScreen() {
   });
 
   if (stats.isPending) {
-    return <LoadingView label="Crunching the numbers" />;
+    return (
+      <>
+        <ScreenHeader title="Analytics" />
+        <LoadingView label="Crunching the numbers" />
+      </>
+    );
   }
   if (stats.isError) {
     return (
-      <Screen>
-        <Title>Listing analytics</Title>
-        <ErrorText>Could not load analytics.</ErrorText>
-        <Button label="Try again" onPress={() => stats.refetch()} />
-      </Screen>
+      <>
+        <ScreenHeader title="Analytics" />
+        <Screen>
+          <Title>Listing analytics</Title>
+          <ErrorText>Could not load analytics.</ErrorText>
+          <Button label="Try again" onPress={() => stats.refetch()} />
+        </Screen>
+      </>
     );
   }
 

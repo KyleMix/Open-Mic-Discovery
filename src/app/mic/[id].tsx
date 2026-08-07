@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   AccessibilityInfo,
@@ -56,6 +56,7 @@ import { signupOpensClockTime, signupWindow } from '@/features/signups/window';
 import { formatNextDateLong, formatRelativeDay } from '@/features/discovery/date-label';
 import { describeRecurrence, formatLocalTime } from '@/features/discovery/recurrence';
 import { formatInZone, zoneDiffersFromDevice } from '@/features/discovery/timezone';
+import { setReturnTo } from '@/stores/return-to';
 import {
   disciplineAccents,
   fonts,
@@ -98,7 +99,9 @@ export default function MicDetailScreen() {
       <Stack.Screen
         options={{
           headerShown: true,
-          title: '',
+          // A fallback until the listing names itself; error and not-found
+          // states otherwise sit under a bare back arrow.
+          title: 'Open mic',
           headerStyle: { backgroundColor: palette.bg },
           headerTintColor: palette.text,
         }}
@@ -497,6 +500,7 @@ function SignupFooter({
     }).length > 0;
   const enablePerformer = useEnablePerformerRole();
   const insets = useSafeAreaInsets();
+  const pathname = usePathname();
 
   // The window can open while the person is reading the screen: a tick
   // re-renders at the opening instant and says so out loud.
@@ -580,6 +584,7 @@ function SignupFooter({
             busy={join.isPending || joinPending}
             onPress={() => {
               if (cta.kind === 'sign-in') {
+                setReturnTo(pathname);
                 router.push('/(auth)/sign-in');
               } else if (session) {
                 join.mutate({ occurrenceId: occurrence.id, userId: session.user.id });
@@ -603,6 +608,7 @@ function ClaimModal({
 }) {
   const { session } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
   const claim = useSubmitClaim();
   const [evidence, setEvidence] = useState('');
   const [done, setDone] = useState(false);
@@ -648,6 +654,7 @@ function ClaimModal({
                   label="Sign in"
                   onPress={() => {
                     close();
+                    setReturnTo(pathname);
                     router.push('/(auth)/sign-in');
                   }}
                 />
@@ -761,6 +768,7 @@ function FlagModal({
 }) {
   const { session } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
   const flag = useFlagListing();
   const [reason, setReason] = useState<FlagReason | null>(null);
   const [details, setDetails] = useState('');
@@ -815,6 +823,7 @@ function FlagModal({
                   label="Sign in"
                   onPress={() => {
                     close();
+                    setReturnTo(pathname);
                     router.push('/(auth)/sign-in');
                   }}
                 />

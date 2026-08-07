@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ConfirmSheet, DiscardPrompt } from '@/components/confirm-sheet';
+import { ScreenHeader } from '@/components/screen-header';
 import { useDiscardGuard } from '@/components/discard-guard';
 import { Glyph } from '@/components/glyph';
 import {
@@ -88,15 +89,23 @@ export default function ManageSeriesScreen() {
   );
 
   if (detail.isPending) {
-    return <LoadingView label="Loading your mic" />;
+    return (
+      <>
+        <ScreenHeader title="My mic" />
+        <LoadingView label="Loading your mic" />
+      </>
+    );
   }
   if (detail.isError || !detail.data) {
     return (
-      <Screen>
-        <Title>My mic</Title>
-        <ErrorText>Could not load this listing.</ErrorText>
-        <Button label="Try again" onPress={() => detail.refetch()} />
-      </Screen>
+      <>
+        <ScreenHeader title="My mic" />
+        <Screen>
+          <Title>My mic</Title>
+          <ErrorText>Could not load this listing.</ErrorText>
+          <Button label="Try again" onPress={() => detail.refetch()} />
+        </Screen>
+      </>
     );
   }
 

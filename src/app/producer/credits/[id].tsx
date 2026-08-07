@@ -14,6 +14,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { ScreenHeader } from '@/components/screen-header';
 import { Body, Button, ErrorText, Field, LoadingView, Screen, Title } from '@/components/ui';
 import { AvatarCircle } from '@/features/profile/avatar-circle';
 import { useSession } from '@/features/auth/session';
@@ -55,23 +56,34 @@ export default function CreditsScreen() {
   const credits = useManageCredits(id);
 
   if (credits.isPending) {
-    return <LoadingView label="Loading lineup" />;
+    return (
+      <>
+        <ScreenHeader title="Lineup" />
+        <LoadingView label="Loading lineup" />
+      </>
+    );
   }
   if (credits.isError) {
     return (
-      <Screen>
-        <Title>Lineup</Title>
-        <ErrorText>Could not load the lineup. Check your connection.</ErrorText>
-        <Button label="Try again" onPress={() => credits.refetch()} />
-      </Screen>
+      <>
+        <ScreenHeader title="Lineup" />
+        <Screen>
+          <Title>Lineup</Title>
+          <ErrorText>Could not load the lineup. Check your connection.</ErrorText>
+          <Button label="Try again" onPress={() => credits.refetch()} />
+        </Screen>
+      </>
     );
   }
   if (!session) {
     return (
-      <Screen>
-        <Title>Lineup</Title>
-        <Body>Sign in to manage this mic.</Body>
-      </Screen>
+      <>
+        <ScreenHeader title="Lineup" />
+        <Screen>
+          <Title>Lineup</Title>
+          <Body>Sign in to manage this mic.</Body>
+        </Screen>
+      </>
     );
   }
 

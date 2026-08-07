@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -10,6 +10,7 @@ import { eventDate, eventTime } from '@/features/discovery/local-time';
 import { liveOrder, performerName, type LiveRow } from '@/features/live/order';
 import { liveCounts, spotsOpen } from '@/features/live/summary';
 import { clockCaption, clockFace, timerTone } from '@/features/live/timer';
+import { ScreenHeader } from '@/components/screen-header';
 import { liveWindow } from '@/features/live/window';
 import { useEndShow, useNightContext, useReopenShow } from '@/features/producer/queries';
 import { ROSTER_STATUS_LABELS } from '@/features/signups/labels';
@@ -80,22 +81,36 @@ export default function LiveScreen() {
     }
   }, [elapsed, setLength, running]);
 
+  // A host running two mics needs even the loading state to say which
+  // show this is; "Live" alone answers nothing.
+  const headerTitle = night.data?.series
+    ? `${night.data.override_title ?? night.data.series.title} · Live`
+    : 'Live';
+
   if (night.isPending || roster.isPending) {
-    return <LoadingView label="Loading the night" />;
+    return (
+      <>
+        <ScreenHeader title={headerTitle} />
+        <LoadingView label="Loading the night" />
+      </>
+    );
   }
   if (night.isError || roster.isError || !night.data) {
     return (
-      <Screen>
-        <Title>Live</Title>
-        <ErrorText>Could not load this night.</ErrorText>
-        <Button
-          label="Try again"
-          onPress={() => {
-            night.refetch();
-            roster.refetch();
-          }}
-        />
-      </Screen>
+      <>
+        <ScreenHeader title={headerTitle} />
+        <Screen>
+          <Title>Live</Title>
+          <ErrorText>Could not load this night.</ErrorText>
+          <Button
+            label="Try again"
+            onPress={() => {
+              night.refetch();
+              roster.refetch();
+            }}
+          />
+        </Screen>
+      </>
     );
   }
 
@@ -103,50 +118,59 @@ export default function LiveScreen() {
   const window = liveWindow(night.data.starts_at, new Date(), night.data.live_ended_at);
   if (window.state === 'too_early') {
     return (
-      <Screen>
-        <Title>Not yet</Title>
-        <Body>
-          Live opens an hour before the night starts, at{' '}
-          {eventTime(window.opensAt.toISOString(), timezone)} on{' '}
-          {eventDate(night.data.starts_at, timezone)}. Until then the list is on the previous
-          screen.
-        </Body>
-      </Screen>
+      <>
+        <ScreenHeader title={headerTitle} />
+        <Screen>
+          <Title>Not yet</Title>
+          <Body>
+            Live opens an hour before the night starts, at{' '}
+            {eventTime(window.opensAt.toISOString(), timezone)} on{' '}
+            {eventDate(night.data.starts_at, timezone)}. Until then the list is on the previous
+            screen.
+          </Body>
+        </Screen>
+      </>
     );
   }
   if (window.state === 'ended') {
     return (
-      <Screen>
-        <Title>Show ended</Title>
-        <Body>
-          You closed this one at {eventTime(window.endedAt.toISOString(), timezone)}. Nothing else
-          can be marked from here.
-        </Body>
-        {/* Ending the night by accident with people still waiting to go up is
+      <>
+        <ScreenHeader title={headerTitle} />
+        <Screen>
+          <Title>Show ended</Title>
+          <Body>
+            You closed this one at {eventTime(window.endedAt.toISOString(), timezone)}. Nothing else
+            can be marked from here.
+          </Body>
+          {/* Ending the night by accident with people still waiting to go up is
             a bad five minutes for everyone, so there is a way back. */}
-        <Button
-          label="Reopen the show"
-          kind="secondary"
-          busy={reopen.isPending}
-          onPress={() => occurrenceId && reopen.mutate(occurrenceId)}
-        />
-        {reopen.isError ? (
-          <ErrorText>
-            {reopen.error instanceof Error ? reopen.error.message : 'Could not reopen the show.'}
-          </ErrorText>
-        ) : null}
-      </Screen>
+          <Button
+            label="Reopen the show"
+            kind="secondary"
+            busy={reopen.isPending}
+            onPress={() => occurrenceId && reopen.mutate(occurrenceId)}
+          />
+          {reopen.isError ? (
+            <ErrorText>
+              {reopen.error instanceof Error ? reopen.error.message : 'Could not reopen the show.'}
+            </ErrorText>
+          ) : null}
+        </Screen>
+      </>
     );
   }
   if (window.state === 'over') {
     return (
-      <Screen>
-        <Title>That night is done</Title>
-        <Body>
-          This night was more than a day ago and was never ended, so the controls have closed
-          themselves. A stray tap cannot rewrite a list that has already happened.
-        </Body>
-      </Screen>
+      <>
+        <ScreenHeader title={headerTitle} />
+        <Screen>
+          <Title>That night is done</Title>
+          <Body>
+            This night was more than a day ago and was never ended, so the controls have closed
+            themselves. A stray tap cannot rewrite a list that has already happened.
+          </Body>
+        </Screen>
+      </>
     );
   }
 
@@ -193,14 +217,7 @@ export default function LiveScreen() {
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          title: 'Live',
-          headerStyle: { backgroundColor: palette.bg },
-          headerTintColor: palette.text,
-        }}
-      />
+      <ScreenHeader title={headerTitle} />
 
       {/* The three numbers a host is asked for all night, kept on screen in
           every state. A finished list still needs them: "can I put one more

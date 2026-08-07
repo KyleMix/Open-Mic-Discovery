@@ -1,7 +1,8 @@
-import { Stack, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { ScreenHeader } from '@/components/screen-header';
 import { useDiscardGuard } from '@/components/discard-guard';
 import { disciplineGlyphs, Glyph } from '@/components/glyph';
 import { useToast } from '@/components/toast';
@@ -47,12 +48,17 @@ export default function EditProfileScreen() {
   const performerDisciplines = usePerformerDisciplines(session?.user.id);
 
   if (profile.isPending || performerDisciplines.isPending) {
-    return <LoadingView label="Loading your profile" />;
+    return (
+      <>
+        <ScreenHeader title="Edit profile" />
+        <LoadingView label="Loading your profile" />
+      </>
+    );
   }
   if (profile.isError || !profile.data) {
     return (
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <ScreenHeader />
+        <ScreenHeader title="Edit profile" />
         <Title>Edit profile</Title>
         <ErrorText>Could not load your profile. Check your connection.</ErrorText>
         <Button label="Try again" onPress={() => profile.refetch()} />
@@ -64,19 +70,6 @@ export default function EditProfileScreen() {
       profile={profile.data}
       initialDisciplines={(performerDisciplines.data ?? []) as Discipline[]}
       userId={session!.user.id}
-    />
-  );
-}
-
-function ScreenHeader() {
-  return (
-    <Stack.Screen
-      options={{
-        headerShown: true,
-        title: 'Edit profile',
-        headerStyle: { backgroundColor: palette.bg },
-        headerTintColor: palette.text,
-      }}
     />
   );
 }
@@ -231,7 +224,7 @@ function EditProfileForm({
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
-        <ScreenHeader />
+        <ScreenHeader title="Edit profile" />
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Change your photo"

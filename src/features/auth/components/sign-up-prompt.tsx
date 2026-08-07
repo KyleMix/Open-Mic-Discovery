@@ -1,7 +1,8 @@
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Body, Button } from '@/components/ui';
+import { setReturnTo } from '@/stores/return-to';
 import { fonts, palette, spacing, type } from '@/theme';
 
 /**
@@ -24,6 +25,13 @@ export function SignUpPrompt({
   perks?: string[];
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  // Finishing the funnel should land back on the thing that prompted it,
+  // whichever screen this prompt is sitting on.
+  function enterFunnel(screen: '/(auth)/sign-up' | '/(auth)/sign-in') {
+    setReturnTo(pathname);
+    router.push(screen);
+  }
   return (
     <View style={styles.card}>
       <Text style={styles.title}>{title}</Text>
@@ -37,11 +45,11 @@ export function SignUpPrompt({
           ))}
         </View>
       ) : null}
-      <Button label="Create a free account" onPress={() => router.push('/(auth)/sign-up')} />
+      <Button label="Create a free account" onPress={() => enterFunnel('/(auth)/sign-up')} />
       <Button
         label="I already have one"
         kind="secondary"
-        onPress={() => router.push('/(auth)/sign-in')}
+        onPress={() => enterFunnel('/(auth)/sign-in')}
       />
       <Text style={styles.footnote}>
         Free, and always will be. An email and your city is all it takes.

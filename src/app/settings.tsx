@@ -1,8 +1,9 @@
-import { Stack, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Body, Button, ErrorText, Field, KeyboardShift, LoadingView, Title } from '@/components/ui';
+import { ScreenHeader } from '@/components/screen-header';
 import { useSession } from '@/features/auth/session';
 import { LEGAL_LINKS, openLegalLink } from '@/features/legal/links';
 import { useBlockedUsers, useDeleteAccount, useUnblockUser } from '@/features/safety/queries';
@@ -18,19 +19,17 @@ export default function SettingsScreen() {
   const [legalError, setLegalError] = useState<string | null>(null);
 
   if (!session) {
-    return <LoadingView label="Settings" />;
+    return (
+      <>
+        <ScreenHeader title="Settings" />
+        <LoadingView label="Settings" />
+      </>
+    );
   }
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          title: 'Settings',
-          headerStyle: { backgroundColor: palette.bg },
-          headerTintColor: palette.text,
-        }}
-      />
+      <ScreenHeader title="Settings" />
       <Title>Settings</Title>
 
       <Text style={styles.sectionTitle}>Notifications</Text>

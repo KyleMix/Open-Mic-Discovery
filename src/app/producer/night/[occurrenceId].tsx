@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
@@ -21,6 +21,7 @@ import {
   Screen,
   Title,
 } from '@/components/ui';
+import { ScreenHeader } from '@/components/screen-header';
 import { formatRelativeDay } from '@/features/discovery/date-label';
 import { liveWindow } from '@/features/live/window';
 import { useNightAttendance, usePlanRoster } from '@/features/plans/queries';
@@ -80,15 +81,23 @@ export default function NightScreen() {
     : 'The list';
 
   if (roster.isPending) {
-    return <LoadingView label="Loading the list" />;
+    return (
+      <>
+        <ScreenHeader title={headerTitle} />
+        <LoadingView label="Loading the list" />
+      </>
+    );
   }
   if (roster.isError) {
     return (
-      <Screen>
-        <Title>The list</Title>
-        <ErrorText>Could not load signups.</ErrorText>
-        <Button label="Try again" onPress={() => roster.refetch()} />
-      </Screen>
+      <>
+        <ScreenHeader title={headerTitle} />
+        <Screen>
+          <Title>The list</Title>
+          <ErrorText>Could not load signups.</ErrorText>
+          <Button label="Try again" onPress={() => roster.refetch()} />
+        </Screen>
+      </>
     );
   }
 
@@ -164,14 +173,7 @@ export default function NightScreen() {
   return (
     <KeyboardShift grow>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <Stack.Screen
-          options={{
-            headerShown: true,
-            title: headerTitle,
-            headerStyle: { backgroundColor: palette.bg },
-            headerTintColor: palette.text,
-          }}
-        />
+        <ScreenHeader title={headerTitle} />
 
         <LiveEntry
           occurrenceId={occurrenceId}

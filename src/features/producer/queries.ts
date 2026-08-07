@@ -497,31 +497,9 @@ export function useReviewClaim() {
   });
 }
 
-/** Enables the performer role on an existing account (dual roles are normal). */
-export function useEnablePerformerRole() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (userId: string) => {
-      const supabase = getSupabase();
-      const { error } = await supabase
-        .from('profiles')
-        .update({ is_performer: true })
-        .eq('id', userId);
-      if (error) {
-        throw userError(error, 'Could not turn on performing. Try again.');
-      }
-      const { error: ppError } = await supabase
-        .from('performer_profiles')
-        .upsert({ profile_id: userId }, { onConflict: 'profile_id', ignoreDuplicates: true });
-      if (ppError) {
-        throw userError(ppError, 'Could not turn on performing. Try again.');
-      }
-    },
-    onSuccess: (_d, userId) => {
-      queryClient.invalidateQueries({ queryKey: ['profile', userId] });
-    },
-  });
-}
+// The enable-performer mutation lives in features/profile/queries.ts; a
+// near-identical copy used to sit here too, drifting on error copy and
+// cache invalidation. One implementation, one behavior.
 
 /** Enables the producer role on an existing account (dual roles are normal). */
 export function useEnableProducerRole() {

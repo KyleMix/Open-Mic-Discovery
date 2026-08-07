@@ -1,4 +1,4 @@
-import { Stack, useRouter } from 'expo-router';
+import { Stack, usePathname, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -8,10 +8,12 @@ import { useSession } from '@/features/auth/session';
 import { SeriesForm, type SeriesFormValues } from '@/features/producer/components/series-form';
 import { signupOpensInterval } from '@/features/producer/signup-opens';
 import { useCreateSeries } from '@/features/producer/queries';
+import { setReturnTo } from '@/stores/return-to';
 import { palette } from '@/theme';
 
 export default function NewSeriesScreen() {
   const router = useRouter();
+  const pathname = usePathname();
   const { session } = useSession();
   const create = useCreateSeries();
   const [dirty, setDirty] = useState(false);
@@ -65,7 +67,13 @@ export default function NewSeriesScreen() {
         <Screen>
           <Title>Sign in first</Title>
           <Body>Creating a listing needs an account.</Body>
-          <Button label="Sign in" onPress={() => router.push('/(auth)/sign-in')} />
+          <Button
+            label="Sign in"
+            onPress={() => {
+              setReturnTo(pathname);
+              router.push('/(auth)/sign-in');
+            }}
+          />
         </Screen>
       ) : (
         <SeriesForm

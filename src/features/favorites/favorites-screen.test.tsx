@@ -25,6 +25,7 @@ import FavoritesScreen from '@/app/(tabs)/favorites';
 jest.mock('@/lib/supabase', () => ({ getSupabase: jest.fn() }));
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
+  usePathname: () => '/favorites',
 }));
 jest.mock('@/features/auth/session', () => ({ useSession: jest.fn() }));
 // OfflineBanner renders on the success path and calls Network.useNetworkState.

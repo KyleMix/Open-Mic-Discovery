@@ -3,12 +3,14 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text } from 'react-native';
 
+import { signOut } from '@/features/auth/api';
 import { parseEulaMarkdown } from '@/features/auth/eula-markdown';
 import { useLatestEula, useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
 import { getSupabase } from '@/lib/supabase';
 import { userError } from '@/lib/user-error';
 import { useOnboardingStore } from '@/stores/onboarding';
+import { consumeReturnTo } from '@/stores/return-to';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { palette, spacing, type } from '@/theme';
 
@@ -65,7 +67,10 @@ export default function EulaScreen() {
         throw userError(error, 'Could not record acceptance. Check your connection and try again.');
       }
       await queryClient.invalidateQueries({ queryKey: ['profile', profile.data.id] });
-      router.replace('/(tabs)');
+      // A deep link that got interrupted by a re-accept lands where it was
+      // headed, not on the default tab.
+      const returnTo = consumeReturnTo();
+      router.replace((returnTo ?? '/(tabs)') as Parameters<typeof router.replace>[0]);
     } catch (e) {
       setAcceptError(e instanceof Error ? e.message : 'Could not record acceptance.');
     } finally {
@@ -108,6 +113,15 @@ export default function EulaScreen() {
         onPress={() => router.push('/privacy')}
       />
       <Button label="I accept the terms" busy={busy} onPress={accept} />
+      <Button
+        label="Not now: sign out"
+        kind="secondary"
+        onPress={() => {
+          // The gate holds this screen until the terms are accepted, so
+          // declining needs a real way out rather than a trap.
+          signOut().catch(() => null);
+        }}
+      />
     </Screen>
   );
 }

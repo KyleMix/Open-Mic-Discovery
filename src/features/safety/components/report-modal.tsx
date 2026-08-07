@@ -1,10 +1,11 @@
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { DiscardPrompt } from '@/components/confirm-sheet';
 import { Body, Button, ErrorText, Field, KeyboardShift } from '@/components/ui';
 import { useSession } from '@/features/auth/session';
+import { setReturnTo } from '@/stores/return-to';
 import { REPORT_REASON_LABELS } from '@/features/safety/labels';
 import {
   useBlockUser,
@@ -51,6 +52,7 @@ export function ReportModal({
 }: Props) {
   const { session } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
   const report = useSubmitReport();
   const block = useBlockUser();
   const [reason, setReason] = useState<ReportReason | null>(null);
@@ -112,6 +114,7 @@ export function ReportModal({
                   label="Sign in"
                   onPress={() => {
                     close();
+                    setReturnTo(pathname);
                     router.push('/(auth)/sign-in');
                   }}
                 />

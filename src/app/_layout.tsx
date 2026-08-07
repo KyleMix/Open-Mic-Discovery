@@ -9,6 +9,7 @@ import {
   DarkTheme,
   Stack,
   ThemeProvider,
+  usePathname,
   useRouter,
   useSegments,
   type ErrorBoundaryProps,
@@ -23,6 +24,7 @@ import { useLatestEula, useOwnProfile } from '@/features/auth/queries';
 import { observeNotificationTaps, registerPushToken } from '@/lib/notifications';
 import { CACHE_BUSTER, queryClient, queryPersister } from '@/lib/query-client';
 import { initSentry, reportError } from '@/lib/sentry';
+import { consumeReturnTo, setReturnTo } from '@/stores/return-to';
 import { palette } from '@/theme';
 
 const appTheme = {
@@ -51,6 +53,7 @@ function AuthGate({ children }: { children: ReactNode }) {
   // Typed routes narrow segments per-route; we branch across groups, so
   // widen to a plain string array.
   const segments: string[] = useSegments();
+  const pathname = usePathname();
   const router = useRouter();
 
   const topSegment = segments[0];
@@ -88,20 +91,31 @@ function AuthGate({ children }: { children: ReactNode }) {
     }
     if (!profile.data) {
       if (topSegment !== 'privacy' && authScreen !== 'eula' && authScreen !== 'onboarding') {
+        // A shared link opened mid-funnel (a mic page, say) is a
+        // destination, not a detour: record it so finishing setup lands
+        // there instead of losing it.
+        if (!inAuthGroup) {
+          setReturnTo(pathname);
+        }
         router.replace('/(auth)/eula');
       }
       return;
     }
     if (eula.data && profile.data.eula_version !== eula.data.version) {
       if (topSegment !== 'privacy' && authScreen !== 'eula') {
+        if (!inAuthGroup) {
+          setReturnTo(pathname);
+        }
         router.replace('/(auth)/eula');
       }
       return;
     }
     // reset-password keeps its recovery session on screen until the new
-    // password is saved; every other auth screen bounces into the app.
+    // password is saved; every other auth screen bounces into the app, back
+    // to wherever the person was headed when the funnel interrupted them.
     if (inAuthGroup && authScreen !== 'reset-password') {
-      router.replace('/(tabs)');
+      const returnTo = consumeReturnTo();
+      router.replace((returnTo ?? '/(tabs)') as Parameters<typeof router.replace>[0]);
     }
   }, [
     waiting,
@@ -113,6 +127,7 @@ function AuthGate({ children }: { children: ReactNode }) {
     topSegment,
     inAuthGroup,
     authScreen,
+    pathname,
     router,
   ]);
 
