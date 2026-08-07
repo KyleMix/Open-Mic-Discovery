@@ -32,6 +32,7 @@ import {
 import { geocodeHomeArea } from '@/features/profile/geocode';
 import { homeAreaLabel } from '@/features/profile/home-area';
 import { logZeroResultSearch } from '@/lib/sentry';
+import { userMessage } from '@/lib/user-error';
 import { selectDiscoveryFilters, useFiltersStore } from '@/stores/filters';
 import { useRecentSearches } from '@/stores/recent-searches';
 import { fonts, minTouchTarget, palette, spacing, type, type Discipline } from '@/theme';
@@ -295,7 +296,7 @@ export default function DiscoverScreen() {
         <SkeletonCards />
       ) : feed.isError ? (
         <View style={styles.stateWrap}>
-          <ErrorText>Could not load mics. Check your connection.</ErrorText>
+          <ErrorText>{userMessage(feed.error, 'Could not load mics. Try again.')}</ErrorText>
           <Button label="Try again" onPress={() => feed.refetch()} />
         </View>
       ) : showingZero ? (

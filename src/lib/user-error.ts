@@ -28,6 +28,14 @@ const NETWORK_HINTS = ['failed to fetch', 'network request failed', 'fetch faile
 
 export const NETWORK_MESSAGE = 'Could not reach the server. Check your connection and try again.';
 
+/**
+ * Which Errors came out of userError, and so carry a message that has
+ * already been through translation. A WeakSet rather than a property on the
+ * error: nothing is added to an object a caller may inspect or serialize,
+ * and an error built anywhere else cannot forge membership.
+ */
+const translated = new WeakSet<Error>();
+
 export function userError(error: ErrorLike, fallback: string): Error {
   try {
     Sentry.captureException(error);
@@ -35,9 +43,28 @@ export function userError(error: ErrorLike, fallback: string): Error {
     // Reporting must never break the user-facing path.
   }
   const raw = typeof error.message === 'string' ? error.message.toLowerCase() : '';
-  if (NETWORK_HINTS.some((hint) => raw.includes(hint))) {
-    return new Error(NETWORK_MESSAGE);
-  }
   const code = typeof error.code === 'string' ? error.code : '';
-  return new Error(CODE_MESSAGES[code] ?? fallback);
+  const message = NETWORK_HINTS.some((hint) => raw.includes(hint))
+    ? NETWORK_MESSAGE
+    : (CODE_MESSAGES[code] ?? fallback);
+  const built = new Error(message);
+  translated.add(built);
+  return built;
+}
+
+/**
+ * What to show for a failed query.
+ *
+ * A screen that hardcodes one sentence for its error state states a cause it
+ * has not established. Discovery said "Check your connection" for every
+ * failure, including a server that answered perfectly promptly with a 404,
+ * which sends the reader looking at their wifi. This returns the translated
+ * message when there is one, so the connection advice appears only for an
+ * actual connection failure, and the caller's fallback otherwise.
+ *
+ * Anything that did not come from userError falls back, which keeps the
+ * guarantee that a raw Postgres string is never rendered.
+ */
+export function userMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && translated.has(error) ? error.message : fallback;
 }

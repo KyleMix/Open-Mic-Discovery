@@ -40,7 +40,10 @@ export function useDiscoverFeed(
         .rpc('search_discover', filtersToDiscoverArgs(filters, center, trimmed))
         .abortSignal(signal);
       if (error) {
-        throw userError(error, 'Could not load mics. Check your connection and try again.');
+        // No cause asserted here: userError supplies the connection wording
+        // when it really was the connection, and a code-specific message
+        // when the server explained itself.
+        throw userError(error, 'Could not load mics. Try again.');
       }
       return data;
     },
