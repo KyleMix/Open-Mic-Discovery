@@ -47,7 +47,10 @@ import { ReportModal } from '@/features/safety/components/report-modal';
 import { FLAG_REASON_LABELS } from '@/features/safety/labels';
 import { SignupCard } from '@/features/signups/components/signup-card';
 import { signupCta } from '@/features/signups/cta';
+import { useEnablePerformerRole } from '@/features/profile/queries';
+import { JOIN_LIST_MUTATION_KEY } from '@/features/signups/join-key';
 import { useJoinList, useMySignup, useSignupCounts } from '@/features/signups/queries';
+import { useMutationState } from '@tanstack/react-query';
 import { isWalkIn } from '@/features/producer/signup-opens';
 import { signupOpensClockTime, signupWindow } from '@/features/signups/window';
 import { formatNextDateLong, formatRelativeDay } from '@/features/discovery/date-label';
@@ -299,6 +302,8 @@ function MicDetail({
             signupCloses={series.signup_closes}
             costCents={nextCostCents}
             timezone={series.timezone}
+            setLengthMinutes={series.set_length_minutes}
+            ageRestriction={venue?.age_restriction ?? null}
           />
         ) : null}
 
@@ -484,6 +489,13 @@ function SignupFooter({
   const mySignup = useMySignup(occurrence.id, session?.user.id);
   const counts = useSignupCounts(occurrence.id);
   const join = useJoinList();
+  // The inline signup card holds a second button for the same action; the
+  // shared mutation key lets each observe the other's in-flight insert.
+  const joinPending =
+    useMutationState({
+      filters: { mutationKey: [...JOIN_LIST_MUTATION_KEY], status: 'pending' },
+    }).length > 0;
+  const enablePerformer = useEnablePerformerRole();
   const insets = useSafeAreaInsets();
 
   // The window can open while the person is reading the screen: a tick
@@ -538,6 +550,26 @@ function SignupFooter({
         <View accessibilityLiveRegion="polite" style={styles.footerStatus}>
           <Text style={styles.footerStatusText}>{cta.label}</Text>
         </View>
+      ) : cta.kind === 'enable-performer' ? (
+        <>
+          <Text style={styles.footerDetail}>{cta.detail}</Text>
+          {enablePerformer.isError ? (
+            <ErrorText>
+              {enablePerformer.error instanceof Error
+                ? enablePerformer.error.message
+                : 'Could not turn on performing.'}
+            </ErrorText>
+          ) : null}
+          <Button
+            label={cta.label}
+            busy={enablePerformer.isPending}
+            onPress={() => {
+              if (session) {
+                enablePerformer.mutate(session.user.id);
+              }
+            }}
+          />
+        </>
       ) : (
         <>
           {cta.kind === 'join' && cta.detail ? (
@@ -545,7 +577,7 @@ function SignupFooter({
           ) : null}
           <Button
             label={cta.label}
-            busy={join.isPending}
+            busy={join.isPending || joinPending}
             onPress={() => {
               if (cta.kind === 'sign-in') {
                 router.push('/(auth)/sign-in');

@@ -1,6 +1,7 @@
 import { STATUS_LABELS } from '@/features/signups/components/signup-card';
 import {
   CTA_LABELS,
+  ENABLE_PERFORMING_DETAIL,
   SIGNUPS_CLOSED_LABEL,
   signupsOpenLabel,
   spotsTakenLabel,
@@ -15,6 +16,7 @@ export type SignupCta =
   | { kind: 'sign-in'; label: string }
   | { kind: 'join'; label: string; detail?: string }
   | { kind: 'status'; label: string; detail?: string }
+  | { kind: 'enable-performer'; label: string; detail: string }
   | null;
 
 type Input = {
@@ -60,7 +62,16 @@ export function signupCta(input: Input): SignupCta {
         STATUS_LABELS[input.myStatus] + (input.mySlot != null ? ` · Slot ${input.mySlot}` : ''),
     };
   }
-  if (input.isPerformer !== true) {
+  // A missing role gets an action, not silence: the footer is the only
+  // control in thumb reach, and rendering nothing there reads as a bug.
+  if (input.isPerformer === false) {
+    return {
+      kind: 'enable-performer',
+      label: CTA_LABELS.enablePerformer,
+      detail: ENABLE_PERFORMING_DETAIL,
+    };
+  }
+  if (input.isPerformer == null) {
     return null;
   }
   if (input.windowState === 'not_yet') {

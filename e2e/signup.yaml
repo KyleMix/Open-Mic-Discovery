@@ -1,21 +1,51 @@
 # Maestro smoke flow: performer signs up for a night and withdraws.
+#
+# Rusty Fret opens signups 7 days ahead and closes at showtime, so on a
+# seeded database its next night is always signable.
 appId: com.openmicexplorer.app
 ---
 - launchApp
+- extendedWaitUntil:
+    visible: 'Rusty Fret Open Mic.*'
+    timeout: 15000
+- tapOn: 'Rusty Fret Open Mic.*'
+# Guest: the footer offers sign-in; sign in as the seeded performer.
 - runFlow:
     when:
-      visible: 'Sign in'
+      visible: 'Sign in to get on the list'
     commands:
+      - tapOn: 'Sign in to get on the list'
       - tapOn: 'Email'
       - inputText: 'performer@demo.openmicexplorer.local'
       - tapOn: 'Password'
       - inputText: 'demo-pass-1234'
       - tapOn: 'Sign in'
+      - extendedWaitUntil:
+          visible: 'Rusty Fret Open Mic.*'
+          timeout: 15000
+      - tapOn: 'Rusty Fret Open Mic.*'
+# A leftover signup from an earlier run withdraws first, so the flow is
+# repeatable against the same database.
 - extendedWaitUntil:
-    visible: 'Discover'
-    timeout: 15000
-- tapOn: 'Switch to list view'
-- tapOn: 'Velvet Antler Comedy Open Mic.*'
+    visible: 'Sign me up|Withdraw'
+    timeout: 10000
+- runFlow:
+    when:
+      visible: 'Withdraw'
+    commands:
+      - tapOn: 'Withdraw'
+      - tapOn: 'Yes, withdraw'
+      - extendedWaitUntil:
+          visible: 'Sign me up'
+          timeout: 10000
+# The core loop: on the list, then off it, with the state named both times.
+- tapOn: 'Sign me up'
 - extendedWaitUntil:
-    visible: 'Sign up|Withdraw|Signups for .* open'
+    visible: 'On the list.*'
+    timeout: 10000
+- tapOn: 'Withdraw'
+- assertVisible: '.*gives up your spot.*'
+- tapOn: 'Yes, withdraw'
+- extendedWaitUntil:
+    visible: 'Sign me up'
     timeout: 10000

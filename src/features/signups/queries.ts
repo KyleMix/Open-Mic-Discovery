@@ -6,6 +6,7 @@ import { useToast } from '@/components/toast';
 import { registerPushToken } from '@/lib/notifications';
 import { uniqueChannelTopic } from '@/lib/realtime';
 import { getSupabase } from '@/lib/supabase';
+import { JOIN_LIST_MUTATION_KEY } from '@/features/signups/join-key';
 import { userError } from '@/lib/user-error';
 import type { Database } from '@/types/database.types';
 
@@ -119,7 +120,7 @@ export function useNightSpots(occurrenceId: string | undefined) {
         .eq('occurrence_id', occurrenceId!)
         .maybeSingle();
       if (error) {
-        throw new Error(error.message);
+        throw userError(error, 'Could not check how full this night is.');
       }
       return data;
     },
@@ -129,6 +130,7 @@ export function useNightSpots(occurrenceId: string | undefined) {
 export function useJoinList() {
   const queryClient = useQueryClient();
   return useMutation({
+    mutationKey: [...JOIN_LIST_MUTATION_KEY],
     mutationFn: async ({ occurrenceId, userId }: { occurrenceId: string; userId: string }) => {
       const { error } = await getSupabase()
         .from('signups')

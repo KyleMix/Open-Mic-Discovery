@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react-native';
 
 import { SignupCard } from './signup-card';
@@ -41,14 +42,18 @@ afterAll(() => {
 });
 
 function renderCard(signupOpens: string) {
+  // The card watches the shared join mutation key (real useMutationState,
+  // not mocked), which needs a client above it.
   return render(
-    <SignupCard
-      occurrence={OCCURRENCE}
-      timezone="America/Los_Angeles"
-      signupMethod="first_come"
-      signupOpens={signupOpens}
-      signupCloses="00:00:00"
-    />,
+    <QueryClientProvider client={new QueryClient()}>
+      <SignupCard
+        occurrence={OCCURRENCE}
+        timezone="America/Los_Angeles"
+        signupMethod="first_come"
+        signupOpens={signupOpens}
+        signupCloses="00:00:00"
+      />
+    </QueryClientProvider>,
   );
 }
 

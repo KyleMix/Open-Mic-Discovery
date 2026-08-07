@@ -70,10 +70,17 @@ describe('signupCta', () => {
     });
   });
 
-  it('shows nothing while lookups are pending or without the performer role', () => {
+  it('shows nothing while lookups are pending', () => {
     expect(signupCta({ ...base, signupPending: true })).toBeNull();
-    expect(signupCta({ ...base, isPerformer: false })).toBeNull();
     expect(signupCta({ ...base, isPerformer: null })).toBeNull();
+  });
+
+  it('offers to turn on performing when the role is missing', () => {
+    expect(signupCta({ ...base, isPerformer: false })).toEqual({
+      kind: 'enable-performer',
+      label: 'Turn on performing',
+      detail: 'Signing up needs the performer role. One tap turns it on.',
+    });
   });
 
   it('shows nothing for non-signable nights', () => {

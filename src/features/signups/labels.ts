@@ -25,7 +25,11 @@ export const CTA_LABELS = {
   join: 'Sign me up',
   lottery: 'Put my name in the draw',
   waitlist: 'Join the waitlist',
+  enablePerformer: 'Turn on performing',
 } as const;
+
+/** Why the footer shows "Turn on performing" instead of the signup action. */
+export const ENABLE_PERFORMING_DETAIL = 'Signing up needs the performer role. One tap turns it on.';
 
 /** Window states the footer shows as status rather than action. */
 export function signupsOpenLabel(opensLabel: string): string {

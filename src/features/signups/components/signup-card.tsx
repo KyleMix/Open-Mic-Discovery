@@ -1,3 +1,4 @@
+import { useMutationState } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, StyleSheet, Text, View } from 'react-native';
 
@@ -8,7 +9,9 @@ import { eventDate, eventDateShort, eventTime } from '@/features/discovery/local
 import { useSession } from '@/features/auth/session';
 import { formatRelativeDay } from '@/features/discovery/date-label';
 import { useEnablePerformerRole } from '@/features/profile/queries';
+import { costLabel } from '@/features/discovery/components/mic-card';
 import { spotsDetail } from '@/features/signups/capacity';
+import { JOIN_LIST_MUTATION_KEY } from '@/features/signups/join-key';
 import {
   useJoinList,
   useMySignup,
@@ -16,6 +19,7 @@ import {
   useSignupCounts,
   useWithdraw,
 } from '@/features/signups/queries';
+import { roomTerms } from '@/features/signups/room-terms';
 import { signupWindow } from '@/features/signups/window';
 import { fonts, palette, spacing, type } from '@/theme';
 import type { Database } from '@/types/database.types';
@@ -47,6 +51,8 @@ type Props = {
   signupOpens: string;
   signupCloses: string;
   costCents?: number;
+  setLengthMinutes?: number | null;
+  ageRestriction?: Database['public']['Enums']['age_restriction'] | null;
 };
 
 /** The "I am on the list" moment: signup state and actions for a night. */
@@ -57,12 +63,20 @@ export function SignupCard({
   signupOpens,
   signupCloses,
   costCents = 0,
+  setLengthMinutes = null,
+  ageRestriction = null,
 }: Props) {
   const { session } = useSession();
   const profile = useOwnProfile(session?.user.id);
   const mySignup = useMySignup(occurrence.id, session?.user.id);
   const spots = useNightSpots(occurrence.id);
   const join = useJoinList();
+  // The sticky footer holds a second button for the same action; observing
+  // its in-flight mutation keeps a fast double tap from firing two inserts.
+  const joinPending =
+    useMutationState({
+      filters: { mutationKey: [...JOIN_LIST_MUTATION_KEY], status: 'pending' },
+    }).length > 0;
   const withdraw = useWithdraw();
   const enablePerformer = useEnablePerformerRole();
   const counts = useSignupCounts(occurrence.id);
@@ -241,7 +255,7 @@ export function SignupCard({
         ) : null}
         <Button
           label={signupMethod === 'lottery' ? 'Put my name in the draw' : 'Sign me up'}
-          busy={join.isPending}
+          busy={join.isPending || joinPending}
           onPress={() => join.mutate({ occurrenceId: occurrence.id, userId: session.user.id })}
         />
       </>
@@ -255,6 +269,18 @@ export function SignupCard({
     ? spotsDetail(spots.data.spots_left, spots.data.capacity, spots.data.planning_performers ?? 0)
     : null;
 
+  // The terms of the room sit beside the commit button in every state:
+  // nobody should have to scroll two cards down to learn the list closes
+  // early, the sets are four minutes, or the bar is 21 and up.
+  const terms = roomTerms({
+    startsAt: occurrence.starts_at,
+    signupCloses,
+    timezone,
+    setLengthMinutes,
+    cost: costLabel(costCents),
+    ageRestriction,
+  });
+
   return (
     <View style={styles.card}>
       {fullness ? (
@@ -262,6 +288,7 @@ export function SignupCard({
           {fullness}
         </Text>
       ) : null}
+      <Text style={styles.terms}>{terms}</Text>
       {content}
     </View>
   );
@@ -282,6 +309,10 @@ const styles = StyleSheet.create({
     fontSize: type.heading.fontSize,
   },
   spots: {
+    color: palette.textSecondary,
+    fontSize: type.caption.fontSize,
+  },
+  terms: {
     color: palette.textSecondary,
     fontSize: type.caption.fontSize,
   },
