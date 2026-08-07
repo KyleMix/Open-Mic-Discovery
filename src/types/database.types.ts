@@ -1171,6 +1171,42 @@ export type Database = {
           },
         ];
       };
+      series_search: {
+        Row: {
+          document: unknown;
+          fuzzy: string;
+          series_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          document: unknown;
+          fuzzy: string;
+          series_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          document?: unknown;
+          fuzzy?: string;
+          series_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'series_search_series_id_fkey';
+            columns: ['series_id'];
+            isOneToOne: true;
+            referencedRelation: 'mic_series';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'series_search_series_id_fkey';
+            columns: ['series_id'];
+            isOneToOne: true;
+            referencedRelation: 'my_upcoming_nights';
+            referencedColumns: ['series_id'];
+          },
+        ];
+      };
       signups: {
         Row: {
           created_at: string;
@@ -2449,6 +2485,57 @@ export type Database = {
         Returns: undefined;
       };
       runtests: { Args: never; Returns: string[] } | { Args: { '': string }; Returns: string[] };
+      search_discover: {
+        Args: {
+          p_ages?: Database['public']['Enums']['age_restriction'][];
+          p_days?: number[];
+          p_disciplines?: Database['public']['Enums']['discipline'][];
+          p_end_hour?: number;
+          p_free_only?: boolean;
+          p_lat?: number;
+          p_limit?: number;
+          p_lng?: number;
+          p_local_from?: string;
+          p_local_to?: string;
+          p_methods?: Database['public']['Enums']['signup_method'][];
+          p_query?: string;
+          p_radius_m?: number;
+          p_start_hour?: number;
+        };
+        Returns: {
+          capacity: number;
+          city: string;
+          cost_cents: number;
+          description: string;
+          disciplines: Database['public']['Enums']['discipline'][];
+          distance_m: number;
+          featured_name: string;
+          is_active: boolean;
+          last_confirmed_at: string;
+          lat: number;
+          lng: number;
+          match_kind: string;
+          neighborhood: string;
+          next_local_date: string;
+          next_occurrence_id: string;
+          next_starts_at: string;
+          next_status: Database['public']['Enums']['occurrence_status'];
+          owner_id: string;
+          poster_url: string;
+          rank_score: number;
+          region: string;
+          rrule: string;
+          series_id: string;
+          set_length_minutes: number;
+          signup_method: Database['public']['Enums']['signup_method'];
+          spots_left: number;
+          start_time: string;
+          timezone: string;
+          title: string;
+          venue_id: string;
+          venue_name: string;
+        }[];
+      };
       search_mics: {
         Args: {
           p_lat?: number;
@@ -3143,6 +3230,7 @@ export type Database = {
       todo_end: { Args: never; Returns: boolean[] };
       todo_start:
         { Args: never; Returns: boolean[] } | { Args: { '': string }; Returns: boolean[] };
+      unaccent: { Args: { '': string }; Returns: string };
       unlockrows: { Args: { '': string }; Returns: number };
       updategeometrysrid: {
         Args: {
