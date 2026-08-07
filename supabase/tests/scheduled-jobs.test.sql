@@ -13,7 +13,7 @@
 -- an environment without it cannot run this product correctly, and a test
 -- that skipped itself there would report success for a broken deployment.
 begin;
-select plan(16);
+select plan(18);
 
 -- cron.job does not exist at all when the extension failed to install, and a
 -- missing relation would abort the file rather than fail a test. This keeps
@@ -92,6 +92,10 @@ select is(
   pg_temp.job_count('weekly-digest'), 1,
   'the weekly digest queue is scheduled'
 );
+select is(
+  pg_temp.job_count('signup-reminders'), 1,
+  'the signup reminder queue is scheduled: people on a list get told before the show'
+);
 
 -- ---------------------------------------------------------------------------
 -- Draining the outbox. Ten migrations write notification rows and the
@@ -135,6 +139,8 @@ select has_function('private', 'generate_occurrences',
   'the function the nightly job calls exists');
 select has_function('private', 'drain_notification_outbox',
   'the function the drain job calls exists');
+select has_function('private', 'queue_signup_reminders',
+  'the function the signup reminder job calls exists');
 select is(
   (select count(*)::int from pg_proc p
    join pg_namespace n on n.oid = p.pronamespace

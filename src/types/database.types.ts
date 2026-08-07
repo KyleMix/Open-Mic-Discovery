@@ -2338,6 +2338,7 @@ export type Database = {
         };
         Returns: undefined;
       };
+      my_waitlist_rank: { Args: { p_occurrence_id: string }; Returns: number };
       no_plan: { Args: never; Returns: boolean[] };
       num_failed: { Args: never; Returns: number };
       os_name: { Args: never; Returns: string };

@@ -55,6 +55,7 @@ export function useMySignup(occurrenceId: string | undefined, userId: string | u
         () => {
           queryClient.invalidateQueries({ queryKey: ['signup', 'mine'] });
           queryClient.invalidateQueries({ queryKey: ['signup', 'counts'] });
+          queryClient.invalidateQueries({ queryKey: ['signup', 'waitlist-rank'] });
         },
       )
       .subscribe();
@@ -122,6 +123,31 @@ export function useNightSpots(occurrenceId: string | undefined) {
         .maybeSingle();
       if (error) {
         throw userError(error, 'Could not check how full this night is.');
+      }
+      return data;
+    },
+  });
+}
+
+/**
+ * The caller's place in the waitlist line, by signup order. Null when they
+ * are not waiting. Realtime signup changes invalidate it, so the number
+ * moves as the line does.
+ */
+export function useWaitlistRank(
+  occurrenceId: string | undefined,
+  userId: string | undefined,
+  waitlisted: boolean,
+) {
+  return useQuery({
+    queryKey: ['signup', 'waitlist-rank', occurrenceId, userId],
+    enabled: !!occurrenceId && !!userId && waitlisted,
+    queryFn: async () => {
+      const { data, error } = await getSupabase().rpc('my_waitlist_rank', {
+        p_occurrence_id: occurrenceId!,
+      });
+      if (error) {
+        throw userError(error, 'Could not check your place in line.');
       }
       return data;
     },

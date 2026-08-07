@@ -1,6 +1,6 @@
 -- Retention queue tests: favorite reminders, new-mic alerts, weekly digest.
 begin;
-select plan(8);
+select plan(9);
 
 -- Fixture: a series with a night today (23:59 UTC so it is still upcoming),
 -- favorited by p1.
@@ -15,12 +15,21 @@ values ('20000000-0000-4000-c000-0000000000e7', '10000000-0000-4000-b000-0000000
 insert into favorites (profile_id, series_id)
 values ('00000000-0000-4000-a000-000000000001', '20000000-0000-4000-c000-0000000000e7');
 
+-- The clock is injected (like private.rate_limit) because the queue now
+-- refuses to remind before 9 AM local; the fixture night is at 23:59.
+select is(
+  private.queue_favorite_reminders((current_date + time '05:00') at time zone 'UTC'),
+  0,
+  'nothing queues in the middle of the night, even for a night happening today'
+);
 select cmp_ok(
-  private.queue_favorite_reminders(), '>=', 1,
-  'a favorited mic happening today queues a reminder'
+  private.queue_favorite_reminders((current_date + time '10:00') at time zone 'UTC'),
+  '>=', 1,
+  'a favorited mic happening today queues a reminder once the morning arrives'
 );
 select is(
-  private.queue_favorite_reminders(), 0,
+  private.queue_favorite_reminders((current_date + time '10:00') at time zone 'UTC'),
+  0,
   'rerunning queues nothing new (idempotent per occurrence)'
 );
 
@@ -29,7 +38,8 @@ insert into notification_prefs (profile_id, favorite_reminders)
 values ('00000000-0000-4000-a000-000000000003', false);
 insert into favorites (profile_id, series_id)
 values ('00000000-0000-4000-a000-000000000003', '20000000-0000-4000-c000-0000000000e7');
-create temp table _run1 as select private.queue_favorite_reminders();
+create temp table _run1 as
+  select private.queue_favorite_reminders((current_date + time '10:00') at time zone 'UTC');
 -- Scoped to the fixture mic: seeded favorites may legitimately remind p3
 -- about other mics queued before the opt-out existed.
 select is(

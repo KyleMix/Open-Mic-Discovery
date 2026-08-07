@@ -22,6 +22,7 @@ jest.mock('@/features/signups/queries', () => ({
   }),
   useJoinList: () => ({ mutate: jest.fn(), isPending: false, isError: false }),
   useWithdraw: () => ({ mutate: jest.fn(), isPending: false }),
+  useWaitlistRank: () => ({ data: null, isPending: false }),
 }));
 
 const OCCURRENCE = {

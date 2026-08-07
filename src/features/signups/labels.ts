@@ -30,6 +30,16 @@ export function statusWithSlot(status: SignupStatus, slot: number | null): strin
   return slot != null ? `${STATUS_LABELS[status]} · ${slotLabel(slot)}` : STATUS_LABELS[status];
 }
 
+/** "1st", "2nd", "3rd", "11th": place-in-line wording for the waitlist. */
+export function ordinal(n: number): string {
+  const tens = n % 100;
+  if (tens >= 11 && tens <= 13) {
+    return `${n}th`;
+  }
+  const suffix = n % 10 === 1 ? 'st' : n % 10 === 2 ? 'nd' : n % 10 === 3 ? 'rd' : 'th';
+  return `${n}${suffix}`;
+}
+
 /** The sticky footer's action labels, shared so wording never drifts. */
 export const CTA_LABELS = {
   signIn: 'Sign in to get on the list',

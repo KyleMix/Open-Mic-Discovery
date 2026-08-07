@@ -14,6 +14,7 @@ import { spotsDetail } from '@/features/signups/capacity';
 import {
   SIGNUPS_CLOSED_LABEL,
   STATUS_LABELS,
+  ordinal,
   slotLabel,
   spotsTakenLabel,
   statusWithSlot,
@@ -24,6 +25,7 @@ import {
   useMySignup,
   useNightSpots,
   useSignupCounts,
+  useWaitlistRank,
   useWithdraw,
 } from '@/features/signups/queries';
 import { roomTerms } from '@/features/signups/room-terms';
@@ -78,6 +80,13 @@ export function SignupCard({
   const withdraw = useWithdraw();
   const enablePerformer = useEnablePerformerRole();
   const counts = useSignupCounts(occurrence.id);
+  // "Waitlisted" alone answers nothing; the place in line is the fact a
+  // waiting performer keeps checking for. Realtime keeps it moving.
+  const waitlistRank = useWaitlistRank(
+    occurrence.id,
+    session?.user.id,
+    mySignup.data?.status === 'waitlisted',
+  );
   const [confirmingWithdraw, setConfirmingWithdraw] = useState(false);
 
   // Draw results, promotion, and on-deck arrive via realtime while the
@@ -153,6 +162,9 @@ export function SignupCard({
         ) : null}
         <Text style={styles.status}>
           {statusWithSlot(mySignup.data.status, mySignup.data.slot_position)}
+          {mySignup.data.status === 'waitlisted' && waitlistRank.data != null
+            ? ` · ${ordinal(waitlistRank.data)} in line`
+            : ''}
         </Text>
         {STATUS_HINTS[mySignup.data.status] ? (
           <Body>{STATUS_HINTS[mySignup.data.status]}</Body>

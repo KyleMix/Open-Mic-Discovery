@@ -117,17 +117,16 @@ select is(
 -- zero rows whether or not anything was queued, and pass for the wrong
 -- reason.
 --
--- Nothing is queued on signup itself. The lifecycle trigger sets the status
--- in a BEFORE INSERT, so there is no status change to notice, and the
--- performer is looking at the screen anyway. Numbers get handed out when the
--- host draws or reorders, which is what these cover.
+-- Signing up queues a receipt at insert (the commit moment gets a
+-- notification in hand, not just a re-rendered card), and numbers get
+-- handed out when the host draws or reorders.
 -- ---------------------------------------------------------------------------
 reset role;
 select is(
-  (select count(*)::int from notification_outbox
+  (select body from notification_outbox
    where profile_id = '00000000-0000-4000-a000-000000000032'),
-  0,
-  'signing up and landing on the waitlist does not push anything yet'
+  'You are on the waitlist. If a spot opens, you move up.',
+  'signing up onto a full night says waitlist at the moment of commit'
 );
 
 -- A lottery night, so the draw assigns status and number in one statement.
@@ -163,13 +162,15 @@ select is(
 );
 select is(
   (select count(*)::int from notification_outbox
-   where profile_id = '00000000-0000-4000-a000-000000000031'),
-  1,
-  'and says it once, rather than a status push plus a number push'
+   where profile_id = '00000000-0000-4000-a000-000000000031'
+     and payload ->> 'occurrence_id' = (select id::text from draw_night)),
+  2,
+  'the draw adds exactly one push on top of the entry receipt'
 );
 select is(
   (select payload ->> 'slot_position' from notification_outbox
-   where profile_id = '00000000-0000-4000-a000-000000000031'),
+   where profile_id = '00000000-0000-4000-a000-000000000031'
+     and body like 'You were drawn%'),
   '1',
   'with the number in the payload, so a tap can open the right night'
 );
@@ -231,9 +232,10 @@ select count(*) from draw_lottery((select id from draw_night));
 reset role;
 select is(
   (select count(*)::int from notification_outbox
-   where profile_id = '00000000-0000-4000-a000-000000000032'),
+   where profile_id = '00000000-0000-4000-a000-000000000032'
+     and payload ->> 'occurrence_id' = (select id::text from draw_night)),
   0,
-  'someone who turned signup updates off is never pushed a number'
+  'someone who turned signup updates off gets no receipt and no number'
 );
 
 reset role;
