@@ -2,7 +2,12 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Platform } from 'react-native';
 
-import { signInWithApple, signInWithGoogle, signUpWithEmail } from '@/features/auth/api';
+import {
+  resendConfirmationEmail,
+  signInWithApple,
+  signInWithGoogle,
+  signUpWithEmail,
+} from '@/features/auth/api';
 import { validateEmail, validatePassword } from '@/features/auth/validation';
 import { Body, Button, ErrorText, Field, FormScreen, Screen, Title } from '@/components/ui';
 
@@ -17,6 +22,7 @@ export default function SignUpScreen() {
   const [busy, setBusy] = useState<'email' | 'apple' | 'google' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
+  const [resent, setResent] = useState(false);
 
   async function submit() {
     const emailError = validateEmail(email);
@@ -65,8 +71,28 @@ export default function SignUpScreen() {
       <Screen>
         <Title>Check your email</Title>
         <Body>
-          We sent a confirmation link to {email.trim()}. Open it, then come back and sign in.
+          We sent a confirmation link to {email.trim()}. Tapping it on this device opens the app and
+          finishes setup.
         </Body>
+        {resent ? <Body>Sent again. Give it a minute, and check spam.</Body> : null}
+        {error ? <ErrorText>{error}</ErrorText> : null}
+        <Button
+          label="Send the email again"
+          kind="secondary"
+          busy={busy === 'email'}
+          onPress={async () => {
+            setBusy('email');
+            setError(null);
+            try {
+              await resendConfirmationEmail(email);
+              setResent(true);
+            } catch (e) {
+              setError(e instanceof Error ? e.message : 'Could not resend the email.');
+            } finally {
+              setBusy(null);
+            }
+          }}
+        />
         <Button label="Go to sign in" onPress={() => router.replace('/(auth)/sign-in')} />
       </Screen>
     );

@@ -48,16 +48,47 @@ export async function signInWithEmail(email: string, password: string): Promise<
  * Creates the account. When the project requires email confirmation,
  * signUp succeeds with no session; the caller must tell the user to go
  * check their inbox instead of silently doing nothing.
+ *
+ * The confirmation link deep-links back into the app (the auth-callback
+ * route exchanges the code); without emailRedirectTo it pointed at the
+ * project site URL, a dead loopback address in local config.
  */
 export async function signUpWithEmail(
   email: string,
   password: string,
 ): Promise<{ needsEmailConfirmation: boolean }> {
-  const { data, error } = await getSupabase().auth.signUp({ email, password });
+  const { data, error } = await getSupabase().auth.signUp({
+    email,
+    password,
+    options: { emailRedirectTo: Linking.createURL('auth-callback') },
+  });
   if (error) {
     throw authError(error, 'Could not create the account. Check your connection and try again.');
   }
   return { needsEmailConfirmation: data.session === null };
+}
+
+/** Sends the confirmation email again, for the inbox where it never landed. */
+export async function resendConfirmationEmail(email: string): Promise<void> {
+  const { error } = await getSupabase().auth.resend({
+    type: 'signup',
+    email: email.trim(),
+    options: { emailRedirectTo: Linking.createURL('auth-callback') },
+  });
+  if (error) {
+    throw authError(error, 'Could not resend the email. Try again in a minute.');
+  }
+}
+
+/**
+ * Finishes a deep-linked auth flow (email confirmation) by exchanging the
+ * one-time code for a session. Same PKCE exchange as password recovery.
+ */
+export async function exchangeAuthCode(code: string): Promise<void> {
+  const { error } = await getSupabase().auth.exchangeCodeForSession(code);
+  if (error) {
+    throw authError(error, 'That link has expired or was already used. Sign in to get a new one.');
+  }
 }
 
 /**

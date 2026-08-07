@@ -22,9 +22,10 @@ type ReturnToState = {
 export const useReturnToStore = create<ReturnToState>((set, get) => ({
   path: null,
   setReturnTo: (path) => {
-    // Only in-app destinations, and never an auth screen: consuming a path
-    // inside the funnel would bounce straight back into it.
-    if (path.startsWith('/') && !path.startsWith('/(auth)')) {
+    // Only in-app destinations, and never the auth machinery itself:
+    // consuming a funnel screen or the confirmation callback would bounce
+    // straight back into it.
+    if (path.startsWith('/') && !path.startsWith('/(auth)') && !path.startsWith('/auth-callback')) {
       set({ path });
     }
   },
