@@ -412,4 +412,20 @@ $ npm audit
 
 Both expo-doctor failures are network failures inside this sandbox, not repo defects: the config schema check returned `SyntaxError: Unexpected token 'H', "Host not i"... is not valid JSON` (a proxy error page rather than JSON) and the directory check reported "unexpected server response". Both must be re-run on a networked machine before submission. Recorded as F-016.
 
-The pgTAP suite was **not** run here: it needs Docker and a local Supabase stack, which this environment does not have. CI runs it on every push (`.github/workflows/ci.yml:70-114`) with a diagnostic step that reports whether `pg_cron`, `postgis`, and `pgtap` are available before the suite runs.
+The pgTAP suite **was** run, correcting an earlier note in this file that said it could not be. Docker is unavailable here, but the repo ships a no-Docker path (`scripts/db/verify-local.sh`) that rebuilds a throwaway database on a system Postgres, applies the shim, runs every migration in order, loads the seed, and runs the suite. After installing `postgis` and `pgtap` on the system Postgres 16:
+
+```
+$ bash scripts/db/verify-local.sh
+migration: supabase/migrations/20260728000100_extensions_and_types.sql
+... (all 56 migrations apply cleanly)
+seed: supabase/seed.sql
+pgTAP:
+SKIPPING supabase/tests/scheduled-jobs.test.sql: pg_cron and pg_net are not both installed here.
+supabase/tests/age-gate.test.sql ............ ok
+... (32 files)
+All tests successful.
+Files=32, Tests=425,  5 wallclock secs
+Result: PASS
+```
+
+So every migration applies from empty, the seed loads, and 425 of the 443 planned assertions pass. The 18 skipped assertions are `scheduled-jobs.test.sql`, which needs `pg_cron` and `pg_net`; those run in CI against the full Supabase stack (`.github/workflows/ci.yml:70-114`), which also reports extension availability as a diagnostic before the suite runs.

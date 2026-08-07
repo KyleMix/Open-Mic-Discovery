@@ -34,6 +34,7 @@ Batches are ordered by risk retired per hour of work, not by finding number. Eac
 
 Closes: **F-001**
 Estimated: half a day.
+Status: **DONE.** Shipped as `supabase/migrations/20260807000400_test_kit_off_by_default.sql` with a paired down script and four new pgTAP assertions. Owner answers that shaped it: email confirmation is on for the hosted project, so this is hardening rather than an emergency; and the bootstrap stays, gated on a confirmed address, rather than being removed from production. Verified by running the full suite both ways, see the verification note at the end of this batch.
 
 Files: `supabase/migrations/<new>_lock_down_test_kit.sql`, `supabase/tests/test-kit.test.sql`.
 Migrations: one new forward migration, one paired down script.
@@ -48,9 +49,25 @@ Verification you run:
 - Sign in as the owner on a local build. The test kit screen must render, must say the kit is switched off, and must offer "Switch the test kit on". Tap it, confirm a scenario builds, then tap "Remove all test data".
 - Separately, and this is not a code check: open the hosted Supabase dashboard, Authentication, and confirm email confirmation is required. Screenshot it into `docs/store/SUBMISSION_CHECKLIST.md`.
 
-Rollback: `supabase/migrations/down/<name>.down.sql` restores the `true` default and the previous function bodies. The only user-visible effect of rolling back is that the kit is on again by default, so rollback is safe and instant.
+Rollback: `supabase/migrations/down/20260807000400_test_kit_off_by_default.down.sql` restores the `true` default and the previous function bodies. It deliberately does not switch existing rows back on, because re-enabling a facility that mints sign-ins is a decision rather than a recovery step, and it is one tap away on the test kit screen.
 
 Why this batch is small even though the finding is a Blocker: the authorization logic is already correct. Only the defaults and one predicate change.
+
+**What was actually run, and what it proved.** `scripts/db/verify-local.sh` rebuilds a throwaway database from empty, applies all 56 migrations, loads the seed, and runs the suite. All 32 runnable files passed, 425 assertions (`scheduled-jobs.test.sql` skipped, it needs pg_cron and pg_net). Then, to check the new assertions bite rather than passing vacuously, the down migration was applied and `test-kit.test.sql` re-run: it failed exactly three of 49, and the failures are the point.
+
+```
+# Failed test 2: "and the column default is off, so a rebuilt database inherits it"
+#         have: true
+#         want: false
+# Failed test 8: "an unconfirmed sign-up on the owner email is not promoted to admin"
+# Failed test 9: "and the child rows the bootstrap creates are not created either"
+#         have: 1
+#         want: 0
+```
+
+Test 8 is the finding, demonstrated rather than argued: under the previous code an account whose email address was never confirmed became a full admin, and test 9 shows it also received a `verified` producer row. Re-applying the migration returns all 49 to passing. `npm run typecheck`, `npm run lint`, and `npm test` (478 tests) are unaffected and green.
+
+**One residual risk, stated plainly.** The predicate depends on GoTrue stamping `email_confirmed_at` when it auto-confirms on a project with confirmations disabled. I am confident it does, and both the seed and the pgTAP fixtures write that column as though it does, but the pgTAP suite inserts `auth.users` rows directly and therefore cannot prove GoTrue's behaviour. If a local `db reset` ever leaves the owner account without admin, this predicate is the first thing to look at.
 
 ---
 

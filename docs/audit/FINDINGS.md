@@ -26,6 +26,7 @@ One credential-shaped string exists: a Google Maps Android API key at `app.json:
 ### F-001 The owner-email admin bootstrap is a standing backdoor, and the test kit ships switched on
 
 Severity: Blocker
+Status: **FIXED in Batch 1**, `supabase/migrations/20260807000400_test_kit_off_by_default.sql`. The exploit was confirmed rather than inferred: with the down migration applied, `supabase/tests/test-kit.test.sql` fails assertion 8, "an unconfirmed sign-up on the owner email is not promoted to admin", and assertion 9 shows that account also receives a `verified` producer row. With the fix applied, all 49 assertions pass.
 Evidence: `supabase/migrations/20260801000100_test_kit.sql:33-40`, `:55-73`, `:127`, `:130`, `:203-210`, `:241-259`; `supabase/config.toml:228`
 
 What the code does. A BEFORE INSERT trigger on `profiles` reads the email off `auth.users` and, when it matches the hardcoded allowlist (one address, `20260801000100_test_kit.sql:39`), sets `is_admin`, `is_performer`, `is_producer` to true and `moderation_status` to approved. It runs after `profiles_guard` specifically so it can undo the guard's `is_admin := false`. Separately, `test_kit_settings.enabled` defaults to `true` (`:127`) and a row is inserted with that default (`:130`), so the test kit is live in every environment the migrations touch. The kit's building blocks insert directly into `auth.users` and `auth.identities` with a hardcoded shared password (`:203-210`, `:241-259`).

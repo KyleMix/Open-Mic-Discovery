@@ -5,7 +5,30 @@
 --   ...0004 admin
 --   ...0005 owner (kylewmixon@gmail.com): performer + producer + admin
 begin;
-select plan(45);
+select plan(49);
+
+-- ---------------------------------------------------------------------------
+-- The kit ships switched off (20260807000400, audit finding F-001)
+--
+-- Checked first, before anything in this file touches the switch. The kit
+-- inserts auth.users rows with a password written down in a migration, so
+-- "on unless somebody remembered to turn it off" is the wrong default for an
+-- environment nobody is watching.
+-- ---------------------------------------------------------------------------
+select ok(
+  (select not enabled from test_kit_settings),
+  'a freshly migrated database has the test kit switched off'
+);
+-- The row value above can be flipped by a later call. The column default is
+-- what a rebuilt database inherits, so it is asserted separately.
+select is(
+  (select column_default from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'test_kit_settings'
+      and column_name = 'enabled'),
+  'false',
+  'and the column default is off, so a rebuilt database inherits it'
+);
 
 -- ---------------------------------------------------------------------------
 -- Owner bootstrap
@@ -65,6 +88,50 @@ select ok(
 );
 delete from profiles where id = '00000000-0000-4000-a000-0000000000ff';
 delete from auth.users where id = '00000000-0000-4000-a000-0000000000ff';
+
+-- ...but only once the address is proven (20260807000400, audit finding
+-- F-001). Before that predicate existed, holding the email at the moment of
+-- insert was the whole lock, and whether that lock held depended on a hosted
+-- auth setting no migration can see.
+--
+-- A third casing of the same address, because the shim's auth.users.email is
+-- unique and case-sensitive while is_owner_email lowercases before matching.
+insert into auth.users
+  (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+   raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+   confirmation_token, recovery_token, email_change, email_change_token_new,
+   email_change_token_current, phone_change, phone_change_token,
+   reauthentication_token)
+values
+  ('00000000-0000-4000-a000-0000000000fe', '00000000-0000-0000-0000-000000000000',
+   'authenticated', 'authenticated', 'kylewmixon@GMAIL.com', 'x', null,
+   '{}', '{}', now(), now(), '', '', '', '', '', '', '', '');
+
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-4000-a000-0000000000fe","role":"authenticated"}',
+  true
+);
+insert into profiles (id, handle, display_name, stage_name, home_city, home_region,
+                      birth_year, eula_version)
+values ('00000000-0000-4000-a000-0000000000fe', 'owner_unconfirmed', 'Kyle', 'Kyle',
+        'Seattle', 'WA', 1990,
+        (select version from eula_versions order by published_at desc limit 1));
+reset role;
+
+select ok(
+  (select not is_admin from profiles where id = '00000000-0000-4000-a000-0000000000fe'),
+  'an unconfirmed sign-up on the owner email is not promoted to admin'
+);
+select is(
+  (select count(*)::int from producer_profiles
+    where profile_id = '00000000-0000-4000-a000-0000000000fe'),
+  0,
+  'and the child rows the bootstrap creates are not created either'
+);
+delete from profiles where id = '00000000-0000-4000-a000-0000000000fe';
+delete from auth.users where id = '00000000-0000-4000-a000-0000000000fe';
 
 -- Everyone else is unaffected: is_admin still cannot be self-granted.
 set local role authenticated;
