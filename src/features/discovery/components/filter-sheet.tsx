@@ -7,11 +7,14 @@ import {
   SIGNUP_METHOD_LABELS,
 } from '@/features/discovery/components/mic-card';
 import { RADIUS_CHOICES } from '@/features/discovery/distance';
-import { TIME_WINDOWS, useFiltersStore, type TimeOfDay } from '@/stores/filters';
+import { AGE_LABELS, TIME_WINDOWS, useFiltersStore, type TimeOfDay } from '@/stores/filters';
 import { disciplineAccents, fonts, minTouchTarget, palette, spacing, type } from '@/theme';
 import type { Database } from '@/types/database.types';
 
 type SignupMethod = Database['public']['Enums']['signup_method'];
+type AgeRestriction = Database['public']['Enums']['age_restriction'];
+
+const AGES: AgeRestriction[] = ['all_ages', 'eighteen_plus', 'twenty_one_plus'];
 
 const DAYS: { day: number; label: string }[] = [
   { day: 1, label: 'Mon' },
@@ -147,6 +150,23 @@ export function FilterSheet({ visible, onClose }: { visible: boolean; onClose: (
                 }))}
                 onChange={filters.setMethods}
               />
+            </Section>
+
+            <Section
+              title="Who can get in?"
+              caption="Based on the venue's age policy. Venues that have not said stay hidden while this is on."
+            >
+              <View style={styles.chipWrap}>
+                {AGES.map((a) => (
+                  <SheetChip
+                    key={a}
+                    label={AGE_LABELS[a]}
+                    active={filters.ages.includes(a)}
+                    activeColor={disciplineAccents.comedy}
+                    onPress={() => filters.toggleAge(a)}
+                  />
+                ))}
+              </View>
             </Section>
 
             <Section title="How far will you go?">

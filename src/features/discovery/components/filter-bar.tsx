@@ -4,9 +4,14 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Glyph, disciplineGlyphs } from '@/components/glyph';
 import { FilterSheet } from '@/features/discovery/components/filter-sheet';
 import {
-  dayQuickPick,
+  SIGNUP_METHOD_LABELS,
+} from '@/features/discovery/components/mic-card';
+import { radiusLabel } from '@/features/discovery/distance';
+import type { WhenFilter } from '@/features/discovery/query-tokens';
+import {
+  AGE_LABELS,
+  TIME_WINDOWS,
   hasActiveFilters,
-  isoWeekday,
   sheetFilterCount,
   useFiltersStore,
 } from '@/stores/filters';
@@ -27,19 +32,30 @@ const DISCIPLINE_LABELS: Record<Discipline, string> = {
   other: 'Other',
 };
 
+const WHEN_PICKS: { when: WhenFilter; label: string }[] = [
+  { when: 'tonight', label: 'Tonight' },
+  { when: 'tomorrow', label: 'Tomorrow' },
+  { when: 'week', label: 'This week' },
+  { when: 'weekend', label: 'This weekend' },
+];
+
+const DAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
 type ChipProps = {
   label: string;
   active: boolean;
   onPress: () => void;
   activeColor?: string;
   icon?: React.ReactNode;
+  /** Applied chips read as removable: the label carries a dismiss mark. */
+  dismissible?: boolean;
 };
 
-function Chip({ label, active, onPress, activeColor, icon }: ChipProps) {
+function Chip({ label, active, onPress, activeColor, icon, dismissible }: ChipProps) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={dismissible ? `Remove filter: ${label}` : label}
       accessibilityState={{ selected: active }}
       onPress={onPress}
       style={[
@@ -48,23 +64,25 @@ function Chip({ label, active, onPress, activeColor, icon }: ChipProps) {
       ]}
     >
       {icon}
-      <Text style={[styles.chipLabel, active && styles.chipLabelActive]}>{label}</Text>
+      <Text style={[styles.chipLabel, active && styles.chipLabelActive]}>
+        {dismissible ? `${label} ✕` : label}
+      </Text>
     </Pressable>
   );
 }
 
 /**
- * The simple face of discovery: one question per row. Row one asks what
- * kind of mic, row two asks when, plus Free and a door into the full
- * filter sheet for everything else.
+ * The face of discovery: what kind of mic, when, and every other applied
+ * constraint as a chip you can see and dismiss. Nothing filters silently:
+ * the radius always shows its current value, and each sheet filter
+ * surfaces here the moment it applies. The search box feeds the same
+ * state: typing "tonight" lights the same Tonight chip a tap would.
  */
 export function FilterBar() {
   const filters = useFiltersStore();
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  const todayIso = isoWeekday(new Date());
-  const quickPick = dayQuickPick(filters.days, todayIso);
-  const moreCount = sheetFilterCount(filters, todayIso);
+  const moreCount = sheetFilterCount(filters);
 
   return (
     <View style={styles.wrap}>
@@ -103,42 +121,87 @@ export function FilterBar() {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.row}
-        accessibilityLabel="When and more filters"
+        accessibilityLabel="When"
       >
         <Chip
           label="Any day"
-          active={quickPick === 'any' && filters.dateBound === null}
-          onPress={() => filters.setQuickPick('any', todayIso)}
+          active={filters.when === null && filters.days.length === 0}
+          onPress={() => filters.setWhen(null)}
         />
-        <Chip
-          label="Tonight"
-          active={filters.dateBound === 'today'}
-          activeColor={disciplineAccents.music}
-          onPress={() =>
-            filters.setQuickPick(filters.dateBound === 'today' ? 'any' : 'today', todayIso)
-          }
-        />
-        <Chip
-          label="This weekend"
-          active={filters.dateBound === 'weekend'}
-          activeColor={disciplineAccents.music}
-          onPress={() =>
-            filters.setQuickPick(filters.dateBound === 'weekend' ? 'any' : 'weekend', todayIso)
-          }
-        />
+        {WHEN_PICKS.map(({ when, label }) => (
+          <Chip
+            key={when}
+            label={label}
+            active={filters.when === when}
+            activeColor={disciplineAccents.music}
+            onPress={() => filters.setWhen(filters.when === when ? null : when)}
+          />
+        ))}
+      </ScrollView>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.row}
+        accessibilityLabel="Applied filters and more"
+      >
         <Chip
           label="Free"
           active={filters.freeOnly}
           activeColor={palette.success}
           onPress={() => filters.setFreeOnly(!filters.freeOnly)}
         />
+        {/* The radius always constrains results, so it always shows. */}
+        <Chip
+          label={`Within ${radiusLabel(filters.radiusKm)}`}
+          active={false}
+          onPress={() => setSheetOpen(true)}
+        />
+        {filters.days.map((day) => (
+          <Chip
+            key={day}
+            label={DAY_SHORT[day - 1]}
+            active
+            activeColor={disciplineAccents.music}
+            dismissible
+            onPress={() => filters.toggleDay(day)}
+          />
+        ))}
+        {filters.timeOfDay ? (
+          <Chip
+            label={TIME_WINDOWS[filters.timeOfDay].label}
+            active
+            activeColor={disciplineAccents.comedy}
+            dismissible
+            onPress={() => filters.setTimeOfDay(null)}
+          />
+        ) : null}
+        {filters.methods.map((m) => (
+          <Chip
+            key={m}
+            label={SIGNUP_METHOD_LABELS[m]}
+            active
+            activeColor={disciplineAccents.poetry}
+            dismissible
+            onPress={() => filters.toggleMethod(m)}
+          />
+        ))}
+        {filters.ages.map((a) => (
+          <Chip
+            key={a}
+            label={AGE_LABELS[a]}
+            active
+            activeColor={disciplineAccents.comedy}
+            dismissible
+            onPress={() => filters.toggleAge(a)}
+          />
+        ))}
         <Chip
           label={moreCount > 0 ? `More filters (${moreCount})` : 'More filters'}
           active={moreCount > 0}
           activeColor={disciplineAccents.poetry}
           onPress={() => setSheetOpen(true)}
         />
-        {hasActiveFilters(filters) || filters.dateBound !== null ? (
+        {hasActiveFilters(filters) ? (
           <Chip label="Clear all filters" active={false} onPress={filters.reset} />
         ) : null}
       </ScrollView>

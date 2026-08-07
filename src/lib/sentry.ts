@@ -27,3 +27,19 @@ export function reportError(error: Error): void {
   }
   Sentry.captureException(error);
 }
+
+/**
+ * Every zero-result search, with the filter state that produced it: the
+ * closest thing to a list of what people wanted and could not find, which
+ * is a product roadmap. Info level, no identity attached, inert without a
+ * DSN like everything else here.
+ */
+export function logZeroResultSearch(query: string, filters: Record<string, unknown>): void {
+  if (!process.env.EXPO_PUBLIC_SENTRY_DSN) {
+    return;
+  }
+  Sentry.captureMessage('search_zero_results', {
+    level: 'info',
+    extra: { query, ...filters },
+  });
+}

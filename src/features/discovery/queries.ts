@@ -2,20 +2,43 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 
 import { getSupabase } from '@/lib/supabase';
 import { userError } from '@/lib/user-error';
-import { filtersToRpcArgs, type DiscoveryFilters } from '@/stores/filters';
+import { filtersToDiscoverArgs, type DiscoveryFilters } from '@/stores/filters';
 import type { Database } from '@/types/database.types';
 
 export type NearbyMic = Database['public']['Functions']['mics_near']['Returns'][number];
-export type SearchResult = Database['public']['Functions']['search_mics']['Returns'][number];
+export type DiscoverResult = Database['public']['Functions']['search_discover']['Returns'][number];
 
-export function useNearbyMics(filters: DiscoveryFilters, center: { lat: number; lng: number }) {
+/**
+ * The one discovery feed: browsing and searching are the same query. An
+ * empty string browses (proximity and time rank); text narrows the same
+ * ranked feed through the server's full text and fuzzy passes, with every
+ * filter still applied.
+ *
+ * Request lifecycle: the caller debounces the query; each distinct
+ * (filters, center, query) is its own cache key, so a slow stale response
+ * can never overwrite a newer one; and the abort signal is passed through
+ * to the fetch, so a superseded request stops consuming the connection
+ * instead of completing pointlessly (performers search on one bar of
+ * cellular).
+ */
+export function useDiscoverFeed(
+  filters: DiscoveryFilters,
+  center: { lat: number; lng: number } | null,
+  query: string,
+) {
+  const trimmed = query.trim();
   return useQuery({
-    queryKey: ['mics', 'near', center, filters],
-    queryFn: async (): Promise<NearbyMic[]> => {
-      const { data, error } = await getSupabase().rpc(
-        'mics_near',
-        filtersToRpcArgs(filters, center),
-      );
+    queryKey: ['mics', 'discover', trimmed, center, filters],
+    // Typing re-keys the query; keeping the previous results on screen
+    // stops the pane flashing back to a skeleton mid-word.
+    placeholderData: keepPreviousData,
+    // One quick retry for a network blip; the global two-retry default
+    // makes a dead search take three backoffs to admit failure.
+    retry: 1,
+    queryFn: async ({ signal }): Promise<DiscoverResult[]> => {
+      const { data, error } = await getSupabase()
+        .rpc('search_discover', filtersToDiscoverArgs(filters, center, trimmed))
+        .abortSignal(signal);
       if (error) {
         throw userError(error, 'Could not load mics. Check your connection and try again.');
       }
@@ -24,24 +47,62 @@ export function useNearbyMics(filters: DiscoveryFilters, center: { lat: number; 
   });
 }
 
-export function useSearchMics(query: string, center?: { lat: number; lng: number } | null) {
+/** What the empty screen can offer instead of a dead end. */
+export type SearchRecovery =
+  | { kind: 'radius'; count: number; radiusKm: number }
+  | { kind: 'window'; count: number }
+  | null;
+
+/** The next radius step up from the current one, or null at the widest. */
+export function widerRadiusKm(currentKm: number): number | null {
+  const steps = [8, 16, 40, 80];
+  const next = steps.find((km) => km > currentKm);
+  return next ?? null;
+}
+
+/**
+ * When the feed comes back empty, probe the two relaxations worth
+ * offering, in the order they help: the same search wider, then the same
+ * search on other days. Best effort: a probe that fails is a missing
+ * suggestion, never an error screen.
+ */
+export function useSearchRecovery(
+  filters: DiscoveryFilters,
+  center: { lat: number; lng: number } | null,
+  query: string,
+  enabled: boolean,
+) {
   const trimmed = query.trim();
   return useQuery({
-    queryKey: ['mics', 'search', trimmed, center],
-    enabled: trimmed.length >= 2,
-    // Typing re-keys the query per keystroke; keeping the previous results
-    // on screen stops the pane flashing back to a spinner mid-word.
-    placeholderData: keepPreviousData,
-    queryFn: async (): Promise<SearchResult[]> => {
-      const { data, error } = await getSupabase().rpc('search_mics', {
-        p_query: trimmed,
-        p_lat: center?.lat,
-        p_lng: center?.lng,
-      });
-      if (error) {
-        throw userError(error, 'Search failed. Check your connection and try again.');
+    queryKey: ['mics', 'recover', trimmed, center, filters],
+    enabled,
+    retry: false,
+    queryFn: async ({ signal }): Promise<SearchRecovery> => {
+      const supabase = getSupabase();
+      const wider = widerRadiusKm(filters.radiusKm);
+      if (wider !== null) {
+        const { data } = await supabase
+          .rpc(
+            'search_discover',
+            filtersToDiscoverArgs({ ...filters, radiusKm: wider }, center, trimmed),
+          )
+          .abortSignal(signal);
+        if (data && data.length > 0) {
+          return { kind: 'radius', count: data.length, radiusKm: wider };
+        }
       }
-      return data;
+      if (filters.when !== null || filters.days.length > 0) {
+        const { data } = await supabase
+          .rpc(
+            'search_discover',
+            filtersToDiscoverArgs({ ...filters, when: null, days: [] }, center, trimmed),
+          )
+          .abortSignal(signal);
+        if (data && data.length > 0) {
+          return { kind: 'window', count: data.length };
+        }
+      }
+      return null;
     },
   });
 }

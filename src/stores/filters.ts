@@ -2,10 +2,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+import type { WhenFilter } from '@/features/discovery/query-tokens';
 import type { Discipline } from '@/theme';
 import type { Database } from '@/types/database.types';
 
 type SignupMethod = Database['public']['Enums']['signup_method'];
+type AgeRestriction = Database['public']['Enums']['age_restriction'];
 
 export type TimeOfDay = 'early' | 'evening' | 'late';
 
@@ -19,57 +21,66 @@ export const TIME_WINDOWS: Record<
   late: { startHour: 21, endHour: 24, label: 'After 9 PM' },
 };
 
+export const AGE_LABELS: Record<AgeRestriction, string> = {
+  all_ages: 'All ages',
+  eighteen_plus: '18+',
+  twenty_one_plus: '21+',
+};
+
 export type DiscoveryFilters = {
   disciplines: Discipline[];
+  /**
+   * The When quick pick: real dates, resolved server side against the
+   * venue-local calendar. Mutually exclusive with hand-picked weekdays.
+   */
+  when: WhenFilter | null;
   days: number[]; // ISO weekday numbers, 1 Monday .. 7 Sunday
   radiusKm: number;
   freeOnly: boolean;
   methods: SignupMethod[];
+  ages: AgeRestriction[];
   timeOfDay: TimeOfDay | null;
 };
 
 /**
  * The members that actually select rows on the server, projected for the
- * discovery query key. UI-only state (view, the seeding flag, the quick-pick
- * date bound) must never reach the key: every extra member forks the cache
- * and doubles what the persister writes.
+ * discovery query key. UI-only state (view, the seeding flag) must never
+ * reach the key: every extra member forks the cache and doubles what the
+ * persister writes.
  */
 export function selectDiscoveryFilters(state: DiscoveryFilters): DiscoveryFilters {
-  const { disciplines, days, radiusKm, freeOnly, methods, timeOfDay } = state;
-  return { disciplines, days, radiusKm, freeOnly, methods, timeOfDay };
+  const { disciplines, when, days, radiusKm, freeOnly, methods, ages, timeOfDay } = state;
+  return { disciplines, when, days, radiusKm, freeOnly, methods, ages, timeOfDay };
 }
 
 export const DEFAULT_FILTERS: DiscoveryFilters = {
   disciplines: [],
+  when: null,
   days: [],
   radiusKm: 40,
   freeOnly: false,
   methods: [],
+  ages: [],
   timeOfDay: null,
 };
-
-/**
- * The Today and Weekend quick picks promise actual dates, not weekdays.
- * The server matches weekdays over a 14 day window, so the quick picks also
- * carry a date bound that the client applies to next_starts_at.
- */
-export type DateBound = 'today' | 'weekend' | null;
 
 type FiltersState = DiscoveryFilters & {
   view: 'map' | 'list';
   disciplinesSeeded: boolean;
-  dateBound: DateBound;
   setView: (view: 'map' | 'list') => void;
   seedDisciplines: (ds: Discipline[]) => void;
   toggleDiscipline: (d: Discipline) => void;
   selectDiscipline: (d: Discipline | null) => void;
-  setQuickPick: (pick: 'any' | 'today' | 'weekend', todayIso: number) => void;
+  /** Quick picks and hand-picked weekdays displace each other. */
+  setWhen: (when: WhenFilter | null) => void;
   toggleDay: (day: number) => void;
   setDays: (days: number[]) => void;
   setRadiusKm: (km: number) => void;
   setFreeOnly: (freeOnly: boolean) => void;
   toggleMethod: (m: SignupMethod) => void;
   setMethods: (methods: SignupMethod[]) => void;
+  toggleAge: (a: AgeRestriction) => void;
+  setAges: (ages: AgeRestriction[]) => void;
   setTimeOfDay: (t: TimeOfDay | null) => void;
   reset: () => void;
 };
@@ -81,8 +92,8 @@ function toggle<T>(list: T[], item: T): T[] {
 /**
  * Client-only UI state; the server data it selects lives in TanStack Query.
  * Persisted so radius, view choice, and cleared discipline chips survive a
- * relaunch. Day picks and the Tonight/This weekend date bound are session
- * state: yesterday's "tonight" would silently mean the wrong day.
+ * relaunch. Day picks and the When quick pick are session state:
+ * yesterday's "tonight" would silently mean the wrong day.
  */
 export const useFiltersStore = create<FiltersState>()(
   persist(
@@ -90,7 +101,6 @@ export const useFiltersStore = create<FiltersState>()(
       ...DEFAULT_FILTERS,
       view: 'list',
       disciplinesSeeded: false,
-      dateBound: null,
       setView: (view) => set({ view }),
       // One-time default from the performer's own disciplines: what you do is
       // what you see first. Never overrides a selection the person already made.
@@ -102,24 +112,19 @@ export const useFiltersStore = create<FiltersState>()(
         ),
       toggleDiscipline: (d) => set((s) => ({ disciplines: toggle(s.disciplines, d) })),
       selectDiscipline: (d) => set({ disciplines: d === null ? [] : [d] }),
-      setQuickPick: (pick, todayIso) =>
-        set(
-          pick === 'today'
-            ? { days: [todayIso], dateBound: 'today' }
-            : pick === 'weekend'
-              ? { days: WEEKEND_DAYS, dateBound: 'weekend' }
-              : { days: [], dateBound: null },
-        ),
-      // Hand-picked weekdays from the sheet mean the weekday pattern, so the
-      // quick-pick date bound no longer applies.
-      toggleDay: (day) => set((s) => ({ days: toggle(s.days, day), dateBound: null })),
-      setDays: (days) => set({ days, dateBound: null }),
+      setWhen: (when) => set({ when, days: [] }),
+      // Hand-picked weekdays from the sheet mean the weekday pattern, so any
+      // quick pick no longer applies.
+      toggleDay: (day) => set((s) => ({ days: toggle(s.days, day), when: null })),
+      setDays: (days) => set({ days, when: null }),
       setRadiusKm: (radiusKm) => set({ radiusKm }),
       setFreeOnly: (freeOnly) => set({ freeOnly }),
       toggleMethod: (m) => set((s) => ({ methods: toggle(s.methods, m) })),
       setMethods: (methods) => set({ methods }),
+      toggleAge: (a) => set((s) => ({ ages: toggle(s.ages, a) })),
+      setAges: (ages) => set({ ages }),
       setTimeOfDay: (timeOfDay) => set({ timeOfDay }),
-      reset: () => set({ ...DEFAULT_FILTERS, dateBound: null }),
+      reset: () => set({ ...DEFAULT_FILTERS }),
     }),
     {
       name: 'discovery-filters',
@@ -130,6 +135,7 @@ export const useFiltersStore = create<FiltersState>()(
         radiusKm: s.radiusKm,
         freeOnly: s.freeOnly,
         methods: s.methods,
+        ages: s.ages,
         timeOfDay: s.timeOfDay,
         view: s.view,
       }),
@@ -146,72 +152,116 @@ export function isoWeekday(date: Date): number {
 /** Friday through Sunday: the nights most people can actually go out. */
 export const WEEKEND_DAYS = [5, 6, 7];
 
-export type DayQuickPick = 'any' | 'today' | 'weekend' | 'custom';
-
-/** Which quick pick, if any, the current day selection matches. */
-export function dayQuickPick(days: number[], todayIso: number): DayQuickPick {
-  if (days.length === 0) {
-    return 'any';
-  }
-  if (days.length === 1 && days[0] === todayIso) {
-    return 'today';
-  }
-  const sorted = [...days].sort();
-  if (sorted.length === WEEKEND_DAYS.length && sorted.every((d, i) => d === WEEKEND_DAYS[i])) {
-    return 'weekend';
-  }
-  return 'custom';
-}
-
 /**
  * How many filters live only inside the All filters sheet, for the badge on
- * its button. Discipline, quick day picks, and Free have their own visible
- * controls, so they are not counted here.
+ * its button. Discipline, the When quick picks, and Free have their own
+ * visible controls, and every sheet filter also renders an applied chip in
+ * the bar, so this count is a summary, not the only trace.
  */
-export function sheetFilterCount(filters: DiscoveryFilters, todayIso: number): number {
+export function sheetFilterCount(filters: DiscoveryFilters): number {
   let count = 0;
-  if (dayQuickPick(filters.days, todayIso) === 'custom') {
+  if (filters.days.length > 0) {
     count += 1;
   }
   if (filters.timeOfDay !== null) {
     count += 1;
   }
   count += filters.methods.length;
+  count += filters.ages.length;
   if (filters.radiusKm !== DEFAULT_FILTERS.radiusKm) {
     count += 1;
   }
   return count;
 }
 
-export type MicsNearArgs = Database['public']['Functions']['mics_near']['Args'];
-
-/** Translates UI filter state into mics_near RPC arguments. */
-export function filtersToRpcArgs(
-  filters: DiscoveryFilters,
-  center: { lat: number; lng: number },
-): MicsNearArgs {
-  const window = filters.timeOfDay ? TIME_WINDOWS[filters.timeOfDay] : null;
-  return {
-    p_lat: center.lat,
-    p_lng: center.lng,
-    p_radius_m: Math.round(filters.radiusKm * 1000),
-    p_disciplines: filters.disciplines.length > 0 ? filters.disciplines : undefined,
-    p_days: filters.days.length > 0 ? filters.days : undefined,
-    p_free_only: filters.freeOnly,
-    p_methods: filters.methods.length > 0 ? filters.methods : undefined,
-    p_start_hour: window?.startHour,
-    p_end_hour: window?.endHour,
-  };
-}
-
 /** True when any filter deviates from the defaults (drives the Reset chip). */
 export function hasActiveFilters(filters: DiscoveryFilters): boolean {
   return (
     filters.disciplines.length > 0 ||
+    filters.when !== null ||
     filters.days.length > 0 ||
     filters.freeOnly ||
     filters.methods.length > 0 ||
+    filters.ages.length > 0 ||
     filters.timeOfDay !== null ||
     filters.radiusKm !== DEFAULT_FILTERS.radiusKm
   );
+}
+
+/** A local calendar date as the RPC's date type expects it. */
+function localDateISO(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function addDays(date: Date, days: number): Date {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+/**
+ * The When quick pick as the server's window: venue-local calendar dates
+ * plus, for the weekend, the weekday set. "Tonight" is the user's local
+ * date; venues within driving distance share it.
+ */
+export function whenToWindow(
+  when: WhenFilter | null,
+  now: Date,
+): { from?: string; to?: string; days?: number[] } {
+  switch (when) {
+    case 'tonight':
+      return { from: localDateISO(now), to: localDateISO(now) };
+    case 'tomorrow': {
+      const tomorrow = addDays(now, 1);
+      return { from: localDateISO(tomorrow), to: localDateISO(tomorrow) };
+    }
+    case 'week':
+      return { from: localDateISO(now), to: localDateISO(addDays(now, 6)) };
+    case 'weekend': {
+      const daysUntilSunday = (7 - isoWeekday(now)) % 7;
+      return {
+        from: localDateISO(now),
+        to: localDateISO(addDays(now, daysUntilSunday)),
+        days: WEEKEND_DAYS,
+      };
+    }
+    default:
+      return {};
+  }
+}
+
+export type SearchDiscoverArgs = Database['public']['Functions']['search_discover']['Args'];
+
+/**
+ * Translates UI filter state, the center, and the typed query into
+ * search_discover arguments. One builder for browsing and searching: the
+ * only difference is whether p_query carries text.
+ */
+export function filtersToDiscoverArgs(
+  filters: DiscoveryFilters,
+  center: { lat: number; lng: number } | null,
+  query: string,
+  now: Date = new Date(),
+): SearchDiscoverArgs {
+  const window = whenToWindow(filters.when, now);
+  const hourWindow = filters.timeOfDay ? TIME_WINDOWS[filters.timeOfDay] : null;
+  const trimmed = query.trim();
+  return {
+    p_query: trimmed.length > 0 ? trimmed : undefined,
+    p_lat: center?.lat,
+    p_lng: center?.lng,
+    p_radius_m: Math.round(filters.radiusKm * 1000),
+    p_disciplines: filters.disciplines.length > 0 ? filters.disciplines : undefined,
+    p_days: window.days ?? (filters.days.length > 0 ? filters.days : undefined),
+    p_local_from: window.from,
+    p_local_to: window.to,
+    p_free_only: filters.freeOnly,
+    p_methods: filters.methods.length > 0 ? filters.methods : undefined,
+    p_ages: filters.ages.length > 0 ? filters.ages : undefined,
+    p_start_hour: hourWindow?.startHour,
+    p_end_hour: hourWindow?.endHour,
+  };
 }

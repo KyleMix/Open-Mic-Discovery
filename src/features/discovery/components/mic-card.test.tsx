@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 
 import { MicCard, type MicCardMic } from './mic-card';
-import type { SearchResult } from '@/features/discovery/queries';
+import type { DiscoverResult } from '@/features/discovery/queries';
 
 // The card carries the favorite star, which reads the session and the
 // favorites query; a signed-out session keeps both quiet in this test.
@@ -18,20 +18,23 @@ function renderCard(element: ReactElement) {
 }
 
 /**
- * Shaped like a row from search_mics, not from mics_near. Typing this as
- * SearchResult is the point: if search ever stops returning something the card
- * draws, this file stops compiling instead of quietly rendering a thinner card
+ * Shaped like a row from search_discover. Typing this as DiscoverResult is
+ * the point: if the feed ever stops returning something the card draws,
+ * this file stops compiling instead of quietly rendering a thinner card
  * the way it used to.
  */
-const SEARCH_ROW: SearchResult = {
+const SEARCH_ROW: DiscoverResult = {
   series_id: 'series-1',
   title: 'The Log Cabin',
   disciplines: ['comedy'],
+  description: null as unknown as string,
   signup_method: 'first_come',
   cost_cents: 0,
+  set_length_minutes: null as unknown as number,
   rrule: 'FREQ=WEEKLY;INTERVAL=2;BYDAY=MO',
   start_time: '19:00:00',
   timezone: 'America/Los_Angeles',
+  is_active: true,
   last_confirmed_at: new Date().toISOString(),
   venue_id: 'venue-1',
   venue_name: 'The Log Cabin',
@@ -41,12 +44,17 @@ const SEARCH_ROW: SearchResult = {
   lat: 47.0379,
   lng: -122.9007,
   distance_m: 2253,
+  next_occurrence_id: null as unknown as string,
   next_starts_at: '2026-08-11T02:00:00.000Z',
+  next_local_date: null as unknown as string,
+  next_status: null as unknown as DiscoverResult['next_status'],
   poster_url: null as unknown as string,
   featured_name: null as unknown as string,
   capacity: null as unknown as number,
   spots_left: null as unknown as number,
   owner_id: null as unknown as string,
+  match_kind: 'text',
+  rank_score: 5.1,
 };
 
 describe('MicCard from a search result', () => {

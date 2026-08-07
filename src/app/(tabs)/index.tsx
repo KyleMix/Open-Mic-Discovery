@@ -12,31 +12,44 @@ import {
   View,
 } from 'react-native';
 
-import { Glyph } from '@/components/glyph';
-import { Body, Button, ErrorText, LoadingView } from '@/components/ui';
-import { freshness } from '@/features/discovery/freshness';
+import { OfflineBanner } from '@/components/offline-banner';
+import { Body, Button, ErrorText } from '@/components/ui';
 import { useOwnProfile, usePerformerDisciplines } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
 import { FilterBar } from '@/features/discovery/components/filter-bar';
-import { OfflineBanner } from '@/components/offline-banner';
-import { boundByDate } from '@/features/discovery/date-window';
-import { MicCard, formatNextDate } from '@/features/discovery/components/mic-card';
+import { MicCard } from '@/features/discovery/components/mic-card';
 import { MicMap } from '@/features/discovery/components/mic-map';
+import { SearchPanel } from '@/features/discovery/components/search-panel';
+import { SkeletonCards } from '@/features/discovery/components/skeleton-card';
 import { radiusLabel } from '@/features/discovery/distance';
 import { DEFAULT_CENTER, requestForegroundLocation } from '@/features/discovery/location';
+import { parseQueryTokens } from '@/features/discovery/query-tokens';
+import {
+  useDiscoverFeed,
+  useSearchRecovery,
+  type SearchRecovery,
+} from '@/features/discovery/queries';
 import { geocodeHomeArea } from '@/features/profile/geocode';
 import { homeAreaLabel } from '@/features/profile/home-area';
-import { sortSoonestNearest } from '@/features/discovery/order';
-import { useNearbyMics, useSearchMics } from '@/features/discovery/queries';
+import { logZeroResultSearch } from '@/lib/sentry';
 import { selectDiscoveryFilters, useFiltersStore } from '@/stores/filters';
+import { useRecentSearches } from '@/stores/recent-searches';
 import { fonts, minTouchTarget, palette, spacing, type, type Discipline } from '@/theme';
 
+/**
+ * Discover: one input, one feed. An empty query is the ranked nearby
+ * feed; typing narrows the same feed, with every filter chip still
+ * applied and visible. Temporal words in the query ("tonight",
+ * "tuesday", "free") become the same chips a tap would set, so results
+ * never change for an invisible reason.
+ */
 export default function DiscoverScreen() {
   const router = useRouter();
   const filters = useFiltersStore();
   const view = useFiltersStore((s) => s.view);
   const setView = useFiltersStore((s) => s.setView);
   const seedDisciplines = useFiltersStore((s) => s.seedDisciplines);
+  const addRecent = useRecentSearches((s) => s.addRecent);
 
   const { session } = useSession();
   const profile = useOwnProfile(session?.user.id);
@@ -56,7 +69,6 @@ export default function DiscoverScreen() {
   const center = manualCenter
     ? { lat: manualCenter.lat, lng: manualCenter.lng }
     : (profileCenter ?? DEFAULT_CENTER);
-  // Nothing on this screen said where results were centered; now it does.
   const centerLabel = manualCenter
     ? manualCenter.label
     : profileCenter
@@ -74,45 +86,9 @@ export default function DiscoverScreen() {
   const [locationNote, setLocationNote] = useState<string | null>(null);
   const [locationDenied, setLocationDenied] = useState(false);
   const [search, setSearch] = useState('');
-  // One search RPC per pause in typing, not one per keystroke.
-  const debouncedSearch = useDebounced(search, 300);
-
-  // Only the server-relevant members reach the query key; passing the whole
-  // store forked the cache on every map/list toggle.
-  const nearby = useNearbyMics(selectDiscoveryFilters(filters), center);
-  const searchResults = useSearchMics(debouncedSearch, center);
-  const searching = search.trim().length >= 2;
-
-  // The list leads with what is happening soonest, closest first. The
-  // Tonight and This weekend quick picks additionally bound results to
-  // their actual dates, not just their weekdays.
-  const visibleMics = useMemo(
-    () =>
-      boundByDate(
-        // Paused listings generate no nights; showing them as undated
-        // cards reads as data rot, the exact thing the badge fights.
-        sortSoonestNearest((nearby.data ?? []).filter((m) => m.is_active !== false)),
-        filters.dateBound,
-        new Date(),
-      ),
-    [nearby.data, filters.dateBound],
-  );
-
-  // Searching a place can move the whole browse experience there: type a
-  // city, tap "Show mics near", and the filtered nearby view recenters.
-  const [placeSearch, setPlaceSearch] = useState<'idle' | 'busy' | 'failed'>('idle');
-  async function browseNear(place: string) {
-    setPlaceSearch('busy');
-    const coords = await geocodeHomeArea(place);
-    if (coords) {
-      setManualCenter({ ...coords, label: place });
-      setSearch('');
-      setLocationNote(null);
-      setPlaceSearch('idle');
-    } else {
-      setPlaceSearch('failed');
-    }
-  }
+  const [inputFocused, setInputFocused] = useState(false);
+  // The settled query: what the feed actually asks the server.
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   async function locateMe() {
     // In-context explanation lives right on the button and note below;
@@ -135,22 +111,119 @@ export default function DiscoverScreen() {
     }
   }
 
-  const openMic = (seriesId: string) => router.push(`/mic/${seriesId}`);
+  // One request per pause in typing, not one per keystroke. When typing
+  // settles, the closed-set token pass runs first: "open mic tonight"
+  // becomes the query "open mic" plus the Tonight chip, visibly lit in
+  // the bar below, so results never change for an invisible reason.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const parsed = parseQueryTokens(search);
+      if (parsed.tokens.length === 0) {
+        setDebouncedSearch(search);
+        return;
+      }
+      const store = useFiltersStore.getState();
+      for (const token of parsed.tokens) {
+        if (token.kind === 'when') {
+          store.setWhen(token.when);
+        } else if (token.kind === 'day') {
+          store.setDays([token.day]);
+        } else if (token.kind === 'free') {
+          store.setFreeOnly(true);
+        } else if (token.kind === 'age') {
+          if (!store.ages.includes(token.age)) {
+            store.toggleAge(token.age);
+          }
+        } else if (token.kind === 'nearMe') {
+          void locateMe();
+        }
+      }
+      setSearch(parsed.text);
+      setDebouncedSearch(parsed.text);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const activeFilters = selectDiscoveryFilters(filters);
+  const feed = useDiscoverFeed(activeFilters, center, debouncedSearch);
+  const query = debouncedSearch.trim();
+
+  const results = useMemo(() => feed.data ?? [], [feed.data]);
+  const showingZero = feed.data !== undefined && results.length === 0;
+  const recovery = useSearchRecovery(activeFilters, center, debouncedSearch, showingZero);
+
+  // Every zero-result search is a thing somebody wanted and could not
+  // find. The log of them is a product roadmap.
+  useEffect(() => {
+    if (showingZero) {
+      logZeroResultSearch(query, activeFilters as unknown as Record<string, unknown>);
+    }
+    // Log once per settled zero, not per filter object identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showingZero, query]);
+
+  // When every match came from the fuzzy pass, say so: silently showing
+  // "Olympia" results for "Olymipa" reads as a wrong answer.
+  const allFuzzy =
+    query.length > 0 && results.length > 0 && results.every((r) => r.match_kind === 'fuzzy');
+
+  const openMic = (seriesId: string) => {
+    if (query.length > 0) {
+      addRecent(query);
+    }
+    router.push(`/mic/${seriesId}`);
+  };
+
+  // Searching a place can move the whole browse experience there: type a
+  // city, tap "Browse near", and the feed recenters.
+  const [placeSearch, setPlaceSearch] = useState<'idle' | 'busy' | 'failed'>('idle');
+  async function browseNear(place: string) {
+    setPlaceSearch('busy');
+    const coords = await geocodeHomeArea(place);
+    if (coords) {
+      setManualCenter({ ...coords, label: place });
+      setSearch('');
+      setLocationNote(null);
+      setPlaceSearch('idle');
+    } else {
+      setPlaceSearch('failed');
+    }
+  }
+
+  const showPanel = inputFocused && search.trim().length === 0;
 
   return (
     <View style={styles.container}>
       <OfflineBanner />
       <View style={styles.searchRow}>
         <TextInput
-          accessibilityLabel="Search by city or venue"
-          placeholder="Search city or venue"
+          accessibilityLabel="Search mics, venues, cities, or hosts"
+          placeholder="Search mic, venue, city, or host"
           placeholderTextColor={palette.textFaint}
           style={styles.searchInput}
           value={search}
           onChangeText={setSearch}
+          onFocus={() => setInputFocused(true)}
+          onBlur={() => setInputFocused(false)}
+          onSubmitEditing={() => {
+            if (search.trim()) {
+              addRecent(search.trim());
+            }
+          }}
           autoCapitalize="none"
+          autoCorrect={false}
           returnKeyType="search"
         />
+        {search.length > 0 ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Clear the search"
+            onPress={() => setSearch('')}
+            style={styles.iconButton}
+          >
+            <Ionicons name="close" size={22} color={palette.text} />
+          </Pressable>
+        ) : null}
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Use my location to find mics near me"
@@ -159,11 +232,7 @@ export default function DiscoverScreen() {
           disabled={locating}
           style={styles.iconButton}
         >
-          <Ionicons
-            name="locate"
-            size={22}
-            color={locating ? palette.textDisabled : palette.text}
-          />
+          <Ionicons name="locate" size={22} color={locating ? palette.textDisabled : palette.text} />
         </Pressable>
         <Pressable
           accessibilityRole="button"
@@ -184,182 +253,159 @@ export default function DiscoverScreen() {
           <Text style={styles.settingsLink}>Open settings</Text>
         </Pressable>
       ) : null}
-      {!searching ? (
-        <View style={styles.centerRow}>
-          <Text style={styles.centerLabel}>Near {centerLabel}</Text>
-          {manualCenter ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Go back to your home area"
-              onPress={() => setManualCenter(null)}
-            >
-              <Text style={styles.centerReset}>Back to home area</Text>
-            </Pressable>
-          ) : null}
-        </View>
-      ) : null}
-      {!searching && !manualCenter && !profileCenter && !profile.isPending ? (
+      <View style={styles.centerRow}>
+        <Text style={styles.centerLabel}>Near {centerLabel}</Text>
+        {manualCenter ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Go back to your home area"
+            onPress={() => setManualCenter(null)}
+          >
+            <Text style={styles.centerReset}>Back to home area</Text>
+          </Pressable>
+        ) : null}
+      </View>
+      {!manualCenter && !profileCenter && !profile.isPending ? (
         <Text style={styles.locationNote}>
           Showing the default Seattle area, not your own. Use the locate button, or search your city
-          and tap Show mics near it.
+          and tap Browse near it.
         </Text>
       ) : null}
 
-      {searching ? (
-        <SearchResults
-          state={searchResults}
-          onSelect={openMic}
-          query={search.trim()}
-          placeSearch={placeSearch}
-          onBrowseNear={browseNear}
+      {showPanel ? (
+        <SearchPanel
+          query={search}
+          onPickRecent={(q) => setSearch(q)}
+          onPickSaved={(sv) => {
+            useFiltersStore.setState({ ...sv.filters });
+            setSearch(sv.query);
+          }}
         />
+      ) : null}
+
+      <FilterBar />
+
+      {allFuzzy ? (
+        <Text style={styles.fuzzyNote}>
+          No exact matches for &quot;{query}&quot;. Showing close matches.
+        </Text>
+      ) : null}
+
+      {feed.isPending ? (
+        <SkeletonCards />
+      ) : feed.isError ? (
+        <View style={styles.stateWrap}>
+          <ErrorText>Could not load mics. Check your connection.</ErrorText>
+          <Button label="Try again" onPress={() => feed.refetch()} />
+        </View>
+      ) : showingZero ? (
+        <ZeroResults
+          query={query}
+          radiusKm={filters.radiusKm}
+          hasWhen={filters.when !== null || filters.days.length > 0}
+          recovery={recovery.data ?? null}
+          onWiden={(km) => filters.setRadiusKm(km)}
+          onAnyDay={() => filters.setWhen(null)}
+          onClearQuery={() => setSearch('')}
+          onBrowseNear={() => browseNear(query)}
+          placeSearch={placeSearch}
+          onClearFilters={filters.reset}
+        />
+      ) : view === 'map' ? (
+        <View style={styles.mapWrap}>
+          <MicMap mics={results} center={center} onSelect={openMic} />
+        </View>
       ) : (
-        <>
-          <FilterBar />
-          {nearby.isPending ? (
-            <LoadingView label="Finding mics" />
-          ) : nearby.isError ? (
-            <View style={styles.stateWrap}>
-              <ErrorText>Could not load mics. Check your connection.</ErrorText>
-              <Button label="Try again" onPress={() => nearby.refetch()} />
-            </View>
-          ) : visibleMics.length === 0 ? (
-            <View style={styles.stateWrap}>
-              <Text style={styles.emptyTitle}>
-                {filters.dateBound === 'today'
-                  ? 'Nothing on tonight'
-                  : filters.dateBound === 'weekend'
-                    ? 'Nothing on this weekend'
-                    : 'No mics here yet'}
-              </Text>
-              <Body>
-                Nothing within {radiusLabel(filters.radiusKm)} matches. Try a bigger distance or
-                clear the filters. Know a mic we are missing? Add it from the My Mics tab.
-              </Body>
-              <Button label="Clear all filters" kind="secondary" onPress={filters.reset} />
-            </View>
-          ) : view === 'map' ? (
-            <View style={styles.mapWrap}>
-              <MicMap mics={visibleMics} center={center} onSelect={openMic} />
-            </View>
-          ) : (
-            <FlatList
-              data={visibleMics}
-              keyExtractor={(mic) => mic.series_id}
-              renderItem={({ item }) => (
-                <MicCard mic={item} onPress={() => openMic(item.series_id)} />
-              )}
-              contentContainerStyle={styles.list}
-              // Freshness is the product, so a way to ask for it again is the
-              // first thing anyone reaches for on this screen.
-              refreshControl={
-                <RefreshControl
-                  refreshing={nearby.isFetching}
-                  onRefresh={nearby.refetch}
-                  tintColor={palette.textSecondary}
-                />
-              }
+        <FlatList
+          data={results}
+          keyExtractor={(mic) => mic.series_id}
+          renderItem={({ item }) => <MicCard mic={item} onPress={() => openMic(item.series_id)} />}
+          contentContainerStyle={styles.list}
+          // The first tap on a result opens it; it must not just dismiss
+          // the keyboard.
+          keyboardShouldPersistTaps="handled"
+          // Refinements keep the previous rows on screen; this dims them so
+          // the list never flashes empty but never lies about being current.
+          style={feed.isPlaceholderData ? styles.stale : null}
+          refreshControl={
+            <RefreshControl
+              refreshing={feed.isFetching && !feed.isPlaceholderData}
+              onRefresh={feed.refetch}
+              tintColor={palette.textSecondary}
             />
-          )}
-        </>
+          }
+        />
       )}
     </View>
   );
 }
 
-function useDebounced(value: string, ms: number): string {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), ms);
-    return () => clearTimeout(timer);
-  }, [value, ms]);
-  return debounced;
-}
-
-function SearchResults({
-  state,
-  onSelect,
+/**
+ * Zero results is never a dead end: offer the same search wider, the same
+ * search on other days, the feed without the query, and a way out of the
+ * filters, in that order of usefulness.
+ */
+function ZeroResults({
   query,
-  placeSearch,
+  radiusKm,
+  hasWhen,
+  recovery,
+  onWiden,
+  onAnyDay,
+  onClearQuery,
   onBrowseNear,
+  placeSearch,
+  onClearFilters,
 }: {
-  state: ReturnType<typeof useSearchMics>;
-  onSelect: (seriesId: string) => void;
   query: string;
+  radiusKm: number;
+  hasWhen: boolean;
+  recovery: SearchRecovery;
+  onWiden: (km: number) => void;
+  onAnyDay: () => void;
+  onClearQuery: () => void;
+  onBrowseNear: () => void;
   placeSearch: 'idle' | 'busy' | 'failed';
-  onBrowseNear: (place: string) => void;
+  onClearFilters: () => void;
 }) {
-  const browseButton = (
-    <View style={styles.browseNear}>
-      <Button
-        label={`Show mics near "${query}"`}
-        kind="secondary"
-        busy={placeSearch === 'busy'}
-        onPress={() => onBrowseNear(query)}
-      />
-      {placeSearch === 'failed' ? (
-        <ErrorText>Could not find that place. Try a city name, like Portland, OR.</ErrorText>
-      ) : null}
-    </View>
-  );
-
-  if (state.isPending || state.isLoading) {
-    return <LoadingView label="Searching" />;
-  }
-  if (state.isError) {
-    return (
-      <View style={styles.stateWrap}>
-        <ErrorText>Search failed. Check your connection.</ErrorText>
-        <Button label="Try again" onPress={() => state.refetch()} />
-      </View>
-    );
-  }
-  if (!state.data || state.data.length === 0) {
-    return (
-      <View style={styles.stateWrap}>
-        <Text style={styles.emptyTitle}>No matches</Text>
-        <Body>No mic, venue, or city matches that search by name.</Body>
-        {browseButton}
-      </View>
-    );
-  }
   return (
-    <FlatList
-      data={state.data}
-      keyExtractor={(r) => r.series_id}
-      contentContainerStyle={styles.list}
-      refreshControl={
-        <RefreshControl
-          refreshing={state.isFetching}
-          onRefresh={state.refetch}
-          tintColor={palette.textSecondary}
+    <View style={styles.stateWrap}>
+      <Text style={styles.emptyTitle}>
+        {query ? `No matches for "${query}"` : 'Nothing here right now'}
+      </Text>
+      <Body>
+        Nothing within {radiusLabel(radiusKm)}
+        {hasWhen ? ' on the days you picked' : ''}.
+      </Body>
+      {recovery?.kind === 'radius' ? (
+        <Button
+          label={`${recovery.count} ${recovery.count === 1 ? 'mic' : 'mics'} within ${radiusLabel(recovery.radiusKm)}`}
+          onPress={() => onWiden(recovery.radiusKm)}
         />
-      }
-      ListHeaderComponent={browseButton}
-      renderItem={({ item }) => {
-        const fresh = freshness(item.last_confirmed_at, new Date());
-        return (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`${item.title} in ${item.city}, ${fresh.label}`}
-            onPress={() => onSelect(item.series_id)}
-            style={({ pressed }) => [
-              styles.searchResult,
-              pressed && { backgroundColor: palette.bgPressed },
-            ]}
-          >
-            <Text style={styles.searchResultTitle}>{item.title}</Text>
-            <Text style={styles.searchResultMeta}>
-              {item.venue_name}, {item.city} · {formatNextDate(item.next_starts_at, item.timezone)}
-            </Text>
-            <View style={styles.searchResultFresh}>
-              <Glyph name="freshness-badge" size={14} color={fresh.color} />
-              <Text style={[styles.searchResultMeta, { color: fresh.color }]}>{fresh.label}</Text>
-            </View>
-          </Pressable>
-        );
-      }}
-    />
+      ) : null}
+      {recovery?.kind === 'window' ? (
+        <Button
+          label={`${recovery.count} ${recovery.count === 1 ? 'mic' : 'mics'} on other days`}
+          onPress={onAnyDay}
+        />
+      ) : null}
+      {query ? (
+        <>
+          <Button label="Show nearby mics instead" kind="secondary" onPress={onClearQuery} />
+          <Button
+            label={`Browse near "${query}"`}
+            kind="secondary"
+            busy={placeSearch === 'busy'}
+            onPress={onBrowseNear}
+          />
+          {placeSearch === 'failed' ? (
+            <ErrorText>Could not find that place. Try a city name, like Portland, OR.</ErrorText>
+          ) : null}
+        </>
+      ) : null}
+      <Button label="Clear all filters" kind="secondary" onPress={onClearFilters} />
+      <Body>Know a mic we are missing? Add it from the My Mics tab.</Body>
+    </View>
   );
 }
 
@@ -429,8 +475,11 @@ const styles = StyleSheet.create({
     fontSize: type.caption.fontSize,
     textDecorationLine: 'underline',
   },
-  browseNear: {
-    gap: spacing.sm,
+  fuzzyNote: {
+    color: palette.warning,
+    fontSize: type.caption.fontSize,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.xs,
   },
   mapWrap: {
     flex: 1,
@@ -438,6 +487,9 @@ const styles = StyleSheet.create({
   list: {
     gap: spacing.sm,
     padding: spacing.md,
+  },
+  stale: {
+    opacity: 0.6,
   },
   stateWrap: {
     flex: 1,
@@ -449,27 +501,5 @@ const styles = StyleSheet.create({
     color: palette.text,
     fontFamily: fonts.semibold,
     fontSize: type.heading.fontSize,
-  },
-  searchResult: {
-    backgroundColor: palette.bgElevated,
-    borderColor: palette.border,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: spacing.xs,
-    padding: spacing.md,
-  },
-  searchResultTitle: {
-    color: palette.text,
-    fontFamily: fonts.medium,
-    fontSize: type.body.fontSize,
-  },
-  searchResultMeta: {
-    color: palette.textSecondary,
-    fontSize: type.caption.fontSize,
-  },
-  searchResultFresh: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.xs,
   },
 });
