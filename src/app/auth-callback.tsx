@@ -18,17 +18,21 @@ import { exchangeAuthCode } from '@/features/auth/api';
 export default function AuthCallbackScreen() {
   const { code } = useLocalSearchParams<{ code?: string }>();
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
+  const [exchangeError, setExchangeError] = useState<string | null>(null);
+  // A link with no code is knowable at render time; only the exchange
+  // outcome needs state.
+  const error = code
+    ? exchangeError
+    : 'That link is incomplete. Open the newest email and tap the link again.';
 
   useEffect(() => {
     if (!code) {
-      setError('That link is incomplete. Open the newest email and tap the link again.');
       return;
     }
     let cancelled = false;
     exchangeAuthCode(code).catch((e) => {
       if (!cancelled) {
-        setError(e instanceof Error ? e.message : 'That link did not work.');
+        setExchangeError(e instanceof Error ? e.message : 'That link did not work.');
       }
     });
     // Success needs no navigation here: the session lands and the root
