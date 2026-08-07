@@ -28,6 +28,7 @@ import {
   useWaitlistRank,
   useWithdraw,
 } from '@/features/signups/queries';
+import { PushPrimer } from '@/features/notifications/components/push-primer';
 import { roomTerms } from '@/features/signups/room-terms';
 import { signupWindow } from '@/features/signups/window';
 import { fonts, palette, spacing, type } from '@/theme';
@@ -204,6 +205,10 @@ export function SignupCard({
             <Button label="Withdraw" kind="secondary" onPress={() => setConfirmingWithdraw(true)} />
           )
         ) : null}
+        <PushPrimer
+          userId={session.user.id}
+          message="Want a push when your status changes or you are on deck?"
+        />
       </>
     );
   } else if (window.state === 'not_yet') {

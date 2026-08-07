@@ -54,6 +54,32 @@ export async function registerPushToken(
   }
 }
 
+export type PushPermissionState = 'granted' | 'denied' | 'undetermined' | 'unavailable';
+
+/**
+ * Where this install stands with the OS on notifications, so screens can
+ * prime before the system dialog and say so honestly after a denial,
+ * instead of showing toggles that silently do nothing.
+ */
+export async function getPushPermissionState(): Promise<PushPermissionState> {
+  if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) {
+    return 'unavailable';
+  }
+  try {
+    const Notifications = await import('expo-notifications');
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status === 'granted') {
+      return 'granted';
+    }
+    if (status === 'denied') {
+      return 'denied';
+    }
+    return 'undetermined';
+  } catch {
+    return 'unavailable';
+  }
+}
+
 type PushPayload = {
   occurrence_id?: string;
   series_id?: string;

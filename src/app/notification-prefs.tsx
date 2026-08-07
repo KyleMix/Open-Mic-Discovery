@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet } from 'react-native';
 
 import { SelectField } from '@/components/select';
 import { ScreenHeader } from '@/components/screen-header';
+import { PushPrimer } from '@/features/notifications/components/push-primer';
 import { SignUpPrompt } from '@/features/auth/components/sign-up-prompt';
 import { Body, Button, ErrorText, LoadingView, ToggleRow } from '@/components/ui';
 import { useOwnProfile } from '@/features/auth/queries';
@@ -117,13 +118,10 @@ export default function NotificationPrefsScreen() {
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          title: 'Notifications',
-          headerStyle: { backgroundColor: palette.bg },
-          headerTintColor: palette.text,
-        }}
+      <ScreenHeader title="Notifications" />
+      <PushPrimer
+        userId={session.user.id}
+        message="Turn on notifications and the choices below can actually reach you."
       />
       <ToggleRow
         label="Signup updates"

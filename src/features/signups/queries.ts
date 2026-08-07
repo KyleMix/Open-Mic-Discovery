@@ -189,9 +189,10 @@ export function useJoinList() {
             ? 'You are on the waitlist. If a spot opens, you move up.'
             : `${statusWithSlot(row.status, row.slot_position)}.`,
       );
-      // First signup is the moment push starts mattering (status changes,
-      // on deck); ask for permission here, not at app launch.
-      registerPushToken(userId, { promptIfNeeded: true });
+      // Token refresh only: the OS permission dialog never fires as a side
+      // effect of a tap. The signup card primes for it with the reason
+      // first (PushPrimer), which is where the ask converts.
+      registerPushToken(userId);
       return queryClient.invalidateQueries({ queryKey: ['signup'] });
     },
     onError: () => {

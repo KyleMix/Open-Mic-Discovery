@@ -190,9 +190,9 @@ export function useToggleFavorite() {
     },
     onSuccess: (_d, vars) => {
       if (vars.favorite) {
-        // Favoriting implies wanting the day-of reminder; a natural moment
-        // to ask for push permission.
-        registerPushToken(vars.userId, { promptIfNeeded: true });
+        // Token refresh only; the OS dialog is primed for on the signup
+        // card and the notification prefs screen, never fired blind.
+        registerPushToken(vars.userId);
       } else {
         toast.show('Removed from favorites', {
           label: 'Undo',

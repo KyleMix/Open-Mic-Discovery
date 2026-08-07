@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
+  Linking,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -71,6 +72,7 @@ export default function DiscoverScreen() {
 
   const [locating, setLocating] = useState(false);
   const [locationNote, setLocationNote] = useState<string | null>(null);
+  const [locationDenied, setLocationDenied] = useState(false);
   const [search, setSearch] = useState('');
   // One search RPC per pause in typing, not one per keystroke.
   const debouncedSearch = useDebounced(search, 300);
@@ -120,12 +122,15 @@ export default function DiscoverScreen() {
     const result = await requestForegroundLocation();
     setLocating(false);
     if (result.status === 'granted') {
+      setLocationDenied(false);
       setManualCenter({ lat: result.lat, lng: result.lng, label: 'your location' });
     } else if (result.status === 'denied') {
+      setLocationDenied(true);
       setLocationNote(
-        'Location is off. Showing your home area instead. Enable location in Settings to search right where you are.',
+        'Location is off. Showing your home area instead. Turn it on in Settings to search right where you are.',
       );
     } else {
+      setLocationDenied(false);
       setLocationNote('Could not get your location. Try again.');
     }
   }
@@ -170,6 +175,15 @@ export default function DiscoverScreen() {
         </Pressable>
       </View>
       {locationNote ? <Text style={styles.locationNote}>{locationNote}</Text> : null}
+      {locationDenied ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Open system settings to allow location"
+          onPress={() => Linking.openSettings().catch(() => null)}
+        >
+          <Text style={styles.settingsLink}>Open settings</Text>
+        </Pressable>
+      ) : null}
       {!searching ? (
         <View style={styles.centerRow}>
           <Text style={styles.centerLabel}>Near {centerLabel}</Text>
@@ -387,6 +401,14 @@ const styles = StyleSheet.create({
     fontSize: type.caption.fontSize,
     paddingHorizontal: spacing.md,
     paddingTop: spacing.xs,
+  },
+  settingsLink: {
+    color: palette.text,
+    fontFamily: fonts.medium,
+    fontSize: type.caption.fontSize,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    textDecorationLine: 'underline',
   },
   centerRow: {
     alignItems: 'center',
