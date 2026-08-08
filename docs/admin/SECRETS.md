@@ -90,6 +90,39 @@ token.
 
 ---
 
+## 3a. Email sending
+
+**Not configured, and it is the most consequential gap on this page.**
+`supabase/config.toml` leaves `[auth.email.smtp]` commented out, so both the
+local stack and the hosted project use Supabase's built-in sender, which is
+documented as being for development and is rate limited to a couple of messages
+an hour.
+
+Three live flows depend on email, and one of them is exercised at review time:
+
+- password reset, `src/features/auth/api.ts`;
+- the magic link that proves identity before a web account deletion,
+  `supabase/functions/deletion-request/index.ts`. App Store review tests deletion
+  because it has to work after uninstall, so a throttled sender looks like a
+  broken deletion path;
+- email confirmation, which `private.bootstrap_owner_profile()` requires before
+  it will grant owner.
+
+| Name        | Where it goes                                                                                                    | Notes                                                                        |
+| ----------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `SMTP_PASS` | project secret, referenced as `env(SMTP_PASS)` from `config.toml`; and the hosted dashboard under Authentication | The provider's API key or SMTP password. Never a literal in the config file. |
+
+To set it up: pick a provider (Resend, SendGrid, SES), verify the sending domain,
+set `SMTP_PASS` as a project secret, uncomment the block in `config.toml` for
+local, configure the same in the dashboard for hosted, then raise
+`auth.rate_limit.email_sent`, which is only honoured once a custom sender exists.
+
+Rotation is ordinary: new key at the provider, set the secret, set it in the
+dashboard, then send yourself a password reset to confirm before revoking the old
+key.
+
+---
+
 ## 4. Auth provider secrets
 
 Set as project secrets, referenced from `supabase/config.toml` via `env(...)` so
@@ -149,8 +182,11 @@ For anything in section 2, 3 or 4:
 
 Named so it is not mistaken for done.
 
+- **Custom SMTP.** Section 3a. The largest gap here, and the only one that could
+  affect a store review.
 - **A staging Supabase project.** S13 asks for separate keys per environment and
-  there are two environments, not three.
+  there are two environments, not three. Supabase branching is the native way to
+  get one, and it bills per running branch.
 - **The S1 build check.** No step in either repo greps a built bundle for key
   prefixes and fails the build.
 - **Console secrets.** The console does not exist. When it does it will need its

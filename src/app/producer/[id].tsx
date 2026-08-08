@@ -40,6 +40,7 @@ import {
 import { contactSupport } from '@/lib/support';
 import { fonts, palette, spacing, type, type Discipline } from '@/theme';
 import type { Database } from '@/types/database.types';
+import { transformedImageUrl } from '@/lib/image-url';
 
 type Occurrence = Database['public']['Tables']['mic_occurrences']['Row'];
 
@@ -282,7 +283,7 @@ export default function ManageSeriesScreen() {
         <Text style={styles.sectionTitle}>Poster</Text>
         {series.poster_url ? (
           <Image
-            source={{ uri: series.poster_url }}
+            source={{ uri: transformedImageUrl(series.poster_url, { width: 1080, height: 608 })! }}
             accessibilityLabel="Event poster"
             style={styles.poster}
             contentFit="cover"

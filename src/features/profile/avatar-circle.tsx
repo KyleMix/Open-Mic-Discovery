@@ -1,6 +1,7 @@
 import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { transformedImageUrl } from '@/lib/image-url';
 import { fonts, palette } from '@/theme';
 
 /** Round profile photo, falling back to the person's first initial. */
@@ -17,7 +18,9 @@ export function AvatarCircle({
   if (url) {
     return (
       <Image
-        source={{ uri: url }}
+        // Asking for twice the layout size keeps it sharp on a retina screen
+        // while still being far smaller than the original upload.
+        source={{ uri: transformedImageUrl(url, { width: size * 2, height: size * 2 })! }}
         accessibilityLabel={`${name}'s photo`}
         style={{ borderRadius: radius, height: size, width: size }}
         contentFit="cover"

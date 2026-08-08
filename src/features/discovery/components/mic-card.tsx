@@ -12,6 +12,7 @@ import { useSession } from '@/features/auth/session';
 import { formatNextDate } from '@/features/discovery/date-label';
 import { formatMilesFromMeters } from '@/features/discovery/distance';
 import { freshness } from '@/features/discovery/freshness';
+import { transformedImageUrl } from '@/lib/image-url';
 import { spotsLabel } from '@/features/signups/capacity';
 import type { NearbyMic } from '@/features/discovery/queries';
 import { describeRecurrence } from '@/features/discovery/recurrence';
@@ -104,7 +105,7 @@ export function MicCard({ mic, onPress }: Props) {
         </View>
         {mic.poster_url ? (
           <Image
-            source={{ uri: mic.poster_url }}
+            source={{ uri: transformedImageUrl(mic.poster_url, { width: 640, height: 360 })! }}
             accessibilityLabel={`${mic.title} poster`}
             style={styles.poster}
             contentFit="cover"

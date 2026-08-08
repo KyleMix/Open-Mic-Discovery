@@ -198,6 +198,9 @@ password_requirements = ""
 
 [auth.rate_limit]
 # Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
+# Raise this when custom SMTP lands: the limit is only honoured once a real
+# sender is configured, and 2 an hour cannot serve password resets plus deletion
+# magic links for real users. See the [auth.email.smtp] block below.
 email_sent = 2
 # Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
 sms_sent = 30
@@ -237,15 +240,38 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
-# Use a production-ready SMTP server
+# Production email sending.
+#
+# Supabase's built-in sender is documented as being for development, and it is
+# rate limited hard (see auth.rate_limit.email_sent above). Three live flows
+# depend on email and one of them is checked at review time:
+#
+#   - password reset (src/features/auth/api.ts)
+#   - the magic link that proves identity before a web account deletion
+#     (supabase/functions/deletion-request/index.ts), which App Store review
+#     exercises because deletion has to work after uninstall
+#   - email confirmation, which the owner bootstrap requires before it will
+#     grant admin (private.bootstrap_owner_profile)
+#
+# So a real SMTP provider is not an optimisation, it is the difference between
+# those flows working under load and throttling silently.
+#
+# Left commented because it needs an account that does not exist yet. To turn it
+# on: pick a provider (Resend, SendGrid, SES), set SMTP_PASS as a project secret
+# rather than a literal here, uncomment this block, and raise
+# auth.rate_limit.email_sent, which only takes effect once a custom SMTP server
+# is configured. Then do the same in the hosted dashboard under Authentication:
+# this file configures the LOCAL stack only. Procedure and rotation notes are in
+# docs/admin/SECRETS.md.
+#
 # [auth.email.smtp]
 # enabled = true
-# host = "smtp.sendgrid.net"
+# host = "smtp.resend.com"
 # port = 587
-# user = "apikey"
-# pass = "env(SENDGRID_API_KEY)"
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
+# user = "resend"
+# pass = "env(SMTP_PASS)"
+# admin_email = "support@openmicfinder.app"
+# sender_name = "Open Mic Explorer"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]

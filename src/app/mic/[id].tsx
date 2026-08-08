@@ -69,6 +69,7 @@ import {
   type Discipline,
 } from '@/theme';
 import type { Database } from '@/types/database.types';
+import { transformedImageUrl } from '@/lib/image-url';
 
 type FlagReason = Database['public']['Enums']['flag_reason'];
 
@@ -217,7 +218,7 @@ function MicDetail({
         <Stack.Screen options={{ title: series.title }} />
         {series.poster_url ? (
           <Image
-            source={{ uri: series.poster_url }}
+            source={{ uri: transformedImageUrl(series.poster_url, { width: 1080, height: 608 })! }}
             accessibilityLabel={`${series.title} poster`}
             style={styles.poster}
             contentFit="cover"
