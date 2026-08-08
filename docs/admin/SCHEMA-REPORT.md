@@ -66,6 +66,19 @@ content-level: `moderation_status = 'rejected'` hides a listing, a venue, a
 profile, or a credit from the public views. A person whose content is rejected
 can immediately post more.
 
+> **Closed, 2026-08-07**, by `20260807001400_user_sanctions.sql`, except appeals
+> which stay v2 per the brief. `public.user_sanctions` holds warnings,
+> suspensions with an expiry, and bans, and the enforcement is in ten policies
+> rather than in the UI. Two separations the migration rests on: sanctions act on
+> a person's ability to act while content moderation acts on content, so a three
+> day suspension does not take down a weekly mic fifty performers depend on; and
+> the `reason` column is written to be read by the person sanctioned, because
+> they can select their own rows and an appeal is meaningless otherwise, so
+> private notes go in the audit row instead. A ban is the one sanction with a
+> content side effect: it pauses the account's listings, records exactly which
+> ones, and lifting it restores those and not the ones the producer had already
+> paused themselves.
+
 **F-E. The report table already exists and is called `reports`, not
 `content_reports`.** It carries reporter, polymorphic target, reason enum, free
 text, status enum, resolver, and timestamps. It is missing severity, assignee,
@@ -772,10 +785,15 @@ who promoted whom.
 > roughly 25 existing admin policies in `public` grant them nothing. That is the
 > fail-safe direction for writes and it is deliberate. It also means a
 > `read_only` admin cannot yet read the queue through row level security, and
-> reads nothing until the console's own read path exists. Rewriting those
-> policies to distinguish read from write by role is the policy pass, and it
-> belongs with `user_sanctions` so those 25 policies are edited once rather than
-> twice.
+> reads nothing until the console's own read path exists.
+>
+> Correction to what this note said on 2026-08-07: it claimed the `read_only`
+> read split had to be bundled with `user_sanctions` so the same policies were
+> not edited twice. That was wrong about the overlap. The sanction clause goes on
+> INSERT and UPDATE policies; the `read_only` reader predicate goes on SELECT
+> policies; the two sets are very nearly disjoint. The sanctions pass is done and
+> touched none of the SELECT policies, so the reader split remains open and can
+> be done on its own whenever the console's read path needs it.
 
 There is also an in-app admin screen: `src/app/admin.tsx`, gated on
 `profile.data?.is_admin` read client side. It renders the held-content queue,
@@ -997,7 +1015,7 @@ before code.**
 | `audit_log`                                                    | **Done 2026-08-07** as `admin.audit_log`, in a new `admin` schema that the Data API does not expose and that the default privileges in `20260728001200` cannot reach. Owner's decision: one table with a `reverses_id` self-reference, absorbing `moderation_actions`. The actor and its role are read from the session by `admin.append_audit()` rather than passed in, and that function is the only writer: `service_role` has `SELECT` and no `INSERT`                                                                                                                                                                                                                                 |
 | `content_reports`                                              | **Do not build. Extend `reports`.** It already has reporter, target type, target id, reason enum, free text, status enum, resolver, resolved at, created at, a queue index, RLS, a rate limit trigger, pgTAP coverage, and two live app screens writing to it. Missing: `severity`, `assigned_to`, `resolution` text. Three `ALTER TABLE` statements beat a parallel table and a data migration, and a second reports table would silently split the queue. **Done 2026-08-07** (`20260807001100_report_triage.sql`), with `assigned_to` and `resolution` on an admin-only sibling table instead of on `reports`, because a reporter can read their own report row: see the note under F-E |
 | `moderation_actions`                                           | **Probably redundant with `audit_log`.** Every field it proposes (target, action, actor, reason, reversible, reversed by, reversed at) is either in `audit_log` already or is a reversal pointer. My recommendation: one append-only `audit_log` plus a nullable `reverses_audit_id` self-reference, so a reversal is itself an audited action pointing at what it undid. Two tables means two places that can disagree about what happened. Open for your call                                                                                                                                                                                                                            |
-| `user_sanctions` (user, type, scope, expiry, reason)           | **Build as proposed.** Nothing exists. The hard part is not the table, it is enforcement (below)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `user_sanctions` (user, type, scope, expiry, reason)           | **Done 2026-08-07.** `type` is `warned \| suspended \| banned`; `scope` is `all_writes \| signups \| listings \| reporting` and doubles as the capability a check asks about, so a narrow sanction stays narrow. Plus `paused_series`, which is what makes a ban reversible, and `audit_id`, which is what the lift's reversal pointer aims at. Enforcement below                                                                                                                                                                                                                                                                                                                          |
 | `appeals`                                                      | **Build as proposed**, v2 per the brief's own phasing                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 ### What `admin.audit_log` does not do yet
@@ -1057,6 +1075,33 @@ The cheapest correct shape is one `SECURITY DEFINER STABLE` predicate,
 policy above. Nine policy rewrites and one function, plus pgTAP for each. That is
 a substantial migration and it belongs to the app repo, not the console repo,
 which is the first real coupling point between the two codebases.
+
+> **Done, 2026-08-07**, as ten policy rewrites and three predicates:
+> `private.is_sanctioned(user, capability)` for the general case,
+> `private.i_am_sanctioned(capability)` so a policy can be written as
+> `(select ...)` with no bare `auth.uid()` in it, and `private.is_banned(user)`
+> for `public_profiles`, because a ban is not a capability check. The sanction
+> clause is attached to the self-service branch of each policy and never to the
+> admin branch, so a moderator keeps working on a sanctioned account's rows.
+> `rls-performance.test.sql` now asserts the wrapping discipline for the new
+> predicate as well, in both directions: no bare calls, and at least eight
+> policies still carrying one.
+>
+> Two departures from the list above.
+>
+> **`series_search` was not touched, and does not need to be.** A ban pauses the
+> account's listings, and `search_discover` already filters `s.is_active` on both
+> its branches (`20260807000300`, lines 256 and 316), so a banned host's mics
+> leave discovery without any surgery on the search surface. Pausing is also
+> reversible and already understood by occurrence generation, which a
+> presence-based hack in `series_search` would not have been.
+>
+> **`profiles owner update` was left alone**, though it was not on the list
+> either. A banned account is already hidden from `public_profiles`, so its bio
+> and stage name are not publicly visible and editing them harms nobody. Blocking
+> it would also put one more obstacle between a banned person and the account
+> deletion both app stores require. The migration header carries this list of
+> deliberate omissions alongside the changes.
 
 ---
 
@@ -1206,8 +1251,12 @@ Recommended order, if you approve:
      (S3) and the S8 step-up check. All three are blocked on TOTP being enabled
      on the project, which is a plan question. `admin.require_owner()` is where
      the step-up check goes and it is deliberately absent rather than stubbed.
-3. **App repo**: `user_sanctions` and `private.can_act()`, threaded through the
-   nine policies in section 9.
+3. ~~**App repo**: `user_sanctions` and `private.can_act()`, threaded through the
+   nine policies in section 9.~~ **Done, 2026-08-07**:
+   `20260807001400_user_sanctions.sql` plus
+   `supabase/tests/user-sanctions.test.sql`, ten policies and three predicates.
+   Still open, and now known to be separable from this: the `read_only` reader
+   predicate on the SELECT policies, and the app-side work below.
 4. **Console repo**: scaffold, gates, queue, audit viewer, admin management.
 5. **Both**: the Phase 4 verification document.
 
@@ -1216,6 +1265,18 @@ repo and run through `scripts/db/verify-local.sh`. Only step 4 is the separate
 repository. That split is worth agreeing on explicitly before I start, because
 "separate repository" in the brief could be read as putting the migrations there
 too, and migrations for one database belonging to two repos is how a schema drifts.
+
+### App-side work the sanctions create
+
+Not done, and not in the approved scope, but it exists the moment a sanction is
+applied. A suspended user's writes now fail at the policy layer, which the app
+reports through `userError` as a generic failure. The database side of the fix is
+already there: a sanctioned person can select their own `user_sanctions` row, so
+the app can read type, scope, reason, and expiry and say "your account is
+suspended until Tuesday, here is why". Without that the app is silently broken
+for the person it is broken for, which is the worst version of this feature.
+Small piece of work, needs your approval per the brief's rule about companion app
+changes.
 
 Answers I need before writing code:
 

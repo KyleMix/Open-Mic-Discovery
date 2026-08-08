@@ -1419,6 +1419,97 @@ export type Database = {
         };
         Relationships: [];
       };
+      user_sanctions: {
+        Row: {
+          audit_id: number | null;
+          created_at: string;
+          created_by: string;
+          expires_at: string | null;
+          id: string;
+          lift_reason: string | null;
+          lifted_at: string | null;
+          lifted_by: string | null;
+          paused_series: string[];
+          reason: string;
+          scope: Database['public']['Enums']['sanction_scope'];
+          type: Database['public']['Enums']['sanction_type'];
+          user_id: string;
+        };
+        Insert: {
+          audit_id?: number | null;
+          created_at?: string;
+          created_by: string;
+          expires_at?: string | null;
+          id?: string;
+          lift_reason?: string | null;
+          lifted_at?: string | null;
+          lifted_by?: string | null;
+          paused_series?: string[];
+          reason: string;
+          scope?: Database['public']['Enums']['sanction_scope'];
+          type: Database['public']['Enums']['sanction_type'];
+          user_id: string;
+        };
+        Update: {
+          audit_id?: number | null;
+          created_at?: string;
+          created_by?: string;
+          expires_at?: string | null;
+          id?: string;
+          lift_reason?: string | null;
+          lifted_at?: string | null;
+          lifted_by?: string | null;
+          paused_series?: string[];
+          reason?: string;
+          scope?: Database['public']['Enums']['sanction_scope'];
+          type?: Database['public']['Enums']['sanction_type'];
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_sanctions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_sanctions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'public_profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_sanctions_lifted_by_fkey';
+            columns: ['lifted_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_sanctions_lifted_by_fkey';
+            columns: ['lifted_by'];
+            isOneToOne: false;
+            referencedRelation: 'public_profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_sanctions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_sanctions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'public_profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       venues: {
         Row: {
           address_line: string;
@@ -2156,6 +2247,21 @@ export type Database = {
       admin_invite_accept: { Args: { p_token: string }; Returns: string };
       admin_invite_revoke: {
         Args: { p_invite_id: string; p_reason: string; p_request_ip: unknown };
+        Returns: undefined;
+      };
+      admin_sanction_apply: {
+        Args: {
+          p_expires_at: string;
+          p_reason: string;
+          p_request_ip: unknown;
+          p_scope: string;
+          p_type: string;
+          p_user_id: string;
+        };
+        Returns: string;
+      };
+      admin_sanction_lift: {
+        Args: { p_reason: string; p_request_ip: unknown; p_sanction_id: string };
         Returns: undefined;
       };
       admin_set_active: {
@@ -3354,6 +3460,8 @@ export type Database = {
       report_severity: 'low' | 'normal' | 'high' | 'urgent';
       report_status: 'open' | 'in_review' | 'actioned' | 'dismissed';
       report_target: 'series' | 'venue' | 'profile' | 'occurrence' | 'credit';
+      sanction_scope: 'all_writes' | 'signups' | 'listings' | 'reporting';
+      sanction_type: 'warned' | 'suspended' | 'banned';
       signup_method: 'lottery' | 'first_come' | 'reserved_slot' | 'host_booked';
       signup_status: 'requested' | 'confirmed' | 'waitlisted' | 'drawn' | 'performed' | 'no_show';
     };
@@ -3518,6 +3626,8 @@ export const Constants = {
       report_severity: ['low', 'normal', 'high', 'urgent'],
       report_status: ['open', 'in_review', 'actioned', 'dismissed'],
       report_target: ['series', 'venue', 'profile', 'occurrence', 'credit'],
+      sanction_scope: ['all_writes', 'signups', 'listings', 'reporting'],
+      sanction_type: ['warned', 'suspended', 'banned'],
       signup_method: ['lottery', 'first_come', 'reserved_slot', 'host_booked'],
       signup_status: ['requested', 'confirmed', 'waitlisted', 'drawn', 'performed', 'no_show'],
     },

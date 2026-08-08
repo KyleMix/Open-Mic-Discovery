@@ -9,7 +9,7 @@
 -- These assert the shape, because the cost is invisible until the data is
 -- big enough to hurt and by then it is in production.
 begin;
-select plan(3);
+select plan(5);
 
 -- pg_policies renders a wrapped call as "( SELECT private.is_admin() ...)".
 -- A bare one appears as "private.is_admin()" with no SELECT in front.
@@ -50,6 +50,33 @@ select cmp_ok(
   '>=',
   20,
   'the admin policies are still there, hoisted rather than removed'
+);
+
+-- The sanction predicate (20260807001400) is the same shape of hazard: it takes
+-- an argument, but the argument is constant for the statement, so the whole call
+-- belongs inside a scalar subquery for the same reason.
+select is(
+  (select count(*)::int
+   from pg_policies
+   where schemaname = 'public'
+     and (
+       coalesce(qual, '') ~ '(?<!SELECT )private\.i_am_sanctioned\('
+       or coalesce(with_check, '') ~ '(?<!SELECT )private\.i_am_sanctioned\('
+     )),
+  0,
+  'no policy calls private.i_am_sanctioned() once per row either'
+);
+
+-- And the same proof that the count above is zero because the calls are wrapped
+-- rather than because the sanction checks quietly went away.
+select cmp_ok(
+  (select count(*)::int from pg_policies
+   where schemaname = 'public'
+     and (coalesce(qual, '') like '%SELECT private.i_am_sanctioned%'
+          or coalesce(with_check, '') like '%SELECT private.i_am_sanctioned%')),
+  '>=',
+  8,
+  'and the sanction checks are still on the policies that need them'
 );
 
 select * from finish();
