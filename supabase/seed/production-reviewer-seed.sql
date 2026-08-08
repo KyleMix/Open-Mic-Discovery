@@ -258,6 +258,39 @@ on conflict (id) do nothing;
 commit;
 
 -- ---------------------------------------------------------------------------
+-- REMOVE THIS CONTENT BEFORE PUBLIC RELEASE
+--
+-- Owner decision, 2026-08-08: the app launches with no listings. Mic owners
+-- add their own rooms once it is live, so nothing is imported from the
+-- website's open mic collection. These ten listings exist for one reason,
+-- which is that a store reviewer opening an empty app fails Guideline 2.1.
+--
+-- That is fine for TestFlight and Play internal testing, where the audience
+-- is reviewers and invited testers. It stops being fine the moment the app
+-- is publicly downloadable, because The Rusty Fret and Blue Heron Coffee are
+-- invented, and a performer driving to 1414 E Olive Way expecting an open
+-- mic is a real harm from fake data in a live product.
+--
+-- So: after review passes and before the app goes public, run this.
+--
+--   begin;
+--   delete from public.signups s using public.mic_occurrences o
+--    where s.occurrence_id = o.id and o.series_id::text like '5eed%';
+--   delete from public.mic_occurrences where series_id::text like '5eed%';
+--   delete from public.mic_series where id::text like '5eed%';
+--   delete from public.venues where id::text like '5eed%';
+--   commit;
+--
+-- The 5eed prefix is why every id in this file carries it: the seed is
+-- removable in four statements precisely because it never shares an id
+-- namespace with anything a real person created. Check the damage first with
+-- the same predicate as a select if you want to be sure.
+--
+-- The two reviewer ACCOUNTS can stay. They are real sign-ups that own
+-- nothing once the listings are gone.
+-- ---------------------------------------------------------------------------
+
+-- ---------------------------------------------------------------------------
 -- What to check before handing the build to a reviewer
 --
 --   select count(*) from mic_series where id::text like '5eed%';      -- 10

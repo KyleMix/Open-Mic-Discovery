@@ -184,6 +184,51 @@ Verified after the sweep: typecheck, lint, 493 Jest tests, 708 pgTAP
 assertions on a rebuilt database (EULA 1.3 text confirmed by query),
 prettier, and `expo prebuild`.
 
+## Owner decisions on the website and launch data, 2026-08-08
+
+Reading `KyleMix/stoned_goose_website` showed the premise of the website
+work was wrong. The `/open-mics` page is already branded Open Mic Explorer
+and already works: 85 real Pacific Northwest mic records in a Sveltia CMS
+collection, a 147-row Google Sheet import as fallback, an interactive map,
+a submit dialog, and schema.org markup. Its source even explains that it
+publishes venue-name-only schema "until the freshness system lands", which
+is the system this app already ships.
+
+Owner decisions:
+
+1. **The app launches empty.** Nothing is imported from the website. Mic
+   owners add their own rooms once the app is live. No importer was built.
+2. **Reviewers keep the fictional seed**, which is already built and
+   verified.
+
+Consequences handled here:
+
+- Those two decisions are in tension for exactly one moment: the fictional
+  seed is right for TestFlight and Play internal testing, and wrong for a
+  public release, because The Rusty Fret and Blue Heron Coffee do not exist
+  and a performer driving to one is real harm from fake data in a live
+  product. Removal is now documented in the seed file's header (four
+  statements, all keyed on the `5eed` id prefix that exists precisely so
+  the seed never shares a namespace with real rows) and as step 11b of
+  LAUNCH-CHECKLIST, gated on public release rather than on review.
+- The website prompt was rewritten from "replace the finder" to "add the
+  app to the page", with the app pitched to hosts rather than performers.
+  On day one the map has 85 rooms and the app has none, so pitching the app
+  as a better map would be false and would earn the review it deserves.
+- `/open-mics/mic/<uuid>` deep links currently 404 on the website. The ids
+  are Supabase uuids the website has no data for, and `output: "export"`
+  cannot pre-render unknown params, so the prompt specifies a static
+  landing page plus a `_redirects` splat rather than a dynamic route.
+- Serving `/.well-known/apple-app-site-association` with the right content
+  type is straightforward on that stack: it is a static export to
+  Cloudflare Workers Static Assets, and `public/_headers` is already used
+  to force a content type on extensionless OG image routes.
+
+Not acted on, recorded because it is the obvious next lever: the website's
+mic collection names 28 hosts and carries 7 distinct host email addresses.
+That is the outreach list for the app's supply side, and it exists without
+importing a single listing.
+
 ## Open decisions (implemented as single points of change)
 
 1. Support inbox: `SUPPORT_EMAIL` constant in `src/lib/support.ts`

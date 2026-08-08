@@ -253,6 +253,22 @@ npx eas submit --profile production --platform android --latest
 - This satisfies the 24-hour takedown expectation with or without the
   future web console (D4).
 
+## 11b. Before the app goes PUBLIC (not before TestFlight)
+
+The reviewer seed puts ten invented venues in the production database so a
+reviewer does not open an empty app. That is correct for TestFlight and Play
+internal testing. It is not correct for a public release: The Rusty Fret and
+Blue Heron Coffee do not exist, and a performer driving to one is real harm
+from fake data in a live product.
+
+Since the app launches with no listings by design (mic owners add their own
+rooms), delete the seed content when you move from testing to public
+availability. The exact four statements are in the header of
+`supabase/seed/production-reviewer-seed.sql`; every seeded id carries a
+`5eed` prefix so the removal cannot touch anything a real person created.
+
+Keep the two reviewer accounts. They own nothing once the listings are gone.
+
 ## 12. Screenshots
 
 - Capture from the seeded preview build, dark frames, one caption line,
