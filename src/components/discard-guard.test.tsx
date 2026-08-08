@@ -11,6 +11,15 @@ type BeforeRemoveEvent = {
 const mockListeners: Record<string, (e: BeforeRemoveEvent) => void> = {};
 const mockDispatch = jest.fn();
 
+/** The registered beforeRemove listener, failing loudly if none was added. */
+function fireBeforeRemove(event: BeforeRemoveEvent): void {
+  const listener = mockListeners.beforeRemove;
+  if (!listener) {
+    throw new Error('No beforeRemove listener registered');
+  }
+  listener(event);
+}
+
 jest.mock('expo-router', () => ({
   useNavigation: () => ({
     addListener: (kind: string, cb: (e: BeforeRemoveEvent) => void) => {
@@ -43,7 +52,7 @@ describe('useDiscardGuard', () => {
     const preventDefault = jest.fn();
     const action = { type: 'GO_BACK' };
     await act(async () => {
-      mockListeners.beforeRemove({ preventDefault, data: { action } });
+      fireBeforeRemove({ preventDefault, data: { action } });
     });
     expect(preventDefault).toHaveBeenCalled();
     expect(screen.getByText('Discard this listing?')).toBeTruthy();
@@ -55,7 +64,7 @@ describe('useDiscardGuard', () => {
   it('keeps the screen when the person backs out of discarding', async () => {
     await render(<Harness when />);
     await act(async () => {
-      mockListeners.beforeRemove({
+      fireBeforeRemove({
         preventDefault: jest.fn(),
         data: { action: { type: 'GO_BACK' } },
       });

@@ -87,6 +87,12 @@ export function MicMap({ mics, center, onSelect }: Props) {
     >
       {clusters.map((feature) => {
         const [lng, lat] = feature.geometry.coordinates;
+        // GeoJSON positions always carry two numbers; supercluster never
+        // emits fewer. The guard keeps the map rendering if one ever arrives
+        // malformed instead of crashing the whole screen.
+        if (lng === undefined || lat === undefined) {
+          return null;
+        }
         if ('cluster' in feature.properties && feature.properties.cluster) {
           const clusterId = feature.properties.cluster_id;
           const count = feature.properties.point_count;

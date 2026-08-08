@@ -63,13 +63,20 @@ describe('deep link configuration', () => {
 
   it('serves an apple-app-site-association covering /mic/*', () => {
     const detail = aasa.applinks.details[0];
-    expect(detail.appIDs[0].endsWith('.com.openmicexplorer.app')).toBe(true);
+    if (!detail) {
+      throw new Error('apple-app-site-association has no applinks details');
+    }
+    expect(detail.appIDs[0]?.endsWith('.com.openmicexplorer.app')).toBe(true);
     expect(detail.components.some((c) => c['/'] === '/mic/*')).toBe(true);
   });
 
   it('serves an assetlinks.json for the Android package', () => {
-    expect(assetLinks[0].relation).toContain('delegate_permission/common.handle_all_urls');
-    expect(assetLinks[0].target.package_name).toBe(appJson.expo.android.package);
-    expect(assetLinks[0].target.sha256_cert_fingerprints.length).toBeGreaterThan(0);
+    const link = assetLinks[0];
+    if (!link) {
+      throw new Error('assetlinks.json is empty');
+    }
+    expect(link.relation).toContain('delegate_permission/common.handle_all_urls');
+    expect(link.target.package_name).toBe(appJson.expo.android.package);
+    expect(link.target.sha256_cert_fingerprints.length).toBeGreaterThan(0);
   });
 });

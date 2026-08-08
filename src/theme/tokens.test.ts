@@ -3,15 +3,18 @@ import { disciplineAccents, minTouchTarget, palette } from './tokens';
 /** Relative luminance per WCAG 2.x. */
 function luminance(hex: string): number {
   const c = hex.replace('#', '');
-  const [r, g, b] = [0, 2, 4].map((i) => {
+  const channel = (i: number): number => {
     const v = parseInt(c.slice(i, i + 2), 16) / 255;
     return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  return 0.2126 * channel(0) + 0.7152 * channel(2) + 0.0722 * channel(4);
 }
 
 function contrastRatio(a: string, b: string): number {
-  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  const la = luminance(a);
+  const lb = luminance(b);
+  const hi = Math.max(la, lb);
+  const lo = Math.min(la, lb);
   return (hi + 0.05) / (lo + 0.05);
 }
 

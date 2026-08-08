@@ -70,7 +70,10 @@ export function describeRecurrence(rrule: string, startTime: string): string | n
 
   if (freq === 'WEEKLY') {
     const interval = Number(parts.get('INTERVAL') ?? '1');
-    const dayNames = byday.map((d) => DAY_NAMES[d]).filter(Boolean);
+    const dayNames = byday.flatMap((d) => {
+      const name = DAY_NAMES[d];
+      return name ? [name] : [];
+    });
     if (dayNames.length !== byday.length) {
       return null;
     }
@@ -88,11 +91,13 @@ export function describeRecurrence(rrule: string, startTime: string): string | n
     const described: string[] = [];
     for (const entry of byday) {
       const match = entry.match(/^(-?\d)([A-Z]{2})$/);
-      if (!match) {
+      const position = match?.[1];
+      const code = match?.[2];
+      if (!position || !code) {
         return null;
       }
-      const ordinal = ORDINALS[match[1]];
-      const day = DAY_NAMES[match[2]];
+      const ordinal = ORDINALS[position];
+      const day = DAY_NAMES[code];
       if (!ordinal || !day) {
         return null;
       }

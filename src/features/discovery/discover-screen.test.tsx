@@ -136,7 +136,7 @@ describe('Discover request lifecycle', () => {
     await waitFor(() => {
       const searches = discoverCalls(calls).filter((c) => c.payload.p_query !== undefined);
       expect(searches).toHaveLength(1);
-      expect(searches[0].payload.p_query).toBe('rusty fret');
+      expect(searches[0]?.payload.p_query).toBe('rusty fret');
     });
   });
 
@@ -156,7 +156,7 @@ describe('Discover request lifecycle', () => {
     await waitFor(() => {
       const searches = discoverCalls(calls).filter((c) => c.payload.p_query === 'open mic');
       expect(searches.length).toBeGreaterThan(0);
-      expect(searches[searches.length - 1].payload.p_local_from).toBeDefined();
+      expect(searches[searches.length - 1]?.payload.p_local_from).toBeDefined();
     });
   });
 

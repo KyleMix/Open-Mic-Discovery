@@ -13,11 +13,11 @@ const row = (over: Partial<LiveRow>): LiveRow => ({
 });
 
 describe('where the night is up to', () => {
-  const list = [
-    row({ id: 'a', slot_position: 1, stage_name: 'First' }),
-    row({ id: 'b', slot_position: 2, stage_name: 'Second' }),
-    row({ id: 'c', slot_position: 3, stage_name: 'Third' }),
-  ];
+  // A tuple, so indexing stays defined under noUncheckedIndexedAccess.
+  const first = row({ id: 'a', slot_position: 1, stage_name: 'First' });
+  const second = row({ id: 'b', slot_position: 2, stage_name: 'Second' });
+  const third = row({ id: 'c', slot_position: 3, stage_name: 'Third' });
+  const list = [first, second, third];
 
   it('starts at the top of the list', () => {
     const live = liveOrder(list);
@@ -28,14 +28,14 @@ describe('where the night is up to', () => {
 
   it('moves on as people are marked done, with no state on the device', () => {
     // The host's phone can die mid-night and the answer stays the same.
-    const live = liveOrder([{ ...list[0], status: 'performed' }, list[1], list[2]]);
+    const live = liveOrder([{ ...first, status: 'performed' }, second, third]);
     expect(performerName(live.current)).toBe('Second');
     expect(performerName(live.next)).toBe('Third');
     expect(live.done).toBe(1);
   });
 
   it('treats a no-show as done, because the night still moved past them', () => {
-    const live = liveOrder([{ ...list[0], status: 'no_show' }, list[1], list[2]]);
+    const live = liveOrder([{ ...first, status: 'no_show' }, second, third]);
     expect(performerName(live.current)).toBe('Second');
     expect(live.done).toBe(1);
   });
@@ -51,14 +51,14 @@ describe('where the night is up to', () => {
     const live = liveOrder(list);
     expect(performerName(live.afterNext)).toBe('Third');
     // And runs out rather than wrapping around.
-    expect(liveOrder([list[0], list[1]]).afterNext).toBeNull();
+    expect(liveOrder([first, second]).afterNext).toBeNull();
   });
 
   it('has nobody up next on the last set', () => {
     const live = liveOrder([
-      { ...list[0], status: 'performed' },
-      { ...list[1], status: 'performed' },
-      list[2],
+      { ...first, status: 'performed' },
+      { ...second, status: 'performed' },
+      third,
     ]);
     expect(performerName(live.current)).toBe('Third');
     expect(live.next).toBeNull();
@@ -76,7 +76,7 @@ describe('where the night is up to', () => {
       ...list,
     ]);
     expect(performerName(live.current)).toBe('First');
-    expect(performerName(live.order[3])).toBe('Late add');
+    expect(performerName(live.order[3] ?? null)).toBe('Late add');
   });
 
   it('falls back to the handle, and then to something sayable', () => {

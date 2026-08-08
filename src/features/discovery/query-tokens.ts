@@ -95,6 +95,12 @@ export function tokenLabel(token: QueryToken): string {
             : 'This weekend';
     case 'day': {
       const name = DAY_NAMES[token.day - 1];
+      // Day tokens are only minted from the rule table, so the index is
+      // always 1 to 7; the fallback keeps the chip readable if that ever
+      // stops being true.
+      if (!name) {
+        return `Day ${token.day}`;
+      }
       return name.charAt(0).toUpperCase() + name.slice(1);
     }
     case 'free':

@@ -44,6 +44,9 @@ async function discoveryKey(filters: DiscoveryFilters, query = ''): Promise<stri
   const wrapper = createWrapper(client);
   await renderHook(() => useDiscoverFeed(filters, CENTER, query), { wrapper });
   const [q] = client.getQueryCache().getAll();
+  if (!q) {
+    throw new Error('useDiscoverFeed registered no query');
+  }
   // Let the fetch settle before reading. Otherwise it resolves after the test
   // has moved on, and React warns about a state update outside act().
   await waitFor(() => expect(q.state.fetchStatus).toBe('idle'));

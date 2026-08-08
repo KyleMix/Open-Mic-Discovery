@@ -160,8 +160,14 @@ export default function NightScreen() {
     if (index < 0 || target < 0 || target >= ordered.length) {
       return;
     }
+    const moving = ordered[index];
+    const displaced = ordered[target];
+    if (!moving || !displaced) {
+      return;
+    }
     const next = [...ordered];
-    [next[index], next[target]] = [next[target], next[index]];
+    next[index] = displaced;
+    next[target] = moving;
     // Every listed row must carry an id; sending a partial array would
     // silently rewrite the running order with entries missing.
     const signupIds = next.map((r) => r.id);

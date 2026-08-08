@@ -154,16 +154,24 @@ export function FilterBar() {
           active={false}
           onPress={() => setSheetOpen(true)}
         />
-        {filters.days.map((day) => (
-          <Chip
-            key={day}
-            label={DAY_SHORT[day - 1]}
-            active
-            activeColor={disciplineAccents.music}
-            dismissible
-            onPress={() => filters.toggleDay(day)}
-          />
-        ))}
+        {filters.days.map((day) => {
+          // Days come from the picker, always 1 to 7; skip rather than
+          // render a blank chip if a stale persisted value ever appears.
+          const label = DAY_SHORT[day - 1];
+          if (!label) {
+            return null;
+          }
+          return (
+            <Chip
+              key={day}
+              label={label}
+              active
+              activeColor={disciplineAccents.music}
+              dismissible
+              onPress={() => filters.toggleDay(day)}
+            />
+          );
+        })}
         {filters.timeOfDay ? (
           <Chip
             label={TIME_WINDOWS[filters.timeOfDay].label}

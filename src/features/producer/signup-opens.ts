@@ -79,8 +79,11 @@ export function signupOpensInterval(minutes: number): string {
 
 /** The chosen label, for prose that has to name the lead time. */
 export function signupOpensLabel(minutes: number, method: SignupMethod): string {
-  const match = signupOpensChoices(method).find((choice) => choice.minutes === minutes);
-  return match ? match.label : signupOpensChoices(method)[0].label;
+  const choices = signupOpensChoices(method);
+  const match = choices.find((choice) => choice.minutes === minutes) ?? choices[0];
+  // Every method has a non-empty choice list; the literal fallback only
+  // exists so the label stays truthful if one is ever emptied.
+  return match ? match.label : `${minutes} minutes before`;
 }
 
 /**

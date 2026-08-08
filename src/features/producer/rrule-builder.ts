@@ -67,17 +67,19 @@ export function parseRrule(rrule: string): RecurrenceChoice | null {
     let day: WeekdayCode | null = null;
     for (const entry of byday) {
       const match = entry.match(/^(-?\d)([A-Z]{2})$/);
-      if (!match || !['1', '2', '3', '4', '-1'].includes(match[1])) {
+      const position = match?.[1];
+      const code = match?.[2];
+      if (!position || !code || !['1', '2', '3', '4', '-1'].includes(position)) {
         return null;
       }
-      if (!(WEEKDAY_CODES as readonly string[]).includes(match[2])) {
+      if (!(WEEKDAY_CODES as readonly string[]).includes(code)) {
         return null;
       }
-      if (day && day !== match[2]) {
+      if (day && day !== code) {
         return null;
       }
-      day = match[2] as WeekdayCode;
-      ordinals.push(match[1] as OrdinalChoice);
+      day = code as WeekdayCode;
+      ordinals.push(position as OrdinalChoice);
     }
     if (!day || ordinals.length === 0) {
       return null;
