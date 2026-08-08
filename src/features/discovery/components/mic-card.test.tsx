@@ -1,6 +1,8 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
+
+import { createTestQueryClient } from '@/test/query-harness';
 
 import { MicCard, type MicCardMic } from './mic-card';
 import type { DiscoverResult } from '@/features/discovery/queries';
@@ -10,11 +12,13 @@ import type { DiscoverResult } from '@/features/discovery/queries';
 jest.mock('@/features/auth/session', () => ({ useSession: () => ({ session: null }) }));
 jest.mock('@/lib/supabase', () => ({ getSupabase: jest.fn() }));
 
+// createTestQueryClient rather than a hand-rolled client: this one set
+// retry: false but took the default five minute gcTime, which schedules a timer
+// per cache entry and kept the Jest worker alive. See src/test/query-harness.tsx.
 function renderCard(element: ReactElement) {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-  });
-  return render(<QueryClientProvider client={queryClient}>{element}</QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={createTestQueryClient()}>{element}</QueryClientProvider>,
+  );
 }
 
 /**

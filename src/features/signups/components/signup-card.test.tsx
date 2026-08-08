@@ -1,5 +1,7 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react-native';
+
+import { createTestQueryClient } from '@/test/query-harness';
 
 import { SignupCard } from './signup-card';
 
@@ -46,7 +48,7 @@ function renderCard(signupOpens: string) {
   // The card watches the shared join mutation key (real useMutationState,
   // not mocked), which needs a client above it.
   return render(
-    <QueryClientProvider client={new QueryClient()}>
+    <QueryClientProvider client={createTestQueryClient()}>
       <SignupCard
         occurrence={OCCURRENCE}
         timezone="America/Los_Angeles"
