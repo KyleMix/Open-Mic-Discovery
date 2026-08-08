@@ -1,210 +1,222 @@
 # Prompt: rebuild stonedgooseproductions.com/open-mics
 
-Paste everything in the fenced block below into Claude. It is written to
-work in a fresh session with no repo access, because the marketing site
-probably lives somewhere other than this repository. If you run it inside
-the `Open-Mic-Discovery` repo instead, Claude will find the real copy and
-screenshots and should prefer those over the summary embedded here.
+For Claude Code running in the **website** repository, with this repo
+(`KyleMix/Open-Mic-Discovery`) added as a second source so it can read the
+real copy and assets rather than inventing them.
 
-Before pasting, fill in the three bracketed answers at the top of the
-prompt. If you do not know the answer to the hosting question, say so in
-the prompt and let Claude tell you how to find out.
+## Before you paste
+
+1. In the website Claude Code session, add this repo so the paths below
+   resolve. Claude Code on the web can do it with `add_repo` for
+   `KyleMix/Open-Mic-Discovery`; ask it to add the repo and clone it. If
+   that is unavailable, copy the four directories listed under "What to
+   take from the app repo" into the website repo by hand first, and tell
+   Claude they are there instead.
+2. Regenerate the legal pages in this repo so what the website copies is
+   current: `npm run legal:export`. It rebuilds `web/legal/terms.md` from
+   whichever EULA version the migrations publish, and `web/legal/privacy.md`
+   from the hostable privacy policy.
+3. Fill in the two bracketed answers in the prompt.
 
 ---
 
 ```
-You are rebuilding one page on my company website.
+You are rebuilding one page and its sub-pages on the Stoned Goose
+Productions website, and wiring up two files the company's mobile app
+depends on.
 
-## Who and what
+## Context
 
 Stoned Goose Productions LLC (Olympia, Washington) is publishing a mobile
 app called Open Mic Explorer. The page at
 https://www.stonedgooseproductions.com/open-mics currently hosts a
-web-based open mic finder I built earlier. I am replacing that page with
-the app's home on the web.
+web-based open mic finder built earlier. That page becomes the app's home
+on the web.
 
-## The three things I need to tell you first
+The app's repository is available to you in this session as
+`Open-Mic-Discovery`. Read from it rather than inventing anything. In
+particular do not write your own privacy policy or terms text: they exist,
+they are reviewed, and the app links to them by URL.
 
-1. Site platform and how I edit it: [Squarespace / Wix / WordPress /
-   Webflow / a static site I deploy myself / other. Say which, and whether
-   I can upload arbitrary files to the domain root.]
-2. What happens to the existing web finder: [see the decision section
-   below, and tell me your recommendation before you build anything.]
-3. Launch state right now: the app is NOT in the stores yet. It goes to
-   TestFlight and Google Play internal testing first. So no App Store or
-   Play badges yet, and nothing on the page may claim you can download it
-   today.
+## What to take from the app repo
 
-## What the app actually is (do not embellish this)
+| Source in Open-Mic-Discovery | Where it must end up |
+| --- | --- |
+| `web/legal/privacy.md` | rendered at `/open-mics/privacy` |
+| `web/legal/terms.md` | rendered at `/open-mics/terms` |
+| `web/delete-account/index.html` | served at `/open-mics/delete-account` |
+| `web/.well-known/apple-app-site-association` | served at the DOMAIN ROOT `/.well-known/apple-app-site-association` |
+| `web/.well-known/assetlinks.json` | served at the DOMAIN ROOT `/.well-known/assetlinks.json` |
+| `marketing/screenshots/*.png` | four real app screenshots for the page |
+| `docs/store/STORE_LISTING.md` | approved marketing copy, reuse its language |
+
+The two markdown legal files carry a generated-by banner. Render them,
+do not rewrite them. If your site framework needs HTML rather than
+markdown, convert at build time and keep the source file so a regeneration
+in the app repo can be re-copied without redoing the prose. Strip the HTML
+comment banner from what visitors see, but keep it in the repo file.
+
+## What the app actually is (do not embellish)
 
 Open Mic Explorer puts open mics for music, comedy, and poetry on one map.
-It is not comedy only. It serves two roles from one account:
+It is not comedy only. One account serves two roles.
 
-Performers: browse a map or list of mics near them; filter by discipline,
-day, distance, cost, signup method, and start time; see when each listing
-was last confirmed by the person who runs it; sign up for a slot in the
-app; get a push when their slot status changes; add a night to their
-calendar.
+Performers: browse a map or list of mics nearby; filter by discipline, day,
+distance, cost, signup method, and start time; see when each listing was
+last confirmed by the person who runs it; sign up for a slot in the app;
+get a push when their slot status changes; add a night to their calendar.
 
-Producers and venues: list a mic in about two minutes using a
+Producers and venues: list a mic in about two minutes with a
 plain-language schedule builder ("every other Tuesday, 8pm"); confirm the
 listing is still accurate with one tap; cancel a night with a reason
 performers actually see; run the signup list live from the side of the
 stage, including lottery draws, running order, walk-ins, and marking
 performers done.
 
-True facts to use, and do not exceed:
+True and usable:
 - Everything is free. No in-app purchases, no subscriptions, no ads, no
   tracking, no data selling.
-- Some real-world mics charge performers for a reserved slot. That money
-  is paid at the venue, never in the app. The app only shows that a cost
-  exists.
+- Some real-world mics charge performers for a reserved slot. That money is
+  paid at the venue, never in the app. The app only shows a cost exists.
 - Accounts are 18 and over, enforced server side.
-- There is reporting, blocking, and a moderation queue with a 24 hour
-  response commitment. Say this plainly somewhere; it is a trust signal,
-  not a legal footnote.
-- Content at launch covers the Pacific Northwest, seeded around Seattle,
-  Tacoma, Portland, Olympia, and Bellingham. Do not imply national
-  coverage.
-- Dark interface, deliberately, so it does not light up a dark room.
+- Reporting, blocking, and a moderation queue with a 24 hour response
+  commitment. Say this plainly; it is a trust signal, not a footnote.
+- Launch coverage is the Pacific Northwest, seeded around Seattle, Tacoma,
+  Portland, Olympia, and Bellingham. Do not imply national coverage.
+- Dark interface on purpose, so it does not light up a dark room.
 - Listings stay readable offline.
+- The app is NOT in the stores yet. It goes to TestFlight and Google Play
+  internal testing first. No store badges, and nothing may suggest it is
+  downloadable today.
 
-Never write: "AI-powered", "the world's largest", user counts, download
-counts, testimonials, press mentions, or any award. None of those are
-true and inventing them is worse than a plain page.
+Never write: "AI-powered", "the world's largest", user or download counts,
+testimonials, press mentions, awards. None are true.
 
-## The decision I need you to make explicitly, before building
+## Decide this first, and tell me before you build
 
-The existing web finder has value I might be about to throw away:
+The existing web finder has value I may be about to discard:
 
-(a) People who use it today will hit whatever replaces it. If the page
-    simply becomes an app advert, those people are told to install
-    something instead of getting what they came for.
-(b) It is probably the only thing on my domain that search engines
-    associate with "open mic near me" style queries. A pure app landing
-    page has nothing for a crawler to rank.
+(a) People who use it today will land on whatever replaces it. If the page
+    becomes a pure app advert, they are told to install something instead
+    of getting the answer they came for.
+(b) It is probably the only thing on this domain that search engines
+    associate with "open mic near me" queries. An app landing page gives a
+    crawler nothing to rank.
 
-So choose between:
+Choose:
 
-OPTION 1 (recommended unless the hosting makes it impossible): keep a
-lightweight, crawlable public listing view on the page, and put the app
-above it. Visitors see the pitch, then real upcoming mics they can read
-without installing anything. Every listing carries a link into the app for
-people who want to sign up. This keeps the search value, serves the person
-who just wants to know what is on tonight, and turns the page into the
-app's best funnel rather than a wall.
+OPTION 1 (recommended unless the stack makes it impossible): keep a
+lightweight, crawlable public listing view on the page with the app pitch
+above it. Visitors get the pitch, then real upcoming mics they can read
+without installing anything, each linking into the app for signup. Keeps
+the search value, serves the person who just wants to know what is on
+tonight, and turns the page into the app's funnel rather than a wall.
 
-OPTION 2: full replacement with a marketing page, and a clear, kind
-message for people who came for the old finder telling them where the
-listings went and what to do instead. Choose this only if the platform
-cannot render a listing view, or if I tell you the old finder's data is
-dead.
+OPTION 2: full replacement, plus a clear and kind message telling former
+finder users where the listings went. Choose this only if the stack cannot
+render a listing view, or if the old finder's data is dead.
 
-Tell me which you recommend and why, in two or three sentences, then
-build it. If you pick Option 1, you will need to ask me how the page can
-read listing data (the app's backend is Supabase, and there is a public,
-anonymous-readable search function, so a read-only fetch is feasible if
-the platform allows custom JavaScript).
+If you pick Option 1: the app's backend is Supabase and there is a public,
+anonymous-readable Postgres function for discovery. Look at
+`src/features/discovery/queries.ts` and the `search_discover` RPC in
+`supabase/migrations/20260807000300_search_discover.sql` for the shape.
+Read it with the anon key only. Ask me for the production URL and anon key
+rather than guessing, and note that the production project may not exist
+yet, in which case build the view against a documented fixture and leave a
+single clearly marked place to switch it on.
 
-## What the page must contain either way
+## Page structure
 
-Structure it in this order. Every section should earn its place; a short
-honest page beats a long padded one.
+Every section earns its place. A short honest page beats a padded one.
 
-1. Hero. The name, one sentence that says what it does, and the primary
-   action. Suggested line, improve on it if you can: "Find an open mic.
-   Get on the list." Do not use a stock photo of a generic microphone on a
-   purple gradient. If you have nothing real to show, use type and space.
-
-2. What it does, split by the two roles. Performers and Producers, side by
-   side or stacked on mobile. Three or four concrete capabilities each,
-   written as outcomes, not feature names.
-
-3. Screenshots. I have four real ones: a map and list view, a listing
-   detail, the "going" list, and the live night screen. Ask me for the
-   files. Frame them plainly. Caption each with what it shows in a handful
-   of words. If I have not given you the files, leave clearly marked
-   placeholders sized correctly, and tell me what to send.
-
-4. Availability. Honest about the current state: it is in testing, here is
-   how to be told when it opens, or here is the TestFlight link if I have
-   given you one. Include a single email capture only if the platform
-   already has a working form; do not build a form that posts nowhere.
-
-5. Are you a producer or a venue. A short, direct section. Listing a mic is
-   free, takes about two minutes, and reaches performers who are already
-   looking. This audience is the reason the app has content at all, so
-   treat it as a real section, not a footnote.
-
-6. Trust and safety, briefly. Reporting, blocking, moderation within 24
-   hours, 18 and over, no ads, no tracking, no data selling.
-
-7. Support and legal footer. These are required by both app stores and
-   must be real, working links:
-   - Support email: [I will give you the address; it will be either
-     support@stonedgooseproductions.com or an address on the same domain.
-     Use exactly what I give you and nothing else.]
-   - Privacy policy: /open-mics/privacy
-   - Terms of use (the EULA): /open-mics/terms
-   - Delete your account: /open-mics/delete-account
-   I have the full text for the privacy policy, the terms, and the
-   deletion page. Ask me for them rather than writing your own; they are
-   already reviewed and the app's EULA references them by URL.
+1. Hero: the name, one sentence saying what it does, the primary action.
+   Candidate line, improve on it if you can: "Find an open mic. Get on the
+   list." No stock photo of a microphone on a purple gradient. If there is
+   nothing real to show, use type and space.
+2. What it does, split by role. Performers and Producers, side by side,
+   stacked on mobile. Three or four concrete outcomes each, not feature
+   names.
+3. Screenshots. Four real ones exist: discover, mic detail, going, live.
+   Frame them plainly, caption each in a handful of words.
+4. Availability. Honest about testing status. Add an email capture only if
+   the site already has a working form endpoint; never build a form that
+   posts nowhere.
+5. For producers and venues. Free, about two minutes, reaches performers
+   already looking. This audience is why the app has content, so give it a
+   real section.
+6. Trust and safety, briefly: reporting, blocking, 24 hour moderation, 18
+   and over, no ads, no tracking, no data selling.
+7. Footer with the required links: support email
+   [support@stonedgooseproductions.com], /open-mics/privacy,
+   /open-mics/terms, /open-mics/delete-account.
 
 ## Hard technical requirements
 
-These are not stylistic. Getting them wrong breaks the app or fails store
-review.
+Not stylistic. Getting these wrong breaks the app or fails store review.
 
-- The three sub-pages above must exist at exactly those paths, reachable
-  with no login and no app install, before I submit to either store.
-  Google Play tests the deletion page. Apple tests the privacy and support
-  links.
-- Two files must be served from the DOMAIN ROOT, not under /open-mics:
-    https://www.stonedgooseproductions.com/.well-known/apple-app-site-association
-    https://www.stonedgooseproductions.com/.well-known/assetlinks.json
-  These are what make links open in the app instead of the browser. The
-  first must be served as application/json with no file extension and no
-  redirect. Many hosted site builders cannot do this. If mine cannot, say
-  so plainly and early, and tell me the options (a subdomain I control, a
-  reverse proxy, or moving the site) rather than building around it
-  silently.
-- Decide and tell me whether the canonical host is www or the bare domain,
-  and make the other one redirect. Deep link configuration has to name the
-  exact host, so an inconsistent www is a real bug, not a cosmetic one.
+- The three sub-pages must exist at exactly those paths, reachable with no
+  login and no app install, before submission. Google Play tests the
+  deletion page. Apple tests the privacy and support links.
+- The two `.well-known` files go at the DOMAIN ROOT, not under
+  `/open-mics`. `apple-app-site-association` must be served as
+  `application/json`, with no file extension and no redirect. If the stack
+  cannot do this, say so immediately and loudly rather than building around
+  it: without these, links do not open in the app.
+- `www` is canonical. The app declares `applinks:www.stonedgooseproductions.com`
+  and an Android intent filter for host `www.stonedgooseproductions.com`
+  with path prefix `/open-mics/mic/`. Make the bare domain 301 to `www`.
+  Do not change the host casing or add a trailing-slash redirect on
+  `/open-mics/mic/*`, because the app's deep link matching is exact.
+- `/open-mics/mic/<id>` URLs are shared from inside the app and will be
+  opened by people without the app installed. They must render something
+  useful: at minimum the page with an explanation, ideally the specific
+  mic. Do not 404 them.
+- The delete-account page reads its backend URL from a `data-function-url`
+  attribute on `<body>` and disables itself while that is a placeholder.
+  Preserve that behavior exactly; it is deliberate, so an unfinished setup
+  fails visibly instead of silently accepting an email address.
 - The page must work with JavaScript disabled for at least the text
   content and the legal links.
 
 ## Style
 
-- Dark theme, matching the app: near-black background around #0B0B0F, with
-  a blue accent around #4DA6FF. Poppins, or a close web-safe fallback.
-- Mobile first. Most visitors will arrive on a phone, some while standing
-  outside a venue.
-- Accessible: real heading order, alt text on every image, focus states,
-  and text that passes AA contrast on the dark background.
+- Dark theme matching the app: background near #0B0B0F, blue accent near
+  #4DA6FF, Poppins or a close fallback.
+- Mobile first. Many visitors arrive on a phone, some standing outside a
+  venue.
+- Accessible: correct heading order, alt text on every image, visible focus
+  states, AA contrast on the dark background.
 - No em dashes anywhere in the copy. Use commas, colons, parentheses, or
   separate sentences.
-- Plain, specific language. No marketing throat-clearing, no "revolutionize",
-  no "seamless", no exclamation marks.
-- Fast: no web fonts beyond one family, no tracking scripts, no cookie
-  banner (there is nothing to consent to if you add no trackers, and
-  adding trackers here would contradict the app's own privacy claims).
+- Plain and specific. No "revolutionize", no "seamless", no exclamation
+  marks.
+- Fast: one font family, no tracking scripts, no cookie banner. Adding
+  trackers here would contradict the app's own privacy claims and the
+  filed store declarations.
 
-## What to give me
+## Constraints on how you work
 
-1. Your recommendation on the Option 1 versus Option 2 decision, first, in
-   a few sentences.
-2. The page itself, in the format my platform actually accepts: a single
-   self-contained HTML file if I deploy static files, or clearly separated
-   content blocks with the copy and the embed code if I am pasting into a
-   site builder. Ask which before you write it if I have not been clear.
-3. A short list of exactly what I still need to hand you or upload:
-   screenshot files, the legal text, the support address, the
-   .well-known files.
-4. The redirect or migration note for anyone who bookmarked the old
-   finder, if you chose Option 2.
+- Match the existing site's framework, build, and conventions. Read the
+  repo before writing. Do not introduce a new framework, CSS system, or
+  dependency without telling me why and getting agreement.
+- Do not delete the old finder's code until the replacement is working.
+  If Option 2, move it aside in one commit and remove it in another, so
+  reverting is cheap.
+- Commit in logical chunks with clear messages. Do not force push.
+- Verify: build the site, and check the three sub-page routes and the two
+  `.well-known` URLs actually resolve locally with the right content type
+  before you claim it is done.
 
-Ask me anything genuinely ambiguous before building. Do not invent facts
+## Deliver
+
+1. Your Option 1 versus Option 2 recommendation first, in a few sentences.
+2. The implementation.
+3. Exactly what you still need from me: the Supabase URL and anon key if
+   Option 1, the Apple Team ID and Android SHA-256 fingerprints for the
+   `.well-known` files (both are currently `TODO_` placeholders in the app
+   repo and I have to paste them in), and anything else.
+4. How to redeploy the legal pages when the app repo regenerates them.
+
+Ask about anything genuinely ambiguous before building. Do not invent facts
 about the app to fill space.
 ```

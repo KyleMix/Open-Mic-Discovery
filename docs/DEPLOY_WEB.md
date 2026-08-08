@@ -4,6 +4,21 @@ The `web/` directory holds the small static site that store compliance requires.
 Nothing in it has a build step: every file deploys as-is to any static host
 (Cloudflare Pages, Netlify, Vercel static, or an S3 bucket behind a CDN).
 
+## Legal pages are generated, not written here
+
+`web/legal/terms.md` and `web/legal/privacy.md` are produced by
+`npm run legal:export` and must not be hand edited. The terms file is
+extracted from whichever EULA version the migrations publish, because the
+agreement lives in `eula_versions` rows and the app renders it from the
+database. A hand-copied terms page works exactly once: the next EULA
+version leaves the website showing an agreement nobody accepted, and
+nothing fails loudly.
+
+So: after any migration that publishes a new EULA version, run
+`npm run legal:export`, commit the result, and re-copy the two files into
+the website repo. The prompt in `docs/WEBSITE-PAGE-PROMPT.md` tells the
+website side to render them rather than rewrite them.
+
 ## What must live where
 
 | URL                                                               | File in repo                                                                                   | Why                                                                                      |

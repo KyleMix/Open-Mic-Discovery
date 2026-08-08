@@ -86,7 +86,8 @@
     "check:backend": "node scripts/check-backend.mjs",
     "build:android": "npx eas-cli build --profile preview --platform android",
     "build:ios": "npx eas-cli build --profile testflight --platform ios",
-    "submit:ios": "npx eas-cli submit --profile production --platform ios"
+    "submit:ios": "npx eas-cli submit --profile production --platform ios",
+    "legal:export": "node scripts/export-legal.mjs"
   },
   "jest": {
     "preset": "jest-expo",
