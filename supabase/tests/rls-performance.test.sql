@@ -9,7 +9,7 @@
 -- These assert the shape, because the cost is invisible until the data is
 -- big enough to hurt and by then it is in production.
 begin;
-select plan(5);
+select plan(7);
 
 -- pg_policies renders a wrapped call as "( SELECT private.is_admin() ...)".
 -- A bare one appears as "private.is_admin()" with no SELECT in front.
@@ -44,12 +44,40 @@ select is(
 
 -- And prove the wrapping is actually present rather than the tables having
 -- quietly lost their admin policies, which would also make the counts zero.
+-- Prove the wrapping is actually present rather than the tables having quietly
+-- lost their admin policies, which would also make the count above zero.
+--
+-- The threshold was 20 until 20260807001500 moved twelve SELECT policies onto
+-- private.is_admin_reader(), so the two predicates are counted separately now.
+-- That is a better test than the single number was: it pins the split as well as
+-- the wrapping, so a policy silently changing which side it is on shows up here.
 select cmp_ok(
   (select count(*)::int from pg_policies
    where schemaname = 'public' and coalesce(qual, '') like '%SELECT private.is_admin()%'),
   '>=',
-  20,
-  'the admin policies are still there, hoisted rather than removed'
+  15,
+  'the write-side admin policies are still there, hoisted rather than removed'
+);
+
+select is(
+  (select count(*)::int
+   from pg_policies
+   where schemaname = 'public'
+     and (
+       coalesce(qual, '') ~ '(?<!SELECT )private\.is_admin_reader\(\)'
+       or coalesce(with_check, '') ~ '(?<!SELECT )private\.is_admin_reader\(\)'
+     )),
+  0,
+  'no policy calls private.is_admin_reader() once per row'
+);
+
+select cmp_ok(
+  (select count(*)::int from pg_policies
+   where schemaname = 'public'
+     and coalesce(qual, '') like '%SELECT private.is_admin_reader()%'),
+  '>=',
+  10,
+  'and the read-side policies are on the reader predicate, so read_only can see the queue'
 );
 
 -- The sanction predicate (20260807001400) is the same shape of hazard: it takes
