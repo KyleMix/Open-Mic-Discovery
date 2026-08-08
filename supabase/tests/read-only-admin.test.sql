@@ -8,7 +8,7 @@
 -- On shape, again: an INSERT that fails WITH CHECK raises 42501, while an UPDATE
 -- that fails USING silently affects zero rows. Both appear below.
 begin;
-select plan(34);
+select plan(37);
 
 insert into admin.admin_users (user_id, role, active, created_by)
 values ('00000000-0000-4000-a000-000000000001', 'read_only', true,
@@ -92,8 +92,8 @@ select cmp_ok(
   'listings are readable, held ones included'
 );
 select cmp_ok(
-  (select count(*)::int from profiles), '>', 1,
-  'profiles other than their own are readable, so a held profile can be reviewed'
+  (select count(*)::int from admin_profile_review), '>', 1,
+  'other accounts are readable through admin_profile_review, so a held profile can be reviewed'
 );
 select is(
   (select count(*)::int from user_sanctions
@@ -123,7 +123,16 @@ select cmp_ok(
 -- ---------------------------------------------------------------------------
 select is(
   (select count(*)::int from producer_profiles), 0,
-  'producer contact details stay hidden: the largest PII surface is not widened'
+  'the producer base table is unreadable, so raw contact details are not on offer'
+);
+select cmp_ok(
+  (select count(*)::int from admin_producer_review), '>', 0,
+  'the masked producer view is readable, because a shape is not a contact detail'
+);
+select ok(
+  (select bool_and(contact_email_masked is null or contact_email_masked like '%***%')
+     from admin_producer_review),
+  'and every address in it is a mask rather than a value'
 );
 select is(
   (select count(*)::int from banned_terms), 0,
@@ -166,10 +175,13 @@ select is(
   'or edit a listing'
 );
 
+-- Read back through the review view, because since 20260807001600 the base
+-- table is not readable by an admin at all and a null would have compared equal
+-- to a null and passed for the wrong reason.
 update profiles set moderation_status = 'rejected'
 where id = '00000000-0000-4000-a000-000000000003';
 select is(
-  (select moderation_status from profiles
+  (select moderation_status from admin_profile_review
     where id = '00000000-0000-4000-a000-000000000003'),
   'approved'::moderation_status,
   'or reject a profile'
@@ -230,6 +242,12 @@ select throws_ok(
   '42501', 'the test kit is admin only',
   'or switch the test kit back on'
 );
+select throws_ok(
+  $$select admin_reveal('00000000-0000-4000-a000-000000000002', 'contact_phone',
+      'read_only wants a phone number', '203.0.113.7'::inet)$$,
+  '42501', 'only a moderator or an owner can reveal contact details',
+  'and cannot unmask a contact detail: oversight does not need somebody phone number'
+);
 
 -- ---------------------------------------------------------------------------
 -- The moderator is unchanged by all of this, which is the regression that would
@@ -246,8 +264,8 @@ select lives_ok(
   'and can still moderate held content'
 );
 select is(
-  (select count(*)::int from producer_profiles), 3,
-  'and still reads producer contact details, which only read_only lost'
+  (select count(*)::int from producer_profiles), 0,
+  'and reads the producer base table no more than read_only does, since 20260807001600'
 );
 reset role;
 

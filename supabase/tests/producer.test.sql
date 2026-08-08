@@ -149,13 +149,19 @@ select is(
   '00000000-0000-4000-a000-000000000001'::uuid,
   'approval transfers ownership to the requester'
 );
+-- Read through the admin review views rather than the base tables. Since
+-- 20260807001600 an admin has no select policy on profiles or
+-- producer_profiles, so a base-table read here would return no row and compare
+-- null against true, which is a test passing for the wrong reason rather than a
+-- test of review_claim.
 select is(
-  (select is_producer from profiles where id = '00000000-0000-4000-a000-000000000001'),
+  (select is_producer from admin_profile_review
+    where id = '00000000-0000-4000-a000-000000000001'),
   true,
   'approval grants the producer role'
 );
 select is(
-  (select count(*)::int from producer_profiles
+  (select count(*)::int from admin_producer_review
    where profile_id = '00000000-0000-4000-a000-000000000001'),
   1,
   'approval creates the producer profile row'

@@ -120,9 +120,14 @@ export function useModerationQueue(isAdmin: boolean) {
     queryFn: async () => {
       const supabase = getSupabase();
       const [profiles, venues, series, reports, flags] = await Promise.all([
+        // admin_profile_review, not profiles: admins no longer read the base
+        // table (migration 20260807001600). The view carries what reviewing held
+        // content needs and omits display_name, birth_year and home_city, which
+        // reach an admin only through admin_reveal, against a reason and an
+        // audit row. display_name was selected here and never rendered.
         supabase
-          .from('profiles')
-          .select('id, handle, stage_name, display_name, bio')
+          .from('admin_profile_review')
+          .select('id, handle, stage_name, bio')
           .eq('moderation_status', 'pending')
           .is('deleted_at', null),
         supabase
@@ -146,7 +151,15 @@ export function useModerationQueue(isAdmin: boolean) {
         }
       }
       return {
-        profiles: profiles.data ?? [],
+        // Every column of a view arrives nullable in the generated types,
+        // because Postgres does not record a not-null constraint on a view
+        // column even when the column underneath has one. Narrowing here rather
+        // than asserting it away at the call site: a row that somehow arrived
+        // without an id is one the screen cannot act on anyway.
+        profiles: (profiles.data ?? []).filter(
+          (p): p is typeof p & { id: string; handle: string; stage_name: string } =>
+            p.id !== null && p.handle !== null && p.stage_name !== null,
+        ),
         venues: venues.data ?? [],
         series: series.data ?? [],
         reports: reports.data ?? [],

@@ -173,7 +173,12 @@ select is_empty(
           'occurrence_attendance',
           -- Exists precisely to read profiles a block hides. Filtered to
           -- `blocker_id = auth.uid()`, so it only ever shows your own list.
-          'blocked_profiles'
+          'blocked_profiles',
+          -- The console's review surfaces (20260807001600). Owner semantics is
+          -- the whole mechanism: row level security cannot hide columns, so
+          -- these exist to omit private ones and to mask contact details, with
+          -- `(select private.is_admin_reader())` in the WHERE as the gate.
+          'admin_profile_review', 'admin_producer_review'
         ) $$,
   'and every view that runs as its owner is one that was reviewed for it'
 );

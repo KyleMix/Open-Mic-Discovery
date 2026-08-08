@@ -64,6 +64,13 @@ export type Database = {
             foreignKeyName: 'attendance_log_profile_id_fkey';
             columns: ['profile_id'];
             isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'attendance_log_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
@@ -139,6 +146,13 @@ export type Database = {
             foreignKeyName: 'attendance_plans_profile_id_fkey';
             columns: ['profile_id'];
             isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'attendance_plans_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
@@ -190,6 +204,13 @@ export type Database = {
             foreignKeyName: 'blocks_blocked_id_fkey';
             columns: ['blocked_id'];
             isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'blocks_blocked_id_fkey';
+            columns: ['blocked_id'];
+            isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
@@ -198,6 +219,13 @@ export type Database = {
             columns: ['blocked_id'];
             isOneToOne: false;
             referencedRelation: 'public_profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'blocks_blocker_id_fkey';
+            columns: ['blocker_id'];
+            isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
             referencedColumns: ['id'];
           },
           {
@@ -252,6 +280,13 @@ export type Database = {
             foreignKeyName: 'claim_requests_requester_id_fkey';
             columns: ['requester_id'];
             isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'claim_requests_requester_id_fkey';
+            columns: ['requester_id'];
+            isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
@@ -260,6 +295,13 @@ export type Database = {
             columns: ['requester_id'];
             isOneToOne: false;
             referencedRelation: 'public_profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'claim_requests_reviewed_by_fkey';
+            columns: ['reviewed_by'];
+            isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
             referencedColumns: ['id'];
           },
           {
@@ -319,6 +361,13 @@ export type Database = {
             foreignKeyName: 'device_push_tokens_profile_id_fkey';
             columns: ['profile_id'];
             isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'device_push_tokens_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
@@ -366,6 +415,13 @@ export type Database = {
           series_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'favorites_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'favorites_profile_id_fkey';
             columns: ['profile_id'];
@@ -435,6 +491,13 @@ export type Database = {
             foreignKeyName: 'listing_flags_flagger_id_fkey';
             columns: ['flagger_id'];
             isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'listing_flags_flagger_id_fkey';
+            columns: ['flagger_id'];
+            isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
@@ -443,6 +506,13 @@ export type Database = {
             columns: ['flagger_id'];
             isOneToOne: false;
             referencedRelation: 'public_profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'listing_flags_resolved_by_fkey';
+            columns: ['resolved_by'];
+            isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
             referencedColumns: ['id'];
           },
           {
@@ -535,6 +605,13 @@ export type Database = {
             foreignKeyName: 'mic_credits_created_by_fkey';
             columns: ['created_by'];
             isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mic_credits_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
@@ -572,6 +649,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'occurrence_spots';
             referencedColumns: ['occurrence_id'];
+          },
+          {
+            foreignKeyName: 'mic_credits_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'mic_credits_profile_id_fkey';
@@ -772,6 +856,13 @@ export type Database = {
             foreignKeyName: 'mic_series_created_by_fkey';
             columns: ['created_by'];
             isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mic_series_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
@@ -786,6 +877,13 @@ export type Database = {
             foreignKeyName: 'mic_series_last_confirmed_by_fkey';
             columns: ['last_confirmed_by'];
             isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mic_series_last_confirmed_by_fkey';
+            columns: ['last_confirmed_by'];
+            isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
@@ -795,6 +893,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'public_profiles';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mic_series_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'admin_producer_review';
+            referencedColumns: ['profile_id'];
           },
           {
             foreignKeyName: 'mic_series_owner_id_fkey';
@@ -855,6 +960,13 @@ export type Database = {
             foreignKeyName: 'notification_outbox_profile_id_fkey';
             columns: ['profile_id'];
             isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notification_outbox_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
@@ -896,6 +1008,13 @@ export type Database = {
           weekly_digest?: boolean;
         };
         Relationships: [
+          {
+            foreignKeyName: 'notification_prefs_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: true;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'notification_prefs_profile_id_fkey';
             columns: ['profile_id'];
@@ -945,6 +1064,13 @@ export type Database = {
             foreignKeyName: 'performer_profiles_profile_id_fkey';
             columns: ['profile_id'];
             isOneToOne: true;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'performer_profiles_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: true;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
@@ -986,6 +1112,13 @@ export type Database = {
           verified?: boolean;
         };
         Relationships: [
+          {
+            foreignKeyName: 'producer_profiles_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: true;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'producer_profiles_profile_id_fkey';
             columns: ['profile_id'];
@@ -1130,6 +1263,13 @@ export type Database = {
             foreignKeyName: 'report_triage_assigned_to_fkey';
             columns: ['assigned_to'];
             isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'report_triage_assigned_to_fkey';
+            columns: ['assigned_to'];
+            isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
@@ -1194,6 +1334,13 @@ export type Database = {
             foreignKeyName: 'reports_reporter_id_fkey';
             columns: ['reporter_id'];
             isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'reports_reporter_id_fkey';
+            columns: ['reporter_id'];
+            isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
@@ -1202,6 +1349,13 @@ export type Database = {
             columns: ['reporter_id'];
             isOneToOne: false;
             referencedRelation: 'public_profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'reports_resolved_by_fkey';
+            columns: ['resolved_by'];
+            isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
             referencedColumns: ['id'];
           },
           {
@@ -1323,6 +1477,13 @@ export type Database = {
             foreignKeyName: 'signups_performer_id_fkey';
             columns: ['performer_id'];
             isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'signups_performer_id_fkey';
+            columns: ['performer_id'];
+            isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
@@ -1385,6 +1546,13 @@ export type Database = {
           scenario?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'test_kit_objects_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'test_kit_objects_created_by_fkey';
             columns: ['created_by'];
@@ -1470,6 +1638,13 @@ export type Database = {
             foreignKeyName: 'user_sanctions_created_by_fkey';
             columns: ['created_by'];
             isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_sanctions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
@@ -1484,6 +1659,13 @@ export type Database = {
             foreignKeyName: 'user_sanctions_lifted_by_fkey';
             columns: ['lifted_by'];
             isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_sanctions_lifted_by_fkey';
+            columns: ['lifted_by'];
+            isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
@@ -1492,6 +1674,13 @@ export type Database = {
             columns: ['lifted_by'];
             isOneToOne: false;
             referencedRelation: 'public_profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_sanctions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
             referencedColumns: ['id'];
           },
           {
@@ -1582,6 +1771,13 @@ export type Database = {
             foreignKeyName: 'venues_created_by_fkey';
             columns: ['created_by'];
             isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'venues_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
@@ -1596,6 +1792,117 @@ export type Database = {
       };
     };
     Views: {
+      admin_producer_review: {
+        Row: {
+          contact_email_masked: string | null;
+          contact_phone_masked: string | null;
+          created_at: string | null;
+          has_payout_ref: boolean | null;
+          profile_id: string | null;
+          updated_at: string | null;
+          verified: boolean | null;
+        };
+        Insert: {
+          contact_email_masked?: never;
+          contact_phone_masked?: never;
+          created_at?: string | null;
+          has_payout_ref?: never;
+          profile_id?: string | null;
+          updated_at?: string | null;
+          verified?: boolean | null;
+        };
+        Update: {
+          contact_email_masked?: never;
+          contact_phone_masked?: never;
+          created_at?: string | null;
+          has_payout_ref?: never;
+          profile_id?: string | null;
+          updated_at?: string | null;
+          verified?: boolean | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'producer_profiles_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: true;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'producer_profiles_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: true;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'producer_profiles_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: true;
+            referencedRelation: 'public_profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      admin_profile_review: {
+        Row: {
+          avatar_url: string | null;
+          bio: string | null;
+          created_at: string | null;
+          deleted_at: string | null;
+          eula_accepted_at: string | null;
+          eula_version: string | null;
+          handle: string | null;
+          id: string | null;
+          is_admin: boolean | null;
+          is_performer: boolean | null;
+          is_producer: boolean | null;
+          moderation_status: Database['public']['Enums']['moderation_status'] | null;
+          stage_name: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          avatar_url?: string | null;
+          bio?: string | null;
+          created_at?: string | null;
+          deleted_at?: string | null;
+          eula_accepted_at?: string | null;
+          eula_version?: string | null;
+          handle?: string | null;
+          id?: string | null;
+          is_admin?: boolean | null;
+          is_performer?: boolean | null;
+          is_producer?: boolean | null;
+          moderation_status?: Database['public']['Enums']['moderation_status'] | null;
+          stage_name?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          avatar_url?: string | null;
+          bio?: string | null;
+          created_at?: string | null;
+          deleted_at?: string | null;
+          eula_accepted_at?: string | null;
+          eula_version?: string | null;
+          handle?: string | null;
+          id?: string | null;
+          is_admin?: boolean | null;
+          is_performer?: boolean | null;
+          is_producer?: boolean | null;
+          moderation_status?: Database['public']['Enums']['moderation_status'] | null;
+          stage_name?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'profiles_eula_version_fkey';
+            columns: ['eula_version'];
+            isOneToOne: false;
+            referencedRelation: 'eula_versions';
+            referencedColumns: ['version'];
+          },
+        ];
+      };
       blocked_profiles: {
         Row: {
           blocked_at: string | null;
@@ -1604,6 +1911,13 @@ export type Database = {
           handle: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'blocks_blocked_id_fkey';
+            columns: ['blocked_id'];
+            isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'blocks_blocked_id_fkey';
             columns: ['blocked_id'];
@@ -1707,6 +2021,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'occurrence_spots';
             referencedColumns: ['occurrence_id'];
+          },
+          {
+            foreignKeyName: 'mic_credits_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'mic_credits_profile_id_fkey';
@@ -1842,6 +2163,13 @@ export type Database = {
             foreignKeyName: 'performer_profiles_profile_id_fkey';
             columns: ['profile_id'];
             isOneToOne: true;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'performer_profiles_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: true;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
@@ -1917,6 +2245,13 @@ export type Database = {
             foreignKeyName: 'attendance_plans_profile_id_fkey';
             columns: ['profile_id'];
             isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'attendance_plans_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
@@ -1946,6 +2281,13 @@ export type Database = {
           verified?: boolean | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'producer_profiles_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: true;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'producer_profiles_profile_id_fkey';
             columns: ['profile_id'];
@@ -2054,6 +2396,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'occurrence_spots';
             referencedColumns: ['occurrence_id'];
+          },
+          {
+            foreignKeyName: 'signups_performer_id_fkey';
+            columns: ['performer_id'];
+            isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'signups_performer_id_fkey';
@@ -2248,6 +2597,15 @@ export type Database = {
       admin_invite_revoke: {
         Args: { p_invite_id: string; p_reason: string; p_request_ip: unknown };
         Returns: undefined;
+      };
+      admin_reveal: {
+        Args: {
+          p_field: string;
+          p_profile_id: string;
+          p_reason: string;
+          p_request_ip: unknown;
+        };
+        Returns: string;
       };
       admin_sanction_apply: {
         Args: {

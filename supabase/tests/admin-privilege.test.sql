@@ -8,7 +8,7 @@
 -- Seed accounts used: 0004 is an admin whose email is not the owner email,
 -- 0001 is a plain performer, 0005 is the owner.
 begin;
-select plan(11);
+select plan(12);
 
 -- ---------------------------------------------------------------------------
 -- An admin cannot promote anyone else.
@@ -17,55 +17,78 @@ set local role authenticated;
 select set_config('request.jwt.claims',
   '{"sub":"00000000-0000-4000-a000-000000000004","role":"authenticated"}', true);
 
--- The row is visible and writable to this caller (the admin policies allow
--- both), so a refusal here is the guard and not row level security hiding the
--- row. Proving that first makes the next assertion mean what it says.
+-- The row is writable by this caller, so a refusal below is the guard and not
+-- row level security hiding the row. Proving that first makes the next assertion
+-- mean what it says.
+--
+-- Read through admin_profile_review rather than profiles: since 20260807001600
+-- an admin has no select policy on the base table, and the assertions further
+-- down read stored state with the role reset for the same reason.
 select is(
-  (select count(*)::int from profiles where id = '00000000-0000-4000-a000-000000000001'),
+  (select count(*)::int from admin_profile_review
+    where id = '00000000-0000-4000-a000-000000000001'),
   1,
-  'an admin can see another profile row, so the write below is not filtered out'
+  'an admin can see another profile through the review view, so the write below is not filtered out'
 );
 
-update profiles set is_admin = true
-where id = '00000000-0000-4000-a000-000000000001';
+-- Since 20260807001600 there are two independent reasons this write cannot
+-- promote anybody, and both are worth asserting because either alone would make
+-- the other untestable. First: the row is no longer visible to the write at all.
+-- An UPDATE whose WHERE clause reads the table needs a SELECT policy as well as
+-- an UPDATE policy, and admins have neither on profiles now, so the statement
+-- matches nothing.
+with attempt as (
+  update profiles set bio = 'edited by a moderator', is_admin = true
+   where id = '00000000-0000-4000-a000-000000000001'
+  returning id
+)
+select is(
+  (select count(*)::int from attempt),
+  0,
+  'a raw cross-user profile write from an admin now matches no rows at all'
+);
+reset role;
 select is(
   (select is_admin from profiles where id = '00000000-0000-4000-a000-000000000001'),
   false,
-  'an admin cannot grant admin to another user'
-);
-
--- The same write with other columns alongside it, because a moderator editing a
--- profile legitimately is the case where this would slip through.
-update profiles set bio = 'edited by a moderator', is_admin = true
-where id = '00000000-0000-4000-a000-000000000001';
-select is(
-  (select is_admin from profiles where id = '00000000-0000-4000-a000-000000000001'),
-  false,
-  'and cannot smuggle the grant in alongside a legitimate edit'
+  'so it cannot grant admin to another user'
 );
 select is(
   (select bio from profiles where id = '00000000-0000-4000-a000-000000000001'),
-  'edited by a moderator',
-  'while the legitimate part of that edit still applies'
+  'Acoustic sets and the occasional poem.',
+  'and the legitimate half of the same statement does not land either'
 );
 
 -- Demotion is blocked in the same way, in both directions: an admin cannot
 -- strip another admin either, so one compromised session cannot lock the owner
 -- out of their own product.
+set local role authenticated;
 update profiles set is_admin = false
 where id = '00000000-0000-4000-a000-000000000005';
+reset role;
 select is(
   (select is_admin from profiles where id = '00000000-0000-4000-a000-000000000005'),
   true,
   'an admin cannot revoke another admin either'
 );
 
--- And cannot keep or re-assert it on themselves through a write.
-update profiles set is_admin = false where id = auth.uid();
+-- The second reason, and the one the guard is actually for: a write that DOES
+-- land still cannot move the column. An admin's own row is visible and writable
+-- to them through the owner policies, so this statement matches a row and the
+-- guard is the only thing standing between it and a demotion.
+set local role authenticated;
+with attempt as (
+  update profiles set is_admin = false where id = auth.uid() returning id
+)
+select is(
+  (select count(*)::int from attempt),
+  1,
+  'an admin write to their own row does match, so the guard is what is under test here'
+);
 select is(
   (select is_admin from profiles where id = auth.uid()),
   true,
-  'an admin cannot demote themselves through a profile write'
+  'and the guard re-derives the column from the allowlist, so they stay an admin'
 );
 
 -- ---------------------------------------------------------------------------
