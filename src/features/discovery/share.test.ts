@@ -12,7 +12,7 @@ describe('sharing a mic', () => {
   it('links to the universal link that already routes to the mic screen', () => {
     // Must stay in step with web/.well-known and the Android intent filters,
     // which is what makes the shared link open the app rather than a browser.
-    expect(micShareUrl('abc-123')).toBe('https://openmicfinder.app/mic/abc-123');
+    expect(micShareUrl('abc-123')).toBe('https://stonedgoose.com/openmic/mic/abc-123');
   });
 
   it('says what the mic is, so the message stands on its own', () => {
@@ -21,7 +21,7 @@ describe('sharing a mic', () => {
     const message = micShareMessage(MIC);
     expect(message).toContain('The Log Cabin');
     expect(message).toContain('Mon, Aug 10');
-    expect(message).toContain('https://openmicfinder.app/mic/abc-123');
+    expect(message).toContain('https://stonedgoose.com/openmic/mic/abc-123');
   });
 
   it('drops the parts it does not have rather than printing null', () => {
@@ -30,7 +30,7 @@ describe('sharing a mic', () => {
       venue_name: null,
       next_starts_at: null,
     });
-    expect(message).toBe('The Log Cabin\nhttps://openmicfinder.app/mic/abc-123');
+    expect(message).toBe('The Log Cabin\nhttps://stonedgoose.com/openmic/mic/abc-123');
   });
 
   it('renders the date in the venue timezone, not the reader one', () => {

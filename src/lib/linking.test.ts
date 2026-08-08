@@ -3,7 +3,7 @@ import { join } from 'path';
 
 /**
  * Universal Links (iOS) and App Links (Android) for mic detail pages.
- * https://openmicfinder.app/mic/<id> must open the app's mic screen from a
+ * https://stonedgoose.com/openmic/mic/<id> must open the app's mic screen from a
  * cold start, so the store configs, the router route, and the well-known
  * files have to stay in agreement. Manual verification procedure:
  * docs/DEPLOY_WEB.md.
@@ -39,12 +39,12 @@ const assetLinks = JSON.parse(
 
 describe('deep link configuration', () => {
   it('declares the iOS associated domain', () => {
-    expect(appJson.expo.ios.associatedDomains).toContain('applinks:openmicfinder.app');
+    expect(appJson.expo.ios.associatedDomains).toContain('applinks:stonedgoose.com');
   });
 
   it('declares a verified Android intent filter for mic pages', () => {
     const filter = appJson.expo.android.intentFilters?.find((f) =>
-      f.data.some((d) => d.host === 'openmicfinder.app'),
+      f.data.some((d) => d.host === 'stonedgoose.com'),
     );
     expect(filter).toBeDefined();
     expect(filter?.autoVerify).toBe(true);
@@ -52,8 +52,8 @@ describe('deep link configuration', () => {
     expect(filter?.category).toEqual(expect.arrayContaining(['BROWSABLE', 'DEFAULT']));
     expect(filter?.data).toContainEqual({
       scheme: 'https',
-      host: 'openmicfinder.app',
-      pathPrefix: '/mic/',
+      host: 'stonedgoose.com',
+      pathPrefix: '/openmic/mic/',
     });
   });
 
@@ -61,13 +61,13 @@ describe('deep link configuration', () => {
     expect(existsSync(join(root, 'src', 'app', 'mic', '[id].tsx'))).toBe(true);
   });
 
-  it('serves an apple-app-site-association covering /mic/*', () => {
+  it('serves an apple-app-site-association covering /openmic/mic/*', () => {
     const detail = aasa.applinks.details[0];
     if (!detail) {
       throw new Error('apple-app-site-association has no applinks details');
     }
     expect(detail.appIDs[0]?.endsWith('.com.openmicexplorer.app')).toBe(true);
-    expect(detail.components.some((c) => c['/'] === '/mic/*')).toBe(true);
+    expect(detail.components.some((c) => c['/'] === '/openmic/mic/*')).toBe(true);
   });
 
   it('serves an assetlinks.json for the Android package', () => {

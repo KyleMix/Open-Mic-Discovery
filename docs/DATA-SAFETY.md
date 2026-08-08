@@ -27,7 +27,7 @@ history.
 | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Collects or shares required data types | Yes                                                                                                                                                   |
 | Encrypted in transit                   | Yes                                                                                                                                                   |
-| Deletion path offered                  | Yes; in-app and web URL `https://openmicfinder.app/delete-account`                                                                                    |
+| Deletion path offered                  | Yes; in-app and web URL `https://stonedgoose.com/openmic/delete-account`                                                                              |
 | Data collected                         | Approximate location (ephemeral), Precise location (ephemeral), Name, Email, User IDs, Date of birth (year), Photos (optional), Other UGC, Crash logs |
 | Data shared with third parties         | None (Sentry and Supabase are service providers under the form's definition, not sharing)                                                             |
 | Data sold                              | No                                                                                                                                                    |
@@ -78,9 +78,9 @@ Answer from these facts rather than from a target tier:
 
 ## Support and policy URLs both forms ask for
 
-| Field              | Value                                                                                          | Status                                                             |
-| ------------------ | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| Privacy policy URL | `https://openmicfinder.app/privacy` (copy: `docs/privacy/PRIVACY_POLICY.md`)                   | Owner must host before submission                                  |
-| Support URL        | `https://openmicfinder.app` (or a /support page)                                               | Owner must host                                                    |
-| Support email      | `SUPPORT_EMAIL` in `src/lib/support.ts`, currently the placeholder `support@openmicfinder.app` | Owner decision 1; change the constant and the store forms together |
-| Web deletion URL   | `https://openmicfinder.app/delete-account`                                                     | Owner must deploy (docs/DEPLOY_WEB.md)                             |
+| Field              | Value                                                                                        | Status                                                             |
+| ------------------ | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Privacy policy URL | `https://stonedgoose.com/openmic/privacy` (copy: `docs/privacy/PRIVACY_POLICY.md`)           | Owner must host before submission                                  |
+| Support URL        | `https://stonedgoose.com/openmic` (or a support page under it)                               | Owner must host                                                    |
+| Support email      | `SUPPORT_EMAIL` in `src/lib/support.ts`, currently the placeholder `support@stonedgoose.com` | Owner decision 1; change the constant and the store forms together |
+| Web deletion URL   | `https://stonedgoose.com/openmic/delete-account`                                             | Owner must deploy (docs/DEPLOY_WEB.md)                             |

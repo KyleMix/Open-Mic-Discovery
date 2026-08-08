@@ -11,9 +11,11 @@ says "openmicfinder" bundle ids in places), THIS file is current.
 ## Decisions blocking or shaping steps below, up front
 
 - **D1, support inbox (blocks step 8).** The app's one support address is
-  the constant `SUPPORT_EMAIL` in `src/lib/support.ts`, currently the
-  placeholder `support@openmicfinder.app`. Decide the real address, change
-  that one constant, and use the same address in both store consoles.
+  the constant `SUPPORT_EMAIL` in `src/lib/support.ts`, set to
+  `support@stonedgoose.com` per the domain decision. The inbox does not
+  exist yet: create it (step 8) or, if you prefer a different address,
+  change that one constant and use the same address in both store
+  consoles.
 - **D2, stewardship badge migration (shapes step 5).** Migration
   `supabase/migrations/20260804000100_discovery_stewardship.sql` is
   written, tested, and NOT yet applied anywhere hosted. It drops and
@@ -24,20 +26,22 @@ says "openmicfinder" bundle ids in places), THIS file is current.
   regenerate types (`npm run db:types`) and commit them. The app behaves
   identically with or without it (badge appears only when the column
   exists).
-- **D3, product domain (shapes steps 7 to 9).** Everything web assumes
-  `openmicfinder.app`: universal links, the deletion page, the privacy
-  policy URL, the placeholder support address. If you own that domain,
-  proceed as written. If the domain should match the Explorer name
-  instead, say so and one coordinated change updates `app.json`
-  (associatedDomains, intentFilters), `web/`, the legal copy, and the
-  support constant; do not submit until whichever domain you choose is
-  live, because Apple follows the links.
-- **D4, moderation console.** The Next.js console does not exist; the
-  database for it is fully built. Today moderation runs through the
-  in-app `/admin` screen (works, audited as of this pass) plus
-  `docs/admin/RUNBOOK.md`. Apple's 24-hour takedown requirement is
-  satisfied by the in-app path, so this does NOT block submission; decide
-  separately whether the console gets built before or after launch.
+- **D3, product domain: DECIDED 2026-08-08.** The web presence lives
+  under the publisher domain, subpath `stonedgoose.com/openmic`. The
+  sweep is done: universal links associate with host `stonedgoose.com`
+  (association files MUST be served from `stonedgoose.com/.well-known/`,
+  the domain root, not the subpath), app pages live under `/openmic/`
+  (mic links, delete-account, privacy, terms), the app strips the prefix
+  via `src/app/+native-intent.tsx`, EULA 1.3 records the new addresses,
+  and support/legal addresses are `support@stonedgoose.com` and
+  `legal@stonedgoose.com`. Your remaining part is hosting (step 7) and
+  creating the inboxes (step 8); do not submit until the pages are live,
+  because Apple follows the links.
+- **D4, moderation console: DECIDED 2026-08-08.** Submit without the web
+  console. The in-app `/admin` screen plus `docs/admin/RUNBOOK.md` are
+  the takedown path (works, audited as of this pass) and satisfy Apple's
+  24-hour requirement. The console gets built after launch on the
+  already-shipped database layer.
 
 ## 1. Apple Developer Program, as an organization
 
@@ -157,13 +161,17 @@ npx eas credentials   # let EAS create iOS distribution cert + profile, Android 
 
 ## 7. Host the web pieces
 
-- Do: deploy the `web/` directory to the product domain (D3) per
-  `docs/DEPLOY_WEB.md`: the deletion page at `/delete-account`, the
-  association files at `/.well-known/apple-app-site-association` and
-  `/.well-known/assetlinks.json` (paste the SHA-256 fingerprints from
-  Play Console App integrity into assetlinks), and a privacy policy page
-  at `/privacy` from `docs/privacy/PRIVACY_POLICY.md`. Any static host
-  works (Cloudflare Pages, Netlify, Vercel; free tiers fine).
+- Do: deploy per `docs/DEPLOY_WEB.md` onto stonedgoose.com: the
+  association files at `stonedgoose.com/.well-known/` (domain root,
+  required by both platforms; paste the SHA-256 fingerprints from Play
+  Console App integrity into assetlinks.json and your Apple Team ID into
+  apple-app-site-association), the deletion page at
+  `stonedgoose.com/openmic/delete-account`, a privacy page at
+  `stonedgoose.com/openmic/privacy` from
+  `docs/privacy/PRIVACY_POLICY.md`, and a terms page at
+  `stonedgoose.com/openmic/terms` from the current EULA text (1.3). Works
+  on any static host or alongside whatever already serves
+  stonedgoose.com; only /.well-known and /openmic/* are claimed.
 - Cost: domain renewal only. Time: an hour.
 - Unblocks: both store forms (privacy URL, deletion URL), universal links.
 
@@ -236,7 +244,8 @@ npx eas submit --profile production --platform android --latest
 
 1. Start Apple organization enrollment (step 1); D-U-N-S is the long pole.
 2. Start Play organization verification (step 2) the same day.
-3. Decide D1 (support inbox) and D3 (domain); both are one-line answers
-   that unblock steps 7, 8, and both store forms.
+3. Create the support@stonedgoose.com and legal@stonedgoose.com inboxes
+   (D1; the domain decision D3 is made) so steps 7 and 8 and both store
+   forms can use them.
 4. Create the Supabase production project and push migrations (step 3).
 5. Restrict the Google Maps key (step 4).

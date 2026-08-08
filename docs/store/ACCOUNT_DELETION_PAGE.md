@@ -17,7 +17,7 @@ Deletion is immediate and permanent.
 
 ## No longer have the app?
 
-Email support@openmicfinder.app from the address on your account with the
+Email support@stonedgoose.com from the address on your account with the
 subject "Delete my account". We verify the request against the account email
 and complete the deletion within 7 days, then confirm by reply.
 

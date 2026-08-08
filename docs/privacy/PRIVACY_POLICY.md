@@ -59,4 +59,4 @@ If this policy changes in a way that matters, the app will tell you and ask you 
 
 ## Contact
 
-Questions about privacy or your data: support@openmicfinder.app. A person reads it.
+Questions about privacy or your data: support@stonedgoose.com. A person reads it.

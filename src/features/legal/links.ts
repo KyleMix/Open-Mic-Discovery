@@ -9,8 +9,8 @@ import * as WebBrowser from 'expo-web-browser';
  * they open in the in-app browser, never an external tab.
  */
 export const LEGAL_LINKS = {
-  privacyPolicy: { label: 'Privacy Policy', url: 'https://openmicfinder.app/privacy' },
-  termsOfUse: { label: 'Terms of Use (EULA)', url: 'https://openmicfinder.app/terms' },
+  privacyPolicy: { label: 'Privacy Policy', url: 'https://stonedgoose.com/openmic/privacy' },
+  termsOfUse: { label: 'Terms of Use (EULA)', url: 'https://stonedgoose.com/openmic/terms' },
 } as const;
 
 async function defaultProbe(url: string): Promise<void> {

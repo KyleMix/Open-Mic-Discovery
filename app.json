@@ -13,7 +13,7 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
-      "associatedDomains": ["applinks:openmicfinder.app"],
+      "associatedDomains": ["applinks:stonedgoose.com"],
       "privacyManifests": {
         "NSPrivacyTracking": false,
         "NSPrivacyTrackingDomains": [],
@@ -132,8 +132,8 @@
           "data": [
             {
               "scheme": "https",
-              "host": "openmicfinder.app",
-              "pathPrefix": "/mic/"
+              "host": "stonedgoose.com",
+              "pathPrefix": "/openmic/mic/"
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]

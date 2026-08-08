@@ -6,7 +6,7 @@ submission, once on iOS and once on Android. The seeded demo accounts are
 in `REVIEW_NOTES.md`; the in-app test kit (tester accounts only, Profile
 tab) can rebuild any scenario listed in `docs/TEST_KIT.md`.
 
-Automated coverage backing this script: 493 Jest tests, 707 pgTAP
+Automated coverage backing this script: 493 Jest tests, 708 pgTAP
 assertions, and three Maestro flows (discovery, signup, reviewer cold
 start) in CI. This script exists for what automation cannot judge: real
 devices, real network, and whether a screen reads sanely.
@@ -129,7 +129,7 @@ On a throwaway account with a signup and an avatar:
 2. Sign in with the deleted credentials. Expect: refused.
 3. Verify the avatar file is gone and the profile row is anonymized
    (pgTAP: `supabase/tests/deletion.test.sql` proves both paths).
-4. Web path: `openmicfinder.app/delete-account`, request a link for a
+4. Web path: `stonedgoose.com/openmic/delete-account`, request a link for a
    second throwaway. Expect: email arrives; the flow deletes the same way.
 
 ## 8. Robustness and accessibility sweep
@@ -155,7 +155,7 @@ On a throwaway account with a signup and an avatar:
 
 ## 9. Deep links
 
-1. Open `https://openmicfinder.app/mic/<seeded-id>` (domain must be
+1. Open `https://stonedgoose.com/openmic/mic/<seeded-id>` (domain must be
    deployed with the association files). Expect: app opens to the
    listing, cold or warm.
 2. `openmicexplorer://` scheme links (from a messaging app) resolve.

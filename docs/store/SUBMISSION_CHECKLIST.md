@@ -110,7 +110,7 @@ notes and demo-account plan in the repo root `REVIEW_NOTES.md`.
 ## Phase 4: Legal and web presence
 
 - [ ] Stand up the support inbox and finalize the address. Placeholder is
-      `support@openmicfinder.app` in `src/lib/support.ts` (DECISIONS_NEEDED
+      `support@stonedgoose.com` in `src/lib/support.ts` (DECISIONS_NEEDED
       item 11). If the address changes, update that file, both hostable
       pages, and the store listings. Someone must actually read it: the
       moderation target is 24 hours.

@@ -109,11 +109,29 @@ name is the only difference).
 `docs/COMPLIANCE.md` (updated), `docs/DATA-SAFETY.md`, `docs/ENV.md`,
 `docs/TEST-PLAN.md`, `docs/LAUNCH-CHECKLIST.md`.
 
+## Post-pass owner decisions, applied same day
+
+Asked and answered 2026-08-08 after the deliverables landed:
+
+- D4: submit WITHOUT the web moderation console; the audited in-app path
+  is the takedown mechanism, console comes after launch.
+- D3: the web presence lives at `stonedgoose.com/openmic`. Sweep applied
+  in one change: `app.json` associated domains and intent filter (host
+  `stonedgoose.com`, path `/openmic/mic/`), `web/.well-known` AASA
+  components, new `src/app/+native-intent.tsx` stripping the `/openmic`
+  prefix from incoming links, share URLs, legal link URLs, the support
+  constant (`support@stonedgoose.com`), the deletion page and Edge
+  Function defaults, and EULA 1.3 (migration
+  `20260808000200_eula_web_home.sql`, the two address lines only, with
+  the eula pgTAP test extended; 708 assertions pass). The deploy target
+  moved accordingly in DEPLOY_WEB.md and LAUNCH-CHECKLIST.md: association
+  files at the domain root, app pages under `/openmic/`.
+
 ## Open decisions (implemented as single points of change)
 
 1. Support inbox: `SUPPORT_EMAIL` constant in `src/lib/support.ts`
-   (already a constant; unchanged placeholder value, D1 in
-   LAUNCH-CHECKLIST).
+   (already a constant; now `support@stonedgoose.com` per D3, and the
+   inbox still needs creating, D1 in LAUNCH-CHECKLIST).
 2. Stewardship badge RPC migration: committed as
    `20260804000100_discovery_stewardship.sql`, still unapplied to any
    hosted project by design; apply notes are D2 in LAUNCH-CHECKLIST. The
