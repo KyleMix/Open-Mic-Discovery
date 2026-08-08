@@ -304,8 +304,16 @@ max_enrolled_factors = 10
 
 # Control MFA via App Authenticator (TOTP)
 [auth.mfa.totp]
-enroll_enabled = false
-verify_enabled = false
+# On, because the console requires AAL2 (S3) and step-up reauthentication (S8),
+# and the project is on the Pro plan where Supabase provides TOTP. This file
+# configures the LOCAL stack only: the hosted project is switched on in the
+# dashboard under Authentication.
+#
+# Enrollment is opt-in and the mobile app never asks, so an ordinary user is
+# unaffected. Database enforcement is a separate switch that ships off, see
+# admin.security_settings.require_aal2 and docs/admin/RUNBOOK.md.
+enroll_enabled = true
+verify_enabled = true
 
 # Configure MFA via Phone Messaging
 [auth.mfa.phone]

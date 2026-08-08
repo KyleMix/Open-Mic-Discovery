@@ -139,6 +139,77 @@ Two routes, in order of preference.
 
 ---
 
+## 2a. Turn on two factor enforcement
+
+**This is outstanding work, not a procedure for an emergency.** The machinery
+landed in `20260807001700` switched off, because requiring AAL2 before anybody has
+enrolled a factor locks out every admin at once. Until the flag is on, S3 and S8
+are built and not in force. Do this once, in this order.
+
+**Step 1. Switch TOTP on for the hosted project.** Supabase dashboard,
+Authentication. `supabase/config.toml` covers the local stack only, so editing it
+proves nothing about production. The project is on the Pro plan, which is where
+Supabase puts MFA.
+
+**Step 2. Enrol a factor on the owner account, and verify it.** An authenticator
+app on a phone you will still have next year. Do this before step 4, and keep the
+recovery arrangements somewhere that is not the same phone.
+
+**Step 3. Enrol every other admin.** Anyone without a factor loses access the
+moment step 4 runs. Check who that is:
+
+```sql
+select a.role, a.user_id, p.handle
+  from admin.admin_users a
+  join profiles p on p.id = a.user_id
+ where a.active;
+```
+
+**Step 4. Flip the switch.**
+
+```sql
+update admin.security_settings set require_aal2 = true, updated_at = now();
+```
+
+**Step 5. Confirm, from a real session rather than from SQL.** Sign in to the app
+as the owner without completing the MFA challenge and confirm the moderation
+screen shows nothing. Complete the challenge and confirm it fills in again.
+
+### If that locks you out
+
+One statement, as the database superuser from the SQL editor:
+
+```sql
+update admin.security_settings set require_aal2 = false, updated_at = now();
+```
+
+Access returns immediately, with no session to re-establish and no token to wait
+out. That escape is why the flag is a table row rather than something compiled in,
+and it is verified by an assertion in `supabase/tests/aal2-step-up.test.sql`.
+
+### What each of the two gates does once it is on
+
+- **AAL2 (S3).** Folded into `private.is_admin()` and
+  `private.is_admin_reader()`, so all 29 admin policies inherit it with no policy
+  of their own to check. An AAL1 admin session reads what a stranger reads and
+  writes what a stranger writes: nothing. It reaches further than the console:
+  `moderate_content` asks the same predicate, so the in-app moderation screen also
+  needs a completed challenge.
+- **Step-up (S8).** A fresh challenge within five minutes, required for applying
+  a suspension or a ban and for anything that changes who can reach the console.
+  A warning does not need one, because making the cheapest action the most
+  annoying is how people stop warning anybody. The window is hard-coded in
+  `admin.step_up_window()` rather than being a setting, since a configurable
+  security window only ever gets turned one way.
+
+One assumption in this chain could not be tested from a development environment:
+the exact `method` string Supabase writes into the `amr` claim after a TOTP
+challenge. `admin.mfa_methods()` holds the accepted set (`totp`, `mfa/totp`) in
+one place for that reason. **Step 5 is what proves it.** If a fresh challenge
+still fails step-up, that function is the one edit needed.
+
+---
+
 ## 3. If a key leaks
 
 Which key it is changes everything, so identify it first.
