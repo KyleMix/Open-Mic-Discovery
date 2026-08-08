@@ -78,7 +78,7 @@ says "openmicfinder" bundle ids in places), THIS file is current.
   us-west (closest to your users).
 - Apply the schema: with the Supabase CLI logged in,
   `npx supabase link --project-ref <ref>` then `npx supabase db push`
-  (runs all 72 migrations in order, including the stewardship one, D2, and
+  (runs all 71 migrations in order, including the stewardship one, D2, and
   this pass's audit migration).
 - Then, in the dashboard:
   - Storage: create public buckets `avatars` and `posters` if `db push`
@@ -100,9 +100,26 @@ says "openmicfinder" bundle ids in places), THIS file is current.
     Edge Function.
   - Edge Functions: `npx supabase functions deploy deletion-request` and
     `npx supabase functions deploy push-sender`.
-- Seed reviewer data: run `supabase/seed.sql` against the project (SQL
-  editor or `psql`), then change the demo account passwords and record
-  them in `REVIEW_NOTES.md`.
+- Seed reviewer data, in this order (do NOT run `supabase/seed.sql`
+  against production; its own header forbids it, because its passwords are
+  published in this repo and it puts two accounts on the admin allowlist):
+  1. Install a preview build pointed at production, sign up two accounts
+     through the app itself (`reviewer.performer@` and
+     `reviewer.producer@` on your domain), accept the EULA, finish
+     onboarding, and pick the performer and producer roles respectively.
+     Passwords are yours; they go in App Store Connect review notes and
+     your password manager, never in git.
+  2. Run the content seed with those addresses:
+     `psql "$PRODUCTION_DATABASE_URL" -v performer_email="'reviewer.performer@stonedgoose.com'" -v producer_email="'reviewer.producer@stonedgoose.com'" -f supabase/seed/production-reviewer-seed.sql`
+     It creates 8 venues and 10 listings (4 owned by the reviewer
+     producer, all four signup methods represented), refuses to run if
+     either account is missing, and is safe to re-run.
+  3. Confirm nights exist, which is what a reviewer actually sees:
+     `select count(*) from mic_occurrences o join mic_series s on s.id=o.series_id where s.id::text like '5eed%' and o.starts_at > now();`
+     A fresh run produces roughly 100. Zero means
+     `private.generate_occurrences()` has not run yet.
+  4. Record the two addresses and passwords in `REVIEW_NOTES.md`, replacing
+     the local-only demo table.
 - What to paste back: project URL and anon key into EAS env vars (step 6
   commands), nothing into the repo.
 - Cost: from 25 USD per month. Time: an afternoon.

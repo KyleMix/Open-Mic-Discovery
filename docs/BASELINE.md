@@ -59,7 +59,7 @@ src/
   theme/               tokens
   types/               database.types.ts (generated Supabase types)
 supabase/
-  migrations/          71 migrations, 20260728000100 .. 20260807001700
+  migrations/          69 migrations, 20260728000100 .. 20260807001700
   tests/               40 pgTAP files, 713 planned assertions
   functions/           deletion-request, push-sender (Deno edge functions)
   seed.sql             demo data incl. reviewer accounts
