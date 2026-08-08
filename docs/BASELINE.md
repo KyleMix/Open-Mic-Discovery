@@ -11,17 +11,17 @@ and documents rather than rescues, and the defect list reflects that.
 
 ## Naming inventory (asked for explicitly in the brief)
 
-| Where | Value |
-| --- | --- |
-| GitHub repo | `KyleMix/Open-Mic-Discovery` |
-| Product name, `app.json` `expo.name` | `Open Mic Explorer` |
-| npm package name | `openmicexplorer` |
-| Expo slug | `openmic` |
-| URL scheme | `openmicexplorer` |
-| iOS bundle identifier | `com.openmicexplorer.app` |
-| Android package | `com.openmicexplorer.app` |
-| Web domain (applinks, deletion page, support email) | `openmicfinder.app` |
-| Support email constant | `support@openmicfinder.app` (placeholder, decision 11 in DECISIONS_NEEDED.md) |
+| Where                                               | Value                                                                         |
+| --------------------------------------------------- | ----------------------------------------------------------------------------- |
+| GitHub repo                                         | `KyleMix/Open-Mic-Discovery`                                                  |
+| Product name, `app.json` `expo.name`                | `Open Mic Explorer`                                                           |
+| npm package name                                    | `openmicexplorer`                                                             |
+| Expo slug                                           | `openmic`                                                                     |
+| URL scheme                                          | `openmicexplorer`                                                             |
+| iOS bundle identifier                               | `com.openmicexplorer.app`                                                     |
+| Android package                                     | `com.openmicexplorer.app`                                                     |
+| Web domain (applinks, deletion page, support email) | `openmicfinder.app`                                                           |
+| Support email constant                              | `support@openmicfinder.app` (placeholder, decision 11 in DECISIONS_NEEDED.md) |
 
 Flags, no silent renames made:
 
@@ -75,19 +75,19 @@ marketing/             feature overview + screenshots
 
 ## Runtime config summary
 
-| Item | Value |
-| --- | --- |
-| Expo SDK | 57 (`expo@57.0.9` installed) |
-| React Native | 0.86.2 (prebuild recommends 0.86.0; patch drift only) |
-| React | 19.2.3 |
-| TypeScript | 6.0.3, `strict: true` already enabled |
-| Package manager | npm (package-lock.json committed), npm 10.9.7 |
-| Node | v22.22.2 (CI pins 22) |
-| Router | expo-router 57.0.9, typed routes on, React Compiler on |
-| Reanimated / worklets | 4.5.1 / 0.10.1 (the pinned pair from ARCHITECTURE.md) |
-| EAS | eas.json present: development, preview, testflight, production profiles; `appVersionSource: remote`; project id b44e6a07-5276-481b-9679-8e3e1e681692, owner kylem_ix |
-| Config file | `app.json` (static; no app.config.ts) |
-| New-arch flags | targetSdk/compileSdk 36, iOS deployment target 16.4, privacy manifest inline in app.json |
+| Item                  | Value                                                                                                                                                                |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Expo SDK              | 57 (`expo@57.0.9` installed)                                                                                                                                         |
+| React Native          | 0.86.2 (prebuild recommends 0.86.0; patch drift only)                                                                                                                |
+| React                 | 19.2.3                                                                                                                                                               |
+| TypeScript            | 6.0.3, `strict: true` already enabled                                                                                                                                |
+| Package manager       | npm (package-lock.json committed), npm 10.9.7                                                                                                                        |
+| Node                  | v22.22.2 (CI pins 22)                                                                                                                                                |
+| Router                | expo-router 57.0.9, typed routes on, React Compiler on                                                                                                               |
+| Reanimated / worklets | 4.5.1 / 0.10.1 (the pinned pair from ARCHITECTURE.md)                                                                                                                |
+| EAS                   | eas.json present: development, preview, testflight, production profiles; `appVersionSource: remote`; project id b44e6a07-5276-481b-9679-8e3e1e681692, owner kylem_ix |
+| Config file           | `app.json` (static; no app.config.ts)                                                                                                                                |
+| New-arch flags        | targetSdk/compileSdk 36, iOS deployment target 16.4, privacy manifest inline in app.json                                                                             |
 
 No workspaces: `package.json` declares none, and there is no second app
 package in the repo (see the moderation console finding below).
@@ -97,23 +97,23 @@ package in the repo (see the moderation console finding below).
 Auth gate lives in `src/app/_layout.tsx` (AuthGate). Unauthenticated users can
 browse discovery read-only; writes prompt sign-in.
 
-| Route | Reachable by |
-| --- | --- |
-| (auth)/sign-in, sign-up, forgot-password, reset-password | unauthenticated |
-| (auth)/onboarding, eula | authenticated, pre-acceptance |
-| (tabs)/index Discover | everyone (guest browse allowed) |
-| (tabs)/favorites | authenticated, both roles |
-| (tabs)/going | authenticated, performer-leaning, both roles see it |
-| (tabs)/producer My Mics | authenticated; content varies by producer role |
-| (tabs)/profile | authenticated |
-| mic/[id] | everyone (guest browse) |
-| producer/[id] (public producer page) | everyone |
-| producer/new, analytics/[id], credits/[id], live/[occ], night/[occ] | producer role |
-| admin | accounts with `profiles.is_admin` (hidden otherwise) |
-| settings, edit-profile, notification-prefs | authenticated |
-| privacy, terms | everyone, including at the EULA gate |
-| auth-callback | deep link target for auth flows |
-| test-kit | tester accounts only, server-gated, off by default (migration 20260807000400) |
+| Route                                                               | Reachable by                                                                  |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| (auth)/sign-in, sign-up, forgot-password, reset-password            | unauthenticated                                                               |
+| (auth)/onboarding, eula                                             | authenticated, pre-acceptance                                                 |
+| (tabs)/index Discover                                               | everyone (guest browse allowed)                                               |
+| (tabs)/favorites                                                    | authenticated, both roles                                                     |
+| (tabs)/going                                                        | authenticated, performer-leaning, both roles see it                           |
+| (tabs)/producer My Mics                                             | authenticated; content varies by producer role                                |
+| (tabs)/profile                                                      | authenticated                                                                 |
+| mic/[id]                                                            | everyone (guest browse)                                                       |
+| producer/[id] (manage a series you own)                             | producer role, owner of that series                                           |
+| producer/new, analytics/[id], credits/[id], live/[occ], night/[occ] | producer role                                                                 |
+| admin                                                               | accounts with `profiles.is_admin` (hidden otherwise)                          |
+| settings, edit-profile, notification-prefs                          | authenticated                                                                 |
+| privacy, terms                                                      | everyone, including at the EULA gate                                          |
+| auth-callback                                                       | deep link target for auth flows                                               |
+| test-kit                                                            | tester accounts only, server-gated, off by default (migration 20260807000400) |
 
 ## Supabase surface referenced by code
 
@@ -157,16 +157,16 @@ grep -rnoE "\.(from|rpc)\('[a-z_]+'" src --include='*.ts' --include='*.tsx' | gr
 
 ## Environment variables read anywhere in code
 
-| Variable | Read in | Purpose |
-| --- | --- | --- |
-| EXPO_PUBLIC_SUPABASE_URL | src/lib/env.ts | backend URL, required, throws if unset |
-| EXPO_PUBLIC_SUPABASE_ANON_KEY | src/lib/env.ts | anon key, required, throws if unset |
-| EXPO_PUBLIC_SENTRY_DSN | src/lib/sentry.ts | crash reporting, inert when unset |
-| EXPO_PUBLIC_IMAGE_TRANSFORMS_ENABLED | src/lib/image-url.ts | Storage render endpoint flag, off unless exactly "true" |
-| EXPO_PUBLIC_AGE_SIGNAL_ENABLED | src/features/auth/ageSignal.ts | platform age signal, flagged off |
-| CODESPACES, CODESPACE_NAME, GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN | scripts/dev | local dev URL rewriting only |
-| TZ, OPENMIC_TEST_TZ | test harness | deterministic test timezones |
-| SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY | supabase/functions (Deno env) | server side only, injected by Supabase, never in the app bundle |
+| Variable                                                             | Read in                        | Purpose                                                         |
+| -------------------------------------------------------------------- | ------------------------------ | --------------------------------------------------------------- |
+| EXPO_PUBLIC_SUPABASE_URL                                             | src/lib/env.ts                 | backend URL, required, throws if unset                          |
+| EXPO_PUBLIC_SUPABASE_ANON_KEY                                        | src/lib/env.ts                 | anon key, required, throws if unset                             |
+| EXPO_PUBLIC_SENTRY_DSN                                               | src/lib/sentry.ts              | crash reporting, inert when unset                               |
+| EXPO_PUBLIC_IMAGE_TRANSFORMS_ENABLED                                 | src/lib/image-url.ts           | Storage render endpoint flag, off unless exactly "true"         |
+| EXPO_PUBLIC_AGE_SIGNAL_ENABLED                                       | src/features/auth/ageSignal.ts | platform age signal, flagged off                                |
+| CODESPACES, CODESPACE_NAME, GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN | scripts/dev                    | local dev URL rewriting only                                    |
+| TZ, OPENMIC_TEST_TZ                                                  | test harness                   | deterministic test timezones                                    |
+| SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY                              | supabase/functions (Deno env)  | server side only, injected by Supabase, never in the app bundle |
 
 `.env.example` documents each client variable and where its value comes from.
 

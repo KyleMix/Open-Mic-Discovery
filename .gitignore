@@ -45,3 +45,4 @@ example
 # local env
 .env
 .expo-ci-export/
+play-service-account.json
