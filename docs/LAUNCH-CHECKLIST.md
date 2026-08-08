@@ -43,6 +43,11 @@ says "openmicfinder" bundle ids in places), THIS file is current.
   24-hour requirement. The console gets built after launch on the
   already-shipped database layer.
 
+**Long-form version of steps 1 to 5:** `docs/FIRST-FIVE-WALKTHROUGH.md`,
+which adds the exact forms, values, and traps, and notes the one thing that
+reorders the list (both stores need a D-U-N-S number, one serves both, and
+it takes up to five days).
+
 ## 1. Apple Developer Program, as an organization
 
 - Do: enroll Stoned Goose Productions LLC at
