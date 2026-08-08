@@ -136,6 +136,8 @@ step 5, and it goes faster once you have screenshots.
 
 ---
 
+## Step 3: the two mailboxes on stonedgooseproductions.com
+
 The app and the EULA now name `support@stonedgooseproductions.com` and
 `legal@stonedgooseproductions.com`. Apple review does test the support address, and
 "mail delivered but nobody can reply from it" is a real failure mode, so
