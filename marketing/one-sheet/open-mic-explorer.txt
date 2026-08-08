@@ -1,0 +1,244 @@
+        OPEN MIC EXPLORER
+
+
+
+
+Find a mic.
+Get on the list.
+Music, comedy, and poetry open mics
+on one map, with the signup list built
+right in. Free for everyone, with nothing
+locked behind a purchase.
+
+
+   Every discipline is first class: the only app
+   that maps all three scenes together.
+
+   Listings show when the host last confirmed
+   them, so stale mics cannot hide.
+
+   From "what is on tonight" to "I am on the
+   list" without leaving the app.
+
+   One account plays both sides: perform on
+   Tuesday, host on Wednesday.
+
+
+
+
+Feature overview                                   August 2026
+What is in the app
+Everything below is built, working, and f ree today.
+
+     DISCOVER
+
+
+  Three scenes, one map                                           Know it still runs
+  Music, comedy, and poetry nights together in one place          Every listing shows when its host last confirmed the
+  for the first time. Filter by what you perform, which day,      details: green for fresh, amber for aging, gray for
+  cost, distance in miles, and how you get on stage. Search       unconfirmed. No more driving across town for a mic that
+  any city, or look around right where you are standing.          quietly died last spring.
+
+
+
+  Every detail up f ront                                          Opens where you live
+  The schedule in plain words, the price, the set length, how     The app starts on your home neighborhood and pre-
+  many spots are left tonight, and who is featuring. Age          selects the kinds of mics you perform at. Your address
+  rules, sound system, parking, and one-tap directions are        stays private: it is never shown to other people, anywhere.
+  on the page before you commit your evening.
+
+
+     G ET ON ST AG E
+
+  Two taps to the list                                            Watch the night unf old
+  Sign up for a night straight from its listing, with a live      Your slot number updates live as the list moves. Your
+  count of the spots left. Walk-in lists confirm you instantly;   phone buz z es the moment you are drawn, promoted from
+  name-draw nights enter you in the drawing. The button           the waitlist, or up next. No more crowding the clipboard to
+  always tells you when signups open.                             see where you stand.
+
+
+
+  Every yes in one place                                          Never miss your night
+  The Going tab collects every night you said yes to, soonest     Star a mic and get reminded on the day it happens. Add
+  first: your slot, your draw entries, and your plans. On walk-   any night to your calendar in one tap. Turn on nearby
+  in nights, tapping "I am going" also tells the host how         alerts and hear about new mics the week they start up.
+  many people to expect.
+
+
+     RUN T HE NIG HT
+
+
+  List your mic in minutes                                        Freshness in one tap
+  Describe your night the way you would say it out loud:          A single tap confirms your listing is still accurate and
+  every Tuesday at 8. Add the venue, the cost, a poster, and      shows performers a green badge. Cancel one night with a
+  bill a featured artist for any night. Someone already listed    reason people actually see, or edit one night versus every
+  it? Claim it and take the keys.                                 future night; the app asks which you mean.
+
+
+
+  Run it live                                                     Know your room
+  Before doors: watch signups arrive, draw the lottery in the     Signups and turnout for every past night, so you can see
+  open, add walk-ins by name. During the show, Live mode          which weeks pack the room. Like everything else in the
+  is two numbers and one big button: who is on stage, a           app, analytics are free: there is no paid tier and nothing to
+  silent set timer that taps your hand at time, and who is        unlock.
+  up next.
+
+
+     T RUST , BUILT IN
+
+
+  A scene you can trust                                           Your data, your call
+  Report or block from any listing or list, and blocks are        Location is only used when you ask to search near
+  enforced everywhere, not just hidden. A moderation queue        yourself. Listings stay readable offline for one-bar
+  reviews everything within a day. Saw a wrong time or a          parking lots. Deleting your account takes two taps in
+  dead mic? Flag it in two taps.                                  settings and actually deletes it.
+
+Open Mic Explorer                                                                                                                 2
+  PRODUCER
+
+
+
+Running a mic, start to stage
+      Handoff: perform ers see or feel this m om ent        Handoff: created by a perform er's action
+
+
+  1       Create an account and switch on the Producer role.
+          Keep the Performer role too. One account covers both, because most hosts also perform.
+
+
+  2       Add your mic, or claim it if someone beat you to it.
+          Pick the venue on a map, set the schedule in plain words, choose how performers get on stage, add cost, set
+          length, and a featured artist when you have one. Claiming asks how we can verify you run the night.
+
+              Hando ff     The moment the lis ting is live, it appears on every nearby performer's map and lis t with your
+                           s chedule and s ignup rules .
+
+
+             Wat ch f or: claims wait on a human review before control trans fers , s o a claimed mic is not yours the
+             s ame minute you as k.
+
+
+  3       Tap Conf irm accurate whenever the details still hold.
+          One tap, stamped by the server so it cannot be faked or backdated.
+
+              Hando ff     Performers s ee "Confirmed 2 days ago" in green on your lis ting before they decide to come.
+
+
+  4       Watch the night f ill up bef ore doors.
+          Signups arrive with a live count of spots taken, and "I am going" plans tell you how many walk-ins to expect.
+
+              Hando ff     Every count is a performer who tapped "Sign me up" or "I am going" on your lis ting.
+
+
+  5       Open the list and set the running order.
+          Draw the lottery with a visible shuffle, add walk-ins by name, reorder the lineup, promote from the waitlist.
+          The draw locks once the show starts, so the order people were told is the order that holds.
+
+
+  6       Go live and run the show f rom one screen.
+          Live mode shows who is on stage, a silent set timer that taps your hand when time is up, and one button to
+          bring up the next performer. Marking a set done is what moves the night forward, so a handoff mid-show
+          costs nothing.
+
+              Hando ff     Tapping "Up next" buzzes that performer's phone: "You are on deck," wherever they are in the
+                           room.
+
+
+  7       Mark no-shows, end the show, or cancel a night when lif e happens.
+          Cancelling asks for a note, and the night can be restored if plans change back.
+
+              Hando ff     Everyone s igned up gets the cancellation and your reas on immediately, on the lis ting and by
+                           pus h.
+
+
+  8       Check turnout in analytics, then do it again next week.
+          Signups and turnout per night, free like everything else in the app.
+
+
+Open Mic Explorer                                                                                                            3
+  PERFORMER
+
+
+
+From couch to stage
+      Handoff: your action lands on the host's screen            Handoff: created by the host's action
+
+
+  1       Open the app and just browse. No account needed.
+          Every mic near you is visible immediately: map, list, search, and full listing details.
+
+
+  2       Make an account when you are ready to get on a list.
+          Pick Performer, choose what you perform, and set your home area. That area stays private; it only aims the
+          map.
+
+
+  3       See what is on tonight, near you, in your discipline.
+          Discover opens on your neighborhood with your disciplines pre-selected. Today and Weekend narrow it to
+          nights you can actually make.
+
+
+  4       Open a listing and size up the night bef ore you go.
+          Plain-words schedule, cost, set length, spots left, who is featuring, age rules, parking, directions, and how the
+          list works.
+
+              Hando ff     The fres hnes s badge you are trus ting is the hos t's one-tap confirmation, times tamped by the
+                           s erver.
+
+
+  5       Tap "Sign me up," or "I am going" f or walk-in nights.
+          Walk-in lists hand you a slot number on the spot. Name-draw nights put you in the drawing. Just planning
+          to show up? Saying you are going still counts you in.
+
+              Hando ff     Your name lands on the hos t's lis t the s econd you tap, and your "I am going" joins their
+                           expected headcount.
+
+
+             Wat ch f or: "Invite only" mics have no in-app s ignup by des ign; the lis ting points you to the hos t or venue
+             ins tead. Paid nights are s ettled at the venue, never in the app.
+
+
+  6       Watch your status change in real time.
+
+              Hando ff     Drawn in the lottery, promoted off the waitlis t, or up next: each is the hos t acting on their
+                           s creen, and each one buzzes your phone.
+
+
+  7       Check the Going tab on the day.
+          Every night you said yes to, soonest first, with your slot number and any cancellation before you head out.
+          Favorites remind you on the day, and any night drops into your calendar in one tap.
+
+
+  8       Build your history.
+          Every night you play stays on your profile, next to your photo and links. Your scene resume writes itself.
+
+
+
+
+Open Mic Explorer                                                                                                               4
+The app at night
+Dark by design: built for dim rooms, late sets, and one thumb.
+
+
+
+
+A list ing, sized up in seconds                Every yes in one place                        Live mode, mid-show
+Freshness, featured artist, spots left        Slots, draw entries, and plans             On stage now, silent timer, up next
+
+
+
+
+                                                C OMING S OON
+
+In progress and not yet live. Everything above this line ships in the current build.
+
+
+   Sign in with Apple and                  Public launch                               Cities beyond Seattle
+   Google                                  TestFlight and Play internal                Seattle is the first Open Mic
+   The buttons are built and               testing, then the App Store and             Explorer city. New scenes get
+   waiting on store credentials.           Google Play.                                seeded next, and any producer
+   Em ail sign-in works today.                                                         can list a m ic anywhere today.
+
+
+Open Mic Explorer                                                                                                          5
+
