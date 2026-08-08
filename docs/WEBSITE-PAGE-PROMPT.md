@@ -21,6 +21,12 @@ an announcement for a product that is not out yet. The relocation below
 keeps the content on the site and links it prominently from the page with
 the authority, which recovers much of that, but not all of it.
 
+The job is now three things, not one: repurpose the page, relocate the map,
+and stand up the five files both app stores require (privacy, terms,
+account deletion, and the two `.well-known` association files). The last of
+those was previously marked optional here; the owner asked for it, so it is
+not.
+
 Assets are on `main` in the app repo, fetchable without attaching anything:
 
 ```
@@ -48,6 +54,9 @@ After this change:
   app: the marketing one-sheet, and the fact that it is coming soon to the
   App Store and Google Play.
 - The map moves to /open-mics/map, intact.
+- Five files both app stores require go live on this domain: three pages
+  under /open-mics, and two association files at the domain root. Detailed
+  below under "Also required".
 
 Do NOT delete the map component, the content/open-mics collection, the
 submit dialog, the sync scripts, or any of the 85 records. This is a move,
@@ -165,48 +174,147 @@ out" capture is welcome. Do not build a form that posts nowhere.
 - Contact address if you need one: kyle@stonedgooseproductions.com. There is
   no support@ or legal@ alias; do not invent one.
 
-## Optional, only if you want it done in the same pass
+## Also required: the five store files
 
-Not needed for this announcement, required before the app is submitted to
-either store. Skip it and say so if you would rather keep this change
-small:
+These are not optional and not for later. Apple and Google both check them,
+and the app cannot be submitted until they are live on this domain.
 
-  $BASE/web/legal/privacy.md          -> /open-mics/privacy
-  $BASE/web/legal/terms.md            -> /open-mics/terms
-  $BASE/web/delete-account/index.html -> /open-mics/delete-account
-  $BASE/web/.well-known/apple-app-site-association -> DOMAIN ROOT
-  $BASE/web/.well-known/assetlinks.json            -> DOMAIN ROOT
+### The three pages
 
-The markdown files are generated in the app repo by `npm run legal:export`
-and carry a do-not-edit banner: render them, never rewrite them. The Apple
-file has no extension and must be served as application/json, which
-public/_headers already does for extensionless OG image routes. Both
-.well-known files still contain TODO_ placeholders for the Apple Team ID
-and Android fingerprints; leave them and tell me.
+| Fetch from the app repo | Serve at |
+| --- | --- |
+| `$BASE/web/legal/privacy.md` | `/open-mics/privacy` |
+| `$BASE/web/legal/terms.md` | `/open-mics/terms` |
+| `$BASE/web/delete-account/index.html` | `/open-mics/delete-account` |
+
+All three must be reachable with no login, no app install, and no
+JavaScript required to read the text. Google Play tests the deletion page.
+Apple tests the privacy link and the support contact.
+
+**The two markdown files are generated.** They are produced in the app repo
+by `npm run legal:export`, and each carries an HTML comment banner naming
+its source. The terms file is extracted from whichever EULA version the
+app's migrations publish, because the agreement lives in the database and
+the app renders it from there: if this page and that row disagree, the
+website is showing an agreement nobody accepted. So render them, never
+rewrite them, never fix a typo in them here. Keep the banner in the repo
+file and strip it from what visitors see. When the app repo regenerates
+them, re-fetch.
+
+Style them to match the site, but do not restructure the content, reorder
+sections, or summarize. The text is reviewed as it stands.
+
+### The deletion page has one behavior you must not "fix"
+
+`web/delete-account/index.html` reads its backend URL from a
+`data-function-url` attribute on `<body>`, which currently holds the
+placeholder `https://YOUR-PROJECT-REF.supabase.co/functions/v1/deletion-request`.
+While that value is unset or still a placeholder, the page deliberately
+disables its form and says why.
+
+That is not a bug and it is not an unfinished state to tidy up. It exists
+so a half-finished deployment fails visibly, instead of silently accepting
+someone's email address for a deletion request that goes nowhere. Preserve
+it exactly, whether you port the page into a Next route or serve the HTML
+as-is.
+
+Leave the placeholder in place. I will supply the real Supabase project
+reference. Tell me where you put the attribute so I know what to edit.
+
+### The two domain-root files
+
+| Fetch from the app repo | Serve at |
+| --- | --- |
+| `$BASE/web/.well-known/apple-app-site-association` | `/.well-known/apple-app-site-association` |
+| `$BASE/web/.well-known/assetlinks.json` | `/.well-known/assetlinks.json` |
+
+**At the domain root, not under /open-mics.** This is not negotiable and
+not a convention: it is where iOS and Android look, and nowhere else.
+`public/.well-known/` is the right home given `output: "export"`. Confirm
+the files actually appear in `out/.well-known/` after a build, because a
+dot-directory under `public/` is exactly the kind of thing a bundler
+quietly skips.
+
+`apple-app-site-association` has **no file extension** and must be served
+as `Content-Type: application/json`, with no redirect in front of it. This
+repo already solves this exact class of problem: `public/_headers` forces
+`Content-Type: image/png` on extensionless OG image routes. Add a rule in
+the same spirit, and mirror it in `vercel.json` the way the existing
+redirects are mirrored, so both hosts behave identically.
+
+Do not rename either file, do not add `.json` to the Apple one, and do not
+pretty-print or reformat their contents.
+
+### The placeholders in them are mine to fill
+
+Both files contain `TODO_` values I have to supply from accounts that do
+not exist yet:
+
+- `apple-app-site-association`: `TODO_TEAM_ID`, my Apple Developer Team ID.
+- `assetlinks.json`: `TODO_SHA256_CERT_FINGERPRINT`, the Android signing
+  certificate fingerprint.
+
+Leave them exactly as they are. Do not invent, guess, or generate
+placeholder-looking values that could pass for real. Tell me the file path
+and line for each so I can paste mine in.
+
+Deep links will not verify until those are real. That is expected right
+now, and it is not a reason to hold the rest of this work.
 
 ## Verify before claiming done
 
-Build the site and confirm in the built output:
+Build the site and check the BUILT OUTPUT, not the dev server. Several of
+these can pass in dev and fail in a static export.
+
+The page work:
 
 - /open-mics/map renders all 85 mics, the map works, the submit dialog
   works, and the ItemList schema is present there.
 - /open-mics is the app page, links clearly to the map, and reads cleanly
   at a 390px viewport without pinch zoom.
-- No route still expects a map at /open-mics. Grep the repo for
-  "/open-mics" and account for every hit.
+- No route still expects a map at /open-mics. Grep for "/open-mics" and
+  account for every hit.
 - The PDF downloads and opens.
+
+The store files:
+
+- /open-mics/privacy, /open-mics/terms, and /open-mics/delete-account all
+  resolve and show the right content, with JavaScript disabled for the text.
+- The delete-account form is still disabled, with its explanation visible,
+  because the function URL is still a placeholder. If the form is
+  submittable, you broke the safety behavior.
+- `out/.well-known/` exists and contains both files after a build. Check
+  the directory literally; do not assume public/ copied it.
+- `apple-app-site-association` is served with `Content-Type:
+  application/json`, has no extension, and is not redirected. Verify with a
+  real request against the built output, for example
+  `curl -sI localhost:PORT/.well-known/apple-app-site-association`, and
+  paste the status line and content type into your summary.
+- Both files still contain their TODO_ placeholders, unmodified.
+
+The repo:
+
 - `npm run typecheck`, `npm run lint`, `npm test`, and content:validate all
   pass.
 - Lighthouse on both routes has not regressed.
 
 ## Deliver
 
-1. The implementation, in logical commits, no force pushes. Keep the move
-   and the new page as separate commits so either can be reverted alone.
+1. The implementation, in logical commits, no force pushes. Keep the map
+   move, the announcement page, and the store files as separate commits so
+   any one can be reverted alone.
 2. A list of every internal link, sitemap entry, and piece of metadata you
    changed for the move, so I can check nothing was missed.
-3. Say explicitly whether you did the optional legal routes or skipped them.
+3. The exact file path and line for each thing I have to fill in myself:
+   the `data-function-url` attribute, `TODO_TEAM_ID`, and
+   `TODO_SHA256_CERT_FINGERPRINT`.
+4. The curl output proving the Apple file's content type.
 
 Ask before building if anything is genuinely ambiguous. In particular, if
 following this would mean deleting mic content, stop and ask.
+
+Do not report the store files as done on the strength of having created
+them. Apple and Google fetch these over HTTP and judge what comes back, so
+"the file is in the repo" and "the file is served correctly" are different
+claims, and only the second one counts.
 ```
