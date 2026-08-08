@@ -1,4 +1,4 @@
-# Deploying the web pieces (stonedgoose.com/openmic)
+# Deploying the web pieces (www.stonedgooseproductions.com/open-mics)
 
 The `web/` directory holds the small static site that store compliance requires.
 Nothing in it has a build step: every file deploys as-is to any static host
@@ -6,18 +6,18 @@ Nothing in it has a build step: every file deploys as-is to any static host
 
 ## What must live where
 
-| URL                                              | File in repo                                                                                   | Why                                                                                      |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `https://stonedgoose.com/openmic/delete-account` | `web/delete-account/index.html`                                                                | Google Play web deletion requirement. Linked from the Play Data Safety form.             |
-| `https://stonedgoose.com/openmic/privacy`        | TODO(owner): host the privacy policy here                                                      | Linked from the paywall (Apple 3.1.2), the delete-account page, and both store listings. |
-| `https://stonedgoose.com/openmic/terms`          | TODO(owner): host the EULA text here (same text as the in-app `eula_versions` current version) | Linked from the paywall (Apple 3.1.2).                                                   |
+| URL                                                               | File in repo                                                                                   | Why                                                                                      |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `https://www.stonedgooseproductions.com/open-mics/delete-account` | `web/delete-account/index.html`                                                                | Google Play web deletion requirement. Linked from the Play Data Safety form.             |
+| `https://www.stonedgooseproductions.com/open-mics/privacy`        | TODO(owner): host the privacy policy here                                                      | Linked from the paywall (Apple 3.1.2), the delete-account page, and both store listings. |
+| `https://www.stonedgooseproductions.com/open-mics/terms`          | TODO(owner): host the EULA text here (same text as the in-app `eula_versions` current version) | Linked from the paywall (Apple 3.1.2).                                                   |
 
 The page must be reachable with no login and no app install.
 
 ## Deploying the delete-account page
 
 1. Deploy the `web/` directory so `web/delete-account/index.html` serves at
-   `https://stonedgoose.com/openmic/delete-account` (and `/delete-account/`).
+   `https://www.stonedgooseproductions.com/open-mics/delete-account` (and `/delete-account/`).
 2. Deploy the Edge Function from the repo root:
 
    ```sh
@@ -30,8 +30,8 @@ The page must be reachable with no login and no app install.
 3. Set the function secrets:
 
    ```sh
-   supabase secrets set ALLOWED_ORIGIN=https://stonedgoose.com
-   supabase secrets set DELETE_PAGE_URL=https://stonedgoose.com/openmic/delete-account/
+   supabase secrets set ALLOWED_ORIGIN=https://www.stonedgooseproductions.com
+   supabase secrets set DELETE_PAGE_URL=https://www.stonedgooseproductions.com/open-mics/delete-account/
    supabase secrets set RATE_LIMIT_SALT=<any long random string>
    ```
 
@@ -60,11 +60,11 @@ The page must be reachable with no login and no app install.
    step 4 is not done.
 
 6. In the Supabase dashboard under Authentication, Redirect URLs, add
-   `https://stonedgoose.com/openmic/delete-account/` so the magic link may land there.
+   `https://www.stonedgooseproductions.com/open-mics/delete-account/` so the magic link may land there.
 7. Verify end to end with a throwaway account: request the link from the page,
    open it, confirm, then check that signing in fails and the profile row shows
    "Deleted user".
-8. Enter `https://stonedgoose.com/openmic/delete-account` in the Play Console Data
+8. Enter `https://www.stonedgooseproductions.com/open-mics/delete-account` in the Play Console Data
    Safety form under account deletion.
 
 ## How the deletion flow works
@@ -86,7 +86,7 @@ The page must be reachable with no login and no app install.
 
 ## Universal Links and App Links
 
-`https://stonedgoose.com/openmic/mic/<id>` opens the app's mic page when the app
+`https://www.stonedgooseproductions.com/open-mics/mic/<id>` opens the app's mic page when the app
 is installed. Config: `associatedDomains` and the autoVerify `intentFilters`
 entry in `app.json`; Expo Router serves the `/mic/[id]` route from any cold
 start. `src/lib/linking.test.ts` keeps config, route, and well-known files
@@ -94,9 +94,9 @@ in agreement.
 
 Deploy both files from `web/.well-known/` at the domain root:
 
-- `https://stonedgoose.com/.well-known/apple-app-site-association`
+- `https://www.stonedgooseproductions.com/.well-known/apple-app-site-association`
   (content type `application/json`, no redirect, no file extension)
-- `https://stonedgoose.com/.well-known/assetlinks.json`
+- `https://www.stonedgooseproductions.com/.well-known/assetlinks.json`
 
 ### Values the owner must fill in (after EAS credentials exist)
 
@@ -112,12 +112,12 @@ Deploy both files from `web/.well-known/` at the domain root:
 ### Manual verification procedure
 
 1. After deploying both files, check
-   `curl -i https://stonedgoose.com/.well-known/apple-app-site-association`
+   `curl -i https://www.stonedgooseproductions.com/.well-known/apple-app-site-association`
    returns 200, JSON, no redirect; same for `assetlinks.json`.
 2. Validate Android with
    `https://developers.google.com/digital-asset-links/tools/generator`.
 3. Install a release build on each platform. Kill the app. Open
-   `https://stonedgoose.com/openmic/mic/<seeded id>` from Notes (iOS) or a chat
+   `https://www.stonedgooseproductions.com/open-mics/mic/<seeded id>` from Notes (iOS) or a chat
    app (Android); the app must open directly to that mic's detail screen.
 4. Android: `adb shell pm get-app-links com.openmicexplorer.app` must show
    the domain as `verified`.

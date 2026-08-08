@@ -115,17 +115,17 @@ Asked and answered 2026-08-08 after the deliverables landed:
 
 - D4: submit WITHOUT the web moderation console; the audited in-app path
   is the takedown mechanism, console comes after launch.
-- D3: the web presence lives at `stonedgoose.com/openmic`. Sweep applied
+- D3: the web presence lives at `www.stonedgooseproductions.com/open-mics`. Sweep applied
   in one change: `app.json` associated domains and intent filter (host
-  `stonedgoose.com`, path `/openmic/mic/`), `web/.well-known` AASA
-  components, new `src/app/+native-intent.tsx` stripping the `/openmic`
+  `www.stonedgooseproductions.com`, path `/open-mics/mic/`), `web/.well-known` AASA
+  components, new `src/app/+native-intent.tsx` stripping the `/open-mics`
   prefix from incoming links, share URLs, legal link URLs, the support
-  constant (`support@stonedgoose.com`), the deletion page and Edge
+  constant (`support@stonedgooseproductions.com`), the deletion page and Edge
   Function defaults, and EULA 1.3 (migration
   `20260808000200_eula_web_home.sql`, the two address lines only, with
   the eula pgTAP test extended; 708 assertions pass). The deploy target
   moved accordingly in DEPLOY_WEB.md and LAUNCH-CHECKLIST.md: association
-  files at the domain root, app pages under `/openmic/`.
+  files at the domain root, app pages under `/open-mics/`.
 
 ## Correction, 2026-08-08 (found while writing the owner walkthrough)
 
@@ -149,10 +149,45 @@ Two things the pass got wrong and fixed:
   named refusal for an unknown account. LAUNCH-CHECKLIST step 3 rewritten
   around it.
 
+## Domain, final: www.stonedgooseproductions.com/open-mics
+
+The owner supplied the real page URL after the first sweep, and it differs
+in both host and path from the interim `stonedgoose.com/openmic`. Swept
+again across 29 files: `app.json` (associated domain
+`applinks:www.stonedgooseproductions.com`, intent filter host and
+`/open-mics/mic/` prefix), the AASA components, `+native-intent.tsx`,
+share and legal URLs, the deletion page, the Edge Function origin and page
+defaults, `config.toml`, the reviewer seed example addresses, and every
+doc.
+
+Support and legal addresses moved to the same domain:
+`support@stonedgooseproductions.com` and
+`legal@stonedgooseproductions.com`.
+
+EULA 1.3 (`20260808000200_eula_web_home.sql`) was corrected in place rather
+than superseded by a 1.4. The repo's rule is that published versions are
+never rewritten because `profiles.eula_version` references them and they
+are the exact text people accepted; that rule protects 1.0 through 1.2,
+which are applied. 1.3 has never been applied to any hosted project (there
+is no production project yet), so no one has accepted it and there is no
+row referencing it. Shipping a 1.3 naming a URL that never existed, then a
+1.4 correcting it, would have put a version in the acceptance history that
+was wrong for its entire life.
+
+Deep links stay fully enabled: the owner confirmed they control files at
+the domain root, which is where `/.well-known/apple-app-site-association`
+and `/.well-known/assetlinks.json` must be served (not under the
+`/open-mics` subpath). Only the `www` host is declared, matching the
+canonical URL and what share links emit; the apex should redirect to it.
+
+Verified after the sweep: typecheck, lint, 493 Jest tests, 708 pgTAP
+assertions on a rebuilt database (EULA 1.3 text confirmed by query),
+prettier, and `expo prebuild`.
+
 ## Open decisions (implemented as single points of change)
 
 1. Support inbox: `SUPPORT_EMAIL` constant in `src/lib/support.ts`
-   (already a constant; now `support@stonedgoose.com` per D3, and the
+   (already a constant; now `support@stonedgooseproductions.com` per D3, and the
    inbox still needs creating, D1 in LAUNCH-CHECKLIST).
 2. Stewardship badge RPC migration: committed as
    `20260804000100_discovery_stewardship.sql`, still unapplied to any

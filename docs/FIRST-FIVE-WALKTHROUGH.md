@@ -13,7 +13,7 @@ stores**. Nothing else in this list is blocked by anything except this.
 
 There is a second, smaller ordering fact: Apple's organization enrollment
 asks for a **publicly reachable company website** and will look at it. So
-`stonedgoose.com` should resolve to something real before you submit the
+`www.stonedgooseproductions.com` should resolve to something real before you submit the
 enrollment form, even if it is one page. That is a few minutes of work
 (step 3 sets up the domain anyway) but it is unpleasant to discover
 halfway through the Apple form.
@@ -21,7 +21,7 @@ halfway through the Apple form.
 So the true order is:
 
 ```
-Day 1 morning:  request D-U-N-S, put a real page on stonedgoose.com
+Day 1 morning:  request D-U-N-S, put a real page on www.stonedgooseproductions.com
 Day 1 afternoon: Supabase project (step 4), Maps key (step 5), email (step 3)
 Day 1 to 5:     wait on D-U-N-S
 D-U-N-S in hand: Apple enrollment (step 1), Play account (step 2), both same day
@@ -54,7 +54,7 @@ calendar.
   as they appear on the D-U-N-S record. You will type those three things
   into two more forms and they must match character for character.
 
-While waiting, put something real at `https://stonedgoose.com`: a single
+While waiting, put something real at `https://www.stonedgooseproductions.com`: a single
 page naming the company and linking to the app is enough for both Apple's
 review and your own store listings.
 
@@ -87,7 +87,7 @@ authority to bind the LLC (Apple asks you to confirm this and may verify).
    - Capabilities to tick: **Sign in with Apple** and **Associated
      Domains**. Both are required by this app: Apple sign-in is in
      `src/app/(auth)/sign-in.tsx`, and associated domains are what make
-     `stonedgoose.com/openmic/mic/...` open the app.
+     `www.stonedgooseproductions.com/open-mics/mic/...` open the app.
 7. Note your **Team ID** (top right of the developer account page, a
    10-character string).
 
@@ -136,22 +136,22 @@ step 5, and it goes faster once you have screenshots.
 
 ---
 
-## Step 3: the two mailboxes on stonedgoose.com
+## Step 3: the two mailboxes on www.stonedgooseproductions.com
 
-The app and the EULA now name `support@stonedgoose.com` and
-`legal@stonedgoose.com`. Apple review does test the support address, and
+The app and the EULA now name `support@stonedgooseproductions.com` and
+`legal@stonedgooseproductions.com`. Apple review does test the support address, and
 "mail delivered but nobody can reply from it" is a real failure mode, so
 pick an option that can both receive and send.
 
 **Option A, Google Workspace (recommended if you want it to just work).**
 https://workspace.google.com, Business Starter, about 7 USD per user per
-month. One user (`kyle@stonedgoose.com`) plus two free aliases
+month. One user (`kyle@www.stonedgooseproductions.com`) plus two free aliases
 (`support@`, `legal@`) covers this entirely. Aliases cost nothing extra;
 you do not need three seats. Setup is a DNS MX record change at your domain
 registrar, guided by their wizard, and it is live in under an hour.
 
 **Option B, Cloudflare Email Routing (free, forwarding only).**
-If `stonedgoose.com` uses Cloudflare DNS, Email Routing forwards
+If `www.stonedgooseproductions.com` uses Cloudflare DNS, Email Routing forwards
 `support@` and `legal@` to any inbox at no cost. The catch: it forwards
 only, it does not send. Replies would come from your personal address,
 which looks wrong to a user and to a reviewer. If you take this route, pair
@@ -160,7 +160,7 @@ right From address.
 
 Whichever you pick:
 
-1. Create or alias `support@stonedgoose.com` and `legal@stonedgoose.com`.
+1. Create or alias `support@stonedgooseproductions.com` and `legal@stonedgooseproductions.com`.
 2. Send a test message to each from an outside address and confirm it
    arrives.
 3. Reply to each test and confirm the reply comes **from** the right
@@ -241,7 +241,7 @@ themselves may need creating by hand.
 
 Under Authentication, URL Configuration:
 
-- Site URL: `https://stonedgoose.com/openmic`
+- Site URL: `https://www.stonedgooseproductions.com/open-mics`
 - Redirect URLs, add both:
   - `openmicexplorer://auth-callback`
   - `openmicexplorer://reset-password`
@@ -286,8 +286,8 @@ notification is ever delivered, quietly.
 ```sh
 npx supabase functions deploy deletion-request
 npx supabase functions deploy push-sender
-npx supabase secrets set ALLOWED_ORIGIN=https://stonedgoose.com
-npx supabase secrets set DELETE_PAGE_URL=https://stonedgoose.com/openmic/delete-account/
+npx supabase secrets set ALLOWED_ORIGIN=https://www.stonedgooseproductions.com
+npx supabase secrets set DELETE_PAGE_URL=https://www.stonedgooseproductions.com/open-mics/delete-account/
 npx supabase secrets set RATE_LIMIT_SALT=$(openssl rand -hex 32)
 ```
 
@@ -314,16 +314,16 @@ this repository and it writes two rows into the admin allowlist.
    production URL for this one purpose.
 2. In the app, sign up **two accounts** and finish onboarding for each,
    choosing the performer role for one and producer for the other:
-   - `reviewer.performer@stonedgoose.com`
-   - `reviewer.producer@stonedgoose.com`
+   - `reviewer.performer@stonedgooseproductions.com`
+   - `reviewer.producer@stonedgooseproductions.com`
      Passwords are yours. They go in App Store Connect review notes and your
      password manager.
 3. Seed the content those accounts need:
 
 ```sh
 psql "$PRODUCTION_DATABASE_URL" \
-  -v performer_email="'reviewer.performer@stonedgoose.com'" \
-  -v producer_email="'reviewer.producer@stonedgoose.com'" \
+  -v performer_email="'reviewer.performer@stonedgooseproductions.com'" \
+  -v producer_email="'reviewer.producer@stonedgooseproductions.com'" \
   -f supabase/seed/production-reviewer-seed.sql
 ```
 

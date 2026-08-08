@@ -1,8 +1,8 @@
--- EULA 1.3: the web presence moves to stonedgoose.com/openmic.
+-- EULA 1.3: the web presence moves to www.stonedgooseproductions.com/open-mics.
 --
 -- Owner decision, 2026-08-08 (store readiness pass): the deletion page,
 -- privacy policy, terms, and support inbox live under the publisher's own
--- domain, stonedgoose.com, on the /openmic subpath, instead of the never
+-- domain, www.stonedgooseproductions.com, on the /open-mics subpath, instead of the never
 -- deployed openmicfinder.app. The agreement names the deletion URL and the
 -- legal contact, so those two lines change and nothing else does. 1.0
 -- through 1.2 are left untouched: they are the exact text people accepted,
@@ -20,7 +20,7 @@
 insert into eula_versions (version, body_md) values ('1.3', $eula$
 # Open Mic Explorer End User License Agreement
 
-Version 1.3, effective August 8, 2026. Replaces version 1.2. The only changes are the web addresses for account deletion and legal contact, which now live at stonedgoose.com/openmic.
+Version 1.3, effective August 8, 2026. Replaces version 1.2. The only changes are the web addresses for account deletion and legal contact, which now live at www.stonedgooseproductions.com/open-mics.
 
 By creating an account you agree to this Agreement. If you do not agree, do not use the app.
 
@@ -52,7 +52,7 @@ You must be at least 18 years old to use Open Mic Explorer. Comedy content in pa
 
 ## 7. Account deletion
 
-You can delete your account at any time from Settings, or from the web at stonedgoose.com/openmic/delete-account. Deletion removes your sign-in and personal data; anonymized records of past signups may be retained for the integrity of event history.
+You can delete your account at any time from Settings, or from the web at www.stonedgooseproductions.com/open-mics/delete-account. Deletion removes your sign-in and personal data; anonymized records of past signups may be retained for the integrity of event history.
 
 ## 8. Changes
 
@@ -62,5 +62,5 @@ We may update this Agreement. Material changes require you to accept the new ver
 
 The app is provided as is, without warranties of any kind. To the maximum extent permitted by law, our liability is limited to the amount you paid us in the past twelve months.
 
-Contact: legal@stonedgoose.com
+Contact: legal@stonedgooseproductions.com
 $eula$);

@@ -1,6 +1,6 @@
 // Web-based account deletion (Google Play requirement).
 //
-// Serves the form on https://stonedgoose.com/openmic/delete-account, which works
+// Serves the form on https://www.stonedgooseproductions.com/open-mics/delete-account, which works
 // for people who have uninstalled the app:
 //
 //   1. { action: "request", email } sends a Supabase Auth magic link to the
@@ -20,9 +20,10 @@
 // session. Set ALLOWED_ORIGIN to the page origin in function secrets.
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-const ALLOWED_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? 'https://stonedgoose.com';
+const ALLOWED_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? 'https://www.stonedgooseproductions.com';
 const PAGE_URL =
-  Deno.env.get('DELETE_PAGE_URL') ?? 'https://stonedgoose.com/openmic/delete-account/';
+  Deno.env.get('DELETE_PAGE_URL') ??
+  'https://www.stonedgooseproductions.com/open-mics/delete-account/';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
@@ -132,7 +133,7 @@ Deno.serve(async (req) => {
         return json(410, { error: 'This account has already been deleted.' });
       }
       return json(500, {
-        error: 'Deletion failed. Try again, or contact support@stonedgoose.com.',
+        error: 'Deletion failed. Try again, or contact support@stonedgooseproductions.com.',
       });
     }
     return json(200, {

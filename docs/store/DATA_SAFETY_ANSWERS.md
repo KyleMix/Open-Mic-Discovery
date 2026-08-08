@@ -20,7 +20,7 @@ Yes, both required paths:
 
 - In app: Profile tab, Settings, Delete account, two taps from the settings
   root (`src/app/settings.tsx`, `delete_account()` RPC).
-- Web, usable after uninstall: `https://stonedgoose.com/openmic/delete-account`
+- Web, usable after uninstall: `https://www.stonedgooseproductions.com/open-mics/delete-account`
   (enter this URL in the form; page source `web/delete-account/index.html`,
   Edge Function `supabase/functions/deletion-request`).
 

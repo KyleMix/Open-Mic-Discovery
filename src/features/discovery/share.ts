@@ -7,8 +7,9 @@ import { eventDateShort } from '@/features/discovery/local-time';
  *
  * The universal link infrastructure already existed (apple-app-site-association,
  * assetlinks.json, and the Android intent filters all route
- * https://stonedgoose.com/openmic/mic/<id> to the mic screen, with
- * +native-intent.tsx stripping the /openmic prefix) but nothing in the app
+ * https://www.stonedgooseproductions.com/open-mics/mic/<id> to the mic
+ * screen, with +native-intent.tsx stripping the /open-mics prefix) but
+ * nothing in the app
  * produced a link, so it was never used. Open mic scenes spread by "come to
  * this on Tuesday" messages, which makes this the cheapest way to grow.
  *
@@ -16,7 +17,7 @@ import { eventDateShort } from '@/features/discovery/local-time';
  * because most messaging apps will not render a preview for a link they cannot
  * fetch, and the recipient should be able to decide without tapping.
  */
-const WEB_BASE = 'https://stonedgoose.com/openmic';
+const WEB_BASE = 'https://www.stonedgooseproductions.com/open-mics';
 
 export function micShareUrl(seriesId: string): string {
   return `${WEB_BASE}/mic/${seriesId}`;

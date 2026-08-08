@@ -191,7 +191,7 @@ npx eas-cli update --branch preview --message "what changed"
   package `com.openmicexplorer.app` plus your release signing certificate's
   SHA-1 fingerprint (`npx eas-cli credentials` shows it). An unrestricted Maps key
   is billable by anyone who finds it.
-- **Check the deep links.** `app.json` still routes `stonedgoose.com/openmic/mic/`,
+- **Check the deep links.** `app.json` still routes `www.stonedgooseproductions.com/open-mics/mic/`,
   which is the pre-rebrand domain. Links shared from the app will not open in
   it unless you own and configure that domain.
 
@@ -246,7 +246,7 @@ Android testers. One `eas update --branch preview` reaches both.
   Google sign-in (Guideline 4.8). It is already implemented; it needs the
   capability enabled on the App ID, which EAS does when it creates the
   credentials.
-- **`associatedDomains` still points at `applinks:stonedgoose.com`**, the
+- **`associatedDomains` still points at `applinks:www.stonedgooseproductions.com`**, the
   pre-rebrand domain, the same staleness the Android `intentFilters` carry.
   Universal links will not work until that domain is one you own and serve an
   apple-app-site-association file from.

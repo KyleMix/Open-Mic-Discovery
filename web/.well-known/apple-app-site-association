@@ -7,7 +7,7 @@
         ],
         "components": [
           {
-            "/": "/openmic/mic/*",
+            "/": "/open-mics/mic/*",
             "comment": "Open mic detail pages open in the app when installed"
           }
         ]

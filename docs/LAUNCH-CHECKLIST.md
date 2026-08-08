@@ -12,7 +12,7 @@ says "openmicfinder" bundle ids in places), THIS file is current.
 
 - **D1, support inbox (blocks step 8).** The app's one support address is
   the constant `SUPPORT_EMAIL` in `src/lib/support.ts`, set to
-  `support@stonedgoose.com` per the domain decision. The inbox does not
+  `support@stonedgooseproductions.com` per the domain decision. The inbox does not
   exist yet: create it (step 8) or, if you prefer a different address,
   change that one constant and use the same address in both store
   consoles.
@@ -27,14 +27,14 @@ says "openmicfinder" bundle ids in places), THIS file is current.
   identically with or without it (badge appears only when the column
   exists).
 - **D3, product domain: DECIDED 2026-08-08.** The web presence lives
-  under the publisher domain, subpath `stonedgoose.com/openmic`. The
-  sweep is done: universal links associate with host `stonedgoose.com`
-  (association files MUST be served from `stonedgoose.com/.well-known/`,
-  the domain root, not the subpath), app pages live under `/openmic/`
+  under the publisher domain, subpath `www.stonedgooseproductions.com/open-mics`. The
+  sweep is done: universal links associate with host `www.stonedgooseproductions.com`
+  (association files MUST be served from `www.stonedgooseproductions.com/.well-known/`,
+  the domain root, not the subpath), app pages live under `/open-mics/`
   (mic links, delete-account, privacy, terms), the app strips the prefix
   via `src/app/+native-intent.tsx`, EULA 1.3 records the new addresses,
-  and support/legal addresses are `support@stonedgoose.com` and
-  `legal@stonedgoose.com`. Your remaining part is hosting (step 7) and
+  and support/legal addresses are `support@stonedgooseproductions.com` and
+  `legal@stonedgooseproductions.com`. Your remaining part is hosting (step 7) and
   creating the inboxes (step 8); do not submit until the pages are live,
   because Apple follows the links.
 - **D4, moderation console: DECIDED 2026-08-08.** Submit without the web
@@ -115,7 +115,7 @@ it takes up to five days).
      Passwords are yours; they go in App Store Connect review notes and
      your password manager, never in git.
   2. Run the content seed with those addresses:
-     `psql "$PRODUCTION_DATABASE_URL" -v performer_email="'reviewer.performer@stonedgoose.com'" -v producer_email="'reviewer.producer@stonedgoose.com'" -f supabase/seed/production-reviewer-seed.sql`
+     `psql "$PRODUCTION_DATABASE_URL" -v performer_email="'reviewer.performer@stonedgooseproductions.com'" -v producer_email="'reviewer.producer@stonedgooseproductions.com'" -f supabase/seed/production-reviewer-seed.sql`
      It creates 8 venues and 10 listings (4 owned by the reviewer
      producer, all four signup methods represented), refuses to run if
      either account is missing, and is safe to re-run.
@@ -183,17 +183,17 @@ npx eas credentials   # let EAS create iOS distribution cert + profile, Android 
 
 ## 7. Host the web pieces
 
-- Do: deploy per `docs/DEPLOY_WEB.md` onto stonedgoose.com: the
-  association files at `stonedgoose.com/.well-known/` (domain root,
+- Do: deploy per `docs/DEPLOY_WEB.md` onto www.stonedgooseproductions.com: the
+  association files at `www.stonedgooseproductions.com/.well-known/` (domain root,
   required by both platforms; paste the SHA-256 fingerprints from Play
   Console App integrity into assetlinks.json and your Apple Team ID into
   apple-app-site-association), the deletion page at
-  `stonedgoose.com/openmic/delete-account`, a privacy page at
-  `stonedgoose.com/openmic/privacy` from
+  `www.stonedgooseproductions.com/open-mics/delete-account`, a privacy page at
+  `www.stonedgooseproductions.com/open-mics/privacy` from
   `docs/privacy/PRIVACY_POLICY.md`, and a terms page at
-  `stonedgoose.com/openmic/terms` from the current EULA text (1.3). Works
+  `www.stonedgooseproductions.com/open-mics/terms` from the current EULA text (1.3). Works
   on any static host or alongside whatever already serves
-  stonedgoose.com; only /.well-known and /openmic/* are claimed.
+  www.stonedgooseproductions.com; only /.well-known and /open-mics/* are claimed.
 - Cost: domain renewal only. Time: an hour.
 - Unblocks: both store forms (privacy URL, deletion URL), universal links.
 
@@ -266,7 +266,7 @@ npx eas submit --profile production --platform android --latest
 
 1. Start Apple organization enrollment (step 1); D-U-N-S is the long pole.
 2. Start Play organization verification (step 2) the same day.
-3. Create the support@stonedgoose.com and legal@stonedgoose.com inboxes
+3. Create the support@stonedgooseproductions.com and legal@stonedgooseproductions.com inboxes
    (D1; the domain decision D3 is made) so steps 7 and 8 and both store
    forms can use them.
 4. Create the Supabase production project and push migrations (step 3).

@@ -17,7 +17,7 @@ Maps each store requirement to the implementing code. Living document; updated w
 
 In-app, two taps from settings root: Profile tab -> Settings -> Delete account (`src/app/settings.tsx`). Server side: `delete_account()` delegates to `private.delete_account_for` (effective definition in `supabase/migrations/20260804000200_delete_account_avatar_cleanup.sql`), which hard-deletes personal rows, the avatar object in the public bucket, and the auth user, and anonymizes the profile row (documented anonymization: signup history keeps referential integrity with no personal data attached). Abuse reports a person filed keep their anonymized profile id for moderation-audit integrity; no personal data rides along. Tested in `supabase/tests/moderation.test.sql`.
 
-Web path (Google Play requirement, works after uninstall): static page `web/delete-account/index.html` served at stonedgoose.com/openmic/delete-account, Edge Function `supabase/functions/deletion-request/index.ts`, service-role RPC `delete_account_web`. Identity confirmed by emailed magic link; rate limited; both paths run the same `private.delete_account_for` and are proven identical in `supabase/tests/deletion.test.sql`. Deployment: `docs/DEPLOY_WEB.md`.
+Web path (Google Play requirement, works after uninstall): static page `web/delete-account/index.html` served at www.stonedgooseproductions.com/open-mics/delete-account, Edge Function `supabase/functions/deletion-request/index.ts`, service-role RPC `delete_account_web`. Identity confirmed by emailed magic link; rate limited; both paths run the same `private.delete_account_for` and are proven identical in `supabase/tests/deletion.test.sql`. Deployment: `docs/DEPLOY_WEB.md`.
 
 ## Privacy
 

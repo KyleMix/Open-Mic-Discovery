@@ -60,7 +60,7 @@ created on the hosted project before submission and the table updated).
 
 Profile tab, Settings, Delete account, typed confirmation. Immediate:
 sign-in removed, profile anonymized. The web path for uninstalled users is
-https://stonedgoose.com/openmic/delete-account (same server-side deletion,
+https://www.stonedgooseproductions.com/open-mics/delete-account (same server-side deletion,
 covered by `supabase/tests/deletion.test.sql`).
 
 ## Where the legal links live

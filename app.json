@@ -13,7 +13,7 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
-      "associatedDomains": ["applinks:stonedgoose.com"],
+      "associatedDomains": ["applinks:www.stonedgooseproductions.com"],
       "privacyManifests": {
         "NSPrivacyTracking": false,
         "NSPrivacyTrackingDomains": [],
@@ -132,8 +132,8 @@
           "data": [
             {
               "scheme": "https",
-              "host": "stonedgoose.com",
-              "pathPrefix": "/openmic/mic/"
+              "host": "www.stonedgooseproductions.com",
+              "pathPrefix": "/open-mics/mic/"
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]
