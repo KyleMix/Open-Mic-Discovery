@@ -136,8 +136,6 @@ step 5, and it goes faster once you have screenshots.
 
 ---
 
-## Step 3: the two mailboxes on www.stonedgooseproductions.com
-
 The app and the EULA now name `support@stonedgooseproductions.com` and
 `legal@stonedgooseproductions.com`. Apple review does test the support address, and
 "mail delivered but nobody can reply from it" is a real failure mode, so
@@ -145,13 +143,13 @@ pick an option that can both receive and send.
 
 **Option A, Google Workspace (recommended if you want it to just work).**
 https://workspace.google.com, Business Starter, about 7 USD per user per
-month. One user (`kyle@www.stonedgooseproductions.com`) plus two free aliases
+month. One user (`kyle@stonedgooseproductions.com`) plus two free aliases
 (`support@`, `legal@`) covers this entirely. Aliases cost nothing extra;
 you do not need three seats. Setup is a DNS MX record change at your domain
 registrar, guided by their wizard, and it is live in under an hour.
 
 **Option B, Cloudflare Email Routing (free, forwarding only).**
-If `www.stonedgooseproductions.com` uses Cloudflare DNS, Email Routing forwards
+If `stonedgooseproductions.com` uses Cloudflare DNS, Email Routing forwards
 `support@` and `legal@` to any inbox at no cost. The catch: it forwards
 only, it does not send. Replies would come from your personal address,
 which looks wrong to a user and to a reviewer. If you take this route, pair
