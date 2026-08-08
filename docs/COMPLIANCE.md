@@ -55,3 +55,37 @@ payment SDK, so 3.1.2 does not apply and Restore Purchases is not required.
 | SDK privacy manifests                                                                                                                | `docs/privacy/SDK_MANIFEST_AUDIT.md`                                                                                                                                                                            |
 | Play Data Safety answers                                                                                                             | `docs/store/DATA_SAFETY_ANSWERS.md`                                                                                                                                                                             |
 | E2E review flows in CI                                                                                                               | `.github/workflows/e2e.yml`, `e2e/reviewer-coldstart.yaml`                                                                                                                                                      |
+
+## Store readiness pass verification (2026-08-08)
+
+Every Guideline 1.2 row above was re-verified on this date against a fresh
+database built from the full migration set (scripts/db/verify-local.sh: 71
+migrations, seed, 707 pgTAP assertions passing). The moderation loop was
+traced live end to end, not inferred from code: a report filed as the demo
+performer appeared in the admin queue as open, moderate_content('series',
+..., false) flipped the listing to rejected and removed it from
+search_discover and direct reads for every non-admin session, the report
+resolution stamped resolved_by from the session, and both actions appended
+rows to admin.audit_log naming the moderator.
+
+Changed by the pass:
+
+- Moderator actions are now audited (migration
+  `20260808000100_moderation_actions_are_audited.sql`, tests in
+  `supabase/tests/moderation-audit.test.sql`). Previously moderate_content,
+  resolve_flag, review_claim, and report resolutions left no audit rows;
+  the audit log migration had documented that gap as waiting for the
+  console. The takedown path a reviewer will exercise is the in-app one, so
+  it audits now. Signatures are unchanged and the app needed no changes.
+- The 1024x1024 store icon is re-encoded without its (unused) alpha
+  channel, since App Store Connect rejects marketing icons with
+  transparency.
+
+Verified unchanged: report reachability is at most two taps from every
+user-generated surface (listing page: report listing, report host or
+featured credit with block offer; night roster: report or block a
+performer; Settings: unblock list). The web console described in
+`docs/admin/RUNBOOK.md` remains unbuilt; the in-app `/admin` screen plus
+that runbook are the operative 24-hour takedown path, and
+`admin.security_settings.require_aal2` stays off until the owner enrolls
+MFA (see `docs/LAUNCH-CHECKLIST.md`).
