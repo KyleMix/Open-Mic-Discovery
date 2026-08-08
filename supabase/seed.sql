@@ -108,6 +108,23 @@ set contact_email = excluded.contact_email,
     verified = excluded.verified;
 
 -- ---------------------------------------------------------------------------
+-- The console allowlist (admin.admin_users, 20260807001300).
+--
+-- profiles.is_admin is a cache of this table, so the two demo admins above need
+-- rows here or the fixture contradicts itself: 0005 is the owner account and
+-- 0004 is a second moderator to test the role split against. There is no
+-- read_only fixture, because adding a sixth profile would move the counts
+-- several existing tests assert on.
+-- ---------------------------------------------------------------------------
+insert into admin.admin_users (user_id, role, active, created_by) values
+  ('00000000-0000-4000-a000-000000000005', 'owner', true, null),
+  ('00000000-0000-4000-a000-000000000004', 'moderator', true,
+   '00000000-0000-4000-a000-000000000005')
+on conflict (user_id) do update
+set role = excluded.role,
+    active = excluded.active;
+
+-- ---------------------------------------------------------------------------
 -- Venues. PostGIS points are (longitude latitude).
 -- ---------------------------------------------------------------------------
 insert into venues (id, name, address_line, neighborhood, city, region, location,

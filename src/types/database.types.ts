@@ -2143,6 +2143,39 @@ export type Database = {
             };
             Returns: string;
           };
+      admin_invite: {
+        Args: {
+          p_email: string;
+          p_expires_in?: string;
+          p_reason: string;
+          p_request_ip: unknown;
+          p_role: string;
+        };
+        Returns: string;
+      };
+      admin_invite_accept: { Args: { p_token: string }; Returns: string };
+      admin_invite_revoke: {
+        Args: { p_invite_id: string; p_reason: string; p_request_ip: unknown };
+        Returns: undefined;
+      };
+      admin_set_active: {
+        Args: {
+          p_active: boolean;
+          p_reason: string;
+          p_request_ip: unknown;
+          p_user_id: string;
+        };
+        Returns: undefined;
+      };
+      admin_set_role: {
+        Args: {
+          p_reason: string;
+          p_request_ip: unknown;
+          p_role: string;
+          p_user_id: string;
+        };
+        Returns: undefined;
+      };
       col_is_null:
         | {
             Args: {
