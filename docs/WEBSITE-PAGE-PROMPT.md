@@ -1,191 +1,177 @@
-# Prompt: add Open Mic Explorer the app to stonedgooseproductions.com/open-mics
+# Prompt: announce the app on stonedgooseproductions.com/open-mics
 
-For Claude Code running in `KyleMix/stoned_goose_website`, with
-`KyleMix/Open-Mic-Discovery` added as a second source.
+For Claude Code in `KyleMix/stoned_goose_website`. Rewritten 2026-08-08
+after the owner scaled the job down: the page announces the app with the
+marketing one-sheet and a coming-soon-to-the-stores note. The earlier
+five-job build-out is not what is being asked for now.
 
-Rewritten 2026-08-08 after reading the website repo. The first version of
-this prompt assumed the page hosted a finder to be replaced. It does not.
-The page is already Open Mic Explorer, it already works, and it stays.
+**Assumption, stated because it is the one thing that could be wrong:** the
+existing map of 85 real mics stays, and the app announcement is added to
+the page. The site is live and that map is what people come for, so
+removing it is not something to infer from a short instruction. If the map
+really should go, say so and this becomes a much smaller and much more
+destructive change.
 
-## What is actually true, so nobody rebuilds the wrong thing
+Assets are on `main` in the app repo, fetchable without attaching anything:
 
-The website's `/open-mics` page is a working product: 85 real Pacific
-Northwest open mic records in a Sveltia CMS collection
-(`content/open-mics/`), a 147-row Google Sheet import as fallback, an
-interactive map (`components/open-mic-explorer.tsx`), a submission dialog,
-and schema.org markup. It ranks, and people use it.
-
-The app is a different product that shares the name. Owner decision,
-2026-08-08: **the app launches with no listings at all.** Nothing is
-imported from the website. Mic owners add their own rooms once it is live.
-
-That means the two surfaces serve different people at launch:
-
-- The **map** serves performers. It has 85 rooms today and answers "what is
-  on tonight" without an install.
-- The **app** serves producers first. An empty app is useless to a performer
-  and perfectly useful to a host who wants to list their room, take signups,
-  and run the night.
-
-Write the page from that split. Do not pitch the app to performers as a
-better map, because on day one it is an emptier one.
-
-## Before you paste
-
-1. Add `KyleMix/Open-Mic-Discovery` to the session and clone it.
-2. In that repo, run `npm run legal:export` so `web/legal/*.md` is current.
+```
+BASE=https://raw.githubusercontent.com/KyleMix/Open-Mic-Discovery/main
+$BASE/marketing/one-sheet/open-mic-explorer.pdf      original, 698 KB, 5 pages
+$BASE/marketing/one-sheet/pages/page-1..5.webp       1400px renders, 604 KB total
+$BASE/marketing/one-sheet/open-mic-explorer.txt      extracted copy
+$BASE/marketing/screenshots/{discover,mic-detail,going,live}.png
+```
 
 ---
 
 ```
-You are adding a mobile app to an existing page on the Stoned Goose
-Productions website, and wiring up the files that app depends on. You are
-NOT replacing what is there.
+You are adding an app announcement to an existing, live page on the Stoned
+Goose Productions website. You are not rebuilding the page.
 
-## Ground truth
+## What exists and stays
 
-This repo's `/open-mics` page (app/(site)/open-mics/page.tsx) is Open Mic
+This repo's /open-mics page (app/(site)/open-mics/page.tsx) is Open Mic
 Explorer: a working map of 85 real Pacific Northwest open mics, CMS
-managed, with a submit dialog and schema.org markup. It stays exactly as
-it is unless a change below explicitly requires touching it.
+managed, with a submit dialog and schema.org markup. It is live. It stays.
+Do not remove, demote below the fold, or restructure it.
 
-Stoned Goose Productions is also publishing a mobile app of the same name.
-The app repo is available in this session as `Open-Mic-Discovery`. Read
-from it. Do not invent facts about the app, and do not write your own
-privacy or terms text: it exists and the app links to it by URL.
+## What to add
 
-The app launches EMPTY by design. Mic owners add their own rooms. Nothing
-from this website's mic collection is imported into it. This is the single
-most important fact for the copy you write: the app's launch audience is
-mic hosts, not performers.
+Stoned Goose Productions is publishing a mobile app of the same name. Add a
+section to this page that does two things:
 
-## The five jobs
+1. Presents the marketing one-sheet ("Open Mic Explorer: Feature Overview",
+   5 pages).
+2. Says it is coming soon to the App Store and Google Play.
 
-### 1. An app section on /open-mics, aimed at hosts
+That is the whole job.
 
-Add a section to the existing page. It does not replace the map, it does
-not sit above the map's fold, and it must not imply the app already has
-listings.
+## Where the assets are
 
-What it says, in your own better words: there is now an app for running an
-open mic. If you host one, you can list it, take signups, and run the list
-from the side of the stage. It is free. It is in testing now.
+Fetch these from the app repo on main. Both repos are public, so no repo
+attachment is needed:
 
-Honest, and it converts: the people who read this page and host a room are
-exactly the app's supply side.
+  BASE=https://raw.githubusercontent.com/KyleMix/Open-Mic-Discovery/main
 
-Do NOT add app store badges. The app is in TestFlight and Play internal
-testing, not released. Nothing may suggest it is downloadable today. If
-this repo already has a working form endpoint, a single "tell me when it
-opens" capture is welcome; do not build a form that posts nowhere.
+  $BASE/marketing/one-sheet/open-mic-explorer.pdf       the original
+  $BASE/marketing/one-sheet/pages/page-1.webp .. page-5.webp
+  $BASE/marketing/one-sheet/open-mic-explorer.txt       extracted copy
+  $BASE/marketing/screenshots/discover.png              app screenshots
+  $BASE/marketing/screenshots/mic-detail.png
+  $BASE/marketing/screenshots/going.png
+  $BASE/marketing/screenshots/live.png
 
-### 2. Three legal sub-routes
+Commit whatever you use into this repo. Do not hotlink raw.githubusercontent
+from the live site.
 
-| Source in Open-Mic-Discovery | Route to create |
-| --- | --- |
-| `web/legal/privacy.md` | `/open-mics/privacy` |
-| `web/legal/terms.md` | `/open-mics/terms` |
-| `web/delete-account/index.html` | `/open-mics/delete-account` |
+## How to present the one-sheet, and why it matters
 
-These are store requirements, reachable with no login and no app install.
-Google Play tests the deletion page. Apple tests privacy and support.
+Do NOT simply drop five US Letter page images on the page and call it done.
+The sheet is two columns of small body text. At a 400px viewport those
+pages are unreadable without pinch zoom, and most visitors to this page are
+on a phone. An unreadable wall of images is worse than no section.
 
-The two markdown files carry a generated-by banner naming their source in
-the app repo. Render them, never rewrite them; they are regenerated by
-`npm run legal:export` over there and re-copied here. Keep the banner in
-the repo file, strip it from what visitors see.
+Build it in this order of preference:
 
-The delete-account page reads its backend URL from a `data-function-url`
-attribute on `<body>` and deliberately disables itself while that is a
-placeholder, so an unfinished setup fails visibly instead of silently
-swallowing an email address. Preserve that behavior exactly. Port it to
-this site's layout if you like, but do not "fix" the disabled state.
+1. A short, web-native summary in responsive HTML, written from
+   `open-mic-explorer.txt`. Pull the strongest few points: three scenes on
+   one map, freshness confirmation so stale mics cannot hide, signup and
+   live running built in, one account for performing and hosting, free with
+   nothing behind a purchase. Use the app screenshots here rather than the
+   page renders; they are real UI and they read at any size.
+2. The full sheet available as a page gallery, click or tap to enlarge, so
+   someone who wants everything can read it.
+3. A plain "Download the feature overview (PDF, 5 pages)" link. Say it is a
+   PDF and say how big it is.
 
-### 3. Two files at the domain root
+If you have to cut one, cut the gallery. Keep the summary and the download.
 
-Copy from the app repo, serve at the DOMAIN ROOT, not under /open-mics:
+## The coming-soon line
 
-- `web/.well-known/apple-app-site-association`
-- `web/.well-known/assetlinks.json`
+Say plainly: coming soon to the App Store and Google Play.
 
-`public/.well-known/` is the right home given `output: "export"`.
+Do NOT use the App Store or Google Play download badges. Both stores'
+marketing guidelines cover released apps, and a badge on an unreleased app
+implies a link that does not exist. Plain text, no badge art, no fake
+button, no link to a store page that is not live.
 
-The Apple file has no extension and must be served as `application/json`.
-This repo already solves exactly this class of problem: `public/_headers`
-forces `Content-Type: image/png` on extensionless OG image routes. Add a
-rule in the same spirit. Verify the built output actually carries the
-header rather than assuming.
+If this repo already has a working form endpoint, one "tell me when it is
+out" capture is welcome. Do not build a form that posts nowhere.
 
-Both files currently contain `TODO_` placeholders (the Apple Team ID and
-the Android SHA-256 fingerprints). Leave them as placeholders, and list
-them in what you hand back to me. Do not invent values.
+## Two contradictions to handle, not ignore
 
-### 4. A landing page for /open-mics/mic/* links
+Both come from putting this specific sheet on this specific page.
 
-The app shares deep links shaped
-`https://www.stonedgooseproductions.com/open-mics/mic/<uuid>`. When the app
-is installed the OS intercepts them. When it is not, they hit this site,
-and today they 404.
+1. Page 5 of the sheet says "Seattle is the first Open Mic Explorer city."
+   The map on this same page lists mics in Bellingham, Tacoma, Portland,
+   Vancouver, Olympia, Blaine, and Chehalis. Read side by side that looks
+   wrong. Resolve it in the surrounding copy: this map is the crew's
+   Pacific Northwest list, the app is a separate product starting in
+   Seattle, and hosts anywhere can list a mic in it today. One or two
+   sentences, not a disclaimer block.
 
-The ids are Supabase uuids from the app's database. This website has no
-data for them and cannot render the mic. So build one static page that
-works for any id: what this link was, that it opens in the app, and a route
-back to the map for someone without the app.
+2. The sheet's performer walkthrough opens with "Every mic near you is
+   visible immediately." That describes what the app does, not what it
+   contains: the app launches with no listings, and mic owners add their
+   own. Do not repeat that line in your summary copy, and do not imply the
+   app arrives holding the 85 mics on this page. The honest pitch to a
+   performer is that it is new; the honest pitch to a host is that they can
+   list their room now.
 
-`output: "export"` cannot pre-render unknown dynamic params, so use a
-`_redirects` splat rule (`/open-mics/mic/* /open-mics/app-link 200` or
-similar) rather than a dynamic route with generateStaticParams. This repo
-already uses `_redirects` and mirrors it in `vercel.json`; follow that
-convention and keep both in step.
+## Style
 
-Do not add a trailing-slash redirect on this path and do not change host
-casing: the app's deep link matching is exact.
+- Match this repo exactly: Next 15 app router, Tailwind config, existing
+  component patterns, content/CMS conventions. Read before writing. No new
+  framework, CSS system, or dependency without asking first.
+- Match the page's existing voice: dry and direct. No "revolutionize", no
+  "seamless", no exclamation marks.
+- No em dashes. Commas, colons, parentheses, or separate sentences.
+- Accessible: correct heading order, real alt text on every page render and
+  screenshot (describe what the page says, not "page 3"), visible focus
+  states, AA contrast. The gallery must be keyboard operable and closeable
+  with Escape.
+- Images lazy loaded with width and height set, so adding 600 KB of renders
+  does not shift layout or slow the page people came for.
+- No tracking scripts, no cookie banner.
+- Contact address, if you need one: kyle@stonedgooseproductions.com. There
+  is no support@ or legal@ alias; do not invent one.
 
-### 5. Keep the map honest about the app
+## Optional, only if you want it done in the same pass
 
-One line somewhere sensible near the map, for the person who installs the
-app expecting these 85 rooms: this map is the crew's list, the app is where
-hosts run their own rooms, and the two are separate for now. Say it in
-fewer words than that. It prevents a one-star review that reads "empty app".
+Not required for this announcement, but required before the app is
+submitted to either store. Skip it and say so if you would rather keep this
+change small:
 
-## Style and constraints
+  $BASE/web/legal/privacy.md         -> /open-mics/privacy
+  $BASE/web/legal/terms.md           -> /open-mics/terms
+  $BASE/web/delete-account/index.html -> /open-mics/delete-account
+  $BASE/web/.well-known/apple-app-site-association -> served at the DOMAIN ROOT
+  $BASE/web/.well-known/assetlinks.json            -> served at the DOMAIN ROOT
 
-- Match the existing site exactly: its Next 15 app router structure,
-  Tailwind config, component patterns, content/CMS conventions, and tone.
-  Read before you write. Do not introduce a framework, CSS system, or
-  dependency without telling me why first.
-- The existing page's voice is dry and direct. Match it. No
-  "revolutionize", no "seamless", no exclamation marks.
-- No em dashes anywhere in the copy. Commas, colons, parentheses, or
-  separate sentences.
-- Accessible: correct heading order, alt text, visible focus states, AA
-  contrast.
-- No tracking scripts and no cookie banner. Adding trackers would
-  contradict the app's filed store privacy declarations.
-- If the app section needs imagery, four real screenshots are at
-  `marketing/screenshots/` in the app repo: discover, mic-detail, going,
-  live.
-- Respect the repo's checks: `npm run typecheck`, `npm run lint`, and
-  `npm test` must pass. Content changes must satisfy `content:validate`.
+The two markdown files are generated in the app repo by `npm run
+legal:export` and carry a do-not-edit banner; render them, never rewrite
+them. The Apple file has no extension and must be served as
+application/json, which `public/_headers` already does for extensionless OG
+image routes. Both .well-known files still contain TODO_ placeholders for
+the Apple Team ID and Android fingerprints; leave them and tell me.
 
 ## Verify before claiming done
 
-Build the site and confirm, in the built output:
+Build the site and confirm in the built output:
 
-- `/open-mics` still renders all 85 mics and the map still works.
-- `/open-mics/privacy`, `/open-mics/terms`, `/open-mics/delete-account`
-  resolve with the right content.
-- `/.well-known/apple-app-site-association` resolves at the ROOT and carries
-  `Content-Type: application/json`.
-- `/.well-known/assetlinks.json` resolves at the root.
-- `/open-mics/mic/anything-at-all` renders the landing page, not a 404.
+- /open-mics still renders all 85 mics and the map still works.
+- The new section reads cleanly at a 390px viewport without pinch zoom.
+- The PDF downloads and opens.
+- `npm run typecheck`, `npm run lint`, `npm test`, and content:validate all
+  pass.
+- Lighthouse on /open-mics has not regressed, given this adds images to a
+  live page.
 
 ## Deliver
 
 1. The implementation, in logical commits, no force pushes.
-2. A list of what you still need from me: the Apple Team ID, the Android
-   SHA-256 fingerprints, and anything else you left as a placeholder.
-3. How to refresh the legal pages when the app repo regenerates them.
+2. Anything you left as a placeholder or could not resolve.
+3. Say explicitly whether you did the optional legal routes or skipped them.
 
-Ask about anything genuinely ambiguous before building.
+Ask before building if anything here is genuinely ambiguous.
 ```
