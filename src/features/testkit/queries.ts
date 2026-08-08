@@ -1,7 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { getSupabase } from '@/lib/supabase';
+import type { Json } from '@/types/database.types';
 import type { ScenarioKey } from './scenarios';
+
+/**
+ * The test kit RPCs return json blobs, so the generated Supabase types can
+ * only say Json. Each shape below is produced by the matching SQL function
+ * in the test-kit migrations and exercised by its pgTAP tests, and the one
+ * cast lives here so no other module needs to weaken a type for it.
+ */
+function fromJson<T>(data: Json): T {
+  return data as T;
+}
 
 /**
  * Client bindings for the admin-only test kit RPCs. Every function here is
@@ -97,7 +108,7 @@ export function useTestKitStatus(isAdmin: boolean) {
       if (error) {
         throw rpcError(error, 'Could not read test kit status.');
       }
-      return data as unknown as TestKitStatus;
+      return fromJson<TestKitStatus>(data);
     },
   });
 }
@@ -121,7 +132,7 @@ export function useSeedScenario() {
       if (error) {
         throw rpcError(error, 'Could not build that scenario.');
       }
-      return data as unknown as ScenarioResult;
+      return fromJson<ScenarioResult>(data);
     },
     onSuccess: invalidate,
   });
@@ -138,7 +149,7 @@ export function useFillRoster() {
       if (error) {
         throw rpcError(error, 'Could not add performers.');
       }
-      return data as unknown as { added: number };
+      return fromJson<{ added: number }>(data);
     },
     onSuccess: invalidate,
   });
@@ -175,7 +186,7 @@ export function useRestartNight() {
       if (error) {
         throw rpcError(error, 'Could not restart that night.');
       }
-      return data as unknown as { back_on_the_list: number };
+      return fromJson<{ back_on_the_list: number }>(data);
     },
     onSuccess: invalidate,
   });
@@ -218,7 +229,7 @@ export function useResetTestData() {
       if (error) {
         throw rpcError(error, 'Could not remove the test data.');
       }
-      return data as unknown as { removed: Record<string, number> };
+      return fromJson<{ removed: Record<string, number> }>(data);
     },
     onSuccess: invalidate,
   });
