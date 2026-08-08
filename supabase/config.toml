@@ -270,7 +270,7 @@ otp_expiry = 3600
 # port = 587
 # user = "resend"
 # pass = "env(SMTP_PASS)"
-# admin_email = "support@stonedgooseproductions.com"
+# admin_email = "kyle@stonedgooseproductions.com"
 # sender_name = "Open Mic Explorer"
 
 # Uncomment to customize email template

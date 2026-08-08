@@ -12,7 +12,7 @@ says "openmicfinder" bundle ids in places), THIS file is current.
 
 - **D1, support inbox (blocks step 8).** The app's one support address is
   the constant `SUPPORT_EMAIL` in `src/lib/support.ts`, set to
-  `support@stonedgooseproductions.com` per the domain decision. The inbox does not
+  `kyle@stonedgooseproductions.com` per the domain decision. The inbox does not
   exist yet: create it (step 8) or, if you prefer a different address,
   change that one constant and use the same address in both store
   consoles.
@@ -33,8 +33,8 @@ says "openmicfinder" bundle ids in places), THIS file is current.
   the domain root, not the subpath), app pages live under `/open-mics/`
   (mic links, delete-account, privacy, terms), the app strips the prefix
   via `src/app/+native-intent.tsx`, EULA 1.3 records the new addresses,
-  and support/legal addresses are `support@stonedgooseproductions.com` and
-  `legal@stonedgooseproductions.com`. Your remaining part is hosting (step 7) and
+  and support/legal addresses are `kyle@stonedgooseproductions.com` and
+  `kyle@stonedgooseproductions.com`. Your remaining part is hosting (step 7) and
   creating the inboxes (step 8); do not submit until the pages are live,
   because Apple follows the links.
 - **D4, moderation console: DECIDED 2026-08-08.** Submit without the web
@@ -109,13 +109,16 @@ it takes up to five days).
   against production; its own header forbids it, because its passwords are
   published in this repo and it puts two accounts on the admin allowlist):
   1. Install a preview build pointed at production, sign up two accounts
-     through the app itself (`reviewer.performer@` and
-     `reviewer.producer@` on your domain), accept the EULA, finish
+     through the app itself, using plus addressing on the one real
+     mailbox so the confirmation emails actually arrive
+     (`kyle+reviewer.performer@stonedgooseproductions.com` and
+     `kyle+reviewer.producer@stonedgooseproductions.com`), accept the
+     EULA, finish
      onboarding, and pick the performer and producer roles respectively.
      Passwords are yours; they go in App Store Connect review notes and
      your password manager, never in git.
   2. Run the content seed with those addresses:
-     `psql "$PRODUCTION_DATABASE_URL" -v performer_email="'reviewer.performer@stonedgooseproductions.com'" -v producer_email="'reviewer.producer@stonedgooseproductions.com'" -f supabase/seed/production-reviewer-seed.sql`
+     `psql "$PRODUCTION_DATABASE_URL" -v performer_email="'kyle+reviewer.performer@stonedgooseproductions.com'" -v producer_email="'kyle+reviewer.producer@stonedgooseproductions.com'" -f supabase/seed/production-reviewer-seed.sql`
      It creates 8 venues and 10 listings (4 owned by the reviewer
      producer, all four signup methods represented), refuses to run if
      either account is missing, and is safe to re-run.
@@ -282,7 +285,7 @@ Keep the two reviewer accounts. They own nothing once the listings are gone.
 
 1. Start Apple organization enrollment (step 1); D-U-N-S is the long pole.
 2. Start Play organization verification (step 2) the same day.
-3. Create the support@stonedgooseproductions.com and legal@stonedgooseproductions.com inboxes
+3. Create the kyle@stonedgooseproductions.com and kyle@stonedgooseproductions.com inboxes
    (D1; the domain decision D3 is made) so steps 7 and 8 and both store
    forms can use them.
 4. Create the Supabase production project and push migrations (step 3).

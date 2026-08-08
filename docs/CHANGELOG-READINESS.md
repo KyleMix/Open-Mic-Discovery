@@ -120,7 +120,7 @@ Asked and answered 2026-08-08 after the deliverables landed:
   `www.stonedgooseproductions.com`, path `/open-mics/mic/`), `web/.well-known` AASA
   components, new `src/app/+native-intent.tsx` stripping the `/open-mics`
   prefix from incoming links, share URLs, legal link URLs, the support
-  constant (`support@stonedgooseproductions.com`), the deletion page and Edge
+  constant (`kyle@stonedgooseproductions.com`), the deletion page and Edge
   Function defaults, and EULA 1.3 (migration
   `20260808000200_eula_web_home.sql`, the two address lines only, with
   the eula pgTAP test extended; 708 assertions pass). The deploy target
@@ -161,8 +161,8 @@ defaults, `config.toml`, the reviewer seed example addresses, and every
 doc.
 
 Support and legal addresses moved to the same domain:
-`support@stonedgooseproductions.com` and
-`legal@stonedgooseproductions.com`.
+`kyle@stonedgooseproductions.com` and
+`kyle@stonedgooseproductions.com`.
 
 EULA 1.3 (`20260808000200_eula_web_home.sql`) was corrected in place rather
 than superseded by a 1.4. The repo's rule is that published versions are
@@ -232,7 +232,7 @@ importing a single listing.
 ## Open decisions (implemented as single points of change)
 
 1. Support inbox: `SUPPORT_EMAIL` constant in `src/lib/support.ts`
-   (already a constant; now `support@stonedgooseproductions.com` per D3, and the
+   (already a constant; now `kyle@stonedgooseproductions.com` per D3, and the
    inbox still needs creating, D1 in LAUNCH-CHECKLIST).
 2. Stewardship badge RPC migration: committed as
    `20260804000100_discovery_stewardship.sql`, still unapplied to any

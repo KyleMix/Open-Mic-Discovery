@@ -36,8 +36,8 @@
 -- Then run this file with those addresses, from the repo root:
 --
 --   psql "$PRODUCTION_DATABASE_URL" \
---     -v performer_email="'reviewer.performer@stonedgooseproductions.com'" \
---     -v producer_email="'reviewer.producer@stonedgooseproductions.com'" \
+--     -v performer_email="'kyle+reviewer.performer@stonedgooseproductions.com'" \
+--     -v producer_email="'kyle+reviewer.producer@stonedgooseproductions.com'" \
 --     -f supabase/seed/production-reviewer-seed.sql
 --
 -- (The quoting is psql's: the value must arrive as a SQL string literal.)

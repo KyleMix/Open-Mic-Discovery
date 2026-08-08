@@ -49,4 +49,4 @@ We may update this Agreement. Material changes require you to accept the new ver
 
 The app is provided as is, without warranties of any kind. To the maximum extent permitted by law, our liability is limited to the amount you paid us in the past twelve months.
 
-Contact: legal@stonedgooseproductions.com
+Contact: kyle@stonedgooseproductions.com

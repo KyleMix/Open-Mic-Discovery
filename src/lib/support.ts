@@ -6,7 +6,7 @@ import { Linking } from 'react-native';
  * stonedgooseproductions.com, so support does too. The inbox itself still
  * needs creating before submission (docs/LAUNCH-CHECKLIST.md step 8).
  */
-export const SUPPORT_EMAIL = 'support@stonedgooseproductions.com';
+export const SUPPORT_EMAIL = 'kyle@stonedgooseproductions.com';
 
 export function contactSupport(subject: string): void {
   const url = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}`;

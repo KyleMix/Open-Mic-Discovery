@@ -39,7 +39,7 @@ select is(
 -- else: operative clauses, the 18+ gate, and the deletion promise survive.
 select is(
   (select body_md like '%www.stonedgooseproductions.com/open-mics/delete-account%'
-     and body_md like '%legal@stonedgooseproductions.com%'
+     and body_md like '%kyle@stonedgooseproductions.com%'
      and body_md like '%at least 18 years old to use Open Mic Explorer%'
      and body_md like '%Producers, not Open Mic Explorer, run the events%'
    from eula_versions where version = '1.3'),

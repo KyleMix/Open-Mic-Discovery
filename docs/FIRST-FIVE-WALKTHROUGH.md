@@ -15,14 +15,14 @@ There is a second, smaller ordering fact: Apple's organization enrollment
 asks for a **publicly reachable company website** and will look at it. So
 `www.stonedgooseproductions.com` should resolve to something real before you submit the
 enrollment form, even if it is one page. That is a few minutes of work
-(step 3 sets up the domain anyway) but it is unpleasant to discover
+but it is unpleasant to discover
 halfway through the Apple form.
 
 So the true order is:
 
 ```
 Day 1 morning:  request D-U-N-S, put a real page on www.stonedgooseproductions.com
-Day 1 afternoon: Supabase project (step 4), Maps key (step 5), email (step 3)
+Day 1 afternoon: Supabase project (step 4), Maps key (step 5), verify email (step 3)
 Day 1 to 5:     wait on D-U-N-S
 D-U-N-S in hand: Apple enrollment (step 1), Play account (step 2), both same day
 Day 6 to 9:     wait on Apple and Google identity verification
@@ -136,44 +136,52 @@ step 5, and it goes faster once you have screenshots.
 
 ---
 
-## Step 3: the two mailboxes on stonedgooseproductions.com
+## Step 3: confirm the contact address, and plan the reviewer accounts
 
-The app and the EULA now name `support@stonedgooseproductions.com` and
-`legal@stonedgooseproductions.com`. Apple review does test the support address, and
-"mail delivered but nobody can reply from it" is a real failure mode, so
-pick an option that can both receive and send.
+Owner decision, 2026-08-08: there is one contact address,
+`kyle@stonedgooseproductions.com`, and it is what the app and the EULA name.
+No `support@` or `legal@` aliases are being created. The address already
+exists and is already in use (the website's open mic sync script identifies
+itself with it), so this step is a verification, not a setup.
 
-**Option A, Google Workspace (recommended if you want it to just work).**
-https://workspace.google.com, Business Starter, about 7 USD per user per
-month. One user (`kyle@stonedgooseproductions.com`) plus two free aliases
-(`support@`, `legal@`) covers this entirely. Aliases cost nothing extra;
-you do not need three seats. Setup is a DNS MX record change at your domain
-registrar, guided by their wizard, and it is live in under an hour.
+### Verify the mailbox does both halves
 
-**Option B, Cloudflare Email Routing (free, forwarding only).**
-If `stonedgooseproductions.com` uses Cloudflare DNS, Email Routing forwards
-`support@` and `legal@` to any inbox at no cost. The catch: it forwards
-only, it does not send. Replies would come from your personal address,
-which looks wrong to a user and to a reviewer. If you take this route, pair
-it with Gmail's "Send mail as" using an SMTP relay so replies carry the
-right From address.
+1. Send a message to `kyle@stonedgooseproductions.com` from an outside
+   address and confirm it arrives.
+2. Reply, and confirm the reply is **from** that address, not from a
+   personal Gmail. Apple review does contact the support address, and a
+   reply arriving from somewhere else reads as an abandoned listing.
 
-Whichever you pick:
+If both hold, this step is done and it cost nothing.
 
-1. Create or alias `support@stonedgooseproductions.com` and `legal@stonedgooseproductions.com`.
-2. Send a test message to each from an outside address and confirm it
-   arrives.
-3. Reply to each test and confirm the reply comes **from** the right
-   address.
-4. If you chose an address other than these two, change the one constant
-   `SUPPORT_EMAIL` in `src/lib/support.ts` and open a new EULA version for
-   the legal address (the pattern is
-   `supabase/migrations/20260808000200_eula_web_home.sql`, which changed
-   exactly those two lines).
+### The part that is easy to miss: the reviewer accounts need real inboxes
 
-- Cost: 0 to 7 USD per month. Time: under an hour.
+Step 4g has you create two reviewer accounts by signing up through the app.
+Hosted Supabase enables email confirmation by default, so those two
+addresses have to actually receive mail, or the accounts can never be
+confirmed and the reviewer credentials you file with Apple will not work.
+
+Use plus addressing on the mailbox you already have, rather than creating
+anything:
+
+- `kyle+kyle+reviewer.performer@stonedgooseproductions.com`
+- `kyle+kyle+reviewer.producer@stonedgooseproductions.com`
+
+Both deliver to `kyle@`, Google Workspace and Gmail honor the `+` suffix,
+and Supabase treats them as distinct accounts. Zero setup, and the
+confirmation links land in an inbox you read.
+
+### If you ever want a dedicated support address
+
+It is a two-line change, not a migration of anything: set `SUPPORT_EMAIL`
+in `src/lib/support.ts`, and publish a new EULA version for the legal
+contact line. The pattern to copy is
+`supabase/migrations/20260808000200_eula_web_home.sql`, which changed
+exactly those two lines and nothing else.
+
+- Cost: nothing. Time: five minutes to test send and reply.
 - Unblocks: the support fields in both store consoles, the in-app contact
-  path, and honest legal contact in the EULA.
+  path, the legal contact in the EULA, and confirmable reviewer accounts.
 
 ---
 
@@ -314,16 +322,16 @@ this repository and it writes two rows into the admin allowlist.
    production URL for this one purpose.
 2. In the app, sign up **two accounts** and finish onboarding for each,
    choosing the performer role for one and producer for the other:
-   - `reviewer.performer@stonedgooseproductions.com`
-   - `reviewer.producer@stonedgooseproductions.com`
+   - `kyle+reviewer.performer@stonedgooseproductions.com`
+   - `kyle+reviewer.producer@stonedgooseproductions.com`
      Passwords are yours. They go in App Store Connect review notes and your
      password manager.
 3. Seed the content those accounts need:
 
 ```sh
 psql "$PRODUCTION_DATABASE_URL" \
-  -v performer_email="'reviewer.performer@stonedgooseproductions.com'" \
-  -v producer_email="'reviewer.producer@stonedgooseproductions.com'" \
+  -v performer_email="'kyle+reviewer.performer@stonedgooseproductions.com'" \
+  -v producer_email="'kyle+reviewer.producer@stonedgooseproductions.com'" \
   -f supabase/seed/production-reviewer-seed.sql
 ```
 

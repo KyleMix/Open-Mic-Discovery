@@ -78,9 +78,9 @@ Answer from these facts rather than from a target tier:
 
 ## Support and policy URLs both forms ask for
 
-| Field              | Value                                                                                                   | Status                                                             |
-| ------------------ | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| Privacy policy URL | `https://www.stonedgooseproductions.com/open-mics/privacy` (copy: `docs/privacy/PRIVACY_POLICY.md`)     | Owner must host before submission                                  |
-| Support URL        | `https://www.stonedgooseproductions.com/open-mics` (or a support page under it)                         | Owner must host                                                    |
-| Support email      | `SUPPORT_EMAIL` in `src/lib/support.ts`, currently the placeholder `support@stonedgooseproductions.com` | Owner decision 1; change the constant and the store forms together |
-| Web deletion URL   | `https://www.stonedgooseproductions.com/open-mics/delete-account`                                       | Owner must deploy (docs/DEPLOY_WEB.md)                             |
+| Field              | Value                                                                                                | Status                                                             |
+| ------------------ | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Privacy policy URL | `https://www.stonedgooseproductions.com/open-mics/privacy` (copy: `docs/privacy/PRIVACY_POLICY.md`)  | Owner must host before submission                                  |
+| Support URL        | `https://www.stonedgooseproductions.com/open-mics` (or a support page under it)                      | Owner must host                                                    |
+| Support email      | `SUPPORT_EMAIL` in `src/lib/support.ts`, currently the placeholder `kyle@stonedgooseproductions.com` | Owner decision 1; change the constant and the store forms together |
+| Web deletion URL   | `https://www.stonedgooseproductions.com/open-mics/delete-account`                                    | Owner must deploy (docs/DEPLOY_WEB.md)                             |

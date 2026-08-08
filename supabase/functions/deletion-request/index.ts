@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
         return json(410, { error: 'This account has already been deleted.' });
       }
       return json(500, {
-        error: 'Deletion failed. Try again, or contact support@stonedgooseproductions.com.',
+        error: 'Deletion failed. Try again, or contact kyle@stonedgooseproductions.com.',
       });
     }
     return json(200, {
