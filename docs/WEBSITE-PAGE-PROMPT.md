@@ -1,3 +1,29 @@
+# SUPERSEDED, DO NOT PASTE AS WRITTEN
+
+Reading `KyleMix/stoned_goose_website` on 2026-08-08 invalidated the premise
+of this prompt. It was written to "replace a web-based open mic finder with
+an app landing page". That is not the situation:
+
+- The website already has a page at `/open-mics` branded **Open Mic
+  Explorer**, the same name as the app.
+- It carries **85 real Pacific Northwest open mic records** in a Sveltia CMS
+  collection (`content/open-mics/`), with a 147-record Google Sheet import as
+  fallback, an interactive map, a submission dialog, and schema.org markup.
+- The app, meanwhile, is about to go to store reviewers with **10 invented
+  venues** (The Rusty Fret, Blue Heron Coffee, and so on).
+
+So this is not a replacement, it is a convergence: one product name, one
+region, one purpose, two data stores that will diverge the moment both are
+live. The decision that has to come first is which store is canonical, and
+it is the owner's call. See the note at the bottom of
+`docs/CHANGELOG-READINESS.md`.
+
+Everything below is retained because the app facts, the hard technical
+requirements, and the style constraints all still hold. The framing of the
+"Option 1 versus Option 2" decision does not.
+
+---
+
 # Prompt: rebuild stonedgooseproductions.com/open-mics
 
 For Claude Code running in the **website** repository, with this repo
