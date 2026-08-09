@@ -36,27 +36,112 @@ calendar.
 
 ## Step 0: get the D-U-N-S number (do this first, it gates 1 and 2)
 
-1. Go to https://developer.apple.com/enroll/duns-lookup/.
-2. Enter: legal entity name exactly as registered with Washington State
-   (`Stoned Goose Productions LLC`), the registered business address, and
-   your business phone. Use the exact registered name, including "LLC".
-   A mismatch against the state registry is the usual cause of rejection.
-3. If the lookup finds an existing D-U-N-S for the LLC, note the number and
-   check the listed address and name are current; if they are wrong, use
-   the same page to request a correction.
-4. If nothing is found, submit the request. Dun and Bradstreet issues it
-   free; Apple's page says up to five business days and it usually lands in
-   one to three.
+A D-U-N-S number is a nine-digit business identifier issued by Dun and
+Bradstreet. Apple and Google both use it to confirm that an organization
+applying for a developer account is a real registered entity, and both
+check what you type against D and B's record rather than against your
+paperwork. That is the whole reason the steps below fuss about exact
+strings.
 
-- Cost: free. Time: up to 5 business days.
-- Unblocks: steps 1 and 2, both of them, completely.
-- What to keep: the 9-digit number, plus the exact legal name and address
-  as they appear on the D-U-N-S record. You will type those three things
-  into two more forms and they must match character for character.
+### 0a. Check whether you already have one, before requesting anything
 
-While waiting, put something real at `https://www.stonedgooseproductions.com`: a single
-page naming the company and linking to the app is enough for both Apple's
-review and your own store listings.
+Most people skip this and lose a week. D and B assigns numbers on its own,
+without anyone asking, when a business shows up in the data it buys: state
+registration filings, business credit applications, business bank accounts,
+supplier records, insurance. An LLC that has been operating for a while
+very often already has one.
+
+Look it up at Apple's tool: https://developer.apple.com/enroll/duns-lookup/
+
+If it finds a match, you are done in five minutes and steps 1 and 2 are
+unblocked today rather than next week. Check the returned name and address
+carefully against reality. If either is stale, request a correction through
+the same tool, because Apple and Google both compare their form fields to
+that record and a mismatch stalls enrollment.
+
+### 0b. Get your exact legal name and address first
+
+This is the single most common cause of rejection and delay: the entity
+name you type does not match the state registry, character for character.
+
+Washington filings are public. Look yours up at the Secretary of State
+Corporations and Charities Filing System:
+
+https://ccfs.sos.wa.gov/#/BusinessSearch
+
+Search the business name, open the record, and copy down exactly:
+
+- The **Business Name** as filed. Note the punctuation and spacing: "Stoned
+  Goose Productions LLC" and "Stoned Goose Productions, L.L.C." are
+  different strings, and only one of them is yours.
+- The **Principal Office Street Address**, exactly as filed.
+- The **UBI number** and formation date, which the forms sometimes ask for.
+
+Write these down somewhere you will still have them in a week. You will
+retype the same three values into the D and B request, the Apple enrollment
+form, and the Google Play organization form, and all four have to agree.
+
+### 0c. Gather the rest before you open the form
+
+The request asks for all of this, and a half-filled form times out:
+
+- Legal entity name and legal structure (Limited Liability Company).
+- Physical street address. **Not a PO Box.** D and B routinely rejects PO
+  boxes and mailbox services because it is verifying a place of business.
+  If the LLC is registered to a home address, use it; that is normal and
+  it does not become public on the App Store.
+- Mailing address, if it differs.
+- A business phone number that a human answers. D and B may call to verify,
+  and Apple may call the number on the D and B record during enrollment. An
+  unanswered verification call stalls things silently, with no error
+  anywhere telling you why.
+- Your name and title (Owner, or Managing Member for an LLC).
+- Email. Use `kyle@stonedgooseproductions.com` rather than a personal Gmail.
+  A company-domain address on a matching company domain is one of the
+  signals used to verify you, and a free-mail address can slow it down.
+- Company website: `https://www.stonedgooseproductions.com`. Have it
+  resolving to something real before you submit, because both D and B and
+  Apple look.
+- Year the business started.
+- Number of employees, including yourself. One is a perfectly normal answer.
+- Line of business, in plain words: live comedy event production and a
+  mobile application for discovering open mic events.
+
+### 0d. Submit the request
+
+**Route A, Apple's tool (use this one).**
+https://developer.apple.com/enroll/duns-lookup/ handles both the lookup and
+the request, it is free, and it is the path Apple's own enrollment expects.
+Apple states up to five business days; in practice it is often one to three.
+
+**Route B, D and B directly.** https://www.dnb.com/duns/get-a-duns.html
+also issues numbers free, but the standard free service can take up to
+thirty business days, and the expedited option costs money. There is no
+reason to take this route for an App Store enrollment unless Apple's tool
+fails for you.
+
+Whichever route, the number arrives by email. Check spam: it comes from a
+Dun and Bradstreet domain that has no prior relationship with your inbox.
+
+### 0e. What "done" looks like
+
+You have a nine-digit number, and the D and B record shows your correct
+legal name, address, and phone. That last part matters as much as the
+number: Google cross-checks the organization details you enter in Play
+Console against D and B, so a number attached to a stale address will pass
+Apple and then trip Google.
+
+- Cost: free by either route. Time: minutes if one already exists, up to 5
+  business days via Apple, up to 30 via D and B's free service.
+- Unblocks: steps 1 and 2, completely. Nothing else in this checklist is
+  waiting on it, so work steps 3, 4, and 5 while it processes.
+- What to keep: the nine digits, plus the exact legal name and address as
+  they appear on the D and B record. You will type those into two more
+  forms and they must match character for character.
+
+While waiting, put something real at `https://www.stonedgooseproductions.com`:
+Apple's organization enrollment asks for a company website and does look at
+it.
 
 ---
 
