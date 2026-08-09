@@ -5,7 +5,23 @@
 - Name: Open Mic Explorer
 - iOS subtitle (30 chars max): Find a mic. Get on the list.
 - Bundle id / package: com.openmicexplorer.app
-- Category: Entertainment (primary), Music (secondary)
+- Category, and it differs per store because the taxonomies differ:
+  - **Apple: Entertainment (primary), Music (secondary).** Apple has no
+    Events category and no Comedy category for apps, so Entertainment is
+    where live-event discovery lands (Eventbrite sits there too).
+    Music is the only discipline-specific option available and it covers a
+    real third of the product.
+  - **Google Play: Events.** Play does have a dedicated Events category,
+    and it fits better than Entertainment on both accuracy and visibility:
+    the app is about scheduled, recurring, real-world events you attend or
+    perform at, and Events is a far smaller pond than Entertainment, which
+    is where every streaming service lives.
+  - **Do not pick Social Networking or Social.** It is tempting because
+    there are profiles, user content, and signup lists, but it is
+    inaccurate (no feed, no follower graph, no direct messages, all
+    deliberately out of v1) and it invites extra review scrutiny for no
+    benefit. Guideline 1.2 obligations apply because of the user generated
+    content, not because of the category, and those are already met.
 - Monetization: none. No in-app purchases, no subscriptions, no ads.
 - Age rating: do not enter a tier from memory. Answer both questionnaires from the evidence list in `SUBMISSION_CHECKLIST.md` (UGC yes, mild profanity yes, unrestricted web access yes, no purchases, no ads, no tracking) and record whatever tier each store returns. The in-app age gate is 18, enforced server side, and is the stricter control either way.
 
