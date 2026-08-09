@@ -8,6 +8,49 @@ your decision. `docs/store/SUBMISSION_CHECKLIST.md` is the older, longer
 runbook; where they disagree (it predates the Explorer rebrand and still
 says "openmicfinder" bundle ids in places), THIS file is current.
 
+## State of play, 2026-08-09
+
+Done, and not blocking anything:
+
+- The app codebase. Strict TypeScript, zero lint errors, 493 Jest tests,
+  708 pgTAP assertions, RLS on every table, the Guideline 1.2 set (EULA
+  gate, report, block, moderation queue, in-app deletion, content filter),
+  privacy manifest, error boundary. Verified on a rebuilt database.
+- Web home decided and swept through the code:
+  www.stonedgooseproductions.com/open-mics.
+- Contact address decided and in the app and EULA:
+  kyle@stonedgooseproductions.com. No mailbox to create.
+- The website: /open-mics is the app announcement, the mic map moved to
+  /open-mics/map, and the five store files were created (owner reports
+  complete, verification commands in step 7).
+- EAS project already exists and is linked: owner `kylem_ix`, projectId
+  `b44e6a07-5276-481b-9679-8e3e1e681692`. No `eas init` needed.
+- The reviewer seed, the legal export, and this checklist.
+
+The critical path, and what is genuinely parallel:
+
+```
+D-U-N-S  ->  Apple enrollment  ->  iOS build  ->  TestFlight
+         ->  Play enrollment   ->  app signing key -> assetlinks fingerprint
+Supabase production  ->  reviewer accounts  ->  Android APK on a real phone
+         (this track needs NOTHING from Apple, Google, or D-U-N-S)
+```
+
+The thing worth knowing: testing the real app is not blocked on any store
+account. A production Supabase project plus the existing EAS project gets
+an installable Android APK, because EAS generates its own Android keystore
+and Google Play is not involved in a direct install. Only iOS device builds
+need Apple.
+
+Three placeholders are waiting on accounts that do not exist yet, and each
+unblocks at a different moment:
+
+| Placeholder                    | Where                                        | Unblocked by                                                        |
+| ------------------------------ | -------------------------------------------- | ------------------------------------------------------------------- |
+| `data-function-url`            | website delete-account page                  | Supabase production project (step 3)                                |
+| `TODO_TEAM_ID`                 | `web/.well-known/apple-app-site-association` | Apple enrollment (step 1)                                           |
+| `TODO_SHA256_CERT_FINGERPRINT` | `web/.well-known/assetlinks.json`            | Play app signing, which needs a first upload (step 2, then step 10) |
+
 ## Decisions blocking or shaping steps below, up front
 
 - **D1, support inbox (blocks step 8).** The app's one support address is
