@@ -20,9 +20,33 @@ Done, and not blocking anything:
   www.stonedgooseproductions.com/open-mics.
 - Contact address decided and in the app and EULA:
   kyle@stonedgooseproductions.com. No mailbox to create.
-- The website: /open-mics is the app announcement, the mic map moved to
-  /open-mics/map, and the five store files were created (owner reports
-  complete, verification commands in step 7).
+- The website, verified live against the deployed site on 2026-08-09, not
+  taken on trust: /open-mics, /open-mics/map, /open-mics/privacy and
+  /open-mics/terms all 200; /open-mics/delete-account 307s to its trailing
+  slash and then 200s; both legal pages carry their real text.
+  `/.well-known/apple-app-site-association` returns 200 with
+  `content-type: application/json`, no extension and no redirect, which is
+  the check that decides whether iOS will associate the domain at all.
+  Both association files still carry their TODO_ placeholders and the
+  deletion page still carries `YOUR-PROJECT-REF`, so nothing was invented
+  to look finished.
+
+  Use the TRAILING SLASH form in Play Console's data deletion field:
+  `https://www.stonedgooseproductions.com/open-mics/delete-account/`. It
+  answers 200 directly, and it is already what the Edge Function default
+  and the documented `DELETE_PAGE_URL` secret use, which is the URL that
+  goes into deletion confirmation emails.
+
+  One gap remains, and it is mine: `/open-mics/mic/<id>` returns 404.
+  Those are the URLs the app generates when someone shares a mic, and a
+  recipient without the app installed hits nothing. I dropped that job
+  when scaling the website prompt down to the announcement and did not
+  flag the omission. Not urgent, because deep links cannot verify until
+  `TODO_TEAM_ID` is real, but it must be done before any mic link is
+  shared publicly. Fix: one static landing page plus a `_redirects` rule
+  for `/open-mics/mic/*`, since a static export cannot pre-render unknown
+  uuids.
+
 - EAS project already exists and is linked: owner `kylem_ix`, projectId
   `b44e6a07-5276-481b-9679-8e3e1e681692`. No `eas init` needed.
 - The reviewer seed, the legal export, and this checklist.
