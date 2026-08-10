@@ -1410,6 +1410,82 @@ export type Database = {
           },
         ];
       };
+      share_events: {
+        Row: {
+          action: string;
+          channel: string | null;
+          created_at: string;
+          id: string;
+          intent: string;
+          occurrence_id: string | null;
+          profile_id: string | null;
+          series_id: string;
+        };
+        Insert: {
+          action: string;
+          channel?: string | null;
+          created_at?: string;
+          id?: string;
+          intent: string;
+          occurrence_id?: string | null;
+          profile_id?: string | null;
+          series_id: string;
+        };
+        Update: {
+          action?: string;
+          channel?: string | null;
+          created_at?: string;
+          id?: string;
+          intent?: string;
+          occurrence_id?: string | null;
+          profile_id?: string | null;
+          series_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'share_events_occurrence_id_fkey';
+            columns: ['occurrence_id'];
+            isOneToOne: false;
+            referencedRelation: 'mic_occurrences';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'share_events_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'admin_profile_review';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'share_events_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'share_events_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'public_profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'share_events_series_id_fkey';
+            columns: ['series_id'];
+            isOneToOne: false;
+            referencedRelation: 'mic_series';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'share_events_series_id_fkey';
+            columns: ['series_id'];
+            isOneToOne: false;
+            referencedRelation: 'my_upcoming_nights';
+            referencedColumns: ['series_id'];
+          },
+        ];
+      };
       signups: {
         Row: {
           created_at: string;
