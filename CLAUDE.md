@@ -14,7 +14,7 @@ Standing rules from the brief that are easy to forget mid-session:
 - Never store naive local times. timestamptz plus IANA timezone on the series.
 - Soft-delete listings. Occurrence generation is idempotent on (series_id, local_date).
 - Write tests alongside features, not after.
-- No joke bank, setlist tools, timers, social feed, DMs, follower graph, or AI features in v1.
+- No joke bank, setlist tools, timers, social feed, DMs, or AI features in v1. (Owner amendment 2026-08-10: mutual-consent Network connections are in scope; still no messaging, feed, or one-way following.)
 - Expo SDK 57: consult https://docs.expo.dev/versions/v57.0.0/ for current APIs. Upgrade expo packages only via `npx expo install`.
 - Reanimated 4.5.1 and react-native-worklets 0.10.1 move together or not at all (see ARCHITECTURE.md).
 

@@ -41,6 +41,14 @@ describe('routeForPushPayload', () => {
     expect(getSupabase().maybeSingle).not.toHaveBeenCalled();
   });
 
+  it('routes network payloads to the Network tab', async () => {
+    await expect(routeForPushPayload({ network: true, other_id: 'p1' })).resolves.toBe(
+      '/(tabs)/network',
+    );
+    // Anything but the literal true is not a network payload.
+    await expect(routeForPushPayload({ network: 'yes' })).resolves.toBeNull();
+  });
+
   it('ignores ids that are not strings', async () => {
     // Payloads arrive from outside the app. A number here would otherwise
     // build "/mic/123" and land on a page that cannot exist.

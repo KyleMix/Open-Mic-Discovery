@@ -42,6 +42,19 @@ payment SDK, so 3.1.2 does not apply and Restore Purchases is not required.
 - Some mics charge performers for a reserved stage slot. That is payment for a real-world service at a physical venue, settled at the venue or with the host, never in the app. The app only shows that a cost exists and says so in plain copy: `src/features/signups/components/signup-card.tsx`.
 - Payment model statement for reviewers: `REVIEW_NOTES.md`, Payment model section.
 
+## Network connections (owner brief amendment, 2026-08-10)
+
+Mutual-consent connections between accounts: request, accept, and only then does either side see the other's public socials and upcoming attendance. No messaging, no feed, no free text on a connection, so nothing new enters the moderation queue except what already covers profiles.
+
+| Control                                | Implementation                                                                                                                                                                                                     |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Mutual consent before any visibility   | `connections` table RLS: only the two parties see a row; `connection_nights` is filtered to accepted pairs (`supabase/migrations/20260810001100_network_connections.sql`, `supabase/tests/connections.test.sql`)   |
+| Report and Block on every connection   | Report and Report+Block on each card (`src/features/network/network-screen.tsx` via the shared `ReportModal`); blocking severs the connection server side and prevents new requests both directions (pgTAP-tested) |
+| Delete anytime, either side, any stage | Delete policy for both parties; declining and withdrawing are the same delete, and account deletion removes all connections (`private.delete_account_for`)                                                         |
+| Attendance visibility opt-out          | `profiles.share_attendance`, toggled on the Network tab; hides all nights from all connections without dropping any (pgTAP-tested)                                                                                 |
+| Request-spam limit                     | `connections_rate_limit` trigger, 20 per user per day, same valve as reports and flags                                                                                                                             |
+| No new data collection                 | A connection is two account ids and a status; socials and attendance already existed. Play Data Safety updated in `docs/store/DATA_SAFETY_ANSWERS.md`                                                              |
+
 ## Platform requirements map (July 2026 audit additions)
 
 | Requirement                                                                                                                          | Implementing files                                                                                                                                                                                              |

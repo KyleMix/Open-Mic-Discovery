@@ -75,6 +75,7 @@ export default function NotificationPrefsScreen() {
     new_mic_nearby: prefs.data?.new_mic_nearby ?? false,
     nearby_radius_km: prefs.data?.nearby_radius_km ?? 25,
     weekly_digest: prefs.data?.weekly_digest ?? false,
+    network_updates: prefs.data?.network_updates ?? true,
   };
 
   // Send only the preference fields. Spreading the whole row here used to
@@ -160,6 +161,12 @@ export default function NotificationPrefsScreen() {
           onChange={(km) => set({ nearby_radius_km: km })}
         />
       ) : null}
+      <ToggleRow
+        label="Network requests"
+        description="When someone asks to connect, or accepts your request."
+        value={p.network_updates}
+        onToggle={(v) => set({ network_updates: v })}
+      />
       <ToggleRow
         label="Weekly digest"
         description="One weekly summary of what is happening near you."

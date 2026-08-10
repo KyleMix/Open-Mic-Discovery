@@ -83,6 +83,7 @@ export async function getPushPermissionState(): Promise<PushPermissionState> {
 type PushPayload = {
   occurrence_id?: string;
   series_id?: string;
+  network?: boolean;
 };
 
 function asPushPayload(data: unknown): PushPayload | null {
@@ -92,14 +93,21 @@ function asPushPayload(data: unknown): PushPayload | null {
   const d = data as Record<string, unknown>;
   const occurrence = typeof d.occurrence_id === 'string' ? d.occurrence_id : undefined;
   const series = typeof d.series_id === 'string' ? d.series_id : undefined;
-  return occurrence || series ? { occurrence_id: occurrence, series_id: series } : null;
+  const network = d.network === true;
+  return occurrence || series || network
+    ? { occurrence_id: occurrence, series_id: series, network }
+    : null;
 }
 
-/** The mic page a push payload points at, or null when it points nowhere. */
+/** The screen a push payload points at, or null when it points nowhere. */
 export async function routeForPushPayload(data: unknown): Promise<string | null> {
   const payload = asPushPayload(data);
   if (!payload) {
     return null;
+  }
+  // Connection requests and accepts land on the tab where the answer is.
+  if (payload.network) {
+    return '/(tabs)/network';
   }
   if (payload.series_id) {
     return `/mic/${payload.series_id}`;

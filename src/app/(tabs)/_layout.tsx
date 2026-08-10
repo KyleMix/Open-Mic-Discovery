@@ -2,9 +2,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 
 import { BrandHeader } from '@/components/logo';
+import { useSession } from '@/features/auth/session';
+import { useMyConnections } from '@/features/network/queries';
+import { splitConnections } from '@/features/network/summary';
 import { disciplineAccents, palette } from '@/theme';
 
 export default function TabsLayout() {
+  const { session } = useSession();
+  const connections = useMyConnections(session?.user.id);
+  // Requests waiting on this person, surfaced as a badge so an ask is seen
+  // without a push. Undefined hides the badge entirely.
+  const waiting = connections.data ? splitConnections(connections.data).requests.length : 0;
   return (
     <Tabs
       screenOptions={{
@@ -39,6 +47,15 @@ export default function TabsLayout() {
         options={{
           title: 'Going',
           tabBarIcon: ({ color, size }) => <Ionicons name="calendar" color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="network"
+        options={{
+          title: 'Network',
+          tabBarBadge: waiting > 0 ? waiting : undefined,
+          tabBarBadgeStyle: { backgroundColor: disciplineAccents.poetry, color: palette.bg },
+          tabBarIcon: ({ color, size }) => <Ionicons name="people" color={color} size={size} />,
         }}
       />
       <Tabs.Screen

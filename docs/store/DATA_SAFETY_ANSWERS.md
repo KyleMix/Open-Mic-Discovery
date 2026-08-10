@@ -70,7 +70,13 @@ permission-gated and user-initiated (`src/features/profile`,
 `expo-image-picker`).
 
 **App activity, Other user-generated content.** Collected: Yes (bios,
-listings, signup entries, reports). Purpose: App functionality. Optional.
+listings, signup entries, reports, network connections). Purpose: App
+functionality. Optional. Note on connections: a connection is two account
+ids and a status, created only by mutual consent, deletable by either
+party at any time, and erased on account deletion. What connections see
+of each other (public profile, socials, upcoming attendance) is
+user-to-user visibility inside the app, not sharing with any third
+party, so the Shared answer stays No.
 
 **App activity, App interactions / Installed apps / Search history.** Not
 collected. There are no analytics SDKs (`package.json`: no analytics

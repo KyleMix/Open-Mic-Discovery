@@ -171,6 +171,11 @@ select is_empty(
           'occurrence_spots',
           -- Filtered to the series owner, its creator, or an admin.
           'occurrence_attendance',
+          -- Reads other people's plans and signups on purpose: that is what
+          -- an accepted connection is for. Filtered to auth.uid()'s accepted,
+          -- unblocked pairs, honoring each counterpart's share_attendance;
+          -- connections.test.sql asserts a stranger gets zero rows.
+          'connection_nights',
           -- Exists precisely to read profiles a block hides. Filtered to
           -- `blocker_id = auth.uid()`, so it only ever shows your own list.
           'blocked_profiles',
