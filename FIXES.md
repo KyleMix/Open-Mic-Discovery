@@ -68,7 +68,7 @@ Status: `pending`, `in progress`, `done <commit>`, `logged only` (console-side o
 
 | # | Finding | Change | Status |
 | - | ------- | ------ | ------ |
-| 42 | Performer can delete performed/no_show rows via API | Status guard on delete policy (migration) | pending |
+| 42 | Performer can delete performed/no_show rows via API | Withdraw policy limited to reservation states; performed/no_show rows are the host's record (pgTAP) | done |
 | 43 | Draw losers get generic waitlist wording | requested-to-waitlisted worded as losing the draw | done |
 | 44 | Window close never re-rendered; paused listing reads live; no signup trace on cancelled night | Arm close timer; paused banner from is_active; card note | pending |
 | 45 | Recurrence: -2FR renders "Schedule varies"; clumsy multi-ordinal English; biweekly preview parity; today's night not retimed; override_venue_id dead | Extend ORDINALS; join ordinals; preview first date; document retime; render override venue | pending |
