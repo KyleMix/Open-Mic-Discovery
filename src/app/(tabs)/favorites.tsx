@@ -4,7 +4,6 @@ import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { SignUpPrompt } from '@/features/auth/components/sign-up-prompt';
 import { useSession } from '@/features/auth/session';
-import { OfflineBanner } from '@/components/offline-banner';
 import { MicCard } from '@/features/discovery/components/mic-card';
 import { useFavorites } from '@/features/favorites/queries';
 import { palette, spacing, type Discipline } from '@/theme';
@@ -33,7 +32,10 @@ export default function FavoritesScreen() {
   if (favorites.isPending) {
     return <LoadingView label="Loading favorites" />;
   }
-  if (favorites.isError) {
+  // Cached favorites stay readable through a failed refetch; the offline
+  // banner marks the staleness.
+  const favoriteRows = favorites.data;
+  if (favoriteRows === undefined) {
     return (
       <Screen>
         <Title>Favorites</Title>
@@ -42,7 +44,7 @@ export default function FavoritesScreen() {
       </Screen>
     );
   }
-  if (favorites.data.length === 0) {
+  if (favoriteRows.length === 0) {
     return (
       <Screen>
         <Title>No favorites yet</Title>
@@ -57,9 +59,8 @@ export default function FavoritesScreen() {
 
   return (
     <View style={styles.container}>
-      <OfflineBanner />
       <FlatList
-        data={favorites.data}
+        data={favoriteRows}
         keyExtractor={(f) => f.series_id}
         contentContainerStyle={styles.list}
         refreshControl={

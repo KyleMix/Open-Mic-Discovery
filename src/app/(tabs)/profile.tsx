@@ -42,7 +42,7 @@ export default function ProfileScreen() {
   if (profile.isPending) {
     return <LoadingView label="Loading your profile" />;
   }
-  if (profile.isError) {
+  if (profile.isError && profile.data === undefined) {
     return (
       <Screen>
         <Title>Profile</Title>

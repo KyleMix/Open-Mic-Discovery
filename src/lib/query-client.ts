@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient, focusManager, onlineManager } from '@tanstack/react-query';
+import * as Network from 'expo-network';
+import { AppState } from 'react-native';
 
 /**
  * Single QueryClient for the app. gcTime is generous because performers
@@ -30,6 +32,30 @@ export const queryClient = new QueryClient({
       retry: 2,
     },
   },
+});
+
+/**
+ * React Native does not tell TanStack Query about connectivity or focus by
+ * itself. Without these two listeners, queries fired offline burned their
+ * retries instead of pausing, nothing refetched when the connection came
+ * back, and nothing refreshed when the app returned to the foreground: a
+ * performer who backgrounded the app at a mic came back to whatever was on
+ * screen when they left.
+ */
+onlineManager.setEventListener((setOnline) => {
+  const sub = Network.addNetworkStateListener((state) => {
+    setOnline(state.isConnected !== false && state.isInternetReachable !== false);
+  });
+  // Optional call: the Jest environment's expo-network mock hands back no
+  // subscription object.
+  return () => sub?.remove?.();
+});
+
+focusManager.setEventListener((handleFocus) => {
+  const sub = AppState.addEventListener('change', (status) => {
+    handleFocus(status === 'active');
+  });
+  return () => sub?.remove?.();
 });
 
 /**

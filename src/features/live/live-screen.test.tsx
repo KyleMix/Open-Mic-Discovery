@@ -20,6 +20,13 @@ let mockSpots: { capacity: number | null; taken: number; spots_left: number | nu
 };
 
 jest.mock('expo-keep-awake', () => ({ useKeepAwake: jest.fn() }));
+// The ownership gate needs a signed-in host who manages the mocked mic.
+jest.mock('@/features/auth/session', () => ({
+  useSession: () => ({ session: { user: { id: 'host-1' } }, ready: true }),
+}));
+jest.mock('@/features/auth/queries', () => ({
+  useOwnProfile: () => ({ data: { is_admin: false }, isPending: false, isError: false }),
+}));
 jest.mock('expo-router', () => ({
   Stack: { Screen: () => null },
   useLocalSearchParams: () => ({ occurrenceId: 'occ-1' }),
@@ -29,7 +36,14 @@ jest.mock('@/features/producer/queries', () => ({
     data: {
       starts_at: mockStartsAt,
       live_ended_at: mockEndedAt,
-      series: { title: 'Test Mic', timezone: 'America/Los_Angeles', set_length_minutes: 10 },
+      series: {
+        id: 'series-1',
+        title: 'Test Mic',
+        timezone: 'America/Los_Angeles',
+        set_length_minutes: 10,
+        owner_id: 'host-1',
+        created_by: 'host-1',
+      },
     },
     isPending: false,
     isError: false,

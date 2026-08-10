@@ -17,6 +17,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, type ReactNode } from 'react';
 
+import { OfflineBanner } from '@/components/offline-banner';
 import { ToastProvider } from '@/components/toast';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { SessionProvider, useSession } from '@/features/auth/session';
@@ -82,7 +83,15 @@ function AuthGate({ children }: { children: ReactNode }) {
   }, [router]);
 
   useEffect(() => {
-    if (waiting || profile.isError || eula.isError) {
+    if (waiting) {
+      return;
+    }
+    // An error with cached data still routes: the cache knows whether this
+    // account is onboarded, and blocking on a failed refetch locked the
+    // whole app behind a connection screen in exactly the offline moments
+    // the persisted cache exists for. Only an unknown profile blocks; an
+    // unknown EULA version skips the version check until it can run.
+    if (session && profile.isError && profile.data === undefined) {
       return;
     }
     if (!session) {
@@ -140,7 +149,10 @@ function AuthGate({ children }: { children: ReactNode }) {
   if (waiting) {
     return <LoadingView label="Getting things ready" />;
   }
-  if (session && (profile.isError || eula.isError)) {
+  // Blocking the whole tree is a last resort for "no idea who this is":
+  // signed in, profile fetch failed, and nothing cached. With cached data
+  // the app renders and the offline banner says why things may be stale.
+  if (session && profile.isError && profile.data === undefined) {
     return (
       <Screen>
         <Title>Connection trouble</Title>
@@ -203,6 +215,7 @@ export default function RootLayout() {
         <ThemeProvider value={appTheme}>
           <StatusBar style="light" />
           <ToastProvider>
+            <OfflineBanner />
             <AuthGate>
               <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
                 <Stack.Screen name="(tabs)" />

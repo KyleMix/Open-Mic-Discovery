@@ -51,7 +51,7 @@ export default function ProducerScreen() {
   if (profile.isPending || mySeries.isPending) {
     return <LoadingView label="Loading your mics" />;
   }
-  if (profile.isError || mySeries.isError) {
+  if ((profile.isError && profile.data === undefined) || (mySeries.isError && mySeries.data === undefined)) {
     return (
       <Screen>
         <Title>My Mics</Title>

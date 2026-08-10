@@ -1,7 +1,6 @@
 import { useRouter } from 'expo-router';
 import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
-import { OfflineBanner } from '@/components/offline-banner';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { SignUpPrompt } from '@/features/auth/components/sign-up-prompt';
 import { useSession } from '@/features/auth/session';
@@ -40,7 +39,11 @@ export default function GoingScreen() {
   if (nights.isPending) {
     return <LoadingView label="Loading your nights" />;
   }
-  if (nights.isError) {
+  // A failed refetch with cached rows still shows the rows: the persisted
+  // cache exists for exactly the offline moments the refetch fails in, and
+  // the offline banner marks the staleness.
+  const nightRows = nights.data;
+  if (nightRows === undefined) {
     return (
       <Screen>
         <Title>Going</Title>
@@ -49,7 +52,7 @@ export default function GoingScreen() {
       </Screen>
     );
   }
-  if (nights.data.length === 0) {
+  if (nightRows.length === 0) {
     return (
       <Screen>
         <Title>Nothing lined up yet</Title>
@@ -64,9 +67,8 @@ export default function GoingScreen() {
 
   return (
     <View style={styles.container}>
-      <OfflineBanner />
       <FlatList
-        data={nights.data}
+        data={nightRows}
         keyExtractor={(n) => n.occurrence_id ?? String(n.series_id)}
         contentContainerStyle={styles.list}
         refreshControl={

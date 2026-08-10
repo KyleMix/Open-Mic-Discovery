@@ -14,7 +14,9 @@ jest.mock('@/components/toast', () => ({ useToast: () => mockToast }));
 const mockToast = { show: jest.fn() };
 const mockedGetSupabase = getSupabase as jest.Mock;
 
-type DbResult = { error: null } | { error: { code?: string; message: string } };
+type DbResult =
+  | { data?: unknown; error: null }
+  | { data?: unknown; error: { code?: string; message: string } };
 type Call = { table: string; method: string; args: unknown[] };
 
 /**
@@ -101,7 +103,10 @@ describe('withdraw undo', () => {
 
 describe('cancel-a-night undo', () => {
   it('reverses the cancellation by restoring the scheduled status', async () => {
-    const { calls, result } = await setup(useCancelNight, [{ error: null }, { error: null }]);
+    const { calls, result } = await setup(useCancelNight, [
+      { data: [{ id: 'o1' }], error: null },
+      { data: [{ id: 'o1' }], error: null },
+    ]);
     result.current.mutate({
       occurrenceId: 'o1',
       seriesId: 's1',
@@ -126,7 +131,7 @@ describe('cancel-a-night undo', () => {
 
   it('surfaces a failed restore with a next step, never the raw error', async () => {
     const { result } = await setup(useCancelNight, [
-      { error: null },
+      { data: [{ id: 'o1' }], error: null },
       { error: { message: 'deadlock detected op 0x33' } },
     ]);
     result.current.mutate({ occurrenceId: 'o1', seriesId: 's1', note: null, dateLabel: 'Tonight' });
@@ -143,7 +148,10 @@ describe('cancel-a-night undo', () => {
 
 describe('pause-listing undo', () => {
   it('reverses the pause by setting the listing active again', async () => {
-    const { calls, result } = await setup(usePauseSeries, [{ error: null }, { error: null }]);
+    const { calls, result } = await setup(usePauseSeries, [
+      { data: [{ id: 's1' }], error: null },
+      { data: [{ id: 's1' }], error: null },
+    ]);
     result.current.mutate('s1');
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(calls[0]).toMatchObject({
@@ -164,7 +172,7 @@ describe('pause-listing undo', () => {
 
   it('surfaces a failed resume with a next step', async () => {
     const { result } = await setup(usePauseSeries, [
-      { error: null },
+      { data: [{ id: 's1' }], error: null },
       { error: { message: 'op failure 500' } },
     ]);
     result.current.mutate('s1');

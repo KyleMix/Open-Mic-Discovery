@@ -18,7 +18,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Glyph, disciplineGlyphs, signupMethodGlyphs } from '@/components/glyph';
-import { OfflineBanner } from '@/components/offline-banner';
 import {
   Body,
   Button,
@@ -112,7 +111,7 @@ export default function MicDetailScreen() {
       />
       {detail.isPending ? (
         <LoadingView label="Loading listing" />
-      ) : detail.isError ? (
+      ) : detail.isError && detail.data === undefined ? (
         <Screen>
           <Title>Listing</Title>
           <ErrorText>Could not load this listing. Check your connection.</ErrorText>
@@ -205,7 +204,6 @@ function MicDetail({
 
   return (
     <View style={styles.detailWrap}>
-      <OfflineBanner />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}

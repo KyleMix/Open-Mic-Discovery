@@ -12,7 +12,6 @@ import {
   View,
 } from 'react-native';
 
-import { OfflineBanner } from '@/components/offline-banner';
 import { Body, Button, ErrorText } from '@/components/ui';
 import { useOwnProfile, usePerformerDisciplines } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
@@ -195,7 +194,6 @@ export default function DiscoverScreen() {
 
   return (
     <View style={styles.container}>
-      <OfflineBanner />
       <View style={styles.searchRow}>
         <TextInput
           accessibilityLabel="Search mics, venues, cities, or hosts"
@@ -298,7 +296,7 @@ export default function DiscoverScreen() {
 
       {feed.isPending ? (
         <SkeletonCards />
-      ) : feed.isError ? (
+      ) : feed.isError && feed.data === undefined ? (
         <View style={styles.stateWrap}>
           <ErrorText>{userMessage(feed.error, 'Could not load mics. Try again.')}</ErrorText>
           <Button label="Try again" onPress={() => feed.refetch()} />
