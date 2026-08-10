@@ -35,8 +35,8 @@ Status: `pending`, `in progress`, `done <commit>`, `logged only` (console-side o
 | 11 | Join 42501 blanket-mapped to "not open" | Join 42501 now passes the draw contract message through and names both remaining causes with a support pointer | done |
 | 12 | Sanctions never surfaced in app | Sanction banner with reason/expiry | pending |
 | 13 | Lottery spots-left misinformation pre/post draw | drawEntrantsLabel pre-draw, drawnSpotsLabel post-draw, first-come copy unchanged; footer gets drawDone | done |
-| 14 | Spots/counts never update live on mic page | Occurrence-scoped realtime + invalidate spots/counts | pending |
-| 15 | Roster misses withdrawals (replica identity) | alter table signups replica identity full | pending |
+| 14 | Spots/counts never update live on mic page | Spots/counts poll every 20s while the window is open (RLS keeps other entrants' rows out of realtime); roster events also refresh spots | done |
+| 15 | Roster misses withdrawals (replica identity) | 20260810000600: replica identity full + mic_series/mic_occurrences added to the realtime publication, pgTAP pinned | done |
 | 16 | Live screen says nobody signed up on undrawn lottery | Count requested rows; link to draw | pending |
 | 17 | Withdraw Undo post-draw limbo + wrong copy | Withdraw confirm copy branches by method and draw state; undo rejoin explains a draw that ran in the meantime | done |
 | 18 | Series delete/unapprove silently erases Going entries | Cancel future occurrences on delete/unapprove (migration) | pending |
@@ -46,8 +46,8 @@ Status: `pending`, `in progress`, `done <commit>`, `logged only` (console-side o
 | 22 | Rule change orphans off-pattern nights invisibly | Mark off-pattern nights in Upcoming nights | pending |
 | 23 | Name search hard-bounded by radius | p_radius_m null when query present | pending |
 | 24 | .or() interpolation 400 on comma/paren | Escape filter values in venue + person search | pending |
-| 25 | Producer edits invisible to viewing performer | Realtime on viewed series + focus refetch | pending |
-| 26 | Cancel/pause does not invalidate favorites/Going | Add keys to useInvalidateSeries | pending |
+| 25 | Producer edits invisible to viewing performer | useMicDetail subscribes to the viewed series' occurrences and series row; focusManager (item 4) covers foregrounding | done |
+| 26 | Cancel/pause does not invalidate favorites/Going | useInvalidateSeries also invalidates plan and favorites | done |
 | 27 | Blocking does not hide a blocked host's mics | Block filtering in discovery RPCs (migration) | pending |
 | 28 | Report-modal block + Settings unblock fail silently; blocked/banned rows render "Performer" | Render errors; stable roster fallback label | pending |
 | 29 | Admin mutations silent; Actioned leaves content live; no target preview; held credits unapprovable | Render errors; Actioned moderates target; show target; credits leg in queue | pending |

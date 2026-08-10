@@ -1,7 +1,9 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 
 import { STARTED_GRACE_MS } from '@/features/discovery/next-occurrence';
 import { getSupabase } from '@/lib/supabase';
+import { uniqueChannelTopic } from '@/lib/realtime';
 import { userError } from '@/lib/user-error';
 import { filtersToDiscoverArgs, type DiscoveryFilters } from '@/stores/filters';
 import type { Database } from '@/types/database.types';
@@ -110,6 +112,47 @@ export function useSearchRecovery(
 }
 
 export function useMicDetail(seriesId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  // A host cancelling or moving tonight must reach the performer already
+  // staring at the page: without this, the old time stayed up until a
+  // manual refresh. Both tables broadcast (20260810000600) and are public
+  // reads, so RLS lets any viewer of the page subscribe.
+  useEffect(() => {
+    if (!seriesId) {
+      return;
+    }
+    const supabase = getSupabase();
+    const channel = supabase
+      .channel(uniqueChannelTopic('mic-detail', seriesId))
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'mic_occurrences',
+          filter: `series_id=eq.${seriesId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['mic', seriesId] });
+          // The Going tab reads the same nights through a view and stays
+          // mounted behind the tabs; refresh it too.
+          queryClient.invalidateQueries({ queryKey: ['plan'] });
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'mic_series', filter: `id=eq.${seriesId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['mic', seriesId] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [seriesId, queryClient]);
+
   return useQuery({
     queryKey: ['mic', seriesId],
     enabled: !!seriesId,

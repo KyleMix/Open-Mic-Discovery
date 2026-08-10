@@ -108,13 +108,16 @@ export function useMyNights(userId: string | undefined) {
  * How full a night is. Public: the whole point is that someone browsing sees
  * the pressure before they tap. Counts only, never who.
  */
-export function useNightSpots(occurrenceId: string | undefined) {
+export function useNightSpots(occurrenceId: string | undefined, opts?: { poll?: boolean }) {
   return useQuery({
     queryKey: ['signup', 'spots', occurrenceId],
     enabled: !!occurrenceId,
     // The number moves as people sign up, and a stale one is the reason
-    // someone taps expecting a slot and lands on a waitlist.
+    // someone taps expecting a slot and lands on a waitlist. Realtime
+    // cannot carry other performers' rows to this subscriber (RLS filters
+    // them), so while the window is open the card polls instead.
     staleTime: 15_000,
+    refetchInterval: opts?.poll ? 20_000 : undefined,
     queryFn: async () => {
       const { data, error } = await getSupabase()
         .from('occurrence_spots')
@@ -305,6 +308,7 @@ export function useRoster(occurrenceId: string | undefined) {
           queryClient.invalidateQueries({ queryKey: ['signup', 'roster', occurrenceId] });
           queryClient.invalidateQueries({ queryKey: ['signup', 'mine', occurrenceId] });
           queryClient.invalidateQueries({ queryKey: ['signup', 'counts', occurrenceId] });
+          queryClient.invalidateQueries({ queryKey: ['signup', 'spots', occurrenceId] });
         },
       )
       .subscribe();
@@ -358,10 +362,13 @@ export function useSetSlotOrder() {
  * Anonymous taken-versus-capacity for a night, so a performer can tell
  * whether signing up confirms them or waitlists them. No names.
  */
-export function useSignupCounts(occurrenceId: string | undefined) {
+export function useSignupCounts(occurrenceId: string | undefined, opts?: { poll?: boolean }) {
   return useQuery({
     queryKey: ['signup', 'counts', occurrenceId],
     enabled: !!occurrenceId,
+    // Same polling rationale as useNightSpots: the other entrants' rows
+    // never reach this subscriber over realtime.
+    refetchInterval: opts?.poll ? 20_000 : undefined,
     queryFn: async () => {
       const { data, error } = await getSupabase().rpc('signup_counts', {
         p_occurrence_id: occurrenceId!,

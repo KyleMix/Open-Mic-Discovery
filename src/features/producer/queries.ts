@@ -35,6 +35,11 @@ function useInvalidateSeries() {
   return (seriesId?: string) => {
     queryClient.invalidateQueries({ queryKey: ['producer'] });
     queryClient.invalidateQueries({ queryKey: ['mics'] });
+    // Dual roles are the normal case: a host who cancels their own night is
+    // often on that night's list too, so the performer-side surfaces
+    // (Going, Favorites) refresh with the producer ones.
+    queryClient.invalidateQueries({ queryKey: ['plan'] });
+    queryClient.invalidateQueries({ queryKey: ['favorites'] });
     if (seriesId) {
       queryClient.invalidateQueries({ queryKey: ['mic', seriesId] });
     }

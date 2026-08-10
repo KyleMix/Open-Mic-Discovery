@@ -71,7 +71,13 @@ export function SignupCard({
   const { session } = useSession();
   const profile = useOwnProfile(session?.user.id);
   const mySignup = useMySignup(occurrence.id, session?.user.id);
-  const spots = useNightSpots(occurrence.id);
+  // Other performers' signups never reach this subscriber over realtime
+  // (RLS filters their rows), so while the window is open the fullness
+  // numbers poll: two people watching "1 spot left" is exactly when the
+  // number must move.
+  const window = signupWindow(occurrence.starts_at, signupOpens, signupCloses, new Date());
+  const pollFullness = occurrence.status === 'scheduled' && window.state === 'open';
+  const spots = useNightSpots(occurrence.id, { poll: pollFullness });
   const join = useJoinList();
   // The sticky footer holds a second button for the same action; observing
   // its in-flight mutation keeps a fast double tap from firing two inserts.
@@ -81,7 +87,7 @@ export function SignupCard({
     }).length > 0;
   const withdraw = useWithdraw();
   const enablePerformer = useEnablePerformerRole();
-  const counts = useSignupCounts(occurrence.id);
+  const counts = useSignupCounts(occurrence.id, { poll: pollFullness });
   // "Waitlisted" alone answers nothing; the place in line is the fact a
   // waiting performer keeps checking for. Realtime keeps it moving.
   const waitlistRank = useWaitlistRank(
@@ -117,7 +123,6 @@ export function SignupCard({
     return null;
   }
 
-  const window = signupWindow(occurrence.starts_at, signupOpens, signupCloses, new Date());
   const nightLabel = formatRelativeDay(occurrence.starts_at, timezone);
 
   let content: React.ReactNode;
