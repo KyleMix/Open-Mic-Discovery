@@ -3,7 +3,7 @@
 -- event under someone else's id, nobody but an admin can read any of it
 -- back, and the rows cannot be edited after the fact.
 begin;
-select plan(10);
+select plan(12);
 
 -- Fixture: an approved mic to share.
 insert into venues (id, name, address_line, city, region, location, moderation_status)
@@ -57,10 +57,21 @@ select is(
   'a sharer reads nothing back, not even their own events'
 );
 
--- Append-only: an update is filtered by RLS rather than applied.
-update share_events set intent = 'producer'
-  where profile_id = '00000000-0000-4000-a000-000000000001';
-delete from share_events where profile_id = '00000000-0000-4000-a000-000000000001';
+-- Append-only: the migration revokes update and delete outright, so the
+-- attempts are refused at the privilege layer, before RLS is even consulted.
+select throws_ok(
+  $$update share_events set intent = 'producer'
+    where profile_id = '00000000-0000-4000-a000-000000000001'$$,
+  '42501',
+  null,
+  'an update is refused outright'
+);
+select throws_ok(
+  $$delete from share_events where profile_id = '00000000-0000-4000-a000-000000000001'$$,
+  '42501',
+  null,
+  'and so is a delete'
+);
 
 -- ---------------------------------------------------------------------------
 -- A guest shares without an account.
@@ -100,7 +111,7 @@ select is(
 select is(
   (select count(*)::int from share_events where intent = 'producer'),
   0,
-  'the RLS-filtered update wrote no rows'
+  'the refused update wrote no rows'
 );
 select is(
   (select channel from share_events where action = 'share_completed'),
