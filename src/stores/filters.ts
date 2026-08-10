@@ -253,7 +253,11 @@ export function filtersToDiscoverArgs(
     p_query: trimmed.length > 0 ? trimmed : undefined,
     p_lat: center?.lat,
     p_lng: center?.lng,
-    p_radius_m: Math.round(filters.radiusKm * 1000),
+    // A typed name is the intent; a hard radius bound made a mic in the
+    // next city unfindable by its exact name. Text searches go unbounded
+    // and let the RPC's distance decay do the ranking; browsing keeps the
+    // radius the person chose.
+    p_radius_m: trimmed.length > 0 ? undefined : Math.round(filters.radiusKm * 1000),
     p_disciplines: filters.disciplines.length > 0 ? filters.disciplines : undefined,
     p_days: window.days ?? (filters.days.length > 0 ? filters.days : undefined),
     p_local_from: window.from,

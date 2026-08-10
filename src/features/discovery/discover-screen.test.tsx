@@ -170,16 +170,11 @@ describe('Discover request lifecycle', () => {
     });
   });
 
-  it('offers a wider radius instead of a dead end on zero results', async () => {
-    // The feed finds nothing at the default radius; the recovery probe at
-    // the next radius up finds two mics.
-    const { view, calls } = await setup((op) => {
-      const payload = op.payload as RpcPayload;
-      if (payload.p_radius_m && payload.p_radius_m > 40000) {
-        return [ROW, { ...ROW, series_id: 'series-2', title: 'Second Mic' }];
-      }
-      return [];
-    });
+  it('searches text unbounded, and never offers a radius that cannot help', async () => {
+    // A typed name drops the radius bound entirely (the mic you name may be
+    // in the next city), so a zero-result text search gets the other
+    // recoveries, not a meaningless "widen the radius".
+    const { view, calls } = await setup(() => []);
     await settle();
     const input = view.getByLabelText('Search mics, venues, cities, or hosts');
     await fireEvent.changeText(input, 'zzzzzz');
@@ -187,9 +182,10 @@ describe('Discover request lifecycle', () => {
 
     await waitFor(() => {
       expect(view.getByText('No matches for "zzzzzz"')).toBeTruthy();
-      expect(view.getByText('2 mics within 50 miles')).toBeTruthy();
-      expect(view.getByText('Show nearby mics instead')).toBeTruthy();
+      expect(view.queryByText(/within \d+ miles/)).toBeNull();
     });
-    expect(discoverCalls(calls).some((c) => c.payload.p_radius_m === 80000)).toBe(true);
+    const textCalls = discoverCalls(calls).filter((c) => c.payload.p_query === 'zzzzzz');
+    expect(textCalls.length).toBeGreaterThan(0);
+    expect(textCalls.every((c) => c.payload.p_radius_m === undefined)).toBe(true);
   });
 });

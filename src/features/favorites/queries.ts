@@ -16,6 +16,8 @@ export type FavoriteItem = {
   series_id: string;
   created_at: string;
   next_starts_at: string | null;
+  /** An imminent called-off night, so the card can say so. */
+  cancelled_next_starts_at: string | null;
   /** Null on the optimistic stub row until the settled refetch fills it in. */
   series: {
     id: string;
@@ -54,13 +56,15 @@ export function useFavorites(userId: string | undefined) {
       // graveyard: fetch each mic's next night and lead with the soonest.
       const seriesIds = data.map((f) => f.series_id);
       const nextBySeries: Record<string, string> = {};
+      // A favorited mic whose imminent night was called off says so on the
+      // card, instead of silently showing the following week.
+      const cancelledBySeries: Record<string, string> = {};
       if (seriesIds.length > 0) {
         const { data: occurrences, error: occError } = await supabase
           .from('mic_occurrences')
-          .select('series_id, starts_at')
+          .select('series_id, starts_at, status')
           .in('series_id', seriesIds)
           .gte('starts_at', new Date().toISOString())
-          .neq('status', 'cancelled')
           .order('starts_at');
         if (occError) {
           throw userError(
@@ -69,13 +73,22 @@ export function useFavorites(userId: string | undefined) {
           );
         }
         for (const occ of occurrences) {
-          if (!nextBySeries[occ.series_id]) {
+          if (occ.status === 'cancelled') {
+            // Only a cancellation before the next live night is news.
+            if (!nextBySeries[occ.series_id] && !cancelledBySeries[occ.series_id]) {
+              cancelledBySeries[occ.series_id] = occ.starts_at;
+            }
+          } else if (!nextBySeries[occ.series_id]) {
             nextBySeries[occ.series_id] = occ.starts_at;
           }
         }
       }
       return data
-        .map((f) => ({ ...f, next_starts_at: nextBySeries[f.series_id] ?? null }))
+        .map((f) => ({
+          ...f,
+          next_starts_at: nextBySeries[f.series_id] ?? null,
+          cancelled_next_starts_at: cancelledBySeries[f.series_id] ?? null,
+        }))
         .sort((a, b) => {
           if (a.next_starts_at === b.next_starts_at) {
             return 0;
@@ -175,6 +188,7 @@ export function useToggleFavorite() {
             created_at: new Date().toISOString(),
             series: null,
             next_starts_at: null,
+            cancelled_next_starts_at: null,
           },
           ...old,
         ];

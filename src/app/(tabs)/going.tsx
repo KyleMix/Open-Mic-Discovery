@@ -135,6 +135,7 @@ function NightRow({ night, onPress }: { night: UpcomingNight; onPress: () => voi
           // You are already on this night; the count belongs where the
           // decision is made, not here.
           spots_left: null,
+          cancelled_next_starts_at: null,
         }}
         onPress={onPress}
       />

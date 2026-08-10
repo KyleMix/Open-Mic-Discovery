@@ -60,6 +60,7 @@ const SEARCH_ROW: DiscoverResult = {
   owner_id: null as unknown as string,
   match_kind: 'text',
   rank_score: 5.1,
+  cancelled_next_starts_at: null as unknown as string,
 };
 
 describe('MicCard from a search result', () => {

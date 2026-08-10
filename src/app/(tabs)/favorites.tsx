@@ -99,6 +99,7 @@ export default function FavoritesScreen() {
                 featured_name: null,
                 host_name: null,
                 spots_left: null,
+                cancelled_next_starts_at: item.cancelled_next_starts_at,
               }}
               onPress={() => router.push(`/mic/${s.id}`)}
             />

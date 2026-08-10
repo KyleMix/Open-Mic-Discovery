@@ -83,7 +83,10 @@ export function useSearchRecovery(
     retry: false,
     queryFn: async ({ signal }): Promise<SearchRecovery> => {
       const supabase = getSupabase();
-      const wider = widerRadiusKm(filters.radiusKm);
+      // Text searches already run unbounded (filtersToDiscoverArgs drops
+      // the radius when a query is present), so widening cannot help them;
+      // the radius probe is a browse-mode recovery only.
+      const wider = trimmed.length === 0 ? widerRadiusKm(filters.radiusKm) : null;
       if (wider !== null) {
         const { data } = await supabase
           .rpc(

@@ -70,6 +70,9 @@ export type MicCardMic = {
   host_name: string | null;
   /** Spots left on the next night; null when the host set no cap. */
   spots_left: number | null;
+  /** An imminent night that was called off; the card says so instead of
+   * silently showing the following week. */
+  cancelled_next_starts_at: string | null;
 };
 
 type Props = {
@@ -89,6 +92,9 @@ export function MicCard({ mic, onPress }: Props) {
   // whether the next night is tomorrow or twelve days out.
   const nextDate = formatNextDate(mic.next_starts_at, mic.timezone);
   const when = recurrence ? `${recurrence} · ${nextDate}` : nextDate;
+  const cancelledNight = mic.cancelled_next_starts_at
+    ? `${formatNextDate(mic.cancelled_next_starts_at, mic.timezone)} is cancelled`
+    : null;
 
   // The favorite star is a sibling overlay, not a child: a button nested in
   // a button is invalid HTML, and react-native-web renders both as <button>.
@@ -97,6 +103,8 @@ export function MicCard({ mic, onPress }: Props) {
       <PressableScale
         accessibilityRole="button"
         accessibilityLabel={`${mic.title} at ${mic.venue_name}. ${when}. ${
+          cancelledNight ? `${cancelledNight}. ` : ''
+        }${
           mic.featured_name ? `Featuring ${mic.featured_name}. ` : ''
         }${mic.host_name ? `Hosted by ${mic.host_name}. ` : ''}${
           SIGNUP_METHOD_LABELS[mic.signup_method]
@@ -138,6 +146,7 @@ export function MicCard({ mic, onPress }: Props) {
             {mic.distance_m != null ? ` (${formatMilesFromMeters(mic.distance_m)})` : ''}
           </Text>
           <Text style={styles.when}>{when}</Text>
+          {cancelledNight ? <Text style={styles.cancelledNight}>{cancelledNight}</Text> : null}
           {/* A guest is the reason someone picks one night over another, so it
             belongs on the card rather than only on the mic page. */}
           {mic.featured_name ? (
@@ -318,6 +327,11 @@ const styles = StyleSheet.create({
   },
   when: {
     color: palette.text,
+    fontSize: type.caption.fontSize,
+  },
+  cancelledNight: {
+    color: palette.danger,
+    fontFamily: fonts.medium,
     fontSize: type.caption.fontSize,
   },
   spotsAlert: {

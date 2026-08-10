@@ -3146,6 +3146,7 @@ export type Database = {
           p_start_hour?: number;
         };
         Returns: {
+          cancelled_next_starts_at: string;
           capacity: number;
           city: string;
           cost_cents: number;

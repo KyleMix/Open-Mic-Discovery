@@ -41,14 +41,14 @@ Status: `pending`, `in progress`, `done <commit>`, `logged only` (console-side o
 | 17 | Withdraw Undo post-draw limbo + wrong copy | Withdraw confirm copy branches by method and draw state; undo rejoin explains a draw that ran in the meantime | done |
 | 18 | Series delete/unapprove silently erases Going entries | Cancel future occurrences on delete/unapprove (migration) | pending |
 | 19 | Start-time change never notifies signed-up performers | starts_at-change notification trigger (migration) | pending |
-| 20 | Cancelled next night invisible on cards | Surface next_status through search_discover + card strike | pending |
+| 20 | Cancelled next night invisible on cards | search_discover returns cancelled_next_starts_at; MicCard renders a danger line; favorites carry it too; pgTAP discovery-truth | done |
 | 21 | anchor_date never re-sent; parity picker hidden in edit | Show picker in edit mode; send anchor in patch | pending |
 | 22 | Rule change orphans off-pattern nights invisibly | Mark off-pattern nights in Upcoming nights | pending |
-| 23 | Name search hard-bounded by radius | p_radius_m null when query present | pending |
+| 23 | Name search hard-bounded by radius | Text queries send no radius (distance decay ranks); radius recovery is browse-only; zero-results copy stops blaming the radius | done |
 | 24 | .or() interpolation 400 on comma/paren | Escape filter values in venue + person search | pending |
 | 25 | Producer edits invisible to viewing performer | useMicDetail subscribes to the viewed series' occurrences and series row; focusManager (item 4) covers foregrounding | done |
 | 26 | Cancel/pause does not invalidate favorites/Going | useInvalidateSeries also invalidates plan and favorites | done |
-| 27 | Blocking does not hide a blocked host's mics | Block filtering in discovery RPCs (migration) | pending |
+| 27 | Blocking does not hide a blocked host's mics | search_discover filters mics whose owner is in a block pair with the caller (enrichment phase, pgTAP proves blocker/guest asymmetry) | done |
 | 28 | Report-modal block + Settings unblock fail silently; blocked/banned rows render "Performer" | Render errors; stable roster fallback label | pending |
 | 29 | Admin mutations silent; Actioned leaves content live; no target preview; held credits unapprovable | Render errors; Actioned moderates target; show target; credits leg in queue | pending |
 | 30 | Claim review silent failure; claims/next-nights lack states | Render states | pending |

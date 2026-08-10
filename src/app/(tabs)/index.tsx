@@ -377,8 +377,10 @@ function ZeroResults({
         {query ? `No matches for "${query}"` : 'Nothing here right now'}
       </Text>
       <Body>
-        Nothing within {radiusLabel(radiusKm)}
-        {hasWhen ? ' on the days you picked' : ''}.
+        {query
+          ? // Text searches run unbounded, so the radius is not the reason.
+            `Nothing anywhere matches that${hasWhen ? ' on the days you picked' : ''}.`
+          : `Nothing within ${radiusLabel(radiusKm)}${hasWhen ? ' on the days you picked' : ''}.`}
       </Body>
       {recovery?.kind === 'radius' ? (
         <Button
