@@ -6,6 +6,7 @@ import { ScreenHeader } from '@/components/screen-header';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
+import { eventDate } from '@/features/discovery/local-time';
 import { useMicDetail } from '@/features/discovery/queries';
 import { NotYourMic } from '@/features/producer/components/not-your-mic';
 import { canManageSeries } from '@/features/producer/ownership';
@@ -122,7 +123,7 @@ export default function AnalyticsScreen() {
         nights.map((n) => (
           <View key={n.id} style={styles.nightRow}>
             <Text style={styles.nightDate}>
-              {new Date(n.starts_at).toLocaleDateString(undefined, {
+              {eventDate(n.starts_at, detail.data?.series.timezone, {
                 weekday: 'short',
                 month: 'short',
                 day: 'numeric',

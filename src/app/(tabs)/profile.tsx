@@ -8,6 +8,7 @@ import { useIsAdminReader } from '@/features/safety/queries';
 import { SignUpPrompt } from '@/features/auth/components/sign-up-prompt';
 import { useSession } from '@/features/auth/session';
 import { formatRelativeDay } from '@/features/discovery/date-label';
+import { eventDate } from '@/features/discovery/local-time';
 import { AvatarCircle } from '@/features/profile/avatar-circle';
 import { homeAreaLabel } from '@/features/profile/home-area';
 import { buildSocialLinks } from '@/features/profile/social';
@@ -213,7 +214,9 @@ function NightRow({
 }) {
   // Past nights stay absolute dates; a history that says "Tonight" lies.
   const date = past
-    ? new Date(night.occurrence.starts_at).toLocaleDateString(undefined, {
+    ? // The mic's zone, like the upcoming branch: a device in another zone
+      // otherwise shifts the night you played by a day.
+      eventDate(night.occurrence.starts_at, night.occurrence.series?.timezone, {
         weekday: 'short',
         month: 'short',
         day: 'numeric',

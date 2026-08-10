@@ -28,8 +28,18 @@ describe('describeRecurrence', () => {
     expect(describeRecurrence('FREQ=MONTHLY;BYDAY=-1TH', '19:30')).toBe(
       'Last Thursday of the month, 7:30 PM',
     );
+    // A shared weekday is said once.
     expect(describeRecurrence('FREQ=MONTHLY;BYDAY=1SU,3SU', '17:00')).toBe(
-      'First Sunday and third Sunday of the month, 5:00 PM',
+      'First and third Sunday of the month, 5:00 PM',
+    );
+    // Mixed weekdays keep the long form.
+    expect(describeRecurrence('FREQ=MONTHLY;BYDAY=1SU,3MO', '17:00')).toBe(
+      'First Sunday and third Monday of the month, 5:00 PM',
+    );
+    // The validator accepts negative ordinals to -5; none may fall back
+    // to "Schedule varies".
+    expect(describeRecurrence('FREQ=MONTHLY;BYDAY=-2FR', '20:00')).toBe(
+      'Second to last Friday of the month, 8:00 PM',
     );
   });
 

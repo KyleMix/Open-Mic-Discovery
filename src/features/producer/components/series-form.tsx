@@ -6,6 +6,7 @@ import { Glyph, disciplineGlyphs } from '@/components/glyph';
 import { SelectField } from '@/components/select';
 import { Body, Button, ErrorText, Field } from '@/components/ui';
 import { describeRecurrence } from '@/features/discovery/recurrence';
+import { rruleMatches } from '@/features/producer/rrule-match';
 import {
   SIGNUP_METHOD_DESCRIPTIONS,
   SIGNUP_METHOD_LABELS,
@@ -158,6 +159,29 @@ function chipStyle(active: boolean) {
   return [styles.chip, active && styles.chipActive];
 }
 
+
+/** The first calendar date on or after the anchor that the rule generates,
+ * as a short label, or null when nothing matches in the next five weeks. */
+function firstMatchingDate(rrule: string, anchorDate: string): string | null {
+  const start = Date.parse(`${anchorDate}T00:00:00Z`);
+  if (Number.isNaN(start)) {
+    return null;
+  }
+  for (let i = 0; i < 35; i++) {
+    const day = new Date(start + i * 86_400_000);
+    const iso = day.toISOString().slice(0, 10);
+    if (rruleMatches(rrule, anchorDate, iso)) {
+      return day.toLocaleDateString(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'UTC',
+      });
+    }
+  }
+  return null;
+}
+
 export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDirtyChange }: Props) {
   const [title, setTitle] = useState(existing?.title ?? '');
   const [description, setDescription] = useState(existing?.description ?? '');
@@ -240,6 +264,15 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
   const startTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
   const rrule = buildRrule(recurrence);
   const preview = rrule ? describeRecurrence(rrule, startTime) : null;
+  // "Every other Wednesday" alone cannot answer which alternating week;
+  // the first concrete date can, so the preview names it for biweeklies.
+  const firstNight =
+    rrule && recurrence.kind === 'biweekly' && (!existing || kindChanged)
+      ? firstMatchingDate(
+          rrule,
+          computeAnchorDate(recurrence, new Date(), biweeklyNextWeek, timezone),
+        )
+      : null;
   const signupOpensOptions = signupOpensChoices(method).map(({ minutes, label }) => ({
     value: minutes,
     label,
@@ -592,7 +625,12 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
       </View>
       <Body>The start time is local time at the venue, in this timezone.</Body>
 
-      {preview ? <Text style={styles.preview}>{preview}</Text> : null}
+      {preview ? (
+        <Text style={styles.preview}>
+          {preview}
+          {firstNight ? ` · First night ${firstNight}` : ''}
+        </Text>
+      ) : null}
 
       <Text style={styles.sectionLabel}>Signups</Text>
       <SelectField

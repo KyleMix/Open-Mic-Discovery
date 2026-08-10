@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import tzLookup from 'tz-lookup';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
@@ -188,8 +189,22 @@ export function hasActiveFilters(filters: DiscoveryFilters): boolean {
   );
 }
 
-/** A local calendar date as the RPC's date type expects it. */
-function localDateISO(date: Date): string {
+/**
+ * A local calendar date as the RPC's date type expects it, in the given
+ * IANA zone when one is known. The zone matters once "Browse near" moves
+ * the center to another city: a Seattle user at 10 PM asking for Tonight
+ * in New York means New York's tonight, not a date that is already
+ * yesterday there.
+ */
+function localDateISO(date: Date, timeZone?: string | null): string {
+  if (timeZone) {
+    try {
+      // en-CA renders YYYY-MM-DD.
+      return date.toLocaleDateString('en-CA', { timeZone });
+    } catch {
+      // An unknown zone falls back to the device date below.
+    }
+  }
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
@@ -210,21 +225,22 @@ function addDays(date: Date, days: number): Date {
 export function whenToWindow(
   when: WhenFilter | null,
   now: Date,
+  timeZone?: string | null,
 ): { from?: string; to?: string; days?: number[] } {
   switch (when) {
     case 'tonight':
-      return { from: localDateISO(now), to: localDateISO(now) };
+      return { from: localDateISO(now, timeZone), to: localDateISO(now, timeZone) };
     case 'tomorrow': {
       const tomorrow = addDays(now, 1);
-      return { from: localDateISO(tomorrow), to: localDateISO(tomorrow) };
+      return { from: localDateISO(tomorrow, timeZone), to: localDateISO(tomorrow, timeZone) };
     }
     case 'week':
-      return { from: localDateISO(now), to: localDateISO(addDays(now, 6)) };
+      return { from: localDateISO(now, timeZone), to: localDateISO(addDays(now, 6), timeZone) };
     case 'weekend': {
       const daysUntilSunday = (7 - isoWeekday(now)) % 7;
       return {
-        from: localDateISO(now),
-        to: localDateISO(addDays(now, daysUntilSunday)),
+        from: localDateISO(now, timeZone),
+        to: localDateISO(addDays(now, daysUntilSunday), timeZone),
         days: WEEKEND_DAYS,
       };
     }
@@ -234,6 +250,15 @@ export function whenToWindow(
 }
 
 export type SearchDiscoverArgs = Database['public']['Functions']['search_discover']['Args'];
+
+/** tz-lookup never throws for finite coordinates, but guard anyway. */
+function centerTimezone(lat: number, lng: number): string | null {
+  try {
+    return tzLookup(lat, lng);
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Translates UI filter state, the center, and the typed query into
@@ -246,7 +271,9 @@ export function filtersToDiscoverArgs(
   query: string,
   now: Date = new Date(),
 ): SearchDiscoverArgs {
-  const window = whenToWindow(filters.when, now);
+  // The center's zone, so the When quick picks mean the center's day.
+  const centerZone = center ? centerTimezone(center.lat, center.lng) : null;
+  const window = whenToWindow(filters.when, now, centerZone);
   const hourWindow = filters.timeOfDay ? TIME_WINDOWS[filters.timeOfDay] : null;
   const trimmed = query.trim();
   return {

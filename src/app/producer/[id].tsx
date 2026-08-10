@@ -347,7 +347,8 @@ export default function ManageSeriesScreen() {
           <View style={styles.editorBox}>
             <Body>
               These changes apply to this and all future nights. Nights you cancelled or edited
-              individually are left alone. To change a single night, use the list below instead.
+              individually are left alone, and tonight keeps its current time if it is already on
+              the calendar. To change a single night, use the list below instead.
             </Body>
             <SeriesForm
               existing={{

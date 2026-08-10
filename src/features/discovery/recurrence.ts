@@ -21,15 +21,26 @@ const ORDINALS: Record<string, string> = {
   '4': 'fourth',
   '5': 'fifth',
   '-1': 'last',
+  // The validator (20260807000700) accepts ordinals to -5; a rule it
+  // accepts must never render as "Schedule varies".
+  '-2': 'second to last',
+  '-3': 'third to last',
+  '-4': 'fourth to last',
+  '-5': 'fifth to last',
 };
 
 export function formatLocalTime(startTime: string): string {
   const [hStr, mStr] = startTime.split(':');
   const hour = Number(hStr);
   const minute = Number(mStr ?? '0');
-  const period = hour >= 12 ? 'PM' : 'AM';
-  const displayHour = hour % 12 === 0 ? 12 : hour % 12;
-  return `${displayHour}:${String(minute).padStart(2, '0')} ${period}`;
+  // Through Intl like every other time on screen: hardcoded AM/PM next to
+  // a 24-hour "· 20:00" chip read as two apps on a de-DE device.
+  const date = new Date(Date.UTC(2000, 0, 1, hour, minute));
+  return date.toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'UTC',
+  });
 }
 
 function parseRrule(rrule: string): Map<string, string> {
@@ -88,7 +99,7 @@ export function describeRecurrence(rrule: string, startTime: string): string | n
   }
 
   if (freq === 'MONTHLY') {
-    const described: string[] = [];
+    const entries: { ordinal: string; day: string }[] = [];
     for (const entry of byday) {
       const match = entry.match(/^(-?\d)([A-Z]{2})$/);
       const position = match?.[1];
@@ -101,9 +112,16 @@ export function describeRecurrence(rrule: string, startTime: string): string | n
       if (!ordinal || !day) {
         return null;
       }
-      described.push(`${ordinal} ${day}`);
+      entries.push({ ordinal, day });
     }
-    const capitalized = joinList(described).replace(/^./, (c) => c.toUpperCase());
+    // "First and third Sunday", not "first Sunday and third Sunday": when
+    // every entry shares a weekday, say the day once.
+    const oneDay = entries.every((e) => e.day === entries[0]?.day) ? entries[0]?.day : null;
+    const phrase =
+      oneDay && entries.length > 1
+        ? `${joinList(entries.map((e) => e.ordinal))} ${oneDay}`
+        : joinList(entries.map((e) => `${e.ordinal} ${e.day}`));
+    const capitalized = phrase.replace(/^./, (c) => c.toUpperCase());
     return `${capitalized} of the month, ${time}`;
   }
 

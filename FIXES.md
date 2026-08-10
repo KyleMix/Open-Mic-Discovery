@@ -71,8 +71,8 @@ Status: `pending`, `in progress`, `done <commit>`, `logged only` (console-side o
 | 42 | Performer can delete performed/no_show rows via API | Withdraw policy limited to reservation states; performed/no_show rows are the host's record (pgTAP) | done |
 | 43 | Draw losers get generic waitlist wording | requested-to-waitlisted worded as losing the draw | done |
 | 44 | Window close never re-rendered; paused listing reads live; no signup trace on cancelled night | Close timer armed; paused-with-preserved-night banner; cancelled-night trace covered by Going tab, push, and the exceptions list | done |
-| 45 | Recurrence: -2FR renders "Schedule varies"; clumsy multi-ordinal English; biweekly preview parity; today's night not retimed; override_venue_id dead | Extend ORDINALS; join ordinals; preview first date; document retime; render override venue | pending |
-| 46 | Tonight quick-pick device-tz after browseNear; AM/PM hardcoded; profile history + analytics dates lack timezone | Center-tz window; shared Intl formatting; eventDate with timezone | pending |
+| 45 | Recurrence: -2FR renders "Schedule varies"; clumsy multi-ordinal English; biweekly preview parity; today's night not retimed; override_venue_id dead | Ordinals to -5 render; shared-weekday ordinals joined; biweekly preview names its first night; editor copy covers tonight; override_venue_id stays inert (nothing writes it; column removal would need its own gate) | done |
+| 46 | Tonight quick-pick device-tz after browseNear; AM/PM hardcoded; profile history + analytics dates lack timezone | When quick picks use the browse center's timezone (tz-lookup); formatLocalTime through Intl; profile history and analytics dates in the mic's zone | done |
 | 47 | free-token strips names; multi-day tokens drop; guest area note suppressed | Adjacency check; accumulate days; fix pending-gate | pending |
 | 48 | Missing retries; producer not-found vs error; analytics zero totals; null-on-error subcomponents | Add retry/error states | pending |
 | 49 | Return-to family (dup stack, dropped params, inert guard, unguarded back, push verb, swallowed signOut, bare /open-mics) | Fix each | pending |
