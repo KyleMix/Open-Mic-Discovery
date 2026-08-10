@@ -12,6 +12,7 @@ import { useEnablePerformerRole } from '@/features/profile/queries';
 import { costLabel } from '@/features/discovery/components/mic-card';
 import { drawEntrantsLabel, drawnSpotsLabel, spotsDetail } from '@/features/signups/capacity';
 import {
+  CTA_LABELS,
   DRAW_DONE_LABEL,
   SIGNUPS_CLOSED_LABEL,
   STATUS_LABELS,
@@ -275,7 +276,7 @@ export function SignupCard({
           </Body>
         ) : null}
         <Button
-          label={signupMethod === 'lottery' ? 'Put my name in the draw' : 'Sign me up'}
+          label={signupMethod === 'lottery' ? CTA_LABELS.lottery : CTA_LABELS.join}
           busy={join.isPending || joinPending}
           onPress={() => join.mutate({ occurrenceId: occurrence.id, userId: session.user.id })}
         />

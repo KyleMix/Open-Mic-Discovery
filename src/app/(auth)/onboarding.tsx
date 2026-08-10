@@ -105,7 +105,7 @@ export default function OnboardingScreen() {
       >
         <Title>What name goes on the list?</Title>
         <Body>
-          This is your stage name: what producers and other performers see when you sign up. Your
+          This is your stage name: what hosts and other performers see when you sign up. Your
           email is never shown to anyone.
         </Body>
         <Field

@@ -105,7 +105,7 @@ const WRITE_SITES: WriteCase[] = [
   },
   {
     name: 'useEnableProducerRole',
-    refusedMessage: 'Could not enable producer tools on this account.',
+    refusedMessage: 'Could not turn on hosting for this account.',
     invoke: async (wrapper) => {
       const { result } = await renderHook(() => useEnableProducerRole(), { wrapper });
       return result.current.mutateAsync('user-1');

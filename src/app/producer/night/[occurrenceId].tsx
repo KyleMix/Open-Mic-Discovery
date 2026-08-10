@@ -251,7 +251,7 @@ export default function NightScreen() {
               </Body>
             ) : (
               <Button
-                label={shuffling ? 'Drawing...' : 'Draw the lottery'}
+                label={shuffling ? 'Drawing' : 'Run the name draw'}
                 busy={!!shuffling || draw.isPending}
                 onPress={startDraw}
               />
@@ -445,7 +445,7 @@ export default function NightScreen() {
           <ConfirmSheet
             title="Draw again?"
             body="A new draw reshuffles everyone, including performers already told they are on. The current order is replaced."
-            confirmLabel="Re-draw the lottery"
+            confirmLabel="Redo the name draw"
             onConfirm={() => {
               setConfirmRedraw(false);
               runDraw();

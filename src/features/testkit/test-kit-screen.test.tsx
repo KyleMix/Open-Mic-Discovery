@@ -106,7 +106,7 @@ describe('every test is a lane', () => {
       occurrence_id: 'occ-2',
     });
     await render(<TestKitScreen />);
-    await press('Draw a lottery');
+    await press('Run a name draw');
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/producer/night/occ-2'));
   });
 

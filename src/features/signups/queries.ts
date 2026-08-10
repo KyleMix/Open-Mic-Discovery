@@ -397,7 +397,7 @@ export function useAddWalkIn() {
         .insert({ occurrence_id: occurrenceId, guest_name: guestName });
       if (error) {
         if (error.code === '42501') {
-          throw new Error('Only the producer of this mic can add walk-ins.');
+          throw new Error('Only the host of this mic can add walk-ins.');
         }
         throw userError(error, 'Could not add them to the list. Try again.');
       }

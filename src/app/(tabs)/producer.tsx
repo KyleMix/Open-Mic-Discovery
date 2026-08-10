@@ -112,8 +112,8 @@ export default function ProducerScreen() {
         {claimsBox}
         <Title>Run a mic?</Title>
         <Body>
-          Producers keep listings accurate, manage signup lists, and post lineups. Enabling the
-          producer role adds it alongside your performer role; most people in a scene do both.
+          Hosts keep listings accurate, manage signup lists, and post lineups. Enabling the host
+          role adds it alongside your performer role; most people in a scene do both.
         </Body>
         {enableRole.isError ? (
           <ErrorText>
@@ -121,7 +121,7 @@ export default function ProducerScreen() {
           </ErrorText>
         ) : null}
         <Button
-          label="Become a producer"
+          label="Become a host"
           busy={enableRole.isPending}
           onPress={() => enableRole.mutate(session.user.id)}
         />

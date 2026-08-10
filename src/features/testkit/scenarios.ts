@@ -63,8 +63,8 @@ export const scenarios: Scenario[] = [
   },
   {
     key: 'lottery',
-    label: 'Draw a lottery',
-    detail: 'Your lottery mic tonight: 9 names in the hat for 5 slots, nothing drawn yet.',
+    label: 'Run a name draw',
+    detail: 'Your name-draw mic tonight: 9 names in the hat for 5 slots, nothing drawn yet.',
     tryThis:
       'Run the draw and watch the shuffle. Five become drawn with slot numbers, the rest waitlist, and each of them gets a push.',
     destination: { screen: 'roster' },

@@ -545,10 +545,10 @@ export function useEnableProducerRole() {
         .eq('id', userId)
         .select('id');
       if (error) {
-        throw userError(error, 'Could not enable the producer role. Try again.');
+        throw userError(error, 'Could not turn on hosting. Try again.');
       }
       if (!data || data.length === 0) {
-        throw new Error('Could not enable producer tools on this account.');
+        throw new Error('Could not turn on hosting for this account.');
       }
       const { error: ppError } = await supabase
         .from('producer_profiles')

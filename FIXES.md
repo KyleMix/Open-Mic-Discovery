@@ -62,7 +62,7 @@ Status: `pending`, `in progress`, `done <commit>`, `logged only` (console-side o
 | 38 | Failed headcounts render as zeros | Night rows say "Headcount unavailable right now" on a failed count | done |
 | 39 | Producer role off with live listings silent; role updates lack zero-row checks | Inline warning when hosting is toggled off over live listings; zero-row checks on both role updates | done |
 | 40 | Walk-in cannot be removed | Trash control on walk-in rows with rendered errors | done |
-| 41 | Draw the lottery vs Name draw; hardcoded CTA; host vs producer | Name draw everywhere; CTA_LABELS; host wins (gate) | pending |
+| 41 | Draw the lottery vs Name draw; hardcoded CTA; host vs producer | "Run the name draw"/"Redo the name draw"; card CTA reads CTA_LABELS; role controls say Host (owner gate); walk-in error and enable-role copy follow | done |
 
 ## P2
 

@@ -33,7 +33,7 @@ export default function ProfileScreen() {
         <Title>Your profile</Title>
         <SignUpPrompt
           title="Perform under your stage name"
-          reason="Your stage name is what producers and other performers see on the list, never your email."
+          reason="Your stage name is what hosts and other performers see on the list, never your email."
           perks={[
             'Sign up for slots and track where you have played',
             'Save mics and get reminded the day of',
@@ -94,7 +94,7 @@ export default function ProfileScreen() {
               { borderColor: disciplineAccents.comedy, color: disciplineAccents.comedy },
             ]}
           >
-            Producer
+            Host
           </Text>
         ) : null}
       </View>

@@ -296,7 +296,7 @@ function EditProfileForm({
           onToggle={setIsPerformer}
         />
         <ToggleRow
-          label="Producer"
+          label="Host"
           description="Run listings, manage signup lists, post lineups."
           value={isProducer}
           onToggle={setIsProducer}
