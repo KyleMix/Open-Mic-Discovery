@@ -48,12 +48,20 @@ export function ShareSheet({ seriesId, open, onClose }: Props) {
   }
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose} accessibilityRole="button">
-        {/* Stop backdrop presses from closing when they land on the sheet. */}
-        <Pressable style={styles.sheet} onPress={() => undefined}>
+      <View style={styles.backdrop}>
+        {/* A sibling touch layer, not a wrapper: a backdrop button wrapping
+            the sheet nests <button> inside <button> on web, which is invalid
+            HTML and breaks hydration. Same shape as select.tsx. */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Close the share sheet"
+          style={styles.backdropTouch}
+          onPress={onClose}
+        />
+        <View style={styles.sheet}>
           <SheetBody seriesId={seriesId} onClose={onClose} />
-        </Pressable>
-      </Pressable>
+        </View>
+      </View>
     </Modal>
   );
 }
@@ -345,6 +353,9 @@ const styles = StyleSheet.create({
     backgroundColor: palette.scrim,
     flex: 1,
     justifyContent: 'flex-end',
+  },
+  backdropTouch: {
+    flex: 1,
   },
   sheet: {
     backgroundColor: palette.bgElevated,
