@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { transformedImageUrl } from '@/lib/image-url';
-import { fonts, palette } from '@/theme';
+import { fonts, maxFontScale, palette } from '@/theme';
 
 /** Round profile photo, falling back to the person's first initial. */
 export function AvatarCircle({
@@ -33,7 +33,9 @@ export function AvatarCircle({
       accessibilityLabel={`${name}'s photo placeholder`}
       style={[styles.fallback, { borderRadius: radius, height: size, width: size }]}
     >
-      <Text style={[styles.initial, { fontSize: size * 0.4 }]}>{initial}</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={[styles.initial, { fontSize: size * 0.4 }]}>
+        {initial}
+      </Text>
     </View>
   );
 }

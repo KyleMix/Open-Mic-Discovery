@@ -55,7 +55,7 @@ export function DiscardPrompt({
 
 const styles = StyleSheet.create({
   backdrop: {
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: palette.scrim,
     flex: 1,
     justifyContent: 'flex-end',
   },

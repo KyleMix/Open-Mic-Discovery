@@ -12,7 +12,7 @@ import { userError } from '@/lib/user-error';
 import { useOnboardingStore } from '@/stores/onboarding';
 import { consumeReturnTo } from '@/stores/return-to';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
-import { palette, spacing, type } from '@/theme';
+import { maxFontScale, palette, radius, spacing, type } from '@/theme';
 
 export default function EulaScreen() {
   const router = useRouter();
@@ -88,19 +88,19 @@ export default function EulaScreen() {
       <ScrollView style={styles.terms} accessibilityLabel="Terms of use text">
         {parseEulaMarkdown(eula.data.body_md).map((block, i) =>
           block.kind === 'title' ? (
-            <Text key={i} style={styles.termsTitle}>
+            <Text maxFontSizeMultiplier={maxFontScale} key={i} style={styles.termsTitle}>
               {block.text}
             </Text>
           ) : block.kind === 'heading' ? (
-            <Text key={i} style={styles.termsHeading}>
+            <Text maxFontSizeMultiplier={maxFontScale} key={i} style={styles.termsHeading}>
               {block.text}
             </Text>
           ) : block.kind === 'bullet' ? (
-            <Text key={i} style={styles.termsText}>
+            <Text maxFontSizeMultiplier={maxFontScale} key={i} style={styles.termsText}>
               {'•'} {block.text}
             </Text>
           ) : (
-            <Text key={i} style={styles.termsText}>
+            <Text maxFontSizeMultiplier={maxFontScale} key={i} style={styles.termsText}>
               {block.text}
             </Text>
           ),
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   terms: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     flex: 1,
     padding: spacing.md,

@@ -24,7 +24,16 @@ import {
   shiftOffsets,
   type Scenario,
 } from '@/features/testkit/scenarios';
-import { disciplineAccents, fonts, minTouchTarget, palette, spacing, type } from '@/theme';
+import {
+  disciplineAccents,
+  fonts,
+  maxFontScale,
+  minTouchTarget,
+  palette,
+  radius,
+  spacing,
+  type,
+} from '@/theme';
 
 /**
  * Testing tools: build a whole situation in one tap, look at it, throw it
@@ -196,7 +205,7 @@ export default function TestKitScreen() {
           heard of, and the screen looks broken instead of behind. */}
       {stale ? (
         <View style={styles.notice}>
-          <Text style={styles.noticeText}>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.noticeText}>
             This database is running an older test kit (version {s.kit_version ?? 'unknown'}, this
             build expects {EXPECTED_KIT_VERSION}). Newer scenarios and tools will fail until the
             migrations are applied. Run supabase db reset, or npx supabase migration up to keep the
@@ -207,7 +216,7 @@ export default function TestKitScreen() {
 
       {!s.enabled ? (
         <View style={styles.notice}>
-          <Text style={styles.noticeText}>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.noticeText}>
             The test kit is switched off for this environment. Switch it back on to use it.
           </Text>
           <Button
@@ -218,11 +227,17 @@ export default function TestKitScreen() {
         </View>
       ) : null}
 
-      {message ? <Text style={styles.success}>{message}</Text> : null}
+      {message ? (
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.success}>
+          {message}
+        </Text>
+      ) : null}
       {error ? <ErrorText>{error}</ErrorText> : null}
 
       {/* ----------------------------------------------------------------- */}
-      <Text style={styles.sectionTitle}>Tests</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+        Tests
+      </Text>
       <Body>
         Each one builds what it needs and takes you straight into it. Come back with the back arrow
         when you are done.
@@ -238,25 +253,33 @@ export default function TestKitScreen() {
             disabled={busy || !s.enabled}
             onPress={() => startLane(scenario)}
           />
-          <Text style={styles.itemBody}>{scenario.detail}</Text>
-          <Text style={styles.itemCaption}>Try: {scenario.tryThis}</Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.itemBody}>
+            {scenario.detail}
+          </Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.itemCaption}>
+            Try: {scenario.tryThis}
+          </Text>
         </View>
       ))}
 
       {/* ----------------------------------------------------------------- */}
-      <Text style={styles.sectionTitle}>Tools</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+        Tools
+      </Text>
       <Body>
         Not tests, but the adjustments a test needs. Each one acts on the night you last built and
         then opens it, so you can see what it did.
       </Body>
       {night ? (
         <View style={styles.item}>
-          <Text style={styles.itemTitle}>{night.title}</Text>
-          <Text style={styles.itemBody}>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.itemTitle}>
+            {night.title}
+          </Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.itemBody}>
             {new Date(night.starts_at).toLocaleString()} (in your device timezone)
           </Text>
 
-          <Text style={styles.itemCaption}>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.itemCaption}>
             Move it and open the mic page, to watch the signup window open and close without waiting
             for the calendar.
           </Text>
@@ -313,9 +336,11 @@ export default function TestKitScreen() {
       )}
 
       {/* ----------------------------------------------------------------- */}
-      <Text style={styles.sectionTitle}>Your roles</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+        Your roles
+      </Text>
       <View style={styles.item}>
-        <Text style={styles.itemBody}>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.itemBody}>
           Turn a role off to see the app the way somebody without it sees it. Your admin access
           stays on, so you can always come back here.
         </Text>
@@ -354,17 +379,21 @@ export default function TestKitScreen() {
       </View>
 
       {/* ----------------------------------------------------------------- */}
-      <Text style={styles.sectionTitle}>Test sign-ins</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+        Test sign-ins
+      </Text>
       <View style={styles.item}>
-        <Text style={styles.itemBody}>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.itemBody}>
           Every generated account uses the password {s.password}. Sign in as one on a second device
           to watch a roster update live from both sides.
         </Text>
         {s.logins.length === 0 ? (
-          <Text style={styles.itemCaption}>None yet. Scenarios create them as they need them.</Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.itemCaption}>
+            None yet. Scenarios create them as they need them.
+          </Text>
         ) : (
           s.logins.map((login) => (
-            <Text key={login.email} style={styles.itemCaption}>
+            <Text maxFontSizeMultiplier={maxFontScale} key={login.email} style={styles.itemCaption}>
               {login.name}: {login.email}
             </Text>
           ))
@@ -372,9 +401,11 @@ export default function TestKitScreen() {
       </View>
 
       {/* ----------------------------------------------------------------- */}
-      <Text style={styles.sectionTitle}>Clean up</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+        Clean up
+      </Text>
       <View style={styles.item}>
-        <Text style={styles.itemBody}>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.itemBody}>
           {totalObjects === 0
             ? 'Nothing to clean up. The test kit has not created anything.'
             : `${totalObjects} test records exist right now: listings, venues, accounts, and signups. Removing them leaves everything real untouched.`}
@@ -402,7 +433,7 @@ export default function TestKitScreen() {
       </View>
 
       <View style={styles.item}>
-        <Text style={styles.itemBody}>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.itemBody}>
           Before you submit to the stores, switch the test kit off. Nobody but an admin can reach it
           either way, and you can switch it back on from this screen.
         </Text>
@@ -449,7 +480,12 @@ function Chip({
         disabled && styles.chipDisabled,
       ]}
     >
-      <Text style={[styles.chipLabel, active && { color: accent }]}>{label}</Text>
+      <Text
+        maxFontSizeMultiplier={maxFontScale}
+        style={[styles.chipLabel, active && { color: accent }]}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -473,7 +509,7 @@ const styles = StyleSheet.create({
   item: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     gap: spacing.sm,
     padding: spacing.md,
@@ -526,7 +562,7 @@ const styles = StyleSheet.create({
   notice: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     gap: spacing.sm,
     padding: spacing.md,

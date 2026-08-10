@@ -13,7 +13,7 @@ import {
   type ReportReason,
   type ReportTarget,
 } from '@/features/safety/queries';
-import { fonts, palette, spacing, type } from '@/theme';
+import { fonts, maxFontScale, palette, radius, spacing, type } from '@/theme';
 
 const REASONS: { reason: ReportReason; label: string }[] = (
   [
@@ -86,7 +86,9 @@ export function ReportModal({
               <DiscardPrompt onDiscard={reallyClose} onKeep={() => setConfirmDiscard(false)} />
             ) : done ? (
               <>
-                <Text style={styles.title}>Report received</Text>
+                <Text maxFontSizeMultiplier={maxFontScale} style={styles.title}>
+                  Report received
+                </Text>
                 <Body>
                   Thank you. Reports are reviewed within 24 hours and acted on when they break the
                   rules everyone accepted.
@@ -115,7 +117,9 @@ export function ReportModal({
               </>
             ) : !session ? (
               <>
-                <Text style={styles.title}>Sign in to report</Text>
+                <Text maxFontSizeMultiplier={maxFontScale} style={styles.title}>
+                  Sign in to report
+                </Text>
                 <Body>Reporting needs an account so our moderators can follow up.</Body>
                 <Button
                   label="Sign in"
@@ -129,7 +133,9 @@ export function ReportModal({
               </>
             ) : (
               <>
-                <Text style={styles.title}>Report {targetLabel}</Text>
+                <Text maxFontSizeMultiplier={maxFontScale} style={styles.title}>
+                  Report {targetLabel}
+                </Text>
                 {REASONS.map((r) => (
                   <Pressable
                     key={r.reason}
@@ -138,7 +144,9 @@ export function ReportModal({
                     onPress={() => setReason(r.reason)}
                     style={[styles.reasonRow, reason === r.reason && styles.reasonRowActive]}
                   >
-                    <Text style={styles.reasonText}>{r.label}</Text>
+                    <Text maxFontSizeMultiplier={maxFontScale} style={styles.reasonText}>
+                      {r.label}
+                    </Text>
                   </Pressable>
                 ))}
                 <Field
@@ -181,7 +189,7 @@ export function ReportModal({
 
 const styles = StyleSheet.create({
   backdrop: {
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: palette.scrim,
     flex: 1,
     justifyContent: 'flex-end',
   },
@@ -201,7 +209,7 @@ const styles = StyleSheet.create({
   reasonRow: {
     backgroundColor: palette.bg,
     borderColor: palette.border,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     borderWidth: 1,
     justifyContent: 'center',
     minHeight: 44,

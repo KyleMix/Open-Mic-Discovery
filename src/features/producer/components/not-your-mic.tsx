@@ -16,8 +16,8 @@ export function NotYourMic({ seriesId }: { seriesId?: string | null }) {
     <Screen>
       <Title>Not your mic</Title>
       <Body>
-        This management page belongs to the host who runs this mic. If that is you, sign in with
-        the account that manages it.
+        This management page belongs to the host who runs this mic. If that is you, sign in with the
+        account that manages it.
       </Body>
       {seriesId ? (
         <Button label="View the mic page" onPress={() => router.replace(`/mic/${seriesId}`)} />

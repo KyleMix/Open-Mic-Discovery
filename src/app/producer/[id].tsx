@@ -42,7 +42,7 @@ import {
   useUpdateSeries,
 } from '@/features/producer/queries';
 import { contactSupport } from '@/lib/support';
-import { fonts, palette, spacing, type, type Discipline } from '@/theme';
+import { type Discipline, fonts, maxFontScale, palette, radius, spacing, type } from '@/theme';
 import type { Database } from '@/types/database.types';
 import { transformedImageUrl } from '@/lib/image-url';
 
@@ -217,15 +217,17 @@ export default function ManageSeriesScreen() {
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets
       >
-        <Text style={styles.title}>{series.title}</Text>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.title}>
+          {series.title}
+        </Text>
         {series.moderation_status === 'pending' ? (
-          <Text style={styles.heldNote}>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.heldNote}>
             Held for review: a moderator checks the wording before this listing goes public. Right
             now only you can see it.
           </Text>
         ) : series.moderation_status === 'rejected' ? (
           <>
-            <Text style={styles.rejectedNote}>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.rejectedNote}>
               This listing was rejected in review and is not public. Edit the wording to resubmit,
               or contact support.
             </Text>
@@ -236,20 +238,24 @@ export default function ManageSeriesScreen() {
             />
           </>
         ) : null}
-        <Text style={styles.meta}>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.meta}>
           {describeRecurrence(series.rrule, series.start_time) ?? 'Schedule varies'} ·{' '}
           {series.venue?.name}
         </Text>
         <View style={styles.freshRow}>
           <Glyph name="freshness-badge" size={16} color={fresh.color} />
-          <Text style={[styles.meta, { color: fresh.color }]}>{fresh.label}</Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={[styles.meta, { color: fresh.color }]}>
+            {fresh.label}
+          </Text>
         </View>
         {/* The night in front of them, before anything else on the screen.
             Live used to be buried on the list screen, which is not where a
             host looks an hour before the door. */}
         {liveTonight ? (
           <View style={styles.liveBox}>
-            <Text style={styles.liveTitle}>Tonight is live</Text>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.liveTitle}>
+              Tonight is live
+            </Text>
             <Body>
               {eventDate(liveTonight.starts_at, series.timezone)}. Run the room from here: the
               running order, a silent set timer, and on deck notices.
@@ -329,14 +335,18 @@ export default function ManageSeriesScreen() {
           </ErrorText>
         ) : null}
 
-        <Text style={styles.sectionTitle}>Lineup</Text>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+          Lineup
+        </Text>
         <Button
           label="Host and featured artist"
           kind="secondary"
           onPress={() => router.push(`/producer/credits/${series.id}`)}
         />
 
-        <Text style={styles.sectionTitle}>Poster</Text>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+          Poster
+        </Text>
         {series.poster_url ? (
           <Image
             source={{ uri: transformedImageUrl(series.poster_url, { width: 1080, height: 608 })! }}
@@ -395,7 +405,9 @@ export default function ManageSeriesScreen() {
           </View>
         ) : null}
 
-        <Text style={styles.sectionTitle}>Upcoming nights</Text>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+          Upcoming nights
+        </Text>
         {updateOccurrence.isError ? (
           <ErrorText>
             {updateOccurrence.error instanceof Error
@@ -416,34 +428,45 @@ export default function ManageSeriesScreen() {
           occurrences.data.map((occ) => (
             <View key={occ.id} style={styles.nightRow}>
               <View style={styles.nightInfo}>
-                <Text style={[styles.nightDate, occ.status === 'cancelled' && styles.cancelled]}>
+                <Text
+                  maxFontSizeMultiplier={maxFontScale}
+                  style={[styles.nightDate, occ.status === 'cancelled' && styles.cancelled]}
+                >
                   {formatRelativeDay(occ.starts_at, series.timezone)}
                   {occ.override_title ? ` · ${occ.override_title}` : ''}
                 </Text>
                 {occ.featured_name ? (
-                  <Text style={styles.featured}>Featuring {occ.featured_name}</Text>
+                  <Text maxFontSizeMultiplier={maxFontScale} style={styles.featured}>
+                    Featuring {occ.featured_name}
+                  </Text>
                 ) : null}
-                {occ.live_ended_at ? <Text style={styles.nightCount}>Show ended</Text> : null}
+                {occ.live_ended_at ? (
+                  <Text maxFontSizeMultiplier={maxFontScale} style={styles.nightCount}>
+                    Show ended
+                  </Text>
+                ) : null}
                 {occ.status === 'scheduled' &&
                 !rruleMatches(series.rrule, series.anchor_date, occ.local_date) ? (
                   // Rule changes keep nights that carry an override or a
                   // signup; without this line they masqueraded as part of
                   // the new schedule.
-                  <Text style={styles.offPatternNote}>
-                    Off the current schedule: kept because of its signups or edits. Cancel it if
-                    the night is not happening.
+                  <Text maxFontSizeMultiplier={maxFontScale} style={styles.offPatternNote}>
+                    Off the current schedule: kept because of its signups or edits. Cancel it if the
+                    night is not happening.
                   </Text>
                 ) : null}
                 {occ.status === 'cancelled' ? (
-                  <Text style={styles.cancelledNote}>
+                  <Text maxFontSizeMultiplier={maxFontScale} style={styles.cancelledNote}>
                     Cancelled{occ.cancellation_note ? `: ${occ.cancellation_note}` : ''}
                   </Text>
                 ) : attendance.isError ? (
                   // A failed count is not "nobody is coming"; a host reads
                   // zeros as permission to stay home.
-                  <Text style={styles.nightCount}>Headcount unavailable right now</Text>
+                  <Text maxFontSizeMultiplier={maxFontScale} style={styles.nightCount}>
+                    Headcount unavailable right now
+                  </Text>
                 ) : (
-                  <Text style={styles.nightCount}>
+                  <Text maxFontSizeMultiplier={maxFontScale} style={styles.nightCount}>
                     {attendanceSummary(
                       counts.get(occ.id) ?? {
                         plan_count: 0,
@@ -533,7 +556,9 @@ export default function ManageSeriesScreen() {
         >
           <View style={styles.modalBackdrop}>
             <View style={styles.modalSheet}>
-              <Text style={styles.sectionTitle}>Pause this listing?</Text>
+              <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+                Pause this listing?
+              </Text>
               <Body>
                 Pausing removes the upcoming nights from the schedule until you resume. Performers
                 can still find the listing, with no dates.
@@ -632,7 +657,7 @@ function NightModal({
               <DiscardPrompt onDiscard={onClose} onKeep={() => setConfirmDiscard(false)} />
             ) : (
               <>
-                <Text style={styles.sectionTitle}>
+                <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
                   {mode === 'cancel' ? `Cancel ${dateLabel}?` : `Edit ${dateLabel} only`}
                 </Text>
                 {mode === 'cancel' ? (
@@ -752,14 +777,14 @@ const styles = StyleSheet.create({
   },
   editorBox: {
     borderColor: palette.border,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
     gap: spacing.sm,
     paddingTop: spacing.md,
   },
   poster: {
     borderColor: palette.border,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
     height: 220,
     width: '100%',
@@ -774,7 +799,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.sm,
@@ -783,7 +808,7 @@ const styles = StyleSheet.create({
   },
   nightInfo: {
     flex: 1,
-    gap: 2,
+    gap: spacing.xxs,
   },
   nightDate: {
     color: palette.text,
@@ -805,7 +830,7 @@ const styles = StyleSheet.create({
   liveBox: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.success,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
     gap: spacing.sm,
     padding: spacing.md,
@@ -829,7 +854,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   modalBackdrop: {
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: palette.scrim,
     flex: 1,
     justifyContent: 'flex-end',
   },

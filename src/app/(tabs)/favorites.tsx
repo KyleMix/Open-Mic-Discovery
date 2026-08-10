@@ -49,8 +49,8 @@ export default function FavoritesScreen() {
       <Screen>
         <Title>No favorites yet</Title>
         <Body>
-          Tap the star on any mic to keep it here. Favorites can remind you on the day of the
-          mic (Settings, Notification preferences).
+          Tap the star on any mic to keep it here. Favorites can remind you on the day of the mic
+          (Settings, Notification preferences).
         </Body>
         <Button label="Find a mic" onPress={() => router.navigate('/(tabs)')} />
       </Screen>

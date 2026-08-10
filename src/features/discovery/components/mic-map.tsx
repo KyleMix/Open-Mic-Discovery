@@ -7,7 +7,7 @@ import Supercluster from 'supercluster';
 import { Glyph, disciplineGlyphs } from '@/components/glyph';
 import { formatNextDate } from '@/features/discovery/components/mic-card';
 import type { NearbyMic } from '@/features/discovery/queries';
-import { disciplineAccents, fonts, palette, type Discipline } from '@/theme';
+import { type Discipline, disciplineAccents, fonts, maxFontScale, palette } from '@/theme';
 
 type Props = {
   mics: NearbyMic[];
@@ -130,7 +130,9 @@ export function MicMap({ mics, center, onSelect }: Props) {
               }}
             >
               <View style={styles.cluster}>
-                <Text style={styles.clusterCount}>{count}</Text>
+                <Text maxFontSizeMultiplier={maxFontScale} style={styles.clusterCount}>
+                  {count}
+                </Text>
               </View>
             </Marker>
           );

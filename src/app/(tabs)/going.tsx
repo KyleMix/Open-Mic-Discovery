@@ -8,7 +8,7 @@ import { MicCard } from '@/features/discovery/components/mic-card';
 import { eventDate, eventTime } from '@/features/discovery/local-time';
 import { goingStatusLabel } from '@/features/plans/summary';
 import { useUpcomingNights, type UpcomingNight } from '@/features/plans/queries';
-import { fonts, palette, spacing, type } from '@/theme';
+import { fonts, maxFontScale, palette, spacing, type } from '@/theme';
 
 /**
  * Every night this person said yes to, whether by signing up or by saying
@@ -106,11 +106,16 @@ function NightRow({ night, onPress }: { night: UpcomingNight; onPress: () => voi
       {/* The date leads, because the card below shows the recurring schedule
           and this tab is about one specific night. */}
       <View style={styles.headline}>
-        <Text style={[styles.when, cancelled && styles.struck]}>
+        <Text
+          maxFontSizeMultiplier={maxFontScale}
+          style={[styles.when, cancelled && styles.struck]}
+        >
           {night.starts_at ? eventDate(night.starts_at, night.timezone) : 'Date to be confirmed'}
           {night.starts_at ? ` · ${eventTime(night.starts_at, night.timezone)}` : ''}
         </Text>
-        <Text style={[styles.status, { color: statusColor }]}>{status}</Text>
+        <Text maxFontSizeMultiplier={maxFontScale} style={[styles.status, { color: statusColor }]}>
+          {status}
+        </Text>
       </View>
       <MicCard
         mic={{
@@ -140,7 +145,7 @@ function NightRow({ night, onPress }: { night: UpcomingNight; onPress: () => voi
         onPress={onPress}
       />
       {cancelled ? (
-        <Text style={styles.cancelNote}>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.cancelNote}>
           This night is off{night.cancellation_note ? `: ${night.cancellation_note}` : ''}.
         </Text>
       ) : null}

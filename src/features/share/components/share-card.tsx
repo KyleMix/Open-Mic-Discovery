@@ -38,7 +38,7 @@ export function ShareCard({ model, variant, size }: Props) {
   const s = size / CARD_BASE;
   const height = variant === 'story' ? (size * 16) / 9 : size;
   const withPoster = !!model.posterUrl;
-  const secondary = withPoster ? '#C9C9D2' : palette.textSecondary;
+  const secondary = withPoster ? palette.textSecondaryOnImage : palette.textSecondary;
   // Story safe zones: Instagram overlays its own UI on the top and bottom
   // ~13% of the canvas, so the content column pads well clear of both.
   const vertical = variant === 'story' ? 90 * s : 0;

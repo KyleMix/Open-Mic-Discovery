@@ -12,7 +12,7 @@ import { NotYourMic } from '@/features/producer/components/not-your-mic';
 import { canManageSeries } from '@/features/producer/ownership';
 import { getSupabase } from '@/lib/supabase';
 import { userError } from '@/lib/user-error';
-import { fonts, palette, spacing, type } from '@/theme';
+import { fonts, maxFontScale, palette, radius, spacing, type } from '@/theme';
 
 /** Signups and turnout per night for one listing. */
 export default function AnalyticsScreen() {
@@ -124,7 +124,7 @@ export default function AnalyticsScreen() {
       ) : (
         nights.map((n) => (
           <View key={n.id} style={styles.nightRow}>
-            <Text style={styles.nightDate}>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.nightDate}>
               {eventDate(n.starts_at, detail.data?.series.timezone, {
                 weekday: 'short',
                 month: 'short',
@@ -132,7 +132,7 @@ export default function AnalyticsScreen() {
               })}
               {n.status === 'cancelled' ? ' (cancelled)' : ''}
             </Text>
-            <Text style={styles.nightCount}>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.nightCount}>
               {n.signups.length} {n.signups.length === 1 ? 'signup' : 'signups'}
             </Text>
           </View>
@@ -145,8 +145,12 @@ export default function AnalyticsScreen() {
 function Total({ label, value }: { label: string; value: number }) {
   return (
     <View style={styles.total}>
-      <Text style={styles.totalValue}>{value}</Text>
-      <Text style={styles.totalLabel}>{label}</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.totalValue}>
+        {value}
+      </Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.totalLabel}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -170,7 +174,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
     flex: 1,
     gap: spacing.xs,
@@ -189,7 +193,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',

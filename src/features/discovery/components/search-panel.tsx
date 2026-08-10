@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Body } from '@/components/ui';
 import { selectDiscoveryFilters, hasActiveFilters, useFiltersStore } from '@/stores/filters';
 import { useRecentSearches, type SavedSearch } from '@/stores/recent-searches';
-import { fonts, minTouchTarget, palette, spacing, type } from '@/theme';
+import { fonts, maxFontScale, minTouchTarget, palette, radius, spacing, type } from '@/theme';
 
 type Props = {
   /** Run a recent query again. */
@@ -39,7 +39,9 @@ export function SearchPanel({ onPickRecent, onPickSaved, query }: Props) {
     <View style={styles.panel}>
       {saved.length > 0 ? (
         <View style={styles.section}>
-          <Text style={styles.heading}>Saved searches</Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.heading}>
+            Saved searches
+          </Text>
           {saved.map((sv) => (
             <View key={sv.name} style={styles.rowWrap}>
               <Pressable
@@ -49,7 +51,9 @@ export function SearchPanel({ onPickRecent, onPickSaved, query }: Props) {
                 style={styles.row}
               >
                 <Ionicons name="bookmark" size={16} color={palette.textSecondary} />
-                <Text style={styles.rowLabel}>{sv.name}</Text>
+                <Text maxFontSizeMultiplier={maxFontScale} style={styles.rowLabel}>
+                  {sv.name}
+                </Text>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
@@ -68,13 +72,17 @@ export function SearchPanel({ onPickRecent, onPickSaved, query }: Props) {
       {recent.length > 0 ? (
         <View style={styles.section}>
           <View style={styles.headingRow}>
-            <Text style={styles.heading}>Recent</Text>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.heading}>
+              Recent
+            </Text>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Clear recent searches"
               onPress={clearRecent}
             >
-              <Text style={styles.clear}>Clear</Text>
+              <Text maxFontSizeMultiplier={maxFontScale} style={styles.clear}>
+                Clear
+              </Text>
             </Pressable>
           </View>
           {recent.map((q) => (
@@ -86,7 +94,9 @@ export function SearchPanel({ onPickRecent, onPickSaved, query }: Props) {
               style={styles.row}
             >
               <Ionicons name="time-outline" size={16} color={palette.textSecondary} />
-              <Text style={styles.rowLabel}>{q}</Text>
+              <Text maxFontSizeMultiplier={maxFontScale} style={styles.rowLabel}>
+                {q}
+              </Text>
             </Pressable>
           ))}
         </View>
@@ -123,7 +133,10 @@ export function SearchPanel({ onPickRecent, onPickSaved, query }: Props) {
               }}
               style={styles.row}
             >
-              <Text style={[styles.clear, !saveName.trim() && { color: palette.textDisabled }]}>
+              <Text
+                maxFontSizeMultiplier={maxFontScale}
+                style={[styles.clear, !saveName.trim() && { color: palette.textDisabled }]}
+              >
                 Save
               </Text>
             </Pressable>
@@ -199,7 +212,7 @@ const styles = StyleSheet.create({
   saveInput: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     borderWidth: 1,
     color: palette.text,
     flex: 1,

@@ -33,7 +33,7 @@ import {
 import { PushPrimer } from '@/features/notifications/components/push-primer';
 import { roomTerms } from '@/features/signups/room-terms';
 import { signupWindow } from '@/features/signups/window';
-import { fonts, palette, spacing, type } from '@/theme';
+import { fonts, maxFontScale, palette, radius, spacing, type } from '@/theme';
 import type { Database } from '@/types/database.types';
 
 type Occurrence = Database['public']['Tables']['mic_occurrences']['Row'];
@@ -166,9 +166,11 @@ export function SignupCard({
     content = (
       <>
         {mySignup.data.on_deck_at ? (
-          <Text style={styles.onDeck}>You are on deck. Get ready, you are up soon!</Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.onDeck}>
+            You are on deck. Get ready, you are up soon!
+          </Text>
         ) : null}
-        <Text style={styles.status}>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.status}>
           {statusWithSlot(mySignup.data.status, mySignup.data.slot_position)}
           {mySignup.data.status === 'waitlisted' && waitlistRank.data != null
             ? ` · ${ordinal(waitlistRank.data)} in line`
@@ -298,7 +300,11 @@ export function SignupCard({
           ? drawEntrantsLabel(counts.data.entrants, counts.data.capacity)
           : null
       : spots.data
-        ? spotsDetail(spots.data.spots_left, spots.data.capacity, spots.data.planning_performers ?? 0)
+        ? spotsDetail(
+            spots.data.spots_left,
+            spots.data.capacity,
+            spots.data.planning_performers ?? 0,
+          )
         : null;
 
   // The terms of the room sit beside the commit button in every state:
@@ -316,11 +322,16 @@ export function SignupCard({
   return (
     <View style={styles.card}>
       {fullness ? (
-        <Text style={[styles.spots, (spots.data?.spots_left ?? 1) <= 0 && styles.spotsFull]}>
+        <Text
+          maxFontSizeMultiplier={maxFontScale}
+          style={[styles.spots, (spots.data?.spots_left ?? 1) <= 0 && styles.spotsFull]}
+        >
           {fullness}
         </Text>
       ) : null}
-      <Text style={styles.terms}>{terms}</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.terms}>
+        {terms}
+      </Text>
       {content}
     </View>
   );
@@ -330,7 +341,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.success,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
     gap: spacing.sm,
     padding: spacing.md,

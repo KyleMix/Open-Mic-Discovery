@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui';
-import { fonts, minTouchTarget, palette, spacing, type } from '@/theme';
+import { fonts, maxFontScale, minTouchTarget, palette, radius, spacing, type } from '@/theme';
 
 export type SelectOption<T extends string | number> = {
   value: T;
@@ -23,7 +23,9 @@ type TriggerProps = {
 function SelectTrigger({ label, valueLabel, placeholderShown, onPress }: TriggerProps) {
   return (
     <View style={styles.field}>
-      <Text style={styles.fieldLabel}>{label}</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.fieldLabel}>
+        {label}
+      </Text>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${label}: ${valueLabel}`}
@@ -32,6 +34,7 @@ function SelectTrigger({ label, valueLabel, placeholderShown, onPress }: Trigger
         style={({ pressed }) => [styles.trigger, pressed && styles.triggerPressed]}
       >
         <Text
+          maxFontSizeMultiplier={maxFontScale}
           numberOfLines={1}
           style={[styles.triggerText, placeholderShown && styles.triggerPlaceholder]}
         >
@@ -65,7 +68,9 @@ function SheetShell({
         />
         <View style={styles.sheet}>
           <View style={styles.grabber} />
-          <Text style={styles.sheetTitle}>{title}</Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.sheetTitle}>
+            {title}
+          </Text>
           <ScrollView contentContainerStyle={styles.optionList}>{children}</ScrollView>
           {footer}
         </View>
@@ -94,11 +99,16 @@ function OptionRow({
       style={[styles.optionRow, selected && styles.optionRowActive]}
     >
       <View style={styles.optionText}>
-        <Text style={[styles.optionLabel, selected && styles.optionLabelActive]}>
+        <Text
+          maxFontSizeMultiplier={maxFontScale}
+          style={[styles.optionLabel, selected && styles.optionLabelActive]}
+        >
           {option.label}
         </Text>
         {option.description ? (
-          <Text style={styles.optionDescription}>{option.description}</Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.optionDescription}>
+            {option.description}
+          </Text>
         ) : null}
       </View>
       <Ionicons
@@ -240,7 +250,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.sm,
@@ -260,7 +270,7 @@ const styles = StyleSheet.create({
     color: palette.textSecondary,
   },
   backdrop: {
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: palette.scrim,
     flex: 1,
     justifyContent: 'flex-end',
   },
@@ -300,7 +310,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.md,
@@ -312,7 +322,7 @@ const styles = StyleSheet.create({
   },
   optionText: {
     flex: 1,
-    gap: 2,
+    gap: spacing.xxs,
   },
   optionLabel: {
     color: palette.textSecondary,

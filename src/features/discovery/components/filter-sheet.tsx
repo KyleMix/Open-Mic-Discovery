@@ -8,7 +8,15 @@ import {
 } from '@/features/discovery/components/mic-card';
 import { RADIUS_CHOICES } from '@/features/discovery/distance';
 import { AGE_LABELS, TIME_WINDOWS, useFiltersStore, type TimeOfDay } from '@/stores/filters';
-import { disciplineAccents, fonts, minTouchTarget, palette, spacing, type } from '@/theme';
+import {
+  disciplineAccents,
+  fonts,
+  maxFontScale,
+  minTouchTarget,
+  palette,
+  spacing,
+  type,
+} from '@/theme';
 import type { Database } from '@/types/database.types';
 
 type SignupMethod = Database['public']['Enums']['signup_method'];
@@ -49,7 +57,12 @@ function SheetChip({
         active && [styles.chipActive, activeColor ? { borderColor: activeColor } : null],
       ]}
     >
-      <Text style={[styles.chipLabel, active && styles.chipLabelActive]}>{label}</Text>
+      <Text
+        maxFontSizeMultiplier={maxFontScale}
+        style={[styles.chipLabel, active && styles.chipLabelActive]}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -65,8 +78,14 @@ function Section({
 }) {
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      {caption ? <Text style={styles.sectionCaption}>{caption}</Text> : null}
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+        {title}
+      </Text>
+      {caption ? (
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionCaption}>
+          {caption}
+        </Text>
+      ) : null}
       {children}
     </View>
   );
@@ -91,7 +110,9 @@ export function FilterSheet({ visible, onClose }: { visible: boolean; onClose: (
         />
         <View style={styles.sheet}>
           <View style={styles.grabber} />
-          <Text style={styles.title}>Filters</Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.title}>
+            Filters
+          </Text>
           <ScrollView contentContainerStyle={styles.scroll}>
             <Section title="Which days?" caption="Pick as many as you like.">
               <View style={styles.chipWrap}>
@@ -195,7 +216,7 @@ export function FilterSheet({ visible, onClose }: { visible: boolean; onClose: (
 
 const styles = StyleSheet.create({
   backdrop: {
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: palette.scrim,
     flex: 1,
     justifyContent: 'flex-end',
   },
@@ -265,7 +286,7 @@ const styles = StyleSheet.create({
   chipLabel: {
     color: palette.textSecondary,
     fontFamily: fonts.medium,
-    fontSize: 15,
+    fontSize: type.label.fontSize,
   },
   chipLabelActive: {
     color: palette.text,

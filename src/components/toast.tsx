@@ -10,7 +10,7 @@ import {
 import { AccessibilityInfo, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { fonts, maxFontScale, minTouchTarget, palette, spacing, type } from '@/theme';
+import { fonts, maxFontScale, minTouchTarget, palette, radius, spacing, type } from '@/theme';
 
 type ToastAction = { label: string; onPress: () => void };
 type ToastState = { message: string; action?: ToastAction } | null;
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: palette.bgPressed,
     borderColor: palette.border,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.md,

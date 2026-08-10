@@ -27,7 +27,15 @@ import { geocodeHomeArea } from '@/features/profile/geocode';
 import { homeAreaError, homeAreaQuery, normalizeHomeArea } from '@/features/profile/home-area';
 import { useUpdateProfile, useUpdateRoles } from '@/features/profile/queries';
 import { handleError, normalizeHandle, normalizeUrl, urlError } from '@/features/profile/social';
-import { disciplineAccents, fonts, palette, spacing, type, type Discipline } from '@/theme';
+import {
+  type Discipline,
+  disciplineAccents,
+  fonts,
+  maxFontScale,
+  palette,
+  spacing,
+  type,
+} from '@/theme';
 
 const DISCIPLINES: Discipline[] = ['music', 'comedy', 'poetry', 'other'];
 
@@ -253,7 +261,9 @@ function EditProfileForm({
           style={styles.avatarWrap}
         >
           <AvatarCircle url={avatarUrl} name={stageName} size={96} />
-          <Text style={styles.changePhoto}>{photoBusy ? 'Uploading...' : 'Change photo'}</Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.changePhoto}>
+            {photoBusy ? 'Uploading...' : 'Change photo'}
+          </Text>
         </Pressable>
 
         <Field
@@ -287,7 +297,9 @@ function EditProfileForm({
           placeholder="What you play, your style, anything you want people to know."
         />
 
-        <Text style={styles.sectionTitle}>What you do</Text>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+          What you do
+        </Text>
         <Body>Pick everything that applies. Most people in a scene end up doing both.</Body>
         <ToggleRow
           label="Performer"
@@ -335,7 +347,9 @@ function EditProfileForm({
           </>
         ) : null}
 
-        <Text style={styles.sectionTitle}>Home area</Text>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+          Home area
+        </Text>
         <Body>
           Used only to show mics near you. Never shown on your profile. Enter city and state, or a
           ZIP code.
@@ -380,7 +394,9 @@ function EditProfileForm({
         />
         {errors.homeArea ? <ErrorText>{errors.homeArea}</ErrorText> : null}
 
-        <Text style={styles.sectionTitle}>Your links</Text>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+          Your links
+        </Text>
         <Body>Optional. Paste a link or just type your username.</Body>
         <Field
           label="Instagram"

@@ -1,7 +1,7 @@
 import * as Network from 'expo-network';
 import { StyleSheet, Text } from 'react-native';
 
-import { palette, spacing, type } from '@/theme';
+import { maxFontScale, palette, spacing, type } from '@/theme';
 
 /**
  * Says when what you are looking at is cached.
@@ -22,7 +22,7 @@ export function OfflineBanner() {
   }
 
   return (
-    <Text accessibilityRole="alert" style={styles.banner}>
+    <Text maxFontSizeMultiplier={maxFontScale} accessibilityRole="alert" style={styles.banner}>
       Offline. Showing the last mics loaded, which may have changed.
     </Text>
   );

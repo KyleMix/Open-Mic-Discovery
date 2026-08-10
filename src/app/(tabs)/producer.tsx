@@ -18,7 +18,7 @@ import {
   usePendingClaims,
   useReviewClaim,
 } from '@/features/producer/queries';
-import { fonts, palette, spacing, type } from '@/theme';
+import { fonts, maxFontScale, palette, radius, spacing, type } from '@/theme';
 
 export default function ProducerScreen() {
   const router = useRouter();
@@ -51,7 +51,10 @@ export default function ProducerScreen() {
   if (profile.isPending || mySeries.isPending) {
     return <LoadingView label="Loading your mics" />;
   }
-  if ((profile.isError && profile.data === undefined) || (mySeries.isError && mySeries.data === undefined)) {
+  if (
+    (profile.isError && profile.data === undefined) ||
+    (mySeries.isError && mySeries.data === undefined)
+  ) {
     return (
       <Screen>
         <Title>My mics</Title>
@@ -69,12 +72,16 @@ export default function ProducerScreen() {
   const claimsBox = profile.data?.is_admin ? (
     claims.isError ? (
       <View style={styles.claimsBox}>
-        <Text style={styles.sectionTitle}>Pending claims</Text>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+          Pending claims
+        </Text>
         <ErrorText>Could not load claim requests. Pull to refresh.</ErrorText>
       </View>
     ) : claims.data && claims.data.length > 0 ? (
       <View style={styles.claimsBox}>
-        <Text style={styles.sectionTitle}>Pending claims</Text>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+          Pending claims
+        </Text>
         {review.isError ? (
           <ErrorText>
             {review.error instanceof Error
@@ -84,7 +91,7 @@ export default function ProducerScreen() {
         ) : null}
         {claims.data.map((claim) => (
           <View key={claim.id} style={styles.claimRow}>
-            <Text style={styles.claimText}>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.claimText}>
               {claim.series?.title ?? 'Unknown mic'}: {claim.evidence ?? 'no evidence given'}
             </Text>
             <View style={styles.claimActions}>
@@ -157,7 +164,9 @@ export default function ProducerScreen() {
         }
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.sectionTitle}>No mics yet</Text>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+              No mics yet
+            </Text>
             <Body>
               Create the listing for your mic here, or find it on the Discover tab and claim it if
               someone already listed it.
@@ -182,20 +191,30 @@ export default function ProducerScreen() {
                 ]}
               >
                 <View style={styles.cardTop}>
-                  <Text style={styles.cardTitle} numberOfLines={1}>
+                  <Text
+                    maxFontSizeMultiplier={maxFontScale}
+                    style={styles.cardTitle}
+                    numberOfLines={1}
+                  >
                     {item.title}
                   </Text>
-                  {!item.is_active ? <Text style={styles.pausedTag}>Paused</Text> : null}
+                  {!item.is_active ? (
+                    <Text maxFontSizeMultiplier={maxFontScale} style={styles.pausedTag}>
+                      Paused
+                    </Text>
+                  ) : null}
                   {item.moderation_status === 'pending' ? (
-                    <Text style={styles.pausedTag}>In review</Text>
+                    <Text maxFontSizeMultiplier={maxFontScale} style={styles.pausedTag}>
+                      In review
+                    </Text>
                   ) : null}
                 </View>
-                <Text style={styles.cardMeta}>
+                <Text maxFontSizeMultiplier={maxFontScale} style={styles.cardMeta}>
                   {item.venue?.name}, {item.venue?.city} ·{' '}
                   {describeRecurrence(item.rrule, item.start_time) ?? 'Schedule varies'}
                 </Text>
                 {night ? (
-                  <Text style={styles.nextNight}>
+                  <Text maxFontSizeMultiplier={maxFontScale} style={styles.nextNight}>
                     {nightIsToday ? nightLabel : `Next: ${nightLabel}`} · {night.signupCount} signed
                     up
                   </Text>
@@ -210,7 +229,12 @@ export default function ProducerScreen() {
               <View style={styles.cardBottom}>
                 <View style={styles.freshRow}>
                   <Glyph name="freshness-badge" size={14} color={fresh.color} />
-                  <Text style={[styles.cardMeta, { color: fresh.color }]}>{fresh.label}</Text>
+                  <Text
+                    maxFontSizeMultiplier={maxFontScale}
+                    style={[styles.cardMeta, { color: fresh.color }]}
+                  >
+                    {fresh.label}
+                  </Text>
                 </View>
                 <Button
                   label="Confirm accurate"
@@ -254,7 +278,7 @@ const styles = StyleSheet.create({
   claimsBox: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.warning,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     gap: spacing.sm,
     padding: spacing.md,
@@ -273,7 +297,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
     gap: spacing.sm,
     overflow: 'hidden',

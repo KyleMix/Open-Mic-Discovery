@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 
 import { PressableScale } from '@/components/pressable-scale';
-import { fonts, maxFontScale, minTouchTarget, palette, spacing, type } from '@/theme';
+import { fonts, maxFontScale, minTouchTarget, palette, radius, spacing, type } from '@/theme';
 
 export function Screen({ children }: { children: ReactNode }) {
   return <View style={styles.screen}>{children}</View>;
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     color: palette.text,
     fontSize: type.body.fontSize,
     minHeight: minTouchTarget,
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
   button: {
     alignItems: 'center',
     backgroundColor: palette.text,
-    borderRadius: 12,
+    borderRadius: radius.md,
     justifyContent: 'center',
     minHeight: minTouchTarget + 4,
   },
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.md,
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
   },
   toggleDot: {
     backgroundColor: palette.bgPressed,
-    borderRadius: 12,
+    borderRadius: radius.md,
     height: 24,
     width: 24,
   },

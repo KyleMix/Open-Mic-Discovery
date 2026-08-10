@@ -32,7 +32,7 @@ import {
 } from '@/features/credits/queries';
 import type { CreditRole } from '@/features/credits/resolve';
 import { normalizeHandle, normalizeUrl, handleError, urlError } from '@/features/profile/social';
-import { fonts, minTouchTarget, palette, spacing, type } from '@/theme';
+import { fonts, maxFontScale, minTouchTarget, palette, radius, spacing, type } from '@/theme';
 
 type Draft = {
   profile: PickablePerson | null;
@@ -207,11 +207,13 @@ function RoleEditor({
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{label}</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+        {label}
+      </Text>
 
       {current ? (
         <View style={styles.currentRow}>
-          <Text style={styles.currentName}>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.currentName}>
             {current.name ?? 'Linked account'}
             {current.moderation_status === 'pending' ? ' (waiting on review)' : ''}
           </Text>
@@ -351,7 +353,9 @@ function PersonPicker({
     return (
       <View style={styles.currentRow}>
         <AvatarCircle url={selected.avatar_url} name={selected.stage_name} size={36} />
-        <Text style={styles.currentName}>{selected.stage_name}</Text>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.currentName}>
+          {selected.stage_name}
+        </Text>
         <Button label="Not them" kind="secondary" onPress={() => onSelect(null)} />
       </View>
     );
@@ -383,8 +387,12 @@ function PersonPicker({
         >
           <AvatarCircle url={person.avatar_url} name={person.stage_name} size={36} />
           <View style={styles.personText}>
-            <Text style={styles.currentName}>{person.stage_name}</Text>
-            <Text style={styles.handle}>@{person.handle}</Text>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.currentName}>
+              {person.stage_name}
+            </Text>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.handle}>
+              @{person.handle}
+            </Text>
           </View>
         </Pressable>
       ))}
@@ -402,7 +410,7 @@ const styles = StyleSheet.create({
   section: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
     gap: spacing.sm,
     padding: spacing.md,
@@ -432,7 +440,7 @@ const styles = StyleSheet.create({
   personRow: {
     alignItems: 'center',
     borderColor: palette.border,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.sm,

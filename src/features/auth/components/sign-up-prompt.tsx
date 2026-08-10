@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { Body, Button } from '@/components/ui';
 import { setReturnTo } from '@/stores/return-to';
-import { fonts, palette, spacing, type } from '@/theme';
+import { fonts, maxFontScale, palette, radius, spacing, type } from '@/theme';
 
 /**
  * The pitch for making an account, shown where the benefit actually is.
@@ -34,12 +34,14 @@ export function SignUpPrompt({
   }
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>{title}</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.title}>
+        {title}
+      </Text>
       <Body>{reason}</Body>
       {perks && perks.length > 0 ? (
         <View style={styles.perks}>
           {perks.map((perk) => (
-            <Text key={perk} style={styles.perk}>
+            <Text maxFontSizeMultiplier={maxFontScale} key={perk} style={styles.perk}>
               {'·'} {perk}
             </Text>
           ))}
@@ -51,7 +53,7 @@ export function SignUpPrompt({
         kind="secondary"
         onPress={() => enterFunnel('/(auth)/sign-in')}
       />
-      <Text style={styles.footnote}>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.footnote}>
         Free, and always will be. An email and your city is all it takes.
       </Text>
     </View>
@@ -62,7 +64,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
     gap: spacing.sm,
     padding: spacing.md,

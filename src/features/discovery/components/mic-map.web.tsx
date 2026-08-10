@@ -2,7 +2,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { formatMilesFromMeters } from '@/features/discovery/distance';
 import type { NearbyMic } from '@/features/discovery/queries';
-import { fonts, palette, spacing, type } from '@/theme';
+import { fonts, maxFontScale, palette, radius, spacing, type } from '@/theme';
 
 type Props = {
   mics: NearbyMic[];
@@ -19,7 +19,7 @@ export function MicMap({ mics, onSelect }: Props) {
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
       <View style={styles.note}>
-        <Text style={styles.noteText}>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.noteText}>
           The map lives in the iOS and Android apps. Web preview shows the same mics nearest first.
         </Text>
       </View>
@@ -31,8 +31,10 @@ export function MicMap({ mics, onSelect }: Props) {
           onPress={() => onSelect(mic.series_id)}
           style={({ pressed }) => [styles.row, pressed && { backgroundColor: palette.bgPressed }]}
         >
-          <Text style={styles.title}>{mic.title}</Text>
-          <Text style={styles.meta}>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.title}>
+            {mic.title}
+          </Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.meta}>
             {mic.venue_name}, {mic.city}
             {mic.distance_m != null ? ` · ${formatMilesFromMeters(mic.distance_m)}` : ''}
           </Text>
@@ -54,7 +56,7 @@ const styles = StyleSheet.create({
   note: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     borderWidth: 1,
     padding: spacing.md,
   },
@@ -65,7 +67,7 @@ const styles = StyleSheet.create({
   row: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     gap: spacing.xs,
     padding: spacing.md,

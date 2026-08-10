@@ -14,7 +14,7 @@ import { buildCardModel, type ShareCardMic } from '@/features/share/card-data';
 import { shareCaption, type ShareIntent } from '@/features/share/captions';
 import { ShareCard } from '@/features/share/components/share-card';
 import { useMySignup } from '@/features/signups/queries';
-import { fonts, maxFontScale, palette, spacing, type } from '@/theme';
+import { fonts, maxFontScale, palette, radius, spacing, type } from '@/theme';
 
 /**
  * The share bottom sheet, reachable from the mic page and from list cards.
@@ -333,7 +333,7 @@ function IntentTab({
 
 const styles = StyleSheet.create({
   backdrop: {
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: palette.scrim,
     flex: 1,
     justifyContent: 'flex-end',
   },
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
   },
   tab: {
     borderColor: palette.border,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     borderWidth: 1,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,

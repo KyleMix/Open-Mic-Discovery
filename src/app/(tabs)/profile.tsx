@@ -16,7 +16,16 @@ import { SocialLinkRow } from '@/components/social-links';
 import { STATUS_LABELS } from '@/features/signups/labels';
 import { useMyNights, type MyNight } from '@/features/signups/queries';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
-import { disciplineAccents, fonts, minTouchTarget, palette, spacing, type } from '@/theme';
+import {
+  disciplineAccents,
+  fonts,
+  maxFontScale,
+  minTouchTarget,
+  palette,
+  radius,
+  spacing,
+  type,
+} from '@/theme';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -74,12 +83,15 @@ export default function ProfileScreen() {
         <AvatarCircle url={p.avatar_url} name={p.stage_name} size={72} />
         <View style={styles.headerText}>
           <Title>{p.stage_name}</Title>
-          <Text style={styles.handle}>@{p.handle}</Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.handle}>
+            @{p.handle}
+          </Text>
         </View>
       </View>
       <View style={styles.roles}>
         {p.is_performer ? (
           <Text
+            maxFontSizeMultiplier={maxFontScale}
             style={[
               styles.roleChip,
               { borderColor: disciplineAccents.music, color: disciplineAccents.music },
@@ -90,6 +102,7 @@ export default function ProfileScreen() {
         ) : null}
         {p.is_producer ? (
           <Text
+            maxFontSizeMultiplier={maxFontScale}
             style={[
               styles.roleChip,
               { borderColor: disciplineAccents.comedy, color: disciplineAccents.comedy },
@@ -101,7 +114,7 @@ export default function ProfileScreen() {
       </View>
       {p.bio ? <Body>{p.bio}</Body> : null}
       {homeAreaLabel(p) ? (
-        <Text style={styles.privateNote}>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.privateNote}>
           Home area: {homeAreaLabel(p)} (only you can see this)
         </Text>
       ) : null}
@@ -172,7 +185,9 @@ function MyNights({ userId, onOpenMic }: { userId: string; onOpenMic: (id: strin
   if (upcoming.length === 0 && past.length === 0) {
     return (
       <View style={styles.nightsWrap}>
-        <Text style={styles.sectionTitle}>My nights</Text>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+          My nights
+        </Text>
         <Body>
           Nights you sign up for land here: your schedule up top, your history under it. Find a mic
           on the Discover tab to start the list.
@@ -184,7 +199,9 @@ function MyNights({ userId, onOpenMic }: { userId: string; onOpenMic: (id: strin
 
   return (
     <View style={styles.nightsWrap}>
-      <Text style={styles.sectionTitle}>My nights</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+        My nights
+      </Text>
       {upcoming.length > 0 ? (
         <>
           {upcoming.slice(0, 5).map((n) => (
@@ -196,7 +213,7 @@ function MyNights({ userId, onOpenMic }: { userId: string; onOpenMic: (id: strin
       )}
       {past.length > 0 ? (
         <>
-          <Text style={styles.playedCount}>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.playedCount}>
             {played.length === 1 ? '1 night played' : `${played.length} nights played`}
           </Text>
           {past.slice(0, 10).map((n) => (
@@ -240,12 +257,16 @@ function NightRow({
       onPress={() => night.occurrence.series && onOpenMic(night.occurrence.series.id)}
       style={({ pressed }) => [styles.nightRow, pressed && { backgroundColor: palette.bgPressed }]}
     >
-      <Text style={styles.nightDate}>{date}</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.nightDate}>
+        {date}
+      </Text>
       <View style={styles.nightBody}>
-        <Text numberOfLines={1} style={styles.nightTitle}>
+        <Text maxFontSizeMultiplier={maxFontScale} numberOfLines={1} style={styles.nightTitle}>
           {title}
         </Text>
-        <Text style={styles.nightStatus}>{label}</Text>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.nightStatus}>
+          {label}
+        </Text>
       </View>
     </Pressable>
   );
@@ -280,7 +301,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.md,
@@ -295,7 +316,7 @@ const styles = StyleSheet.create({
   },
   nightBody: {
     flex: 1,
-    gap: 2,
+    gap: spacing.xxs,
   },
   nightTitle: {
     color: palette.text,

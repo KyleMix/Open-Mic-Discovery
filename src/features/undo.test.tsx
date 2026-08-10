@@ -15,8 +15,7 @@ const mockToast = { show: jest.fn() };
 const mockedGetSupabase = getSupabase as jest.Mock;
 
 type DbResult =
-  | { data?: unknown; error: null }
-  | { data?: unknown; error: { code?: string; message: string } };
+  { data?: unknown; error: null } | { data?: unknown; error: { code?: string; message: string } };
 type Call = { table: string; method: string; args: unknown[] };
 
 /**

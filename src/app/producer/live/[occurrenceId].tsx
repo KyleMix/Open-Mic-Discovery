@@ -24,7 +24,7 @@ import {
   useRoster,
   useSetSignupStatus,
 } from '@/features/signups/queries';
-import { fonts, palette, spacing, type } from '@/theme';
+import { fonts, maxFontScale, palette, radius, spacing, type } from '@/theme';
 
 /**
  * Running the night.
@@ -256,31 +256,50 @@ export default function LiveScreen() {
           person up" is exactly the question at the end of the night. */}
       <View style={styles.stats}>
         <View style={styles.stat}>
-          <Text style={[styles.statValue, room.full && styles.statValueFull]}>{room.value}</Text>
-          <Text style={styles.statCaption}>{room.caption}</Text>
+          <Text
+            maxFontSizeMultiplier={maxFontScale}
+            style={[styles.statValue, room.full && styles.statValueFull]}
+          >
+            {room.value}
+          </Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.statCaption}>
+            {room.caption}
+          </Text>
         </View>
         <View style={styles.stat}>
-          <Text style={styles.statValue}>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.statValue}>
             {counts.done}
-            <Text style={styles.statValueSoft}>/{counts.onList}</Text>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.statValueSoft}>
+              /{counts.onList}
+            </Text>
           </Text>
-          <Text style={styles.statCaption}>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.statCaption}>
             {counts.toGo > 0 ? `${counts.toGo} still to go` : 'all done'}
           </Text>
         </View>
         <View style={styles.stat}>
-          <Text style={[styles.statValue, counts.waitlist > 0 && styles.statValueWaiting]}>
+          <Text
+            maxFontSizeMultiplier={maxFontScale}
+            style={[styles.statValue, counts.waitlist > 0 && styles.statValueWaiting]}
+          >
             {counts.waitlist}
           </Text>
-          <Text style={styles.statCaption}>on the waitlist</Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.statCaption}>
+            on the waitlist
+          </Text>
         </View>
       </View>
 
       {live.current ? (
         <>
-          <Text style={styles.label}>On stage now</Text>
-          <Text style={styles.nowName}>{performerName(live.current)}</Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.label}>
+            On stage now
+          </Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.nowName}>
+            {performerName(live.current)}
+          </Text>
           <Text
+            maxFontSizeMultiplier={maxFontScale}
             style={[
               styles.clock,
               tone === 'nearly' && styles.clockNearly,
@@ -289,7 +308,10 @@ export default function LiveScreen() {
           >
             {clockFace(elapsed, setLength)}
           </Text>
-          <Text style={[styles.clockNote, tone === 'over' && styles.clockNoteOver]}>
+          <Text
+            maxFontSizeMultiplier={maxFontScale}
+            style={[styles.clockNote, tone === 'over' && styles.clockNoteOver]}
+          >
             {clockCaption(elapsed, setLength)}
           </Text>
 
@@ -311,7 +333,7 @@ export default function LiveScreen() {
           {live.next ? (
             <View style={styles.nextBox}>
               <Ionicons name="arrow-forward" size={16} color={palette.warning} />
-              <Text style={styles.nextText}>
+              <Text maxFontSizeMultiplier={maxFontScale} style={styles.nextText}>
                 Up next: {performerName(live.next)}
                 {live.next.on_deck_at ? ' (told they are on deck)' : ''}
               </Text>
@@ -357,10 +379,14 @@ export default function LiveScreen() {
           on the list screen. */}
       {waitlist.length > 0 ? (
         <>
-          <Text style={styles.label}>Waiting for a spot ({waitlist.length})</Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.label}>
+            Waiting for a spot ({waitlist.length})
+          </Text>
           {waitlist.map((row) => (
             <View key={row.id} style={styles.waitRow}>
-              <Text style={styles.waitName}>{performerName(row)}</Text>
+              <Text maxFontSizeMultiplier={maxFontScale} style={styles.waitName}>
+                {performerName(row)}
+              </Text>
               <Button
                 label="Put them on"
                 kind="secondary"
@@ -393,7 +419,9 @@ export default function LiveScreen() {
           the controls for the night. */}
       {confirmingEnd ? (
         <View style={styles.endBox}>
-          <Text style={styles.endTitle}>End the show?</Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.endTitle}>
+            End the show?
+          </Text>
           <Body>
             {live.current
               ? `${live.order.length - live.done} still to go up. Ending now closes the controls and takes everyone off deck.`
@@ -415,15 +443,18 @@ export default function LiveScreen() {
         <Button label="End show" kind="secondary" onPress={() => setConfirmingEnd(true)} />
       )}
 
-      <Text style={styles.label}>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.label}>
         Running order ({live.done} of {live.order.length} done)
       </Text>
       {live.order.map((row, index) => {
         const isCurrent = row.id === live.current?.id;
         return (
           <View key={row.id} style={[styles.row, isCurrent && styles.rowCurrent]}>
-            <Text style={styles.slot}>{index + 1}</Text>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.slot}>
+              {index + 1}
+            </Text>
             <Text
+              maxFontSizeMultiplier={maxFontScale}
               style={[
                 styles.rowName,
                 row.status === 'performed' && styles.rowDone,
@@ -433,12 +464,20 @@ export default function LiveScreen() {
               {performerName(row)}
             </Text>
             {row.status === 'performed' ? (
-              <Text style={styles.rowMeta}>{ROSTER_STATUS_LABELS.performed}</Text>
+              <Text maxFontSizeMultiplier={maxFontScale} style={styles.rowMeta}>
+                {ROSTER_STATUS_LABELS.performed}
+              </Text>
             ) : null}
             {row.status === 'no_show' ? (
-              <Text style={styles.rowMeta}>{ROSTER_STATUS_LABELS.no_show}</Text>
+              <Text maxFontSizeMultiplier={maxFontScale} style={styles.rowMeta}>
+                {ROSTER_STATUS_LABELS.no_show}
+              </Text>
             ) : null}
-            {row.on_deck_at && !isCurrent ? <Text style={styles.onDeckMeta}>On deck</Text> : null}
+            {row.on_deck_at && !isCurrent ? (
+              <Text maxFontSizeMultiplier={maxFontScale} style={styles.onDeckMeta}>
+                On deck
+              </Text>
+            ) : null}
           </View>
         );
       })}
@@ -491,7 +530,7 @@ const styles = StyleSheet.create({
   stats: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     flexDirection: 'row',
     paddingVertical: spacing.md,
@@ -526,7 +565,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.md,
@@ -549,7 +588,7 @@ const styles = StyleSheet.create({
   endBox: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.danger,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
     gap: spacing.sm,
     marginTop: spacing.md,
@@ -564,7 +603,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: palette.bgElevated,
     borderColor: palette.warning,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.sm,
@@ -580,7 +619,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.sm,

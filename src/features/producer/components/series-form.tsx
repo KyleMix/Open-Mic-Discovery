@@ -32,13 +32,15 @@ import {
 } from '@/features/producer/rrule-builder';
 import { useVenueSearch } from '@/features/producer/queries';
 import {
+  type Discipline,
   disciplineAccents,
   fonts,
+  maxFontScale,
   minTouchTarget,
   palette,
+  radius,
   spacing,
   type,
-  type Discipline,
 } from '@/theme';
 import type { Database } from '@/types/database.types';
 
@@ -158,7 +160,6 @@ type Props = {
 function chipStyle(active: boolean) {
   return [styles.chip, active && styles.chipActive];
 }
-
 
 /** The first calendar date on or after the anchor that the rule generates,
  * as a short label, or null when nothing matches in the next five weeks. */
@@ -467,7 +468,9 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
         placeholder="The Basement Open Mic"
       />
 
-      <Text style={styles.sectionLabel}>Disciplines</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionLabel}>
+        Disciplines
+      </Text>
       <View style={styles.chipRow}>
         {DISCIPLINES.map((d) => (
           <Pressable
@@ -483,12 +486,16 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
               size={14}
               color={disciplines.includes(d) ? disciplineAccents[d] : palette.textSecondary}
             />
-            <Text style={styles.chipText}>{d.charAt(0).toUpperCase() + d.slice(1)}</Text>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.chipText}>
+              {d.charAt(0).toUpperCase() + d.slice(1)}
+            </Text>
           </Pressable>
         ))}
       </View>
 
-      <Text style={styles.sectionLabel}>When does it happen?</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionLabel}>
+        When does it happen?
+      </Text>
       <View style={styles.chipRow}>
         {(['weekly', 'biweekly', 'monthly'] as const).map((kind) => (
           <Pressable
@@ -504,7 +511,7 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
             }
             style={chipStyle(recurrence.kind === kind)}
           >
-            <Text style={styles.chipText}>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.chipText}>
               {kind === 'weekly'
                 ? 'Every week'
                 : kind === 'biweekly'
@@ -528,7 +535,9 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
               }
               style={chipStyle(recurrence.days.includes(code))}
             >
-              <Text style={styles.chipText}>{WEEKDAY_LABELS[code]}</Text>
+              <Text maxFontSizeMultiplier={maxFontScale} style={styles.chipText}>
+                {WEEKDAY_LABELS[code]}
+              </Text>
             </Pressable>
           ))}
         </View>
@@ -546,7 +555,9 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
                 }
                 style={chipStyle(recurrence.ordinals.includes(o))}
               >
-                <Text style={styles.chipText}>{ORDINAL_LABELS[o]}</Text>
+                <Text maxFontSizeMultiplier={maxFontScale} style={styles.chipText}>
+                  {ORDINAL_LABELS[o]}
+                </Text>
               </Pressable>
             ))}
           </View>
@@ -560,7 +571,9 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
                 onPress={() => setRecurrence({ ...recurrence, day: code })}
                 style={chipStyle(recurrence.day === code)}
               >
-                <Text style={styles.chipText}>{WEEKDAY_LABELS[code]}</Text>
+                <Text maxFontSizeMultiplier={maxFontScale} style={styles.chipText}>
+                  {WEEKDAY_LABELS[code]}
+                </Text>
               </Pressable>
             ))}
           </View>
@@ -575,7 +588,9 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
             onPress={() => setBiweeklyNextWeek(false)}
             style={chipStyle(!biweeklyNextWeek)}
           >
-            <Text style={styles.chipText}>Happens this week</Text>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.chipText}>
+              Happens this week
+            </Text>
           </Pressable>
           <Pressable
             accessibilityRole="button"
@@ -583,12 +598,16 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
             onPress={() => setBiweeklyNextWeek(true)}
             style={chipStyle(biweeklyNextWeek)}
           >
-            <Text style={styles.chipText}>Starts next week</Text>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.chipText}>
+              Starts next week
+            </Text>
           </Pressable>
         </View>
       ) : null}
 
-      <Text style={styles.sectionLabel}>Start time</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionLabel}>
+        Start time
+      </Text>
       <View style={styles.pairRow}>
         <View style={[styles.pairItem, { flex: 2 }]}>
           <SelectField label="Hour" value={hour} options={HOUR_OPTIONS} onChange={setHour} />
@@ -602,7 +621,9 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
           />
         </View>
       </View>
-      <Text style={styles.sectionLabel}>Timezone</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionLabel}>
+        Timezone
+      </Text>
       <View style={styles.chipRow}>
         {(TIMEZONE_CHOICES.some((t) => t.id === timezone)
           ? TIMEZONE_CHOICES
@@ -619,20 +640,24 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
             }}
             style={chipStyle(timezone === t.id)}
           >
-            <Text style={styles.chipText}>{t.label}</Text>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.chipText}>
+              {t.label}
+            </Text>
           </Pressable>
         ))}
       </View>
       <Body>The start time is local time at the venue, in this timezone.</Body>
 
       {preview ? (
-        <Text style={styles.preview}>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.preview}>
           {preview}
           {firstNight ? ` · First night ${firstNight}` : ''}
         </Text>
       ) : null}
 
-      <Text style={styles.sectionLabel}>Signups</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionLabel}>
+        Signups
+      </Text>
       <SelectField
         label="How performers get on stage"
         value={method}
@@ -713,11 +738,15 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
       />
 
       <>
-        <Text style={styles.sectionLabel}>Venue</Text>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionLabel}>
+          Venue
+        </Text>
         {existing ? <Body>Changing the venue moves this and all future nights there.</Body> : null}
         {venueLabel ? (
           <View style={styles.venuePicked}>
-            <Text style={styles.chipText}>{venueLabel}</Text>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.chipText}>
+              {venueLabel}
+            </Text>
             <Button
               label="Change"
               kind="secondary"
@@ -749,7 +778,9 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
                 />
               </View>
             </View>
-            <Text style={styles.sectionLabel}>Location</Text>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionLabel}>
+              Location
+            </Text>
             {lookup === 'searching' ? (
               <Body>Finding the address on the map...</Body>
             ) : lookup === 'found' ? (
@@ -803,8 +834,10 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
                 }}
                 style={styles.venueResult}
               >
-                <Text style={styles.chipText}>{v.name}</Text>
-                <Text style={styles.venueMeta}>
+                <Text maxFontSizeMultiplier={maxFontScale} style={styles.chipText}>
+                  {v.name}
+                </Text>
+                <Text maxFontSizeMultiplier={maxFontScale} style={styles.venueMeta}>
                   {v.address_line}, {v.city}, {v.region}
                 </Text>
               </Pressable>
@@ -880,7 +913,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -889,9 +922,9 @@ const styles = StyleSheet.create({
   venueResult: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     borderWidth: 1,
-    gap: 2,
+    gap: spacing.xxs,
     padding: spacing.md,
   },
   venueMeta: {

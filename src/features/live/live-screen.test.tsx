@@ -189,9 +189,7 @@ describe('running the night', () => {
       performer({ id: 'sg-2', status: 'requested', slot_position: null, stage_name: 'Second' }),
     ];
     await render(<LiveScreen />);
-    expect(
-      screen.getByText(/2 names are in the draw, and the draw has not run yet/),
-    ).toBeTruthy();
+    expect(screen.getByText(/2 names are in the draw, and the draw has not run yet/)).toBeTruthy();
     expect(screen.getByText('Open the list screen')).toBeTruthy();
   });
 

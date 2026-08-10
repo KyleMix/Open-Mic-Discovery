@@ -22,6 +22,20 @@ export const palette = {
   danger: '#FF5D5D',
   success: '#4CD97B',
   warning: '#FFC94D',
+  /** The dim layer behind every bottom sheet and modal. */
+  scrim: 'rgba(0, 0, 0, 0.6)',
+  /** Secondary text drawn over a poster image, where textSecondary sinks. */
+  textSecondaryOnImage: '#C9C9D2',
+} as const;
+
+/**
+ * External brand colors, used only where a third-party mark is rendered
+ * (profile social links). Kept here so no component invents hex values.
+ */
+export const brandColors = {
+  instagram: '#E1306C',
+  youtube: '#FF0000',
+  spotify: '#1DB954',
 } as const;
 
 /**
@@ -40,12 +54,25 @@ export const disciplineAccents = {
 export type Discipline = keyof typeof disciplineAccents;
 
 export const spacing = {
+  /** Hairline gap inside stacked text rows. */
+  xxs: 2,
   xs: 4,
   sm: 8,
   md: 16,
   lg: 24,
   xl: 32,
   xxl: 48,
+} as const;
+
+/**
+ * Corner radii. sm: inputs and small chips, md: buttons and cards,
+ * lg: prominent cards and sheets, pill: fully rounded.
+ */
+export const radius = {
+  sm: 10,
+  md: 12,
+  lg: 14,
+  pill: 999,
 } as const;
 
 /**
@@ -62,8 +89,16 @@ export const type = {
   title: { fontSize: 28, fontWeight: '700', lineHeight: 34 },
   heading: { fontSize: 20, fontWeight: '600', lineHeight: 26 },
   body: { fontSize: 16, fontWeight: '400', lineHeight: 22 },
+  /** Chip and control labels: between body and caption. */
+  label: { fontSize: 15, fontWeight: '400', lineHeight: 20 },
   caption: { fontSize: 13, fontWeight: '400', lineHeight: 18 },
 } as const;
+
+/**
+ * Mirrored as literals in app.json (backgroundColor, splash, adaptive
+ * icon: palette.bg; notification icon color: disciplineAccents.music).
+ * Static JSON cannot import; change those four together with the palette.
+ */
 
 /** Minimum touch target size per accessibility standards. */
 export const minTouchTarget = 44;

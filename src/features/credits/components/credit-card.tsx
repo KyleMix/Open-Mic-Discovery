@@ -11,7 +11,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { AvatarCircle } from '@/features/profile/avatar-circle';
 import { SocialLinkRow } from '@/components/social-links';
 import { buildSocialLinks } from '@/features/profile/social';
-import { fonts, minTouchTarget, palette, spacing, type } from '@/theme';
+import { fonts, maxFontScale, minTouchTarget, palette, radius, spacing, type } from '@/theme';
 
 import { creditName, type Credit, type CreditRole } from '../resolve';
 
@@ -46,11 +46,11 @@ export function CreditCard({
       <View style={styles.row}>
         <AvatarCircle url={credit.avatar_url} name={name} size={44} />
         <View style={styles.text}>
-          <Text style={styles.role}>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.role}>
             {ROLE_LABEL[role]}
             {overridden ? ' tonight' : ''}
           </Text>
-          <Text style={styles.name} numberOfLines={1}>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.name} numberOfLines={1}>
             {name}
           </Text>
         </View>
@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
     gap: spacing.sm,
     padding: spacing.md,
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   },
   text: {
     flex: 1,
-    gap: 2,
+    gap: spacing.xxs,
   },
   role: {
     color: palette.textSecondary,

@@ -16,7 +16,7 @@ import {
   useResolveFlag,
   useResolveReport,
 } from '@/features/safety/queries';
-import { fonts, palette, spacing, type } from '@/theme';
+import { fonts, maxFontScale, palette, radius, spacing, type } from '@/theme';
 
 /**
  * The moderation queue (Guideline 1.2): held content, abuse reports, and
@@ -109,7 +109,11 @@ export default function AdminScreen() {
       ) : null}
       {empty ? <Body>Queue is clear. Nothing needs review.</Body> : null}
 
-      {q.reports.length > 0 ? <Text style={styles.sectionTitle}>Abuse reports</Text> : null}
+      {q.reports.length > 0 ? (
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+          Abuse reports
+        </Text>
+      ) : null}
       {resolveReport.isError ? (
         <ErrorText>
           {resolveReport.error instanceof Error
@@ -119,11 +123,19 @@ export default function AdminScreen() {
       ) : null}
       {q.reports.map((r) => (
         <View key={r.id} style={styles.item}>
-          <Text style={styles.itemTitle}>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.itemTitle}>
             {REPORT_TARGET_LABELS[r.target_type]}: {REPORT_REASON_LABELS[r.reason]}
           </Text>
-          {r.targetLabel ? <Text style={styles.itemBody}>{r.targetLabel}</Text> : null}
-          {r.details ? <Text style={styles.itemBody}>Reporter: {r.details}</Text> : null}
+          {r.targetLabel ? (
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.itemBody}>
+              {r.targetLabel}
+            </Text>
+          ) : null}
+          {r.details ? (
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.itemBody}>
+              Reporter: {r.details}
+            </Text>
+          ) : null}
           {isAdmin ? (
             <View style={styles.actions}>
               <Button
@@ -143,7 +155,11 @@ export default function AdminScreen() {
                 kind="secondary"
                 busy={resolveReport.isPending}
                 onPress={() =>
-                  resolveReport.mutate({ reportId: r.id, adminId: session.user.id, actioned: false })
+                  resolveReport.mutate({
+                    reportId: r.id,
+                    adminId: session.user.id,
+                    actioned: false,
+                  })
                 }
               />
             </View>
@@ -152,7 +168,9 @@ export default function AdminScreen() {
       ))}
 
       {q.profiles.length + q.venues.length + q.series.length + q.credits.length > 0 ? (
-        <Text style={styles.sectionTitle}>Held content</Text>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+          Held content
+        </Text>
       ) : null}
       {moderate.isError ? (
         <ErrorText>
@@ -202,7 +220,11 @@ export default function AdminScreen() {
         />
       ))}
 
-      {q.flags.length > 0 ? <Text style={styles.sectionTitle}>Listing flags</Text> : null}
+      {q.flags.length > 0 ? (
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+          Listing flags
+        </Text>
+      ) : null}
       {resolveFlag.isError ? (
         <ErrorText>
           {resolveFlag.error instanceof Error
@@ -212,10 +234,14 @@ export default function AdminScreen() {
       ) : null}
       {q.flags.map((f) => (
         <View key={f.id} style={styles.item}>
-          <Text style={styles.itemTitle}>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.itemTitle}>
             {f.series?.title ?? 'Listing'}: {FLAG_REASON_LABELS[f.reason]}
           </Text>
-          {f.details ? <Text style={styles.itemBody}>{f.details}</Text> : null}
+          {f.details ? (
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.itemBody}>
+              {f.details}
+            </Text>
+          ) : null}
           {isAdmin ? (
             <View style={styles.actions}>
               <Button
@@ -256,8 +282,14 @@ function ModerationItem({
 }) {
   return (
     <View style={styles.item}>
-      <Text style={styles.itemTitle}>{title}</Text>
-      {body ? <Text style={styles.itemBody}>{body}</Text> : null}
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.itemTitle}>
+        {title}
+      </Text>
+      {body ? (
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.itemBody}>
+          {body}
+        </Text>
+      ) : null}
       {canAct ? (
         <View style={styles.actions}>
           <Button label="Approve" busy={busy} onPress={() => onDecide(true)} />
@@ -287,7 +319,7 @@ const styles = StyleSheet.create({
   item: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     gap: spacing.sm,
     padding: spacing.md,

@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 
 import { DEFAULT_CENTER } from '@/features/discovery/location';
-import { palette } from '@/theme';
+import { palette, radius } from '@/theme';
 
 export type Pin = { lat: number; lng: number };
 
@@ -71,7 +71,7 @@ export function PinPicker({ pin, onChange }: Props) {
 const styles = StyleSheet.create({
   mapBox: {
     borderColor: palette.border,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     height: 220,
     overflow: 'hidden',

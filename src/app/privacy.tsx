@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, Text } from 'react-native';
 import { Screen, Title } from '@/components/ui';
 import { parseEulaMarkdown } from '@/features/auth/eula-markdown';
 import { PRIVACY_POLICY_MD } from '@/features/legal/privacy-policy';
-import { fonts, palette, spacing, type } from '@/theme';
+import { fonts, maxFontScale, palette, radius, spacing, type } from '@/theme';
 
 /**
  * The privacy policy, reachable by guests, by accounts still at the EULA
@@ -27,19 +27,19 @@ export default function PrivacyScreen() {
       <ScrollView style={styles.policy} accessibilityLabel="Privacy policy text">
         {parseEulaMarkdown(PRIVACY_POLICY_MD).map((block, i) =>
           block.kind === 'title' ? (
-            <Text key={i} style={styles.policyTitle}>
+            <Text maxFontSizeMultiplier={maxFontScale} key={i} style={styles.policyTitle}>
               {block.text}
             </Text>
           ) : block.kind === 'heading' ? (
-            <Text key={i} style={styles.policyHeading}>
+            <Text maxFontSizeMultiplier={maxFontScale} key={i} style={styles.policyHeading}>
               {block.text}
             </Text>
           ) : block.kind === 'bullet' ? (
-            <Text key={i} style={styles.policyText}>
+            <Text maxFontSizeMultiplier={maxFontScale} key={i} style={styles.policyText}>
               {'•'} {block.text}
             </Text>
           ) : (
-            <Text key={i} style={styles.policyText}>
+            <Text maxFontSizeMultiplier={maxFontScale} key={i} style={styles.policyText}>
               {block.text}
             </Text>
           ),
@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
   policy: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     flex: 1,
     padding: spacing.md,

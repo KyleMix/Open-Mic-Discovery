@@ -15,7 +15,7 @@ import * as Linking from 'expo-linking';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import type { SocialKey, SocialLink } from '@/features/profile/social';
-import { minTouchTarget, palette, spacing } from '@/theme';
+import { brandColors, minTouchTarget, palette, spacing } from '@/theme';
 
 type IconProps = {
   name: string;
@@ -37,10 +37,10 @@ type IconSpec = { name: string; brand: boolean; color: string };
  * background.
  */
 export const SOCIAL_ICONS: Record<SocialKey, IconSpec> = {
-  instagram: { name: 'instagram', brand: true, color: '#E1306C' },
+  instagram: { name: 'instagram', brand: true, color: brandColors.instagram },
   tiktok: { name: 'tiktok', brand: true, color: palette.text },
-  youtube: { name: 'youtube', brand: true, color: '#FF0000' },
-  spotify: { name: 'spotify', brand: true, color: '#1DB954' },
+  youtube: { name: 'youtube', brand: true, color: brandColors.youtube },
+  spotify: { name: 'spotify', brand: true, color: brandColors.spotify },
   apple_music: { name: 'apple', brand: true, color: palette.text },
   website: { name: 'globe', brand: false, color: palette.textSecondary },
 };

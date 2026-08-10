@@ -7,7 +7,7 @@ import { useSession } from '@/features/auth/session';
 import { eventDate } from '@/features/discovery/local-time';
 import { useMyPlan, useTogglePlan } from '@/features/plans/queries';
 import { isWalkIn } from '@/features/producer/signup-opens';
-import { fonts, palette, spacing, type } from '@/theme';
+import { fonts, maxFontScale, palette, radius, spacing, type } from '@/theme';
 import type { Database } from '@/types/database.types';
 
 type Occurrence = Database['public']['Tables']['mic_occurrences']['Row'];
@@ -49,7 +49,9 @@ export function PlanToggle({ occurrence, timezone, signupMethod }: Props) {
   if (!session) {
     return (
       <View style={styles.card}>
-        <Text style={styles.title}>Going to this one?</Text>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.title}>
+          Going to this one?
+        </Text>
         <Body>
           {isWalkIn(signupMethod)
             ? 'The list gets signed at the venue, so telling the host you are coming is the only way they know how many to plan for.'
@@ -73,7 +75,7 @@ export function PlanToggle({ occurrence, timezone, signupMethod }: Props) {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.title}>
         {going ? `You are going on ${nightLabel}` : 'Going to this one?'}
       </Text>
       <Body>
@@ -106,7 +108,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
     gap: spacing.sm,
     padding: spacing.md,

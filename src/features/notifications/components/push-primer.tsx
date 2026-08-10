@@ -4,7 +4,7 @@ import { Linking, StyleSheet, View } from 'react-native';
 
 import { Body, Button } from '@/components/ui';
 import { getPushPermissionState, registerPushToken } from '@/lib/notifications';
-import { palette, spacing } from '@/theme';
+import { palette, radius, spacing } from '@/theme';
 
 /**
  * The ask before the OS asks.
@@ -64,7 +64,7 @@ export function PushPrimer({ userId, message }: { userId: string; message: strin
 const styles = StyleSheet.create({
   box: {
     borderColor: palette.border,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderTopWidth: 0,
     borderWidth: 1,
     gap: spacing.sm,

@@ -20,7 +20,16 @@ import type { NearbyMic } from '@/features/discovery/queries';
 import { describeRecurrence } from '@/features/discovery/recurrence';
 import { ShareSheet } from '@/features/share/components/share-sheet';
 import { useFavorites, useToggleFavorite } from '@/features/favorites/queries';
-import { disciplineAccents, fonts, palette, spacing, type, type Discipline } from '@/theme';
+import {
+  type Discipline,
+  disciplineAccents,
+  fonts,
+  maxFontScale,
+  palette,
+  radius,
+  spacing,
+  type,
+} from '@/theme';
 
 // Plain-language names for how you get on stage; shared across discovery,
 // mic detail, and producer screens so the wording never drifts.
@@ -138,7 +147,7 @@ export function MicCard({ mic, onPress }: Props) {
         ) : null}
         <View style={styles.body}>
           <View style={styles.titleRow}>
-            <Text numberOfLines={1} style={styles.title}>
+            <Text maxFontSizeMultiplier={maxFontScale} numberOfLines={1} style={styles.title}>
               {mic.title}
             </Text>
             <View style={styles.glyphRow}>
@@ -150,22 +159,28 @@ export function MicCard({ mic, onPress }: Props) {
               <View style={session ? styles.overlaySpacerWide : styles.overlaySpacer} />
             </View>
           </View>
-          <Text numberOfLines={1} style={styles.venue}>
+          <Text maxFontSizeMultiplier={maxFontScale} numberOfLines={1} style={styles.venue}>
             {mic.venue_name}
             {mic.neighborhood ? `, ${mic.neighborhood}` : ''}
             {mic.distance_m != null ? ` (${formatMilesFromMeters(mic.distance_m)})` : ''}
           </Text>
-          <Text style={styles.when}>{when}</Text>
-          {cancelledNight ? <Text style={styles.cancelledNight}>{cancelledNight}</Text> : null}
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.when}>
+            {when}
+          </Text>
+          {cancelledNight ? (
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.cancelledNight}>
+              {cancelledNight}
+            </Text>
+          ) : null}
           {/* A guest is the reason someone picks one night over another, so it
             belongs on the card rather than only on the mic page. */}
           {mic.featured_name ? (
-            <Text numberOfLines={1} style={styles.featured}>
+            <Text maxFontSizeMultiplier={maxFontScale} numberOfLines={1} style={styles.featured}>
               Featuring {mic.featured_name}
             </Text>
           ) : null}
           {mic.host_name ? (
-            <Text numberOfLines={1} style={styles.host}>
+            <Text maxFontSizeMultiplier={maxFontScale} numberOfLines={1} style={styles.host}>
               Hosted by {mic.host_name}
             </Text>
           ) : null}
@@ -176,18 +191,30 @@ export function MicCard({ mic, onPress }: Props) {
                 size={14}
                 color={palette.textSecondary}
               />
-              <Text style={styles.metaText}>{SIGNUP_METHOD_LABELS[mic.signup_method]}</Text>
+              <Text maxFontSizeMultiplier={maxFontScale} style={styles.metaText}>
+                {SIGNUP_METHOD_LABELS[mic.signup_method]}
+              </Text>
             </View>
-            <Text style={styles.metaText}>{costLabel(mic.cost_cents)}</Text>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.metaText}>
+              {costLabel(mic.cost_cents)}
+            </Text>
             <View style={styles.metaItem}>
               <Glyph name="freshness-badge" size={14} color={fresh.color} />
-              <Text style={[styles.metaText, { color: fresh.color }]}>{fresh.label}</Text>
+              <Text
+                maxFontSizeMultiplier={maxFontScale}
+                style={[styles.metaText, { color: fresh.color }]}
+              >
+                {fresh.label}
+              </Text>
             </View>
             {stewardship ? <StewardshipBadge ownerId={stewardship.ownerId} variant="card" /> : null}
             {/* Full is the one state worth interrupting the row for: it changes
               whether signing up gets you a slot or a place in the queue. */}
             {spots ? (
-              <Text style={[styles.metaText, spots.tone !== 'plain' && styles.spotsAlert]}>
+              <Text
+                maxFontSizeMultiplier={maxFontScale}
+                style={[styles.metaText, spots.tone !== 'plain' && styles.spotsAlert]}
+              >
                 {spots.label}
               </Text>
             ) : null}
@@ -294,7 +321,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
     flexDirection: 'row',
     overflow: 'hidden',

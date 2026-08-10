@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
-import { palette, spacing } from '@/theme';
+import { palette, radius, spacing } from '@/theme';
 
 /**
  * Placeholder rows shown while the first feed loads, shaped like MicCard
@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
     flexDirection: 'row',
     overflow: 'hidden',

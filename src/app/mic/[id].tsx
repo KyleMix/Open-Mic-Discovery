@@ -64,13 +64,15 @@ import { describeRecurrence, formatLocalTime } from '@/features/discovery/recurr
 import { formatInZone, zoneDiffersFromDevice } from '@/features/discovery/timezone';
 import { setReturnTo } from '@/stores/return-to';
 import {
+  type Discipline,
   disciplineAccents,
   fonts,
+  maxFontScale,
   minTouchTarget,
   palette,
+  radius,
   spacing,
   type,
-  type Discipline,
 } from '@/theme';
 import type { Database } from '@/types/database.types';
 import { transformedImageUrl } from '@/lib/image-url';
@@ -221,7 +223,9 @@ function MicDetail({
           />
         ) : null}
         <View style={styles.titleRow}>
-          <Text style={styles.title}>{series.title}</Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.title}>
+            {series.title}
+          </Text>
           <View style={styles.glyphRow}>
             {(series.disciplines as Discipline[]).map((d) => (
               <Glyph key={d} name={disciplineGlyphs[d]} size={20} color={disciplineAccents[d]} />
@@ -254,22 +258,34 @@ function MicDetail({
 
         <View style={styles.freshRow}>
           <Glyph name="freshness-badge" size={16} color={fresh.color} />
-          <Text style={[styles.freshText, { color: fresh.color }]}>{fresh.label}</Text>
-          <Text style={[styles.freshText, { color: palette.textSecondary }]}>·</Text>
+          <Text
+            maxFontSizeMultiplier={maxFontScale}
+            style={[styles.freshText, { color: fresh.color }]}
+          >
+            {fresh.label}
+          </Text>
+          <Text
+            maxFontSizeMultiplier={maxFontScale}
+            style={[styles.freshText, { color: palette.textSecondary }]}
+          >
+            ·
+          </Text>
           <StewardshipBadge ownerId={series.owner_id} verified={ownerVerified} />
         </View>
 
         <Card>
-          <Text style={styles.when}>{recurrence ?? 'Schedule varies'}</Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.when}>
+            {recurrence ?? 'Schedule varies'}
+          </Text>
           {next ? (
-            <Text style={styles.nextDate}>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.nextDate}>
               Next: {formatNextDateLong(next.starts_at, series.timezone)}
               {next.doors_at
                 ? ` · Doors ${formatInZone(next.doors_at, series.timezone, { hour: 'numeric', minute: '2-digit' })}`
                 : ''}
             </Text>
           ) : (
-            <Text style={styles.nextDate}>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.nextDate}>
               {series.is_active
                 ? 'No upcoming dates listed'
                 : 'This mic is paused right now. Check back, or flag it if you think it is gone.'}
@@ -279,27 +295,37 @@ function MicDetail({
             // Pausing preserves nights that hold signups, so a paused mic
             // can still have a next night; without this line it read as
             // fully live.
-            <Text style={styles.nextDate}>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.nextDate}>
               This mic is paused: the night above still happens for the people on its list, but no
               new nights are being scheduled.
             </Text>
           ) : null}
           {zoneDiffersFromDevice(series.timezone) ? (
-            <Text style={styles.nextDate}>Times shown are local to the venue.</Text>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.nextDate}>
+              Times shown are local to the venue.
+            </Text>
           ) : null}
-          {nextTitle ? <Text style={styles.overrideNote}>Special night: {nextTitle}</Text> : null}
+          {nextTitle ? (
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.overrideNote}>
+              Special night: {nextTitle}
+            </Text>
+          ) : null}
           {/* A guest is the reason to pick this night over the next one, so it
               sits with the date rather than further down the page. */}
           {next?.featured_name ? (
             <>
-              <Text style={styles.featured}>Featuring {next.featured_name}</Text>
+              <Text maxFontSizeMultiplier={maxFontScale} style={styles.featured}>
+                Featuring {next.featured_name}
+              </Text>
               {next.featured_note ? (
-                <Text style={styles.costNote}>{next.featured_note}</Text>
+                <Text maxFontSizeMultiplier={maxFontScale} style={styles.costNote}>
+                  {next.featured_note}
+                </Text>
               ) : null}
             </>
           ) : null}
           {next && next.override_cost_cents != null ? (
-            <Text style={styles.overrideNote}>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.overrideNote}>
               This night: {costLabel(next.override_cost_cents)} (usually{' '}
               {costLabel(series.cost_cents)})
             </Text>
@@ -308,7 +334,7 @@ function MicDetail({
             <Button label="Add to my calendar" kind="secondary" onPress={addNightToCalendar} />
           ) : null}
           {occurrences.some((o) => o.status === 'cancelled') ? (
-            <Text style={styles.cancelNote}>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.cancelNote}>
               {occurrences
                 .filter((o) => o.status === 'cancelled')
                 .map(
@@ -346,7 +372,9 @@ function MicDetail({
         <Card>
           <View style={styles.methodRow}>
             <Glyph name={signupMethodGlyphs[series.signup_method]} size={18} color={palette.text} />
-            <Text style={styles.methodTitle}>{SIGNUP_METHOD_LABELS[series.signup_method]}</Text>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.methodTitle}>
+              {SIGNUP_METHOD_LABELS[series.signup_method]}
+            </Text>
           </View>
           <Body>{SIGNUP_METHOD_EXPLAINERS[series.signup_method]}</Body>
           <View style={styles.factsRow}>
@@ -372,14 +400,20 @@ function MicDetail({
                 })()
               : null}
           </View>
-          {series.cost_note ? <Text style={styles.costNote}>{series.cost_note}</Text> : null}
+          {series.cost_note ? (
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.costNote}>
+              {series.cost_note}
+            </Text>
+          ) : null}
         </Card>
 
         {series.description ? <Body>{series.description}</Body> : null}
 
         {venue ? (
           <Card>
-            <Text style={styles.venueName}>{venue.name}</Text>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.venueName}>
+              {venue.name}
+            </Text>
             <Body>
               {venue.address_line}, {venue.neighborhood ? `${venue.neighborhood}, ` : ''}
               {venue.city}, {venue.region}
@@ -411,7 +445,9 @@ function MicDetail({
               ) : null}
             </View>
             {venue.parking_notes ? (
-              <Text style={styles.costNote}>Parking: {venue.parking_notes}</Text>
+              <Text maxFontSizeMultiplier={maxFontScale} style={styles.costNote}>
+                Parking: {venue.parking_notes}
+              </Text>
             ) : null}
             <Button label="Get directions" kind="secondary" onPress={openDirections} />
             {venue.phone ? (
@@ -438,7 +474,9 @@ function MicDetail({
           style={styles.flagButton}
         >
           <Glyph name="flag-listing" size={16} color={palette.textSecondary} />
-          <Text style={styles.flagText}>Something wrong with this listing?</Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.flagText}>
+            Something wrong with this listing?
+          </Text>
         </Pressable>
 
         {series.owner_id === null ? (
@@ -448,8 +486,12 @@ function MicDetail({
             onPress={() => setClaimOpen(true)}
             style={styles.flagButton}
           >
-            <Glyph name="signup-host-booked" size={16} color={palette.textSecondary} />
-            <Text style={styles.flagText}>Do you run this mic? Claim it</Text>
+            {/* Ionicons, not a signup-method glyph: that icon already means
+                "invite only" on this same screen. */}
+            <Ionicons name="key-outline" size={16} color={palette.textSecondary} />
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.flagText}>
+              Do you run this mic? Claim it
+            </Text>
           </Pressable>
         ) : null}
 
@@ -460,7 +502,9 @@ function MicDetail({
           style={styles.flagButton}
         >
           <Ionicons name="flag-outline" size={16} color={palette.textSecondary} />
-          <Text style={styles.flagText}>Report abusive content</Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.flagText}>
+            Report abusive content
+          </Text>
         </Pressable>
 
         <ShareSheet seriesId={series.id} open={shareOpen} onClose={() => setShareOpen(false)} />
@@ -591,11 +635,15 @@ function SignupFooter({
       ) : null}
       {cta.kind === 'status' ? (
         <View accessibilityLiveRegion="polite" style={styles.footerStatus}>
-          <Text style={styles.footerStatusText}>{cta.label}</Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.footerStatusText}>
+            {cta.label}
+          </Text>
         </View>
       ) : cta.kind === 'enable-performer' ? (
         <>
-          <Text style={styles.footerDetail}>{cta.detail}</Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.footerDetail}>
+            {cta.detail}
+          </Text>
           {enablePerformer.isError ? (
             <ErrorText>
               {enablePerformer.error instanceof Error
@@ -616,7 +664,9 @@ function SignupFooter({
       ) : (
         <>
           {cta.kind === 'join' && cta.detail ? (
-            <Text style={styles.footerDetail}>{cta.detail}</Text>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.footerDetail}>
+              {cta.detail}
+            </Text>
           ) : null}
           <Button
             label={cta.label}
@@ -678,7 +728,9 @@ function ClaimModal({
               <DiscardPrompt onDiscard={reallyClose} onKeep={() => setConfirmDiscard(false)} />
             ) : done ? (
               <>
-                <Text style={styles.modalTitle}>Claim submitted</Text>
+                <Text maxFontSizeMultiplier={maxFontScale} style={styles.modalTitle}>
+                  Claim submitted
+                </Text>
                 <Body>
                   We review claims by hand to keep listings trustworthy. Once approved, this mic
                   appears in your My Mics tab with full control.
@@ -687,7 +739,9 @@ function ClaimModal({
               </>
             ) : !session ? (
               <>
-                <Text style={styles.modalTitle}>Sign in to claim</Text>
+                <Text maxFontSizeMultiplier={maxFontScale} style={styles.modalTitle}>
+                  Sign in to claim
+                </Text>
                 <Body>Claiming a mic needs an account so we can hand you the keys.</Body>
                 <Button
                   label="Sign in"
@@ -701,7 +755,9 @@ function ClaimModal({
               </>
             ) : (
               <>
-                <Text style={styles.modalTitle}>Claim this mic</Text>
+                <Text maxFontSizeMultiplier={maxFontScale} style={styles.modalTitle}>
+                  Claim this mic
+                </Text>
                 <Body>
                   Tell us how we can verify you run this night: your role, socials, or who at the
                   venue can vouch for you.
@@ -790,8 +846,12 @@ function Card({ children }: { children: React.ReactNode }) {
 function Fact({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.fact}>
-      <Text style={styles.factLabel}>{label}</Text>
-      <Text style={styles.factValue}>{value}</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.factLabel}>
+        {label}
+      </Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.factValue}>
+        {value}
+      </Text>
     </View>
   );
 }
@@ -850,13 +910,17 @@ function FlagModal({
               <DiscardPrompt onDiscard={reallyClose} onKeep={() => setConfirmDiscard(false)} />
             ) : done ? (
               <>
-                <Text style={styles.modalTitle}>Thanks for keeping it fresh</Text>
+                <Text maxFontSizeMultiplier={maxFontScale} style={styles.modalTitle}>
+                  Thanks for keeping it fresh
+                </Text>
                 <Body>Your flag is in. Flags like this are what keep listings accurate.</Body>
                 <Button label="Done" onPress={close} />
               </>
             ) : !session ? (
               <>
-                <Text style={styles.modalTitle}>Sign in to flag</Text>
+                <Text maxFontSizeMultiplier={maxFontScale} style={styles.modalTitle}>
+                  Sign in to flag
+                </Text>
                 <Body>Flagging a listing needs an account so we can follow up on fixes.</Body>
                 <Button
                   label="Sign in"
@@ -870,7 +934,9 @@ function FlagModal({
               </>
             ) : (
               <>
-                <Text style={styles.modalTitle}>What is wrong?</Text>
+                <Text maxFontSizeMultiplier={maxFontScale} style={styles.modalTitle}>
+                  What is wrong?
+                </Text>
                 {FLAG_REASONS.map((r) => (
                   <Pressable
                     key={r.reason}
@@ -879,7 +945,9 @@ function FlagModal({
                     onPress={() => setReason(r.reason)}
                     style={[styles.reasonRow, reason === r.reason && styles.reasonRowActive]}
                   >
-                    <Text style={styles.reasonText}>{r.label}</Text>
+                    <Text maxFontSizeMultiplier={maxFontScale} style={styles.reasonText}>
+                      {r.label}
+                    </Text>
                   </Pressable>
                 ))}
                 <Field
@@ -962,7 +1030,7 @@ const styles = StyleSheet.create({
   },
   poster: {
     borderColor: palette.border,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
     height: 260,
     width: '100%',
@@ -996,7 +1064,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
     gap: spacing.sm,
     padding: spacing.md,
@@ -1035,7 +1103,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   fact: {
-    gap: 2,
+    gap: spacing.xxs,
   },
   factLabel: {
     color: palette.textFaint,
@@ -1073,7 +1141,7 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
   modalBackdrop: {
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: palette.scrim,
     flex: 1,
     justifyContent: 'flex-end',
   },
@@ -1093,7 +1161,7 @@ const styles = StyleSheet.create({
   reasonRow: {
     backgroundColor: palette.bg,
     borderColor: palette.border,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     borderWidth: 1,
     minHeight: 44,
     justifyContent: 'center',

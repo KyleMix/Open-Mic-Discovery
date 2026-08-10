@@ -14,12 +14,14 @@ import {
   useFiltersStore,
 } from '@/stores/filters';
 import {
+  type Discipline,
   disciplineAccents,
   fonts,
+  maxFontScale,
   minTouchTarget,
   palette,
   spacing,
-  type Discipline,
+  type,
 } from '@/theme';
 
 const DISCIPLINES: Discipline[] = ['music', 'comedy', 'poetry', 'other'];
@@ -62,7 +64,10 @@ function Chip({ label, active, onPress, activeColor, icon, dismissible }: ChipPr
       ]}
     >
       {icon}
-      <Text style={[styles.chipLabel, active && styles.chipLabelActive]}>
+      <Text
+        maxFontSizeMultiplier={maxFontScale}
+        style={[styles.chipLabel, active && styles.chipLabelActive]}
+      >
         {dismissible ? `${label} ✕` : label}
       </Text>
     </Pressable>
@@ -243,7 +248,7 @@ const styles = StyleSheet.create({
   chipLabel: {
     color: palette.textSecondary,
     fontFamily: fonts.medium,
-    fontSize: 15,
+    fontSize: type.label.fontSize,
   },
   chipLabelActive: {
     color: palette.text,

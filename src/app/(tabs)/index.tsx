@@ -34,7 +34,16 @@ import { logZeroResultSearch } from '@/lib/sentry';
 import { userMessage } from '@/lib/user-error';
 import { selectDiscoveryFilters, useFiltersStore } from '@/stores/filters';
 import { useRecentSearches } from '@/stores/recent-searches';
-import { fonts, minTouchTarget, palette, spacing, type, type Discipline } from '@/theme';
+import {
+  type Discipline,
+  fonts,
+  maxFontScale,
+  minTouchTarget,
+  palette,
+  radius,
+  spacing,
+  type,
+} from '@/theme';
 
 /**
  * Discover: one input, one feed. An empty query is the ranked nearby
@@ -252,30 +261,40 @@ export default function DiscoverScreen() {
           <Ionicons name={view === 'map' ? 'list' : 'map'} size={22} color={palette.text} />
         </Pressable>
       </View>
-      {locationNote ? <Text style={styles.locationNote}>{locationNote}</Text> : null}
+      {locationNote ? (
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.locationNote}>
+          {locationNote}
+        </Text>
+      ) : null}
       {locationDenied ? (
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Open system settings to allow location"
           onPress={() => Linking.openSettings().catch(() => null)}
         >
-          <Text style={styles.settingsLink}>Open settings</Text>
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.settingsLink}>
+            Open settings
+          </Text>
         </Pressable>
       ) : null}
       <View style={styles.centerRow}>
-        <Text style={styles.centerLabel}>Near {centerLabel}</Text>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.centerLabel}>
+          Near {centerLabel}
+        </Text>
         {manualCenter ? (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Go back to your home area"
             onPress={() => setManualCenter(null)}
           >
-            <Text style={styles.centerReset}>Back to home area</Text>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.centerReset}>
+              Back to home area
+            </Text>
           </Pressable>
         ) : null}
       </View>
       {!manualCenter && !profileCenter && (session ? !profile.isPending : true) ? (
-        <Text style={styles.locationNote}>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.locationNote}>
           Showing the default Seattle area, not your own. Use the locate button, or search your city
           and tap Browse near it.
         </Text>
@@ -295,7 +314,7 @@ export default function DiscoverScreen() {
       <FilterBar />
 
       {allFuzzy ? (
-        <Text style={styles.fuzzyNote}>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.fuzzyNote}>
           No exact matches for &quot;{query}&quot;. Showing close matches.
         </Text>
       ) : null}
@@ -379,7 +398,7 @@ function ZeroResults({
 }) {
   return (
     <View style={styles.stateWrap}>
-      <Text style={styles.emptyTitle}>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.emptyTitle}>
         {query ? `No matches for "${query}"` : 'Nothing here right now'}
       </Text>
       <Body>
@@ -435,7 +454,7 @@ const styles = StyleSheet.create({
   searchInput: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     borderWidth: 1,
     color: palette.text,
     flex: 1,
@@ -447,7 +466,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     borderWidth: 1,
     height: minTouchTarget,
     justifyContent: 'center',

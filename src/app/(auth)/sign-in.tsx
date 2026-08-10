@@ -6,7 +6,7 @@ import { signInWithApple, signInWithEmail, signInWithGoogle } from '@/features/a
 import { validateEmail } from '@/features/auth/validation';
 import { Logo } from '@/components/logo';
 import { Body, Button, ErrorText, Field, FormScreen } from '@/components/ui';
-import { palette, spacing } from '@/theme';
+import { maxFontScale, palette, spacing } from '@/theme';
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -64,7 +64,9 @@ export default function SignInScreen() {
       />
       {error ? <ErrorText>{error}</ErrorText> : null}
       <Link href="/(auth)/forgot-password">
-        <Text style={{ color: palette.textSecondary }}>Forgot password?</Text>
+        <Text maxFontSizeMultiplier={maxFontScale} style={{ color: palette.textSecondary }}>
+          Forgot password?
+        </Text>
       </Link>
       <Button
         label="Sign in"

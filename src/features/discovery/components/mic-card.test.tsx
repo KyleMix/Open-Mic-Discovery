@@ -116,8 +116,6 @@ describe('MicCard from a search result', () => {
         onPress={jest.fn()}
       />,
     );
-    expect(
-      screen.getByLabelText(/Featuring Nia Guest\. Hosted by Maggie McCrary\./),
-    ).toBeTruthy();
+    expect(screen.getByLabelText(/Featuring Nia Guest\. Hosted by Maggie McCrary\./)).toBeTruthy();
   });
 });

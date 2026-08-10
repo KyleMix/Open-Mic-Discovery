@@ -3,7 +3,7 @@ import { StyleSheet, Text } from 'react-native';
 import { useSession } from '@/features/auth/session';
 import { sanctionMessage } from '@/features/safety/labels';
 import { useMySanction } from '@/features/safety/queries';
-import { palette, spacing, type } from '@/theme';
+import { maxFontScale, palette, spacing, type } from '@/theme';
 
 /**
  * A live sanction, said once at the top of the app instead of leaking out
@@ -18,7 +18,7 @@ export function SanctionBanner() {
     return null;
   }
   return (
-    <Text accessibilityRole="alert" style={styles.banner}>
+    <Text maxFontSizeMultiplier={maxFontScale} accessibilityRole="alert" style={styles.banner}>
       {sanctionMessage(sanction.data)}
     </Text>
   );

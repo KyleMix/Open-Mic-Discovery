@@ -3,7 +3,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
-  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -22,6 +21,7 @@ import {
   Screen,
   Title,
 } from '@/components/ui';
+import { ConfirmSheet } from '@/components/confirm-sheet';
 import { ScreenHeader } from '@/components/screen-header';
 import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
@@ -45,7 +45,16 @@ import {
   useSetSlotOrder,
   type RosterRow,
 } from '@/features/signups/queries';
-import { disciplineAccents, fonts, minTouchTarget, palette, spacing, type } from '@/theme';
+import {
+  disciplineAccents,
+  fonts,
+  maxFontScale,
+  minTouchTarget,
+  palette,
+  radius,
+  spacing,
+  type,
+} from '@/theme';
 
 /**
  * The producer's live list for one night: running order, lottery draw with
@@ -231,11 +240,11 @@ export default function NightScreen() {
 
         {pending.length > 0 ? (
           <View style={styles.drawBox}>
-            <Text style={styles.sectionTitle}>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
               {pending.length} in the draw{shuffling ? ': drawing' : ''}
             </Text>
             {pending.map((r) => (
-              <Text key={r.id} style={styles.pendingName}>
+              <Text maxFontSizeMultiplier={maxFontScale} key={r.id} style={styles.pendingName}>
                 {r.stage_name ?? r.handle ?? 'Name hidden'}
               </Text>
             ))}
@@ -259,20 +268,27 @@ export default function NightScreen() {
           </View>
         ) : null}
 
-        <Text style={styles.sectionTitle}>Running order</Text>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+          Running order
+        </Text>
         {listed.length === 0 ? (
           <Body>Nobody on the list yet. Signups appear here in real time.</Body>
         ) : (
           listed.map((row) => (
             <View key={row.id} style={styles.rowStacked}>
               <View style={styles.rowTop}>
-                <Text style={styles.slot}>{row.slot_position ?? '·'}</Text>
+                <Text maxFontSizeMultiplier={maxFontScale} style={styles.slot}>
+                  {row.slot_position ?? '·'}
+                </Text>
                 <View style={styles.rowBody}>
-                  <Text style={styles.name}>
+                  <Text maxFontSizeMultiplier={maxFontScale} style={styles.name}>
                     {row.stage_name ?? row.handle ?? row.guest_name ?? 'Name hidden'}
                     {row.guest_name ? ' (walk-in)' : ''}
                   </Text>
-                  <Text style={row.on_deck_at ? styles.onDeckMeta : styles.meta}>
+                  <Text
+                    maxFontSizeMultiplier={maxFontScale}
+                    style={row.on_deck_at ? styles.onDeckMeta : styles.meta}
+                  >
                     {row.on_deck_at
                       ? 'On deck'
                       : row.status
@@ -388,12 +404,16 @@ export default function NightScreen() {
 
         {waitlist.length > 0 ? (
           <>
-            <Text style={styles.sectionTitle}>Waitlist</Text>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+              Waitlist
+            </Text>
             {waitlist.map((row) => (
               <View key={row.id} style={styles.row}>
-                <Text style={styles.slot}>·</Text>
+                <Text maxFontSizeMultiplier={maxFontScale} style={styles.slot}>
+                  ·
+                </Text>
                 <View style={styles.rowBody}>
-                  <Text style={styles.name}>
+                  <Text maxFontSizeMultiplier={maxFontScale} style={styles.name}>
                     {row.stage_name ?? row.handle ?? row.guest_name ?? 'Name hidden'}
                     {row.guest_name ? ' (walk-in)' : ''}
                   </Text>
@@ -468,33 +488,6 @@ export default function NightScreen() {
   );
 }
 
-function ConfirmSheet({
-  title,
-  body,
-  confirmLabel,
-  onConfirm,
-  onClose,
-}: {
-  title: string;
-  body: string;
-  confirmLabel: string;
-  onConfirm: () => void;
-  onClose: () => void;
-}) {
-  return (
-    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.modalBackdrop}>
-        <View style={styles.modalSheet}>
-          <Text style={styles.sectionTitle}>{title}</Text>
-          <Body>{body}</Body>
-          <Button label={confirmLabel} onPress={onConfirm} />
-          <Button label="Back" kind="secondary" onPress={onClose} />
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
 /**
  * The way in to running the night.
  *
@@ -540,7 +533,9 @@ function WhoIsComing({ occurrenceId }: { occurrenceId: string | undefined }) {
   if (counts.isError) {
     return (
       <View style={styles.comingBox}>
-        <Text style={styles.sectionTitle}>Who is coming</Text>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+          Who is coming
+        </Text>
         <ErrorText>Headcount unavailable right now. Pull to refresh.</ErrorText>
       </View>
     );
@@ -555,10 +550,12 @@ function WhoIsComing({ occurrenceId }: { occurrenceId: string | undefined }) {
 
   return (
     <View style={styles.comingBox}>
-      <Text style={styles.sectionTitle}>Who is coming</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+        Who is coming
+      </Text>
       <Body>{summary}</Body>
       {names.length > 0 ? (
-        <Text style={styles.pendingName}>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.pendingName}>
           {names
             .map(
               (n) =>
@@ -568,7 +565,9 @@ function WhoIsComing({ occurrenceId }: { occurrenceId: string | undefined }) {
         </Text>
       ) : null}
       {night.data?.featured_name ? (
-        <Text style={styles.featured}>Featuring {night.data.featured_name}</Text>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.featured}>
+          Featuring {night.data.featured_name}
+        </Text>
       ) : null}
     </View>
   );
@@ -610,7 +609,7 @@ const styles = StyleSheet.create({
   comingBox: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
     gap: spacing.xs,
     padding: spacing.md,
@@ -623,7 +622,7 @@ const styles = StyleSheet.create({
   drawBox: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.warning,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
     gap: spacing.sm,
     padding: spacing.md,
@@ -642,7 +641,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.sm,
@@ -654,7 +653,7 @@ const styles = StyleSheet.create({
   rowStacked: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     gap: spacing.xs,
     padding: spacing.sm,
@@ -677,7 +676,7 @@ const styles = StyleSheet.create({
   },
   rowBody: {
     flex: 1,
-    gap: 2,
+    gap: spacing.xxs,
   },
   name: {
     color: palette.text,
@@ -711,18 +710,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: minTouchTarget,
     minWidth: minTouchTarget,
-  },
-  modalBackdrop: {
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  modalSheet: {
-    backgroundColor: palette.bgElevated,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    gap: spacing.sm,
-    padding: spacing.lg,
-    paddingBottom: spacing.xl,
   },
 });

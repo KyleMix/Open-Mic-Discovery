@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { fonts, palette } from '@/theme';
+import { fonts, maxFontScale, palette, type } from '@/theme';
 
 const MARK = require('../../assets/brand/mark.png');
 
@@ -48,6 +48,7 @@ export function Logo({ markSize = 56, color, showWordmark = true }: LogoProps) {
       <LogoMark size={markSize} color={color} />
       {showWordmark ? (
         <Text
+          maxFontSizeMultiplier={maxFontScale}
           style={[
             styles.wordmark,
             {
@@ -73,7 +74,9 @@ export function BrandHeader() {
   return (
     <View style={styles.row} accessibilityRole="image" accessibilityLabel="Open Mic Explorer">
       <LogoMark size={32} />
-      <Text style={styles.headerWordmark}>{WORDMARK}</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.headerWordmark}>
+        {WORDMARK}
+      </Text>
     </View>
   );
 }
@@ -90,7 +93,7 @@ const styles = StyleSheet.create({
   headerWordmark: {
     color: palette.text,
     fontFamily: fonts.regular,
-    fontSize: 15,
+    fontSize: type.label.fontSize,
     letterSpacing: 0.8,
     marginLeft: 9,
   },

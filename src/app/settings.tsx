@@ -8,7 +8,7 @@ import { SignUpPrompt } from '@/features/auth/components/sign-up-prompt';
 import { useSession } from '@/features/auth/session';
 import { useBlockedUsers, useDeleteAccount, useUnblockUser } from '@/features/safety/queries';
 import { SUPPORT_EMAIL, contactSupport } from '@/lib/support';
-import { fonts, palette, spacing, type } from '@/theme';
+import { fonts, maxFontScale, palette, radius, spacing, type } from '@/theme';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -36,21 +36,27 @@ export default function SettingsScreen() {
       <ScreenHeader title="Settings" />
       <Title>Settings</Title>
 
-      <Text style={styles.sectionTitle}>Notifications</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+        Notifications
+      </Text>
       <Button
         label="Notification preferences"
         kind="secondary"
         onPress={() => router.push('/notification-prefs')}
       />
 
-      <Text style={styles.sectionTitle}>Legal</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+        Legal
+      </Text>
       {/* The in-app copies are the source of truth until the hosted pages
           exist; the old hosted-URL buttons opened a 404. Help below links
           the same screens, kept here too so Legal is not an empty header. */}
       <Button label="Terms of use" kind="secondary" onPress={() => router.push('/terms')} />
       <Button label="Privacy policy" kind="secondary" onPress={() => router.push('/privacy')} />
 
-      <Text style={styles.sectionTitle}>Blocked users</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+        Blocked users
+      </Text>
       {blocked.isPending ? (
         <Body>Loading</Body>
       ) : blocked.isError ? (
@@ -71,26 +77,28 @@ export default function SettingsScreen() {
           ) : null}
           {blocked.data
             .filter((b): b is typeof b & { blocked_id: string } => b.blocked_id != null)
-          .map((b) => (
-            <View key={b.blocked_id} style={styles.blockRow}>
-              <Text style={styles.blockText}>
-                {b.display_name ?? 'Blocked user'}
-                {b.handle ? ` (@${b.handle})` : ''}
-              </Text>
-              <Button
-                label="Unblock"
-                kind="secondary"
-                busy={unblock.isPending}
-                onPress={() =>
-                  unblock.mutate({ blockerId: session.user.id, blockedId: b.blocked_id })
-                }
-              />
-            </View>
-          ))}
+            .map((b) => (
+              <View key={b.blocked_id} style={styles.blockRow}>
+                <Text maxFontSizeMultiplier={maxFontScale} style={styles.blockText}>
+                  {b.display_name ?? 'Blocked user'}
+                  {b.handle ? ` (@${b.handle})` : ''}
+                </Text>
+                <Button
+                  label="Unblock"
+                  kind="secondary"
+                  busy={unblock.isPending}
+                  onPress={() =>
+                    unblock.mutate({ blockerId: session.user.id, blockedId: b.blocked_id })
+                  }
+                />
+              </View>
+            ))}
         </>
       )}
 
-      <Text style={styles.sectionTitle}>Help</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+        Help
+      </Text>
       <Body>
         Stuck, or something in the app is wrong? Email us at {SUPPORT_EMAIL} and a person reads it.
       </Body>
@@ -106,7 +114,9 @@ export default function SettingsScreen() {
         onPress={() => router.push('/privacy')}
       />
 
-      <Text style={styles.sectionTitle}>Account</Text>
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+        Account
+      </Text>
       <Body>
         Deleting your account removes your sign-in and personal data immediately. Anonymized records
         of past signups are retained so signup history stays intact. This cannot be undone.
@@ -128,7 +138,9 @@ function DeleteConfirmModal({ visible, onClose }: { visible: boolean; onClose: (
       <View style={styles.backdrop}>
         <KeyboardShift>
           <View style={styles.sheet}>
-            <Text style={styles.sectionTitle}>Delete your account?</Text>
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+              Delete your account?
+            </Text>
             <Body>This is immediate and permanent. Type DELETE to confirm.</Body>
             <Field
               label="Confirmation"
@@ -178,7 +190,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -189,7 +201,7 @@ const styles = StyleSheet.create({
     fontSize: type.body.fontSize,
   },
   backdrop: {
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: palette.scrim,
     flex: 1,
     justifyContent: 'flex-end',
   },
