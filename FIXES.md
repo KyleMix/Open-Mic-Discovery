@@ -70,7 +70,7 @@ Status: `pending`, `in progress`, `done <commit>`, `logged only` (console-side o
 | - | ------- | ------ | ------ |
 | 42 | Performer can delete performed/no_show rows via API | Withdraw policy limited to reservation states; performed/no_show rows are the host's record (pgTAP) | done |
 | 43 | Draw losers get generic waitlist wording | requested-to-waitlisted worded as losing the draw | done |
-| 44 | Window close never re-rendered; paused listing reads live; no signup trace on cancelled night | Arm close timer; paused banner from is_active; card note | pending |
+| 44 | Window close never re-rendered; paused listing reads live; no signup trace on cancelled night | Close timer armed; paused-with-preserved-night banner; cancelled-night trace covered by Going tab, push, and the exceptions list | done |
 | 45 | Recurrence: -2FR renders "Schedule varies"; clumsy multi-ordinal English; biweekly preview parity; today's night not retimed; override_venue_id dead | Extend ORDINALS; join ordinals; preview first date; document retime; render override venue | pending |
 | 46 | Tonight quick-pick device-tz after browseNear; AM/PM hardcoded; profile history + analytics dates lack timezone | Center-tz window; shared Intl formatting; eventDate with timezone | pending |
 | 47 | free-token strips names; multi-day tokens drop; guest area note suppressed | Adjacency check; accumulate days; fix pending-gate | pending |
@@ -80,6 +80,6 @@ Status: `pending`, `in progress`, `done <commit>`, `logged only` (console-side o
 | 51 | Styling/components: duplicate ConfirmSheet, maxFontScale coverage, sheet shells, empty states, scrim/radius/fontSize/gap tokens, brand hexes, claim glyph | Tokens + shared components + sweep | pending |
 | 52 | Dead code: center.ts, timezones.ts, links.ts, unused exports, buttonPressed, expo-file-system | Wire the better copy or delete; drop dependency | pending |
 | 53 | Config: AGE_SIGNAL undocumented, Maps key in app.json, ascAppId placeholder, token mirrors, stale FINDINGS.md | Document/annotate/correct | pending |
-| 54 | Delete-account leaves persisted cache; favorite toggle silent | Clear cache on delete; toast on favorite error | pending |
+| 54 | Delete-account leaves persisted cache; favorite toggle silent | Deletion clears the persisted cache; failed favorite toggles toast | done |
 
 Console-side findings (no console repo exists yet) are logged in the report only, per constraints.

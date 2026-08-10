@@ -279,6 +279,15 @@ function MicDetail({
                 : 'This mic is paused right now. Check back, or flag it if you think it is gone.'}
             </Text>
           )}
+          {!series.is_active && next ? (
+            // Pausing preserves nights that hold signups, so a paused mic
+            // can still have a next night; without this line it read as
+            // fully live.
+            <Text style={styles.nextDate}>
+              This mic is paused: the night above still happens for the people on its list, but no
+              new nights are being scheduled.
+            </Text>
+          ) : null}
           {zoneDiffersFromDevice(series.timezone) ? (
             <Text style={styles.nextDate}>Times shown are local to the venue.</Text>
           ) : null}
@@ -526,6 +535,9 @@ function SignupFooter({
   const [, setTick] = useState(0);
   const window = signupWindow(occurrence.starts_at, signupOpens, signupCloses, new Date());
   const opensAtMs = window.state === 'not_yet' ? window.opensAt.getTime() : null;
+  // The close matters too: sitting on the screen through it used to leave
+  // "Sign me up" visible while the server refused the tap.
+  const closesAtMs = window.state === 'open' ? window.closesAt.getTime() : null;
   const nightLabel = formatRelativeDay(occurrence.starts_at, timezone);
   useEffect(() => {
     if (opensAtMs == null) {
@@ -544,6 +556,17 @@ function SignupFooter({
     );
     return () => clearTimeout(timer);
   }, [opensAtMs, nightLabel]);
+  useEffect(() => {
+    if (closesAtMs == null) {
+      return;
+    }
+    const delay = closesAtMs - Date.now() + 1000;
+    if (delay > MAX_TIMER_MS) {
+      return;
+    }
+    const timer = setTimeout(() => setTick((n) => n + 1), Math.max(delay, 0));
+    return () => clearTimeout(timer);
+  }, [closesAtMs]);
 
   const cta = signupCta({
     signedIn: !!session,

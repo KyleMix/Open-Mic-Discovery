@@ -195,12 +195,18 @@ export function useToggleFavorite() {
       });
       return { prevList, prevFlag };
     },
-    onError: (_e, { userId, seriesId }, context) => {
-      if (!context) {
-        return;
+    onError: (_e, { userId, seriesId, favorite }, context) => {
+      if (context) {
+        queryClient.setQueryData(['favorites', userId], context.prevList);
+        queryClient.setQueryData(['favorites', userId, seriesId], context.prevFlag);
       }
-      queryClient.setQueryData(['favorites', userId], context.prevList);
-      queryClient.setQueryData(['favorites', userId, seriesId], context.prevFlag);
+      // The optimistic star has just flipped back; without a word that
+      // reads as a glitch, not a failed save.
+      toast.show(
+        favorite
+          ? 'Could not save the favorite. Check your connection.'
+          : 'Could not remove the favorite. Check your connection.',
+      );
     },
     onSuccess: (_d, vars) => {
       if (vars.favorite) {

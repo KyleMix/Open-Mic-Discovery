@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { signOut } from '@/features/auth/api';
+import { clearCachedData } from '@/lib/query-client';
 import { getSupabase } from '@/lib/supabase';
 import { userError } from '@/lib/user-error';
 import type { Database } from '@/types/database.types';
@@ -108,6 +109,10 @@ export function useDeleteAccount(userId: string | undefined) {
         throw userError(error, 'Could not delete the account. Try again, or contact support.');
       }
       await signOut().catch(() => null);
+      // The persisted cache holds the deleted account's private rows (home
+      // area, admin queue for admins); a deleted account leaves nothing on
+      // the device.
+      await clearCachedData().catch(() => null);
     },
   });
 }
