@@ -39,8 +39,8 @@ Status: `pending`, `in progress`, `done <commit>`, `logged only` (console-side o
 | 15 | Roster misses withdrawals (replica identity) | 20260810000600: replica identity full + mic_series/mic_occurrences added to the realtime publication, pgTAP pinned | done |
 | 16 | Live screen says nobody signed up on undrawn lottery | Count requested rows; link to draw | pending |
 | 17 | Withdraw Undo post-draw limbo + wrong copy | Withdraw confirm copy branches by method and draw state; undo rejoin explains a draw that ran in the meantime | done |
-| 18 | Series delete/unapprove silently erases Going entries | Cancel future occurrences on delete/unapprove (migration) | pending |
-| 19 | Start-time change never notifies signed-up performers | starts_at-change notification trigger (migration) | pending |
+| 18 | Series delete/unapprove silently erases Going entries | Soft-delete or rejection cancels committed future nights (existing cancellation push carries it); pause untouched by design | done |
+| 19 | Start-time change never notifies signed-up performers | occurrences_notify_time_change queues a mic-local notice for active signups | done |
 | 20 | Cancelled next night invisible on cards | search_discover returns cancelled_next_starts_at; MicCard renders a danger line; favorites carry it too; pgTAP discovery-truth | done |
 | 21 | anchor_date never re-sent; parity picker hidden in edit | Show picker in edit mode; send anchor in patch | pending |
 | 22 | Rule change orphans off-pattern nights invisibly | Mark off-pattern nights in Upcoming nights | pending |
@@ -69,7 +69,7 @@ Status: `pending`, `in progress`, `done <commit>`, `logged only` (console-side o
 | # | Finding | Change | Status |
 | - | ------- | ------ | ------ |
 | 42 | Performer can delete performed/no_show rows via API | Status guard on delete policy (migration) | pending |
-| 43 | Draw losers get generic waitlist wording | Branch notification on prior status (migration) | pending |
+| 43 | Draw losers get generic waitlist wording | requested-to-waitlisted worded as losing the draw | done |
 | 44 | Window close never re-rendered; paused listing reads live; no signup trace on cancelled night | Arm close timer; paused banner from is_active; card note | pending |
 | 45 | Recurrence: -2FR renders "Schedule varies"; clumsy multi-ordinal English; biweekly preview parity; today's night not retimed; override_venue_id dead | Extend ORDINALS; join ordinals; preview first date; document retime; render override venue | pending |
 | 46 | Tonight quick-pick device-tz after browseNear; AM/PM hardcoded; profile history + analytics dates lack timezone | Center-tz window; shared Intl formatting; eventDate with timezone | pending |
