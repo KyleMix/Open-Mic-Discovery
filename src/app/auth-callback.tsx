@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ScreenHeader } from '@/components/screen-header';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { exchangeAuthCode } from '@/features/auth/api';
+import { consumeReturnTo } from '@/stores/return-to';
 
 /**
  * Where the email confirmation link lands.
@@ -30,17 +31,28 @@ export default function AuthCallbackScreen() {
       return;
     }
     let cancelled = false;
-    exchangeAuthCode(code).catch((e) => {
-      if (!cancelled) {
-        setExchangeError(e instanceof Error ? e.message : 'That link did not work.');
-      }
-    });
-    // Success needs no navigation here: the session lands and the root
-    // gate routes to the EULA, onboarding, or the recorded destination.
+    exchangeAuthCode(code)
+      .then(() => {
+        // Navigate here, not in the gate: this route sits outside the
+        // (auth) group, so the gate's final bounce never fires for it and
+        // an already-onboarded account (reinstall, second device) would sit
+        // on "Confirming your email" forever. A brand-new account passes
+        // through the tabs for one frame and the gate walks it into the
+        // EULA and onboarding from there, recording the destination.
+        if (!cancelled) {
+          const returnTo = consumeReturnTo();
+          router.replace((returnTo ?? '/(tabs)') as Parameters<typeof router.replace>[0]);
+        }
+      })
+      .catch((e) => {
+        if (!cancelled) {
+          setExchangeError(e instanceof Error ? e.message : 'That link did not work.');
+        }
+      });
     return () => {
       cancelled = true;
     };
-  }, [code]);
+  }, [code, router]);
 
   if (error) {
     return (
