@@ -27,6 +27,12 @@ import { initSentry, reportError } from '@/lib/sentry';
 import { consumeReturnTo, setReturnTo } from '@/stores/return-to';
 import { palette } from '@/theme';
 
+// A cold-start deep link (a shared mic, a push tap) renders on top of the
+// tabs instead of as the only screen on the stack. Without an anchor the
+// linked page had no back button and no tab bar: the app's front door led
+// into a room with no doors.
+export const unstable_settings = { anchor: '(tabs)' };
+
 const appTheme = {
   ...DarkTheme,
   colors: {

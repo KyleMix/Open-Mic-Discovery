@@ -19,9 +19,9 @@ Status: `pending`, `in progress`, `done <commit>`, `logged only` (console-side o
 | - | ------- | ----- | ------ | ------ |
 | 1 | Walk-in reorder/redraw fails permanently (slot-move trigger inserts null profile_id) | supabase/migrations | Null guard in queue_slot_move_notification + pgTAP (walk-in-slot-moves.test.sql) | done 33fd7e9 |
 | 2 | Post-draw entrants stuck "In the draw"; draw allowed while window open | supabase/migrations, signups feature | Draw closes signups for the night (server side done: lifecycle refusal with named reason, post-draw walk-ins land via confirm-or-waitlist, draw guarded to lottery/scheduled, signup_counts reports entrants and draw_done); client card work tracked with items 13 and 17 | in progress |
-| 3 | Mic page swaps to next week at showtime; slot/on-deck vanish | src/features/discovery/queries.ts, src/app/mic/[id].tsx | Include in-progress occurrence (4h trailing cutoff matching the Going tab) and skip completed nights; nextOccurrence helper + tests | in progress |
+| 3 | Mic page swaps to next week at showtime; slot/on-deck vanish | src/features/discovery/queries.ts, src/app/mic/[id].tsx | Include in-progress occurrence (4h trailing cutoff matching the Going tab) and skip completed nights; nextOccurrence helper + tests | done f77d7c7 |
 | 4 | Offline: error branch hides persisted cache; AuthGate replaces app with error screen | src/lib/query-client.ts, src/app/_layout.tsx, tab screens, mic/[id] | Branch on error-and-no-data; gate only blocks with no data; banner global; online/focus managers wired | pending |
-| 5 | Cold-start deep link has no back stack or tabs | src/app/_layout.tsx | unstable_settings anchor (tabs) | pending |
+| 5 | Cold-start deep link has no back stack or tabs | src/app/_layout.tsx | unstable_settings anchor (tabs) | in progress |
 | 6 | Onboarding is a trap; partial failure gives unwinnable handle error | src/app/(auth)/onboarding.tsx, src/features/auth/api.ts | Sign-out escape; idempotent completeOnboarding | pending |
 | 7 | Pause/cancel/restore/resume report success on refused writes | src/features/producer/queries.ts | Zero-row checks on all four | pending |
 | 8 | Producer management screens unguarded for non-owners | src/app/producer/*.tsx | Ownership gate + not-yours state; is_producer check on new | pending |
