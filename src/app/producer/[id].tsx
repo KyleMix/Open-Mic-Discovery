@@ -31,6 +31,7 @@ import { useSeriesAttendance } from '@/features/plans/queries';
 import { attendanceSummary } from '@/features/plans/summary';
 import { SeriesForm, type SeriesFormValues } from '@/features/producer/components/series-form';
 import { isWalkIn, signupOpensInterval } from '@/features/producer/signup-opens';
+import { rruleMatches } from '@/features/producer/rrule-match';
 import { pickAndUploadPoster } from '@/features/producer/poster';
 import {
   useCancelNight,
@@ -172,6 +173,9 @@ export default function ManageSeriesScreen() {
           cost_note: values.costNote || null,
           set_length_minutes: values.setLengthMinutes ? Number(values.setLengthMinutes) : null,
           capacity: values.capacity ? Number(values.capacity) : null,
+          // Only when the pattern kind changed: re-sending the anchor on
+          // every save would silently flip a biweekly mic's week parity.
+          ...(values.anchorDateChanged ? { anchor_date: values.anchorDate } : {}),
           ...(values.venueId ? { venue_id: values.venueId } : {}),
         },
       },
@@ -402,6 +406,16 @@ export default function ManageSeriesScreen() {
                   <Text style={styles.featured}>Featuring {occ.featured_name}</Text>
                 ) : null}
                 {occ.live_ended_at ? <Text style={styles.nightCount}>Show ended</Text> : null}
+                {occ.status === 'scheduled' &&
+                !rruleMatches(series.rrule, series.anchor_date, occ.local_date) ? (
+                  // Rule changes keep nights that carry an override or a
+                  // signup; without this line they masqueraded as part of
+                  // the new schedule.
+                  <Text style={styles.offPatternNote}>
+                    Off the current schedule: kept because of its signups or edits. Cancel it if
+                    the night is not happening.
+                  </Text>
+                ) : null}
                 {occ.status === 'cancelled' ? (
                   <Text style={styles.cancelledNote}>
                     Cancelled{occ.cancellation_note ? `: ${occ.cancellation_note}` : ''}
@@ -764,6 +778,10 @@ const styles = StyleSheet.create({
   },
   cancelledNote: {
     color: palette.danger,
+    fontSize: type.caption.fontSize,
+  },
+  offPatternNote: {
+    color: palette.warning,
     fontSize: type.caption.fontSize,
   },
   liveBox: {

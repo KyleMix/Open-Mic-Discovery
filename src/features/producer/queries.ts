@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useToast } from '@/components/toast';
+import { quotedIlikePattern } from '@/lib/postgrest';
 import { getSupabase } from '@/lib/supabase';
 import { userError } from '@/lib/user-error';
 import type { Database } from '@/types/database.types';
@@ -310,7 +311,8 @@ export function useVenueSearch(query: string) {
       const { data, error } = await getSupabase()
         .from('venues')
         .select('id, name, address_line, city, region')
-        .or(`name.ilike.%${trimmed}%,city.ilike.%${trimmed}%`)
+        // Quoted so "Joe's Bar, Seattle" cannot terminate the filter list.
+        .or(`name.ilike.${quotedIlikePattern(trimmed)},city.ilike.${quotedIlikePattern(trimmed)}`)
         .is('deleted_at', null)
         .limit(12);
       if (error) {

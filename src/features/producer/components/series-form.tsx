@@ -104,6 +104,9 @@ export type SeriesFormValues = {
   signupMethod: SignupMethod;
   rrule: string;
   anchorDate: string;
+  /** False when editing without changing the pattern kind: the stored
+   * anchor must survive the save. */
+  anchorDateChanged: boolean;
   startTime: string;
   timezone: string;
   signupOpensMinutes: number;
@@ -163,6 +166,12 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
   const [recurrence, setRecurrence] = useState<RecurrenceChoice>(
     (existing && parseRrule(existing.rrule)) ?? { kind: 'weekly', days: [] },
   );
+  // What the form opened with, so editing can tell a changed pattern kind
+  // from an untouched one: an untouched biweekly must keep its stored
+  // anchor (re-sending a fresh one silently flips the week parity), while
+  // a switch to biweekly needs the parity question asked.
+  const [initialKind] = useState(() => (existing && parseRrule(existing.rrule))?.kind ?? null);
+  const kindChanged = existing != null && recurrence.kind !== initialKind;
   const [biweeklyNextWeek, setBiweeklyNextWeek] = useState(false);
   const existingTime = existing?.start_time?.slice(0, 5).split(':');
   const [hour, setHour] = useState<number>(existingTime ? Number(existingTime[0]) : 19);
@@ -384,6 +393,7 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
       // late at night would otherwise anchor to the wrong ISO week and
       // invert every alternate night of a biweekly schedule.
       anchorDate: computeAnchorDate(recurrence, new Date(), biweeklyNextWeek, timezone),
+      anchorDateChanged: existing == null || kindChanged,
       startTime,
       timezone,
       signupOpensMinutes,
@@ -524,7 +534,7 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
         </>
       )}
 
-      {recurrence.kind === 'biweekly' && !existing ? (
+      {recurrence.kind === 'biweekly' && (!existing || kindChanged) ? (
         <View style={styles.chipRow}>
           <Pressable
             accessibilityRole="button"

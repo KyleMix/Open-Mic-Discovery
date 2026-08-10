@@ -42,10 +42,10 @@ Status: `pending`, `in progress`, `done <commit>`, `logged only` (console-side o
 | 18 | Series delete/unapprove silently erases Going entries | Soft-delete or rejection cancels committed future nights (existing cancellation push carries it); pause untouched by design | done |
 | 19 | Start-time change never notifies signed-up performers | occurrences_notify_time_change queues a mic-local notice for active signups | done |
 | 20 | Cancelled next night invisible on cards | search_discover returns cancelled_next_starts_at; MicCard renders a danger line; favorites carry it too; pgTAP discovery-truth | done |
-| 21 | anchor_date never re-sent; parity picker hidden in edit | Show picker in edit mode; send anchor in patch | pending |
-| 22 | Rule change orphans off-pattern nights invisibly | Mark off-pattern nights in Upcoming nights | pending |
+| 21 | anchor_date never re-sent; parity picker hidden in edit | Parity picker shows when the pattern kind changes in edit; anchor sent only then (untouched biweeklies keep parity) | done |
+| 22 | Rule change orphans off-pattern nights invisibly | rruleMatches mirror (tested) marks kept off-schedule nights on the manage screen | done |
 | 23 | Name search hard-bounded by radius | Text queries send no radius (distance decay ranks); radius recovery is browse-only; zero-results copy stops blaming the radius | done |
-| 24 | .or() interpolation 400 on comma/paren | Escape filter values in venue + person search | pending |
+| 24 | .or() interpolation 400 on comma/paren | quotedIlikePattern (tested) protects both .or() call sites | done |
 | 25 | Producer edits invisible to viewing performer | useMicDetail subscribes to the viewed series' occurrences and series row; focusManager (item 4) covers foregrounding | done |
 | 26 | Cancel/pause does not invalidate favorites/Going | useInvalidateSeries also invalidates plan and favorites | done |
 | 27 | Blocking does not hide a blocked host's mics | search_discover filters mics whose owner is in a block pair with the caller (enrichment phase, pgTAP proves blocker/guest asymmetry) | done |

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { quotedIlikePattern } from '@/lib/postgrest';
 import { getSupabase } from '@/lib/supabase';
 import { userError } from '@/lib/user-error';
 import type { Database } from '@/types/database.types';
@@ -166,7 +167,9 @@ export function usePersonSearch(query: string) {
       const { data, error } = await getSupabase()
         .from('public_profiles')
         .select('id, handle, stage_name, avatar_url')
-        .or(`handle.ilike.%${trimmed}%,stage_name.ilike.%${trimmed}%`)
+        .or(
+          `handle.ilike.${quotedIlikePattern(trimmed)},stage_name.ilike.${quotedIlikePattern(trimmed)}`,
+        )
         .limit(10);
       if (error) {
         throw userError(error, 'Could not search people right now. Try again.');
