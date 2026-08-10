@@ -94,7 +94,7 @@ export default function CreditsScreen() {
           <Button
             label="Sign in"
             onPress={() => {
-              setReturnTo(pathname);
+              setReturnTo(occurrenceId ? `${pathname}?occurrence=${occurrenceId}` : pathname);
               router.push('/(auth)/sign-in');
             }}
           />

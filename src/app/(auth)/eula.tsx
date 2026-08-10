@@ -118,8 +118,9 @@ export default function EulaScreen() {
         kind="secondary"
         onPress={() => {
           // The gate holds this screen until the terms are accepted, so
-          // declining needs a real way out rather than a trap.
-          signOut().catch(() => null);
+          // declining needs a real way out rather than a trap. A failed
+          // sign-out on the escape hatch cannot be silent.
+          signOut().catch(() => setAcceptError('Could not sign out. Check your connection.'));
         }}
       />
     </Screen>

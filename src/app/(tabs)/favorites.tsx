@@ -52,7 +52,7 @@ export default function FavoritesScreen() {
           Tap the star on any listing to keep it here. Favorites can remind you on the day of the
           mic (Settings, Notification preferences).
         </Body>
-        <Button label="Find a mic" onPress={() => router.push('/(tabs)')} />
+        <Button label="Find a mic" onPress={() => router.navigate('/(tabs)')} />
       </Screen>
     );
   }

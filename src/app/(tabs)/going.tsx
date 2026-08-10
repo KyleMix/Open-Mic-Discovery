@@ -60,7 +60,7 @@ export default function GoingScreen() {
           Sign up for a slot or tap &quot;I am going&quot; on any mic and it lands here, soonest
           first. On a walk-in night, saying you are going also tells the host how many to expect.
         </Body>
-        <Button label="Find a mic" onPress={() => router.push('/(tabs)')} />
+        <Button label="Find a mic" onPress={() => router.navigate('/(tabs)')} />
       </Screen>
     );
   }

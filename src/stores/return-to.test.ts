@@ -14,8 +14,19 @@ describe('return-to store', () => {
   it('refuses auth screens and non-paths', () => {
     setReturnTo('/(auth)/sign-in');
     expect(consumeReturnTo()).toBeNull();
+    // usePathname strips route groups, so this is the shape real callers
+    // would actually pass.
+    setReturnTo('/sign-in');
+    expect(consumeReturnTo()).toBeNull();
+    setReturnTo('/reset-password');
+    expect(consumeReturnTo()).toBeNull();
     setReturnTo('https://elsewhere.example');
     expect(consumeReturnTo()).toBeNull();
+  });
+
+  it('keeps real destinations that merely share a prefix', () => {
+    setReturnTo('/mic/sign-in-lounge');
+    expect(consumeReturnTo()).toBe('/mic/sign-in-lounge');
   });
 
   it('keeps the latest destination when set twice', () => {

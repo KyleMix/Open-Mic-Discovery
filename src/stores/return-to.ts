@@ -24,8 +24,23 @@ export const useReturnToStore = create<ReturnToState>((set, get) => ({
   setReturnTo: (path) => {
     // Only in-app destinations, and never the auth machinery itself:
     // consuming a funnel screen or the confirmation callback would bounce
-    // straight back into it.
-    if (path.startsWith('/') && !path.startsWith('/(auth)') && !path.startsWith('/auth-callback')) {
+    // straight back into it. usePathname strips route groups, so the auth
+    // screens arrive as /sign-in, never /(auth)/sign-in; both shapes are
+    // refused so no caller can hold this wrong.
+    const authPaths = [
+      '/(auth)',
+      '/auth-callback',
+      '/sign-in',
+      '/sign-up',
+      '/eula',
+      '/onboarding',
+      '/forgot-password',
+      '/reset-password',
+    ];
+    if (
+      path.startsWith('/') &&
+      !authPaths.some((p) => path === p || path.startsWith(`${p}/`))
+    ) {
       set({ path });
     }
   },

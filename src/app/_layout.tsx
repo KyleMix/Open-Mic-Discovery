@@ -139,7 +139,16 @@ function AuthGate({ children }: { children: ReactNode }) {
     // to wherever the person was headed when the funnel interrupted them.
     if (inAuthGroup && authScreen !== 'reset-password') {
       const returnTo = consumeReturnTo();
-      router.replace((returnTo ?? '/(tabs)') as Parameters<typeof router.replace>[0]);
+      const target = (returnTo ?? '/(tabs)') as Parameters<typeof router.replace>[0];
+      // dismissTo pops the funnel screens off the stack on the way to the
+      // destination; a plain replace left the destination duplicated
+      // beneath itself (mic page, sign-in pushed on top, replaced by the
+      // mic page again).
+      try {
+        router.dismissTo(target);
+      } catch {
+        router.replace(target);
+      }
     }
   }, [
     waiting,

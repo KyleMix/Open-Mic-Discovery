@@ -231,7 +231,7 @@ function EditProfileForm({
         link_apple_music: apple || null,
       });
       toast.show('Profile saved.');
-      bypassGuard(() => router.back());
+      bypassGuard(() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/profile')));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save. Try again.');
     }

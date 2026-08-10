@@ -10,5 +10,9 @@ export function redirectSystemPath({ path }: { path: string; initial: boolean })
   if (path.startsWith('/open-mics/')) {
     return path.slice('/open-mics'.length);
   }
+  // The bare landing path (no trailing slash) means the front door.
+  if (path === '/open-mics') {
+    return '/';
+  }
   return path;
 }
