@@ -8,7 +8,6 @@ import {
   parseSignupOpensMinutes,
   signupOpensChoices,
   signupOpensInterval,
-  signupOpensLabel,
 } from './signup-opens';
 
 describe('signup opens choices', () => {
@@ -121,9 +120,3 @@ describe('parseSignupOpensMinutes', () => {
   });
 });
 
-describe('signupOpensLabel', () => {
-  it('names the chosen lead time', () => {
-    expect(signupOpensLabel(60, 'first_come')).toBe('1 hour before');
-    expect(signupOpensLabel(7 * 24 * 60, 'lottery')).toBe('1 week before');
-  });
-});

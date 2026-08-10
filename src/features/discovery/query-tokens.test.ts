@@ -1,4 +1,4 @@
-import { parseQueryTokens, tokenLabel } from './query-tokens';
+import { parseQueryTokens } from './query-tokens';
 
 describe('parseQueryTokens', () => {
   it('strips "tonight" and keeps the rest as text', () => {
@@ -79,19 +79,6 @@ describe('parseQueryTokens', () => {
   });
 });
 
-describe('tokenLabel', () => {
-  it('labels every token kind', () => {
-    expect(tokenLabel({ kind: 'when', when: 'tonight' })).toBe('Tonight');
-    expect(tokenLabel({ kind: 'when', when: 'tomorrow' })).toBe('Tomorrow');
-    expect(tokenLabel({ kind: 'when', when: 'week' })).toBe('This week');
-    expect(tokenLabel({ kind: 'when', when: 'weekend' })).toBe('This weekend');
-    expect(tokenLabel({ kind: 'day', day: 2 })).toBe('Tuesday');
-    expect(tokenLabel({ kind: 'free' })).toBe('Free');
-    expect(tokenLabel({ kind: 'age', age: 'eighteen_plus' })).toBe('18+');
-    expect(tokenLabel({ kind: 'age', age: 'all_ages' })).toBe('All ages');
-    expect(tokenLabel({ kind: 'nearMe' })).toBe('Near me');
-  });
-});
 
 describe('token boundaries', () => {
   it('leaves hyphenated names alone', () => {

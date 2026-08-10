@@ -7,7 +7,7 @@
  * own wall-clock columns, which are local by definition.
  */
 
-import { eventDate, eventTime } from '@/features/discovery/local-time';
+import { eventDate } from '@/features/discovery/local-time';
 import { describeRecurrence, formatLocalTime } from '@/features/discovery/recurrence';
 import { parseIntervalMs } from '@/features/signups/window';
 
@@ -91,10 +91,6 @@ export function showClockTime(startTime: string): string {
   return formatLocalTime(startTime);
 }
 
-/** Doors time for a concrete night, in the mic's zone. */
-export function doorsClockTime(doorsAtIso: string | null, timezone: string | null): string | null {
-  return doorsAtIso ? eventTime(doorsAtIso, timezone) : null;
-}
 
 /** Hard cap with an honest ellipsis; never mid-word when avoidable. */
 export function truncate(text: string, max: number): string {

@@ -7,6 +7,7 @@ import { SelectField } from '@/components/select';
 import { Body, Button, ErrorText, Field } from '@/components/ui';
 import { describeRecurrence } from '@/features/discovery/recurrence';
 import { rruleMatches } from '@/features/producer/rrule-match';
+import { TIMEZONE_CHOICES } from '@/features/producer/timezones';
 import {
   SIGNUP_METHOD_DESCRIPTIONS,
   SIGNUP_METHOD_LABELS,
@@ -82,15 +83,9 @@ const METHOD_OPTIONS = METHODS.map((m) => ({
 
 // Launch-region zones. The device zone is offered too when it is not one of
 // these, so a listing created anywhere gets an honest local time.
-const TIMEZONE_CHOICES: { id: string; label: string }[] = [
-  { id: 'America/Los_Angeles', label: 'Pacific' },
-  { id: 'America/Denver', label: 'Mountain' },
-  { id: 'America/Phoenix', label: 'Arizona' },
-  { id: 'America/Chicago', label: 'Central' },
-  { id: 'America/New_York', label: 'Eastern' },
-  { id: 'America/Anchorage', label: 'Alaska' },
-  { id: 'Pacific/Honolulu', label: 'Hawaii' },
-];
+// One list, from the module written for it: its labels name example
+// cities, which is what a non-technical host actually recognizes.
+const TIMEZONE_CHOICE_IDS = TIMEZONE_CHOICES.map((t) => ({ id: t.value, label: t.label }));
 
 function deviceTimezone(): string | null {
   try {
@@ -625,9 +620,9 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
         Timezone
       </Text>
       <View style={styles.chipRow}>
-        {(TIMEZONE_CHOICES.some((t) => t.id === timezone)
-          ? TIMEZONE_CHOICES
-          : [...TIMEZONE_CHOICES, { id: timezone, label: timezone }]
+        {(TIMEZONE_CHOICE_IDS.some((t) => t.id === timezone)
+          ? TIMEZONE_CHOICE_IDS
+          : [...TIMEZONE_CHOICE_IDS, { id: timezone, label: timezone }]
         ).map((t) => (
           <Pressable
             key={t.id}

@@ -77,15 +77,6 @@ export function signupOpensInterval(minutes: number): string {
   return minutes % DAY === 0 ? `${minutes / DAY} days` : `${minutes} minutes`;
 }
 
-/** The chosen label, for prose that has to name the lead time. */
-export function signupOpensLabel(minutes: number, method: SignupMethod): string {
-  const choices = signupOpensChoices(method);
-  const match = choices.find((choice) => choice.minutes === minutes) ?? choices[0];
-  // Every method has a non-empty choice list; the literal fallback only
-  // exists so the label stays truthful if one is ever emptied.
-  return match ? match.label : `${minutes} minutes before`;
-}
-
 /**
  * Reads total minutes out of a Postgres interval. Postgres renders the day and
  * time parts separately ("7 days", "01:30:00", "1 day 02:00:00"), so both are

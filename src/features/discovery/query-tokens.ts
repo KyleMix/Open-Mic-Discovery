@@ -84,32 +84,3 @@ export function parseQueryTokens(raw: string): ParsedQuery {
   return { text: text.replace(/\s+/g, ' ').trim(), tokens };
 }
 
-/** The label a stripped token's chip shows, so the person can undo it. */
-export function tokenLabel(token: QueryToken): string {
-  switch (token.kind) {
-    case 'when':
-      return token.when === 'tonight'
-        ? 'Tonight'
-        : token.when === 'tomorrow'
-          ? 'Tomorrow'
-          : token.when === 'week'
-            ? 'This week'
-            : 'This weekend';
-    case 'day': {
-      const name = DAY_NAMES[token.day - 1];
-      // Day tokens are only minted from the rule table, so the index is
-      // always 1 to 7; the fallback keeps the chip readable if that ever
-      // stops being true.
-      if (!name) {
-        return `Day ${token.day}`;
-      }
-      return name.charAt(0).toUpperCase() + name.slice(1);
-    }
-    case 'free':
-      return 'Free';
-    case 'age':
-      return token.age === 'all_ages' ? 'All ages' : token.age === 'eighteen_plus' ? '18+' : '21+';
-    case 'nearMe':
-      return 'Near me';
-  }
-}

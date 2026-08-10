@@ -6,8 +6,6 @@
 
 // Mirrors the server-side gate in supabase/migrations/20260729000200_age_gate_18.sql.
 export const MINIMUM_AGE = 18;
-export const HANDLE_PATTERN = /^[a-z0-9_]{3,30}$/;
-
 export function validateEmail(email: string): string | null {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
     return 'Enter a valid email address.';
@@ -18,13 +16,6 @@ export function validateEmail(email: string): string | null {
 export function validatePassword(password: string): string | null {
   if (password.length < 10) {
     return 'Password must be at least 10 characters.';
-  }
-  return null;
-}
-
-export function validateHandle(handle: string): string | null {
-  if (!HANDLE_PATTERN.test(handle)) {
-    return 'Handles are 3 to 30 characters: lowercase letters, numbers, and underscores.';
   }
   return null;
 }

@@ -2,7 +2,6 @@ import {
   validateBirthYear,
   validateDisplayName,
   validateEmail,
-  validateHandle,
   validatePassword,
   validateRoles,
 } from './validation';
@@ -21,12 +20,6 @@ describe('auth validation', () => {
     expect(validatePassword('long-enough-pass')).toBeNull();
   });
 
-  it('enforces the handle pattern', () => {
-    expect(validateHandle('demo_performer')).toBeNull();
-    expect(validateHandle('ab')).not.toBeNull();
-    expect(validateHandle('Has-Caps')).not.toBeNull();
-    expect(validateHandle('a'.repeat(31))).not.toBeNull();
-  });
 
   it('bounds display names', () => {
     expect(validateDisplayName('Demi')).toBeNull();

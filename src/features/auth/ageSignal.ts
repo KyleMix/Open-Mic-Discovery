@@ -15,8 +15,10 @@ async function requestPlatformAgeRange(options: AgeRangeRequest): Promise<AgeRan
 
 /**
  * Platform age signal (Apple Declared Age Range, Google Play age signals),
- * behind a flag so state age-assurance laws can be satisfied with a config
- * flip instead of a rebuild (see ARCHITECTURE.md decisions log).
+ * behind a flag so state age-assurance laws can be satisfied by flipping
+ * the flag and shipping a build, rather than writing new code
+ * (EXPO_PUBLIC_ values are inlined at build time, so a rebuild is still
+ * required; see ARCHITECTURE.md decisions log).
  *
  * When AGE_SIGNAL_ENABLED is true, signup requests the platform age range
  * and any signal below the in-app gate routes into the existing block path
