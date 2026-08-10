@@ -33,7 +33,7 @@ Status: `pending`, `in progress`, `done <commit>`, `logged only` (console-side o
 | # | Finding | Change | Status |
 | - | ------- | ------ | ------ |
 | 11 | Join 42501 blanket-mapped to "not open" | Join 42501 now passes the draw contract message through and names both remaining causes with a support pointer | done |
-| 12 | Sanctions never surfaced in app | Sanction banner with reason/expiry | pending |
+| 12 | Sanctions never surfaced in app | SanctionBanner at the root reads the caller's live sanction; sanctionMessage tested | done |
 | 13 | Lottery spots-left misinformation pre/post draw | drawEntrantsLabel pre-draw, drawnSpotsLabel post-draw, first-come copy unchanged; footer gets drawDone | done |
 | 14 | Spots/counts never update live on mic page | Spots/counts poll every 20s while the window is open (RLS keeps other entrants' rows out of realtime); roster events also refresh spots | done |
 | 15 | Roster misses withdrawals (replica identity) | 20260810000600: replica identity full + mic_series/mic_occurrences added to the realtime publication, pgTAP pinned | done |
@@ -50,9 +50,9 @@ Status: `pending`, `in progress`, `done <commit>`, `logged only` (console-side o
 | 26 | Cancel/pause does not invalidate favorites/Going | useInvalidateSeries also invalidates plan and favorites | done |
 | 27 | Blocking does not hide a blocked host's mics | search_discover filters mics whose owner is in a block pair with the caller (enrichment phase, pgTAP proves blocker/guest asymmetry) | done |
 | 28 | Report-modal block + Settings unblock fail silently; blocked/banned rows render "Performer" | Render errors; stable roster fallback label | pending |
-| 29 | Admin mutations silent; Actioned leaves content live; no target preview; held credits unapprovable | Render errors; Actioned moderates target; show target; credits leg in queue | pending |
-| 30 | Claim review silent failure; claims/next-nights lack states | Render states | pending |
-| 31 | Read-only admins locked out of admin screen | Gate reads on is_admin_reader; hide action buttons | pending |
+| 29 | Admin mutations silent; Actioned leaves content live; no target preview; held credits unapprovable | Per-section error banners; Take down moderates the target before stamping; reports show their target's content; held credits reviewable | done |
+| 30 | Claim review silent failure; claims/next-nights lack states | Claims error state + review error rendered on My Mics | done |
+| 31 | Read-only admins locked out of admin screen | am_admin_reader RPC (pgTAP); queue readable to allowlisted readers with actions hidden; profile link shows for them | done |
 | 32 | Reset-password yanked by gate | Exempt reset-password in both gate branches | pending |
 | 33 | No AppState auth refresh wiring; refresh failure unhandled | startAutoRefresh wiring; redirect on session loss | pending |
 | 34 | Guest deep links spin forever on admin/test-kit/edit-profile; test-kit headerless | Session check first; ScreenHeader in all branches | pending |

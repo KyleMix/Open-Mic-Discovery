@@ -10,6 +10,7 @@ import {
   REPORT_TARGET_LABELS,
 } from '@/features/safety/labels';
 import {
+  useIsAdminReader,
   useModerateContent,
   useModerationQueue,
   useResolveFlag,
@@ -25,12 +26,27 @@ export default function AdminScreen() {
   const { session } = useSession();
   const profile = useOwnProfile(session?.user.id);
   const isAdmin = profile.data?.is_admin ?? false;
-  const queue = useModerationQueue(isAdmin);
+  // Read-only reviewers on the admin allowlist see the queue without the
+  // action buttons; the server re-checks every write regardless.
+  const reader = useIsAdminReader(session?.user.id);
+  const canRead = isAdmin || (reader.data ?? false);
+  const queue = useModerationQueue(canRead);
   const moderate = useModerateContent();
   const resolveReport = useResolveReport();
   const resolveFlag = useResolveFlag();
 
-  if (profile.isPending) {
+  if (!session) {
+    return (
+      <>
+        <ScreenHeader title="Moderation queue" />
+        <Screen>
+          <Title>Moderation</Title>
+          <Body>This area is for moderators.</Body>
+        </Screen>
+      </>
+    );
+  }
+  if (profile.isPending || reader.isPending) {
     return (
       <>
         <ScreenHeader title="Moderation queue" />
@@ -38,7 +54,7 @@ export default function AdminScreen() {
       </>
     );
   }
-  if (!isAdmin || !session) {
+  if (!canRead) {
     return (
       <>
         <ScreenHeader title="Moderation queue" />
@@ -88,37 +104,62 @@ export default function AdminScreen() {
     >
       <ScreenHeader title="Moderation queue" />
       <Body>Response target: every item here is actioned within 24 hours.</Body>
+      {!isAdmin ? (
+        <Body>You have read-only access: you can review the queue but not act on it.</Body>
+      ) : null}
       {empty ? <Body>Queue is clear. Nothing needs review.</Body> : null}
 
       {q.reports.length > 0 ? <Text style={styles.sectionTitle}>Abuse reports</Text> : null}
+      {resolveReport.isError ? (
+        <ErrorText>
+          {resolveReport.error instanceof Error
+            ? resolveReport.error.message
+            : 'Could not resolve the report. Try again.'}
+        </ErrorText>
+      ) : null}
       {q.reports.map((r) => (
         <View key={r.id} style={styles.item}>
           <Text style={styles.itemTitle}>
             {REPORT_TARGET_LABELS[r.target_type]}: {REPORT_REASON_LABELS[r.reason]}
           </Text>
-          {r.details ? <Text style={styles.itemBody}>{r.details}</Text> : null}
-          <View style={styles.actions}>
-            <Button
-              label="Actioned"
-              busy={resolveReport.isPending}
-              onPress={() =>
-                resolveReport.mutate({ reportId: r.id, adminId: session.user.id, actioned: true })
-              }
-            />
-            <Button
-              label="Dismiss"
-              kind="secondary"
-              busy={resolveReport.isPending}
-              onPress={() =>
-                resolveReport.mutate({ reportId: r.id, adminId: session.user.id, actioned: false })
-              }
-            />
-          </View>
+          {r.targetLabel ? <Text style={styles.itemBody}>{r.targetLabel}</Text> : null}
+          {r.details ? <Text style={styles.itemBody}>Reporter: {r.details}</Text> : null}
+          {isAdmin ? (
+            <View style={styles.actions}>
+              <Button
+                label="Take down"
+                busy={resolveReport.isPending}
+                onPress={() =>
+                  resolveReport.mutate({
+                    reportId: r.id,
+                    adminId: session.user.id,
+                    actioned: true,
+                    target: { type: r.target_type, id: r.target_id },
+                  })
+                }
+              />
+              <Button
+                label="Dismiss"
+                kind="secondary"
+                busy={resolveReport.isPending}
+                onPress={() =>
+                  resolveReport.mutate({ reportId: r.id, adminId: session.user.id, actioned: false })
+                }
+              />
+            </View>
+          ) : null}
         </View>
       ))}
 
-      {q.profiles.length + q.venues.length + q.series.length > 0 ? (
+      {q.profiles.length + q.venues.length + q.series.length + q.credits.length > 0 ? (
         <Text style={styles.sectionTitle}>Held content</Text>
+      ) : null}
+      {moderate.isError ? (
+        <ErrorText>
+          {moderate.error instanceof Error
+            ? moderate.error.message
+            : 'Could not save the decision. Try again.'}
+        </ErrorText>
       ) : null}
       {q.profiles.map((p) => (
         <ModerationItem
@@ -126,6 +167,7 @@ export default function AdminScreen() {
           title={`Profile @${p.handle}`}
           body={`${p.stage_name}${p.bio ? `: ${p.bio}` : ''}`}
           busy={moderate.isPending}
+          canAct={isAdmin}
           onDecide={(approve) => moderate.mutate({ target: 'profile', targetId: p.id, approve })}
         />
       ))}
@@ -135,6 +177,7 @@ export default function AdminScreen() {
           title={`Venue: ${v.name}`}
           body={v.parking_notes ?? ''}
           busy={moderate.isPending}
+          canAct={isAdmin}
           onDecide={(approve) => moderate.mutate({ target: 'venue', targetId: v.id, approve })}
         />
       ))}
@@ -144,34 +187,54 @@ export default function AdminScreen() {
           title={`Listing: ${s.title}`}
           body={s.description ?? ''}
           busy={moderate.isPending}
+          canAct={isAdmin}
           onDecide={(approve) => moderate.mutate({ target: 'series', targetId: s.id, approve })}
+        />
+      ))}
+      {q.credits.map((c) => (
+        <ModerationItem
+          key={c.id}
+          title={`Lineup credit on ${c.series?.title ?? 'a listing'}`}
+          body={`${c.role}: ${c.name ?? 'linked account'}`}
+          busy={moderate.isPending}
+          canAct={isAdmin}
+          onDecide={(approve) => moderate.mutate({ target: 'credit', targetId: c.id, approve })}
         />
       ))}
 
       {q.flags.length > 0 ? <Text style={styles.sectionTitle}>Listing flags</Text> : null}
+      {resolveFlag.isError ? (
+        <ErrorText>
+          {resolveFlag.error instanceof Error
+            ? resolveFlag.error.message
+            : 'Could not resolve the flag. Try again.'}
+        </ErrorText>
+      ) : null}
       {q.flags.map((f) => (
         <View key={f.id} style={styles.item}>
           <Text style={styles.itemTitle}>
             {f.series?.title ?? 'Listing'}: {FLAG_REASON_LABELS[f.reason]}
           </Text>
           {f.details ? <Text style={styles.itemBody}>{f.details}</Text> : null}
-          <View style={styles.actions}>
-            <Button
-              label="Confirmed"
-              busy={resolveFlag.isPending}
-              onPress={() =>
-                resolveFlag.mutate({ flagId: f.id, adminId: session.user.id, confirmed: true })
-              }
-            />
-            <Button
-              label="Dismiss"
-              kind="secondary"
-              busy={resolveFlag.isPending}
-              onPress={() =>
-                resolveFlag.mutate({ flagId: f.id, adminId: session.user.id, confirmed: false })
-              }
-            />
-          </View>
+          {isAdmin ? (
+            <View style={styles.actions}>
+              <Button
+                label="Confirmed"
+                busy={resolveFlag.isPending}
+                onPress={() =>
+                  resolveFlag.mutate({ flagId: f.id, adminId: session.user.id, confirmed: true })
+                }
+              />
+              <Button
+                label="Dismiss"
+                kind="secondary"
+                busy={resolveFlag.isPending}
+                onPress={() =>
+                  resolveFlag.mutate({ flagId: f.id, adminId: session.user.id, confirmed: false })
+                }
+              />
+            </View>
+          ) : null}
         </View>
       ))}
     </ScrollView>
@@ -182,21 +245,25 @@ function ModerationItem({
   title,
   body,
   busy,
+  canAct,
   onDecide,
 }: {
   title: string;
   body: string;
   busy: boolean;
+  canAct: boolean;
   onDecide: (approve: boolean) => void;
 }) {
   return (
     <View style={styles.item}>
       <Text style={styles.itemTitle}>{title}</Text>
       {body ? <Text style={styles.itemBody}>{body}</Text> : null}
-      <View style={styles.actions}>
-        <Button label="Approve" busy={busy} onPress={() => onDecide(true)} />
-        <Button label="Reject" kind="secondary" busy={busy} onPress={() => onDecide(false)} />
-      </View>
+      {canAct ? (
+        <View style={styles.actions}>
+          <Button label="Approve" busy={busy} onPress={() => onDecide(true)} />
+          <Button label="Reject" kind="secondary" busy={busy} onPress={() => onDecide(false)} />
+        </View>
+      ) : null}
     </View>
   );
 }

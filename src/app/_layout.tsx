@@ -21,6 +21,7 @@ import { OfflineBanner } from '@/components/offline-banner';
 import { ToastProvider } from '@/components/toast';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { SessionProvider, useSession } from '@/features/auth/session';
+import { SanctionBanner } from '@/features/safety/components/sanction-banner';
 import { useLatestEula, useOwnProfile } from '@/features/auth/queries';
 import { observeNotificationTaps, registerPushToken } from '@/lib/notifications';
 import { CACHE_BUSTER, queryClient, queryPersister } from '@/lib/query-client';
@@ -216,6 +217,7 @@ export default function RootLayout() {
           <StatusBar style="light" />
           <ToastProvider>
             <OfflineBanner />
+            <SanctionBanner />
             <AuthGate>
               <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
                 <Stack.Screen name="(tabs)" />

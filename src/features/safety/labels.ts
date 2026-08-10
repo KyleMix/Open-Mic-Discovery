@@ -37,3 +37,40 @@ export const FLAG_REASON_LABELS: Record<FlagReason, string> = {
   duplicate: 'Duplicate listing',
   other: 'Something else',
 };
+
+type SanctionType = Database['public']['Enums']['sanction_type'];
+type SanctionScope = Database['public']['Enums']['sanction_scope'];
+
+const SANCTION_AREA: Record<SanctionScope, string> = {
+  all_writes: 'Your account',
+  signups: 'Signing up',
+  listings: 'Managing listings',
+  reporting: 'Reporting',
+};
+
+/**
+ * The banner line for a live sanction. The reason is written by moderators
+ * to be read by the sanctioned person; without this the app showed them
+ * nothing but unrelated, wrongly worded failures.
+ */
+export function sanctionMessage(sanction: {
+  type: SanctionType;
+  scope: SanctionScope;
+  reason: string;
+  expires_at: string | null;
+}): string {
+  if (sanction.type === 'warned') {
+    return `A warning from the moderators: ${sanction.reason}`;
+  }
+  const area = SANCTION_AREA[sanction.scope];
+  if (sanction.type === 'suspended') {
+    const until = sanction.expires_at
+      ? ` until ${new Date(sanction.expires_at).toLocaleDateString(undefined, {
+          month: 'short',
+          day: 'numeric',
+        })}`
+      : '';
+    return `${area} is suspended${until}. ${sanction.reason}`;
+  }
+  return `${area} has been disabled by the moderators. ${sanction.reason}`;
+}

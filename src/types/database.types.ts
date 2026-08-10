@@ -2737,6 +2737,7 @@ export type Database = {
         };
         Returns: undefined;
       };
+      am_admin_reader: { Args: never; Returns: boolean };
       col_is_null:
         | {
             Args: {

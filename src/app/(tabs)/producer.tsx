@@ -66,10 +66,22 @@ export default function ProducerScreen() {
       </Screen>
     );
   }
-  const claimsBox =
-    profile.data?.is_admin && claims.data && claims.data.length > 0 ? (
+  const claimsBox = profile.data?.is_admin ? (
+    claims.isError ? (
       <View style={styles.claimsBox}>
         <Text style={styles.sectionTitle}>Pending claims</Text>
+        <ErrorText>Could not load claim requests. Pull to refresh.</ErrorText>
+      </View>
+    ) : claims.data && claims.data.length > 0 ? (
+      <View style={styles.claimsBox}>
+        <Text style={styles.sectionTitle}>Pending claims</Text>
+        {review.isError ? (
+          <ErrorText>
+            {review.error instanceof Error
+              ? review.error.message
+              : 'Could not review that claim. Try again.'}
+          </ErrorText>
+        ) : null}
         {claims.data.map((claim) => (
           <View key={claim.id} style={styles.claimRow}>
             <Text style={styles.claimText}>
@@ -91,7 +103,8 @@ export default function ProducerScreen() {
           </View>
         ))}
       </View>
-    ) : null;
+    ) : null
+  ) : null;
 
   if (profile.data && !profile.data.is_producer) {
     return (

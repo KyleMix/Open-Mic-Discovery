@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { signOut } from '@/features/auth/api';
 import { useOwnProfile } from '@/features/auth/queries';
+import { useIsAdminReader } from '@/features/safety/queries';
 import { SignUpPrompt } from '@/features/auth/components/sign-up-prompt';
 import { useSession } from '@/features/auth/session';
 import { formatRelativeDay } from '@/features/discovery/date-label';
@@ -20,6 +21,9 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { session } = useSession();
   const profile = useOwnProfile(session?.user.id);
+  // Read-only reviewers get the queue link too; the queue itself hides the
+  // action buttons from them.
+  const reader = useIsAdminReader(session?.user.id);
   const [error, setError] = useState<string | null>(null);
 
   // Browsing is open, so this tab is reachable with no account at all.
@@ -107,7 +111,7 @@ export default function ProfileScreen() {
       {error ? <ErrorText>{error}</ErrorText> : null}
       <Button label="Edit profile" onPress={() => router.push('/edit-profile')} />
       <Button label="Settings" kind="secondary" onPress={() => router.push('/settings')} />
-      {p.is_admin ? (
+      {p.is_admin || reader.data ? (
         <Button label="Moderation queue" kind="secondary" onPress={() => router.push('/admin')} />
       ) : null}
       {p.is_admin ? (

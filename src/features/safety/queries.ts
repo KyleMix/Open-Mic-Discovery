@@ -112,6 +112,57 @@ export function useDeleteAccount(userId: string | undefined) {
   });
 }
 
+/**
+ * Whether this account may read the moderation queue: full admins
+ * (profiles.is_admin) and read_only reviewers on the admin allowlist both
+ * qualify; only the former get action buttons, and the server re-checks
+ * every write regardless.
+ */
+export function useIsAdminReader(userId: string | undefined) {
+  return useQuery({
+    queryKey: ['moderation', 'reader', userId],
+    enabled: !!userId,
+    queryFn: async (): Promise<boolean> => {
+      const { data, error } = await getSupabase().rpc('am_admin_reader');
+      if (error) {
+        // Reading the queue is a convenience; a failed probe is "no".
+        return false;
+      }
+      return data ?? false;
+    },
+  });
+}
+
+/**
+ * The caller's live sanction, if any. The reason column is written to be
+ * read by the sanctioned person (they need it to appeal); without this the
+ * app showed a suspended account nothing but unrelated, wrongly worded
+ * failures.
+ */
+export function useMySanction(userId: string | undefined) {
+  return useQuery({
+    queryKey: ['sanction', userId],
+    enabled: !!userId,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await getSupabase()
+        .from('user_sanctions')
+        .select('type, scope, reason, expires_at')
+        .eq('user_id', userId!)
+        .is('lifted_at', null)
+        .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) {
+        // The banner is best-effort; a failed check shows nothing.
+        return null;
+      }
+      return data;
+    },
+  });
+}
+
 /** Admin: everything awaiting action, in one queue query. */
 export function useModerationQueue(isAdmin: boolean) {
   return useQuery({
@@ -119,7 +170,7 @@ export function useModerationQueue(isAdmin: boolean) {
     enabled: isAdmin,
     queryFn: async () => {
       const supabase = getSupabase();
-      const [profiles, venues, series, reports, flags] = await Promise.all([
+      const [profiles, venues, series, credits, reports, flags] = await Promise.all([
         // admin_profile_review, not profiles: admins no longer read the base
         // table (migration 20260807001600). The view carries what reviewing held
         // content needs and omits display_name, birth_year and home_city, which
@@ -138,6 +189,12 @@ export function useModerationQueue(isAdmin: boolean) {
           .from('mic_series')
           .select('id, title, description')
           .eq('moderation_status', 'pending'),
+        // Held lineup credits were the one pending state nothing could
+        // approve: the producer saw "(waiting on review)" forever.
+        supabase
+          .from('mic_credits')
+          .select('id, role, name, profile_id, series:mic_series(title)')
+          .eq('moderation_status', 'pending'),
         supabase
           .from('reports')
           .select('*')
@@ -145,7 +202,7 @@ export function useModerationQueue(isAdmin: boolean) {
           .order('created_at'),
         supabase.from('listing_flags').select('*, series:mic_series(title)').eq('status', 'open'),
       ]);
-      for (const result of [profiles, venues, series, reports, flags]) {
+      for (const result of [profiles, venues, series, credits, reports, flags]) {
         if (result.error) {
           throw userError(result.error, 'Could not load the queue. Try again.');
         }
@@ -162,11 +219,64 @@ export function useModerationQueue(isAdmin: boolean) {
         ),
         venues: venues.data ?? [],
         series: series.data ?? [],
-        reports: reports.data ?? [],
+        credits: credits.data ?? [],
+        reports: await describeReportTargets(reports.data ?? []),
         flags: flags.data ?? [],
       };
     },
   });
+}
+
+type ReportRow = Database['public']['Tables']['reports']['Row'];
+export type DescribedReport = ReportRow & { targetLabel: string | null };
+
+/**
+ * What each report is about, fetched per target type so the moderator can
+ * see the content they are ruling on instead of only its category.
+ * Best-effort: a failed lookup leaves the label null, never blocks the
+ * queue.
+ */
+async function describeReportTargets(reports: ReportRow[]): Promise<DescribedReport[]> {
+  const supabase = getSupabase();
+  const ids = (t: ReportRow['target_type']) =>
+    reports.filter((r) => r.target_type === t).map((r) => r.target_id);
+  const labels = new Map<string, string>();
+  try {
+    const [series, profiles, venues, credits] = await Promise.all([
+      ids('series').length
+        ? supabase.from('mic_series').select('id, title, description').in('id', ids('series'))
+        : Promise.resolve({ data: [] }),
+      ids('profile').length
+        ? supabase
+            .from('admin_profile_review')
+            .select('id, handle, stage_name, bio')
+            .in('id', ids('profile'))
+        : Promise.resolve({ data: [] }),
+      ids('venue').length
+        ? supabase.from('venues').select('id, name').in('id', ids('venue'))
+        : Promise.resolve({ data: [] }),
+      ids('credit').length
+        ? supabase.from('mic_credits').select('id, name, role').in('id', ids('credit'))
+        : Promise.resolve({ data: [] }),
+    ]);
+    for (const s of series.data ?? []) {
+      labels.set(s.id, `"${s.title}"${s.description ? `: ${s.description}` : ''}`);
+    }
+    for (const p of profiles.data ?? []) {
+      if (p.id) {
+        labels.set(p.id, `@${p.handle} (${p.stage_name})${p.bio ? `: ${p.bio}` : ''}`);
+      }
+    }
+    for (const v of venues.data ?? []) {
+      labels.set(v.id, v.name);
+    }
+    for (const c of credits.data ?? []) {
+      labels.set(c.id, `${c.role} credit: ${c.name ?? 'linked account'}`);
+    }
+  } catch {
+    // Labels are an aid, not a gate.
+  }
+  return reports.map((r) => ({ ...r, targetLabel: labels.get(r.target_id) ?? null }));
 }
 
 export function useModerateContent() {
@@ -189,7 +299,26 @@ export function useModerateContent() {
 export function useResolveReport() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { reportId: string; adminId: string; actioned: boolean }) => {
+    mutationFn: async (input: {
+      reportId: string;
+      adminId: string;
+      actioned: boolean;
+      target?: { type: ReportTarget; id: string };
+    }) => {
+      // "Actioned" that leaves the content live is a contradiction the
+      // queue used to present: the report read handled while the reported
+      // thing stayed up. Take the target down first, then stamp the report.
+      const moderatable: ReportTarget[] = ['profile', 'venue', 'series', 'credit'];
+      if (input.actioned && input.target && moderatable.includes(input.target.type)) {
+        const { error: modError } = await getSupabase().rpc('moderate_content', {
+          p_target: input.target.type,
+          p_target_id: input.target.id,
+          p_approve: false,
+        });
+        if (modError) {
+          throw userError(modError, 'Could not take the content down. The report stays open.');
+        }
+      }
       const { data, error } = await getSupabase()
         .from('reports')
         .update({
