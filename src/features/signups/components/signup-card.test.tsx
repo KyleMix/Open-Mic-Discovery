@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import { createTestQueryClient } from '@/test/query-harness';
 
@@ -16,8 +16,10 @@ jest.mock('@/features/auth/queries', () => ({
 jest.mock('@/features/profile/queries', () => ({
   useEnablePerformerRole: () => ({ mutate: jest.fn(), isPending: false, isError: false }),
 }));
+let mockMySignup: { status: string; slot_position: number | null; on_deck_at: null } | null = null;
+
 jest.mock('@/features/signups/queries', () => ({
-  useMySignup: () => ({ data: null, isPending: false }),
+  useMySignup: () => ({ data: mockMySignup, isPending: false, isSuccess: true }),
   useSignupCounts: () => ({ data: null, isPending: false }),
   useNightSpots: () => ({
     data: { capacity: 20, taken: 16, spots_left: 4, planning_performers: 0 },
@@ -44,7 +46,7 @@ afterAll(() => {
   jest.useRealTimers();
 });
 
-function renderCard(signupOpens: string) {
+function renderCard(signupOpens: string, extra: { onShare?: () => void } = {}) {
   // The card watches the shared join mutation key (real useMutationState,
   // not mocked), which needs a client above it.
   return render(
@@ -55,6 +57,7 @@ function renderCard(signupOpens: string) {
         signupMethod="first_come"
         signupOpens={signupOpens}
         signupCloses="00:00:00"
+        {...extra}
       />
     </QueryClientProvider>,
   );
@@ -86,5 +89,26 @@ describe('how full the night is', () => {
     // it yet, and it is the reason to come back when the list opens.
     await renderCard('7 days');
     expect(screen.getByText('4 of 20 spots left.')).toBeTruthy();
+  });
+});
+
+describe('spreading the word', () => {
+  afterEach(() => {
+    mockMySignup = null;
+  });
+
+  it('offers the share sheet to someone on the list', async () => {
+    mockMySignup = { status: 'confirmed', slot_position: 3, on_deck_at: null };
+    const onShare = jest.fn();
+    await renderCard('30 days', { onShare });
+
+    fireEvent.press(screen.getByText('Share this mic'));
+    expect(onShare).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers nothing before a signup exists', async () => {
+    const onShare = jest.fn();
+    await renderCard('30 days', { onShare });
+    expect(screen.queryByText('Share this mic')).toBeNull();
   });
 });

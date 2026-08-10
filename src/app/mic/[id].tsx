@@ -234,9 +234,14 @@ function MicDetail({
               accessibilityRole="button"
               accessibilityLabel={`Share ${series.title}`}
               onPress={() => setShareOpen(true)}
-              style={styles.iconTap}
+              style={styles.sharePill}
             >
-              <Ionicons name="share-outline" size={24} color={palette.textSecondary} />
+              {/* Labeled, not a bare glyph: sharing is how mics and the app
+                  spread, so the affordance has to read at a glance. */}
+              <Ionicons name="share-outline" size={18} color={palette.brand} />
+              <Text maxFontSizeMultiplier={maxFontScale} style={styles.sharePillText}>
+                Share
+              </Text>
             </Pressable>
             <FavoriteStar seriesId={series.id} onSignedOutPress={() => setSavePrompt(true)} />
           </View>
@@ -349,6 +354,7 @@ function MicDetail({
         {next ? (
           <SignupCard
             occurrence={next}
+            onShare={() => setShareOpen(true)}
             signupMethod={series.signup_method}
             signupOpens={series.signup_opens}
             signupCloses={series.signup_closes}
@@ -1042,11 +1048,21 @@ const styles = StyleSheet.create({
     fontSize: type.title.fontSize,
     lineHeight: type.title.lineHeight,
   },
-  iconTap: {
+  sharePill: {
     alignItems: 'center',
+    borderColor: palette.brand,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: spacing.xs,
     justifyContent: 'center',
-    minHeight: 44,
-    minWidth: 44,
+    minHeight: 36,
+    paddingHorizontal: spacing.md,
+  },
+  sharePillText: {
+    color: palette.brand,
+    fontFamily: fonts.medium,
+    fontSize: type.label.fontSize,
   },
   glyphRow: {
     flexDirection: 'row',

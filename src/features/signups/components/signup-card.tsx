@@ -48,6 +48,9 @@ const STATUS_HINTS: Partial<Record<Database['public']['Enums']['signup_status'],
 
 type Props = {
   occurrence: Occurrence;
+  /** Opens the share sheet. The person who just got on the list is the
+   * person most likely to bring a crowd, so the card offers it there. */
+  onShare?: () => void;
   /** The mic's IANA timezone; night labels render in venue-local time. */
   timezone: string | null;
   signupMethod: Database['public']['Enums']['signup_method'];
@@ -61,6 +64,7 @@ type Props = {
 /** The "I am on the list" moment: signup state and actions for a night. */
 export function SignupCard({
   occurrence,
+  onShare,
   timezone,
   signupMethod,
   signupOpens,
@@ -223,6 +227,13 @@ export function SignupCard({
           userId={session.user.id}
           message="Want a push when your status changes or you are on deck?"
         />
+        {onShare &&
+        ['requested', 'confirmed', 'waitlisted', 'drawn'].includes(mySignup.data.status) ? (
+          <>
+            <Body>A crowd makes the night. The flyer takes one tap to send.</Body>
+            <Button label="Share this mic" kind="secondary" onPress={onShare} />
+          </>
+        ) : null}
       </>
     );
   } else if (window.state === 'not_yet') {
