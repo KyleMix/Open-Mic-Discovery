@@ -1,9 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { Modal, Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
-import * as MediaLibrary from 'expo-media-library';
-import * as Sharing from 'expo-sharing';
-import { captureRef } from 'react-native-view-shot';
 
 import { Button, LoadingView } from '@/components/ui';
 import { useToast } from '@/components/toast';
@@ -15,6 +11,16 @@ import { shareCaption, type ShareIntent } from '@/features/share/captions';
 import { ShareCard } from '@/features/share/components/share-card';
 import { useMySignup } from '@/features/signups/queries';
 import { fonts, maxFontScale, palette, radius, spacing, type } from '@/theme';
+
+// Native-backed modules, loaded at use time only: statically importing
+// them pulled them into Expo Router's server render, which crashed on a
+// native base class that does not exist in Node. Nothing here runs before
+// a person taps, so nothing needs them sooner.
+const loadClipboard = () => import('expo-clipboard');
+const loadMediaLibrary = () => import('expo-media-library');
+const loadSharing = () => import('expo-sharing');
+const loadViewShot = () => import('react-native-view-shot');
+
 
 /**
  * The share bottom sheet, reachable from the mic page and from list cards.
@@ -149,13 +155,15 @@ function SheetBody({ seriesId, onClose }: { seriesId: string; onClose: () => voi
 
   async function capture(variant: 'square' | 'story'): Promise<string> {
     const ref = variant === 'story' ? storyRef : squareRef;
-    return captureRef(ref, {
-      format: 'png',
-      quality: 1,
-      result: 'tmpfile',
-      width: 1080,
-      height: variant === 'story' ? 1920 : 1080,
-    });
+    return loadViewShot().then(({ captureRef }) =>
+      captureRef(ref, {
+        format: 'png',
+        quality: 1,
+        result: 'tmpfile',
+        width: 1080,
+        height: variant === 'story' ? 1920 : 1080,
+      }),
+    );
   }
 
   /**
@@ -192,9 +200,9 @@ function SheetBody({ seriesId, onClose }: { seriesId: string; onClose: () => voi
       } else {
         // Android's share intent drops text on most image targets, so the
         // caption rides the clipboard instead of getting silently lost.
-        await Clipboard.setStringAsync(caption);
+        await (await loadClipboard()).setStringAsync(caption);
         toast.show('Caption copied. Paste it wherever the image lands.');
-        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: series.title });
+        await (await loadSharing()).shareAsync(uri, { mimeType: 'image/png', dialogTitle: series.title });
         // Best effort: Android does not say whether the person completed it.
         record('share_completed', null);
       }
@@ -202,13 +210,14 @@ function SheetBody({ seriesId, onClose }: { seriesId: string; onClose: () => voi
 
   const doCopy = () =>
     runGuarded('copy', async () => {
-      await Clipboard.setStringAsync(caption);
+      await (await loadClipboard()).setStringAsync(caption);
       toast.show('Caption copied.');
       record('copy_caption');
     });
 
   const doSave = () =>
     runGuarded('save', async () => {
+      const MediaLibrary = await loadMediaLibrary();
       const permission = await MediaLibrary.requestPermissionsAsync(true);
       if (!permission.granted) {
         toast.show('Open Settings to let the app save images.');
@@ -226,7 +235,7 @@ function SheetBody({ seriesId, onClose }: { seriesId: string; onClose: () => voi
       if (Platform.OS === 'ios') {
         await Share.share({ url: uri });
       } else {
-        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: series.title });
+        await (await loadSharing()).shareAsync(uri, { mimeType: 'image/png', dialogTitle: series.title });
       }
       record('story_share');
     });

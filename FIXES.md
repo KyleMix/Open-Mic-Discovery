@@ -12,6 +12,7 @@ Status: `pending`, `in progress`, `done <commit>`, `logged only` (console-side o
 | # | Finding | Files | Change | Status |
 | - | ------- | ----- | ------ | ------ |
 | 0 | Inherited pgTAP failures from the share feature (bare is_admin() in the new policy; test assumed RLS filtering where the privilege is revoked) | supabase/migrations/20260810000300_share_events_initplan.sql, supabase/tests/share-events.test.sql | alter policy wraps is_admin in a scalar subquery; test asserts 42501 on update/delete | done a20f3a9 |
+| 0b | Web SSR broken: item 4's onlineManager wiring reached for window in Expo Router's Node render (audit regression), and the share sheet's static native imports (view-shot, media-library, sharing, clipboard) crashed the same render with "Class extends value undefined" (inherited from the share feature, present at the pre-audit commit) | src/lib/query-client.ts, src/features/share/components/share-sheet.tsx | Connectivity wiring guarded off the server render; the four native share modules load lazily at tap time; verified with a clean expo export --platform web | done |
 
 ## P0
 
