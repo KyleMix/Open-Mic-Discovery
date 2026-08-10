@@ -38,6 +38,16 @@ export const SIGNUP_METHOD_DESCRIPTIONS: Record<NearbyMic['signup_method'], stri
   host_booked: 'The host chooses the lineup.',
 };
 
+/** The longer form the mic page teaches with; lives beside the short maps
+ * so per-method copy cannot drift across files. */
+export const SIGNUP_METHOD_EXPLAINERS: Record<NearbyMic['signup_method'], string> = {
+  first_come: 'The list fills in signup order. Sign up early, show up, you are on.',
+  lottery: 'Names go into a draw. Signing up enters you; the host draws the running order.',
+  reserved_slot: 'A fixed number of spots are reserved ahead of time. Grab one while they last.',
+  host_booked:
+    'The host books this lineup directly. Reach out through the venue or host to ask for a spot.',
+};
+
 // Re-exported for the screens that already import them from here. costLabel
 // lives in its own module so the share card model can price a night without
 // importing this component (which imports the share sheet: a cycle).

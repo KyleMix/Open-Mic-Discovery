@@ -31,7 +31,11 @@ import {
 import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
 import { addToCalendar } from '@/features/calendar/calendar';
-import { SIGNUP_METHOD_LABELS, costLabel } from '@/features/discovery/components/mic-card';
+import {
+  SIGNUP_METHOD_EXPLAINERS,
+  SIGNUP_METHOD_LABELS,
+  costLabel,
+} from '@/features/discovery/components/mic-card';
 import { StewardshipBadge } from '@/features/discovery/components/stewardship-badge';
 import { freshness } from '@/features/discovery/freshness';
 import { nextOccurrence } from '@/features/discovery/next-occurrence';
@@ -73,14 +77,6 @@ import { transformedImageUrl } from '@/lib/image-url';
 
 type FlagReason = Database['public']['Enums']['flag_reason'];
 
-const SIGNUP_METHOD_EXPLAINERS: Record<Database['public']['Enums']['signup_method'], string> = {
-  first_come: 'The list fills in signup order. Sign up early, show up, you are on.',
-  lottery: 'Names go into a draw. Signing up enters you; the host draws the running order.',
-  reserved_slot: 'A fixed number of slots are reserved ahead of time. Grab one while they last.',
-  host_booked:
-    'The host books this lineup directly. Reach out through the venue or host to ask for a spot.',
-};
-
 const FLAG_REASONS: { reason: FlagReason; label: string }[] = (
   [
     'wrong_time',
@@ -110,17 +106,17 @@ export default function MicDetailScreen() {
         }}
       />
       {detail.isPending ? (
-        <LoadingView label="Loading listing" />
+        <LoadingView label="Loading mic" />
       ) : detail.isError && detail.data === undefined ? (
         <Screen>
-          <Title>Listing</Title>
-          <ErrorText>Could not load this listing. Check your connection.</ErrorText>
+          <Title>Open mic</Title>
+          <ErrorText>Could not load this mic. Check your connection.</ErrorText>
           <Button label="Try again" onPress={() => detail.refetch()} />
         </Screen>
       ) : !detail.data ? (
         <Screen>
           <Title>Not found</Title>
-          <Body>This listing is no longer available.</Body>
+          <Body>This mic is no longer listed.</Body>
           <NotFoundEscape />
         </Screen>
       ) : (
@@ -459,7 +455,7 @@ function MicDetail({
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Report this listing for abuse"
+          accessibilityLabel="Report this mic for abuse"
           onPress={() => setReportOpen(true)}
           style={styles.flagButton}
         >

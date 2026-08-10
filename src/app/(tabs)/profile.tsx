@@ -31,12 +31,12 @@ export default function ProfileScreen() {
   if (!session) {
     return (
       <Screen>
-        <Title>Your profile</Title>
+        <Title>Profile</Title>
         <SignUpPrompt
           title="Perform under your stage name"
           reason="Your stage name is what hosts and other performers see on the list, never your email."
           perks={[
-            'Sign up for slots and track where you have played',
+            'Sign up for spots and track where you have played',
             'Save mics and get reminded the day of',
             'Link your Instagram, TikTok, or site so people can find you',
           ]}

@@ -340,7 +340,7 @@ export default function ManageSeriesScreen() {
         {series.poster_url ? (
           <Image
             source={{ uri: transformedImageUrl(series.poster_url, { width: 1080, height: 608 })! }}
-            accessibilityLabel="Event poster"
+            accessibilityLabel="Listing poster"
             style={styles.poster}
             contentFit="cover"
           />
@@ -404,7 +404,7 @@ export default function ManageSeriesScreen() {
           </ErrorText>
         ) : null}
         {occurrences.isPending ? (
-          <Body>Loading nights...</Body>
+          <Body>Loading nights</Body>
         ) : occurrences.isError ? (
           <>
             <ErrorText>Could not load upcoming nights.</ErrorText>

@@ -52,7 +52,7 @@ export default function SettingsScreen() {
 
       <Text style={styles.sectionTitle}>Blocked users</Text>
       {blocked.isPending ? (
-        <Body>Loading...</Body>
+        <Body>Loading</Body>
       ) : blocked.isError ? (
         <>
           <ErrorText>Could not load blocked users.</ErrorText>
@@ -109,7 +109,7 @@ export default function SettingsScreen() {
       <Text style={styles.sectionTitle}>Account</Text>
       <Body>
         Deleting your account removes your sign-in and personal data immediately. Anonymized records
-        of past signups are retained so event history stays intact. This cannot be undone.
+        of past signups are retained so signup history stays intact. This cannot be undone.
       </Body>
       <Button label="Delete account" onPress={() => setConfirmOpen(true)} />
 

@@ -77,7 +77,7 @@ export default function AnalyticsScreen() {
       <>
         <ScreenHeader title="Analytics" />
         <Screen>
-          <Title>Listing analytics</Title>
+          <Title>Analytics</Title>
           <ErrorText>Could not load analytics.</ErrorText>
           <Button label="Try again" onPress={() => stats.refetch()} />
         </Screen>

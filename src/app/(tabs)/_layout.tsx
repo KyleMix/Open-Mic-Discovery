@@ -44,7 +44,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="producer"
         options={{
-          title: 'My Mics',
+          title: 'My mics',
           tabBarIcon: ({ color, size }) => <Ionicons name="mic" color={color} size={size} />,
         }}
       />

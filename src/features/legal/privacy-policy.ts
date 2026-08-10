@@ -44,7 +44,7 @@ If you block someone, the block is enforced on our servers so their content is f
 
 ## Deleting your account
 
-Settings, then Delete account. Deletion is immediate: your sign-in, personal details, home area, photo, and push tokens are removed. Records of past signups are kept in anonymized form, with nothing personal attached, so event history stays intact for the hosts who ran those nights. You can also request deletion by email if you no longer have the app installed.
+Settings, then Delete account. Deletion is immediate: your sign-in, personal details, home area, photo, and push tokens are removed. Records of past signups are kept in anonymized form, with nothing personal attached, so signup history stays intact for the hosts who ran those nights. You can also request deletion by email if you no longer have the app installed.
 
 ## Age
 

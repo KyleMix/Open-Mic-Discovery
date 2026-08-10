@@ -57,7 +57,7 @@ export default function GoingScreen() {
       <Screen>
         <Title>Nothing lined up yet</Title>
         <Body>
-          Sign up for a slot or tap &quot;I am going&quot; on any mic and it lands here, soonest
+          Sign up for a spot or tap &quot;I am going&quot; on any mic and it lands here, soonest
           first. On a walk-in night, saying you are going also tells the host how many to expect.
         </Body>
         <Button label="Find a mic" onPress={() => router.navigate('/(tabs)')} />

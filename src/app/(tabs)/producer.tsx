@@ -35,7 +35,7 @@ export default function ProducerScreen() {
   if (!session) {
     return (
       <Screen>
-        <Title>My Mics</Title>
+        <Title>My mics</Title>
         <SignUpPrompt
           title="Run a mic?"
           reason="Listing a mic puts you on the hook for keeping it accurate, so it needs an account."
@@ -54,7 +54,7 @@ export default function ProducerScreen() {
   if ((profile.isError && profile.data === undefined) || (mySeries.isError && mySeries.data === undefined)) {
     return (
       <Screen>
-        <Title>My Mics</Title>
+        <Title>My mics</Title>
         <ErrorText>Could not load your mics. Check your connection.</ErrorText>
         <Button
           label="Try again"

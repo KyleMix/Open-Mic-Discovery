@@ -291,7 +291,7 @@ function EditProfileForm({
         <Body>Pick everything that applies. Most people in a scene end up doing both.</Body>
         <ToggleRow
           label="Performer"
-          description="Find mics, sign up for slots, track where you have played."
+          description="Find mics, sign up for spots, track where you have played."
           value={isPerformer}
           onToggle={setIsPerformer}
         />

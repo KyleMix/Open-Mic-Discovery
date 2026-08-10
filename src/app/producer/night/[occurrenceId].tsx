@@ -232,7 +232,7 @@ export default function NightScreen() {
         {pending.length > 0 ? (
           <View style={styles.drawBox}>
             <Text style={styles.sectionTitle}>
-              {pending.length} in the draw{shuffling ? ': drawing...' : ''}
+              {pending.length} in the draw{shuffling ? ': drawing' : ''}
             </Text>
             {pending.map((r) => (
               <Text key={r.id} style={styles.pendingName}>
