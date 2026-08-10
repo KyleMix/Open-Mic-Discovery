@@ -5,7 +5,23 @@
 -- the same state as the in-app path (delete_account), and invalid or
 -- already-deleted accounts fail safely.
 begin;
-select plan(19);
+select plan(21);
+
+-- Fixture: a share event attributed to performer 0001, to prove deletion
+-- clears the attribution (the FK's "on delete set null" cannot fire for a
+-- profile that is anonymized in place rather than deleted).
+insert into venues (id, name, address_line, city, region, location, moderation_status)
+values ('10000000-0000-4000-b000-0000000000f1', 'deletion share venue', 'x', 'Seattle', 'WA',
+        'POINT(-122.3 47.6)', 'approved');
+insert into mic_series (id, venue_id, created_by, owner_id, title, disciplines, rrule,
+                        anchor_date, start_time, timezone, signup_method, moderation_status)
+values ('20000000-0000-4000-c000-0000000000f1', '10000000-0000-4000-b000-0000000000f1',
+        '00000000-0000-4000-a000-000000000002', '00000000-0000-4000-a000-000000000002',
+        'deletion share mic', '{comedy}', 'FREQ=WEEKLY;BYDAY=MO', current_date, '20:00',
+        'America/Los_Angeles', 'first_come', 'approved');
+insert into share_events (profile_id, series_id, intent, action)
+values ('00000000-0000-4000-a000-000000000001',
+        '20000000-0000-4000-c000-0000000000f1', 'performer', 'share_completed');
 
 -- ---------------------------------------------------------------------------
 -- In-app path: performer 0001 deletes their own account.
@@ -23,6 +39,16 @@ select is(
 select is(
   (select display_name from profiles where id = '00000000-0000-4000-a000-000000000001'),
   'Deleted user', 'in-app: the profile is anonymized'
+);
+select is(
+  (select count(*)::int from share_events
+   where profile_id = '00000000-0000-4000-a000-000000000001'),
+  0, 'in-app: share history is no longer attributed to the deleted account'
+);
+select is(
+  (select count(*)::int from share_events
+   where series_id = '20000000-0000-4000-c000-0000000000f1' and profile_id is null),
+  1, 'in-app: the share row itself survives, anonymous like a guest share'
 );
 
 -- ---------------------------------------------------------------------------

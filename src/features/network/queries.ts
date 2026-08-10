@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { quotedIlikePattern } from '@/lib/postgrest';
 import { getSupabase } from '@/lib/supabase';
 import { userError } from '@/lib/user-error';
 import type { Database } from '@/types/database.types';
@@ -59,9 +60,9 @@ export function useConnectionNights(userId: string | undefined) {
  * already filtered out server side.
  */
 export function useSearchPeople(term: string, userId: string | undefined) {
-  // PostgREST's or() splits on commas and parens; stripping them from the
-  // term keeps a pasted oddity from becoming a filter instead of a search.
-  const cleaned = term.trim().replace(/[,()]/g, '');
+  // PostgREST's or() splits on commas and parens; quoting the term keeps a
+  // stage name like "Bob (the Builder)" searchable instead of a 400.
+  const cleaned = term.trim();
   return useQuery({
     queryKey: ['network', 'search', cleaned],
     enabled: !!userId && cleaned.length >= 2,
@@ -69,7 +70,9 @@ export function useSearchPeople(term: string, userId: string | undefined) {
       const { data, error } = await getSupabase()
         .from('public_profiles')
         .select('id, handle, stage_name, avatar_url, is_performer, is_producer')
-        .or(`handle.ilike.%${cleaned}%,stage_name.ilike.%${cleaned}%`)
+        .or(
+          `handle.ilike.${quotedIlikePattern(cleaned)},stage_name.ilike.${quotedIlikePattern(cleaned)}`,
+        )
         .neq('id', userId!)
         .limit(20);
       if (error) {
@@ -160,12 +163,18 @@ export function useSetShareAttendance() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ userId, share }: { userId: string; share: boolean }) => {
-      const { error } = await getSupabase()
+      const { data, error } = await getSupabase()
         .from('profiles')
         .update({ share_attendance: share })
-        .eq('id', userId);
+        .eq('id', userId)
+        .select('id');
       if (error) {
         throw userError(error, 'Could not save the choice. Try again.');
+      }
+      // Row level security filters denied rows out of an update rather than
+      // raising, so zero rows back means nothing was saved.
+      if (!data || data.length === 0) {
+        throw new Error('Could not save the choice. Try again.');
       }
     },
     onSuccess: (_data, { userId }) => {

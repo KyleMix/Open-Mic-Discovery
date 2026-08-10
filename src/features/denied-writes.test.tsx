@@ -14,6 +14,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react-native';
 
+import { useAcceptRequest, useSetShareAttendance } from '@/features/network/queries';
 import { useUpdateProfile } from '@/features/profile/queries';
 import {
   useCancelNight,
@@ -125,6 +126,22 @@ const WRITE_SITES: WriteCase[] = [
     invoke: async (wrapper) => {
       const { result } = await renderHook(() => useUpdateProfile('user-1'), { wrapper });
       return result.current.mutateAsync({ display_name: 'New name' });
+    },
+  },
+  {
+    name: 'useAcceptRequest',
+    refusedMessage: 'That request is no longer open.',
+    invoke: async (wrapper) => {
+      const { result } = await renderHook(() => useAcceptRequest(), { wrapper });
+      return result.current.mutateAsync({ userId: 'user-1', otherId: 'user-2' });
+    },
+  },
+  {
+    name: 'useSetShareAttendance',
+    refusedMessage: 'Could not save the choice. Try again.',
+    invoke: async (wrapper) => {
+      const { result } = await renderHook(() => useSetShareAttendance(), { wrapper });
+      return result.current.mutateAsync({ userId: 'user-1', share: false });
     },
   },
   {
