@@ -258,14 +258,6 @@ export function SignupCard({
               'notification with the result either way. Not drawn means the waitlist.'
             : `Signups for ${nightLabel} are open.`}
         </Body>
-        {counts.data && signupMethod !== 'lottery' ? (
-          <Body>
-            {spotsTakenLabel(counts.data.taken, counts.data.capacity) +
-              (counts.data.capacity != null && counts.data.taken >= counts.data.capacity
-                ? '. Signing up now joins the waitlist.'
-                : '.')}
-          </Body>
-        ) : null}
         {join.isError ? (
           <ErrorText>
             {join.error instanceof Error ? join.error.message : 'Could not sign up.'}
@@ -299,13 +291,21 @@ export function SignupCard({
         : counts.data
           ? drawEntrantsLabel(counts.data.entrants, counts.data.capacity)
           : null
-      : spots.data
-        ? spotsDetail(
-            spots.data.spots_left,
-            spots.data.capacity,
-            spots.data.planning_performers ?? 0,
-          )
-        : null;
+      : ((spots.data
+          ? spotsDetail(
+              spots.data.spots_left,
+              spots.data.capacity,
+              spots.data.planning_performers ?? 0,
+            )
+          : null) ??
+        // Uncapped nights have no spots-left arithmetic; the count of
+        // names so far is still worth the line. This header is now the
+        // card's only fullness reading: it used to be restated inside the
+        // open-signups copy as "1 of 20 spots taken", the same fact in the
+        // opposite direction.
+        (counts.data && counts.data.taken > 0
+          ? `${spotsTakenLabel(counts.data.taken, counts.data.capacity)}.`
+          : null));
 
   // The terms of the room sit beside the commit button in every state:
   // nobody should have to scroll two cards down to learn the list closes
