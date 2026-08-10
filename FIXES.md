@@ -53,10 +53,10 @@ Status: `pending`, `in progress`, `done <commit>`, `logged only` (console-side o
 | 29 | Admin mutations silent; Actioned leaves content live; no target preview; held credits unapprovable | Per-section error banners; Take down moderates the target before stamping; reports show their target's content; held credits reviewable | done |
 | 30 | Claim review silent failure; claims/next-nights lack states | Claims error state + review error rendered on My Mics | done |
 | 31 | Read-only admins locked out of admin screen | am_admin_reader RPC (pgTAP); queue readable to allowlisted readers with actions hidden; profile link shows for them | done |
-| 32 | Reset-password yanked by gate | Exempt reset-password in both gate branches | pending |
-| 33 | No AppState auth refresh wiring; refresh failure unhandled | startAutoRefresh wiring; redirect on session loss | pending |
-| 34 | Guest deep links spin forever on admin/test-kit/edit-profile; test-kit headerless | Session check first; ScreenHeader in all branches | pending |
-| 35 | No +not-found route | Styled +not-found.tsx | pending |
+| 32 | Reset-password yanked by gate | Exempt reset-password in both gate branches | done |
+| 33 | No AppState auth refresh wiring; refresh failure unhandled | Auth refresh follows AppState (start/stop on foreground); session loss now lands on real guest states everywhere (items 8/34) | done |
+| 34 | Guest deep links spin forever on admin/test-kit/edit-profile; test-kit headerless | test-kit and admin check session before the forever-pending profile query; test-kit renders its header in every branch; edit-profile gets a guest state | done |
+| 35 | No +not-found route | Styled +not-found.tsx with an escape to Discover | done |
 | 36 | Association-file placeholder values pass the guard tests | Tests reject TODO placeholders (deploy step remains owner's) | pending |
 | 37 | Map showsUserLocation fires OS prompt out of context | Gate on granted permission | pending |
 | 38 | Failed headcounts render as zeros | "count unavailable" on error | pending |

@@ -2,6 +2,7 @@ import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { ScreenHeader } from '@/components/screen-header';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
@@ -52,27 +53,58 @@ export default function TestKitScreen() {
   const [error, setError] = useState<string | null>(null);
   const [confirmingReset, setConfirmingReset] = useState(false);
 
-  if (profile.isPending) {
-    return <LoadingView label="Loading" />;
-  }
-  if (!isAdmin || !session) {
+  // Session before profile: a disabled query is pending forever, so the
+  // old order left a signed-out deep link on a spinner for good. And every
+  // branch renders the header, or the root stack's headerShown: false
+  // leaves these screens with no back button.
+  if (!session) {
     return (
-      <Screen>
-        <Title>Testing tools</Title>
-        <Body>This area is for the app owner.</Body>
-      </Screen>
+      <>
+        <ScreenHeader title="Testing tools" />
+        <Screen>
+          <Title>Testing tools</Title>
+          <Body>This area is for the app owner.</Body>
+        </Screen>
+      </>
+    );
+  }
+  if (profile.isPending) {
+    return (
+      <>
+        <ScreenHeader title="Testing tools" />
+        <LoadingView label="Loading" />
+      </>
+    );
+  }
+  if (!isAdmin) {
+    return (
+      <>
+        <ScreenHeader title="Testing tools" />
+        <Screen>
+          <Title>Testing tools</Title>
+          <Body>This area is for the app owner.</Body>
+        </Screen>
+      </>
     );
   }
   if (status.isPending) {
-    return <LoadingView label="Loading the test kit" />;
+    return (
+      <>
+        <ScreenHeader title="Testing tools" />
+        <LoadingView label="Loading the test kit" />
+      </>
+    );
   }
   if (status.isError) {
     return (
-      <Screen>
-        <Title>Testing tools</Title>
-        <ErrorText>Could not reach the test kit. Check your connection.</ErrorText>
-        <Button label="Try again" onPress={() => status.refetch()} />
-      </Screen>
+      <>
+        <ScreenHeader title="Testing tools" />
+        <Screen>
+          <Title>Testing tools</Title>
+          <ErrorText>Could not reach the test kit. Check your connection.</ErrorText>
+          <Button label="Try again" onPress={() => status.refetch()} />
+        </Screen>
+      </>
     );
   }
 

@@ -106,7 +106,15 @@ function AuthGate({ children }: { children: ReactNode }) {
       return;
     }
     if (!profile.data) {
-      if (topSegment !== 'privacy' && authScreen !== 'eula' && authScreen !== 'onboarding') {
+      // reset-password is exempt here and below for the same reason as the
+      // final branch: yanking the recovery session into the EULA funnel
+      // left the password silently unchanged.
+      if (
+        topSegment !== 'privacy' &&
+        authScreen !== 'eula' &&
+        authScreen !== 'onboarding' &&
+        authScreen !== 'reset-password'
+      ) {
         // A shared link opened mid-funnel (a mic page, say) is a
         // destination, not a detour: record it so finishing setup lands
         // there instead of losing it.
@@ -118,7 +126,7 @@ function AuthGate({ children }: { children: ReactNode }) {
       return;
     }
     if (eula.data && profile.data.eula_version !== eula.data.version) {
-      if (topSegment !== 'privacy' && authScreen !== 'eula') {
+      if (topSegment !== 'privacy' && authScreen !== 'eula' && authScreen !== 'reset-password') {
         if (!inAuthGroup) {
           setReturnTo(pathname);
         }

@@ -13,6 +13,7 @@ import {
   Field,
   KeyboardShift,
   LoadingView,
+  Screen,
   Title,
   ToggleRow,
 } from '@/components/ui';
@@ -43,10 +44,25 @@ function disciplineDescription(d: Discipline): string {
 }
 
 export default function EditProfileScreen() {
+  const router = useRouter();
   const { session } = useSession();
   const profile = useOwnProfile(session?.user.id);
   const performerDisciplines = usePerformerDisciplines(session?.user.id);
 
+  // Both queries are disabled without a session, and a disabled query is
+  // pending forever: a signed-out deep link sat on this spinner for good.
+  if (!session) {
+    return (
+      <>
+        <ScreenHeader title="Edit profile" />
+        <Screen>
+          <Title>Edit profile</Title>
+          <Body>Sign in to edit your profile.</Body>
+          <Button label="Go to sign in" onPress={() => router.replace('/(auth)/sign-in')} />
+        </Screen>
+      </>
+    );
+  }
   if (profile.isPending || performerDisciplines.isPending) {
     return (
       <>
