@@ -35,6 +35,7 @@ import { addToCalendar } from '@/features/calendar/calendar';
 import { SIGNUP_METHOD_LABELS, costLabel } from '@/features/discovery/components/mic-card';
 import { StewardshipBadge } from '@/features/discovery/components/stewardship-badge';
 import { freshness } from '@/features/discovery/freshness';
+import { nextOccurrence } from '@/features/discovery/next-occurrence';
 import { useFlagListing, useMicDetail } from '@/features/discovery/queries';
 import { CreditCard } from '@/features/credits/components/credit-card';
 import { useSeriesCredits } from '@/features/credits/queries';
@@ -159,7 +160,7 @@ function MicDetail({
   const venue = series.venue;
   const fresh = freshness(series.last_confirmed_at, new Date());
   const recurrence = describeRecurrence(series.rrule, series.start_time);
-  const next = occurrences.find((o) => o.status !== 'cancelled');
+  const next = nextOccurrence(occurrences);
   // A producer can rename or reprice a single night; the next night must
   // show those overrides or performers see the wrong show and price.
   const nextTitle = next?.override_title ?? null;

@@ -1,5 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { STARTED_GRACE_MS } from '@/features/discovery/next-occurrence';
 import { getSupabase } from '@/lib/supabase';
 import { userError } from '@/lib/user-error';
 import { filtersToDiscoverArgs, type DiscoveryFilters } from '@/stores/filters';
@@ -120,7 +121,10 @@ export function useMicDetail(seriesId: string | undefined) {
           .from('mic_occurrences')
           .select('*')
           .eq('series_id', seriesId!)
-          .gte('starts_at', new Date().toISOString())
+          // Trails the clock so tonight's mic stays on its own page while
+          // the show runs; at showtime the page used to flip to next week
+          // and take the performer's slot and on-deck state with it.
+          .gte('starts_at', new Date(Date.now() - STARTED_GRACE_MS).toISOString())
           .order('starts_at')
           .limit(6),
       ]);
