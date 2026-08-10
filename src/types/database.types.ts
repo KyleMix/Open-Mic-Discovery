@@ -1450,6 +1450,27 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'share_events_occurrence_id_fkey';
+            columns: ['occurrence_id'];
+            isOneToOne: false;
+            referencedRelation: 'my_upcoming_nights';
+            referencedColumns: ['occurrence_id'];
+          },
+          {
+            foreignKeyName: 'share_events_occurrence_id_fkey';
+            columns: ['occurrence_id'];
+            isOneToOne: false;
+            referencedRelation: 'occurrence_attendance';
+            referencedColumns: ['occurrence_id'];
+          },
+          {
+            foreignKeyName: 'share_events_occurrence_id_fkey';
+            columns: ['occurrence_id'];
+            isOneToOne: false;
+            referencedRelation: 'occurrence_spots';
+            referencedColumns: ['occurrence_id'];
+          },
+          {
             foreignKeyName: 'share_events_profile_id_fkey';
             columns: ['profile_id'];
             isOneToOne: false;
@@ -3202,6 +3223,8 @@ export type Database = {
         Args: { p_occurrence_id: string };
         Returns: {
           capacity: number;
+          draw_done: boolean;
+          entrants: number;
           taken: number;
         }[];
       };

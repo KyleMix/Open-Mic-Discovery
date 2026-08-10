@@ -220,20 +220,28 @@ select is(
   'and a reorder that changes nothing sends nothing'
 );
 
--- Opting out of signup updates has to hold for the new notice too.
+-- Opting out of signup updates has to hold for the new notice too. Since
+-- 20260810000500 a draw closes its night to new entries, so this scenario
+-- runs on the series' following night, where no draw has happened yet.
+create temp table draw_night_two as
+  select id from mic_occurrences
+  where series_id = '20000000-0000-4000-c000-0000000000f7'
+    and starts_at > now()
+  order by starts_at offset 1 limit 1;
+grant select on draw_night_two to public;
 insert into notification_prefs (profile_id, signup_updates)
 values ('00000000-0000-4000-a000-000000000032', false);
 insert into signups (occurrence_id, performer_id)
-values ((select id from draw_night), '00000000-0000-4000-a000-000000000032');
+values ((select id from draw_night_two), '00000000-0000-4000-a000-000000000032');
 set local role authenticated;
 select set_config('request.jwt.claims',
   '{"sub":"00000000-0000-4000-a000-000000000002","role":"authenticated"}', true);
-select count(*) from draw_lottery((select id from draw_night));
+select count(*) from draw_lottery((select id from draw_night_two));
 reset role;
 select is(
   (select count(*)::int from notification_outbox
    where profile_id = '00000000-0000-4000-a000-000000000032'
-     and payload ->> 'occurrence_id' = (select id::text from draw_night)),
+     and payload ->> 'occurrence_id' = (select id::text from draw_night_two)),
   0,
   'someone who turned signup updates off gets no receipt and no number'
 );
