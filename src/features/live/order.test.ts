@@ -7,6 +7,7 @@ const row = (over: Partial<LiveRow>): LiveRow => ({
   created_at: '2026-08-10T18:00:00.000Z',
   stage_name: 'The First',
   handle: 'first',
+  guest_name: null,
   performer_id: 'p-1',
   on_deck_at: null,
   ...over,
@@ -81,7 +82,10 @@ describe('where the night is up to', () => {
 
   it('falls back to the handle, and then to something sayable', () => {
     expect(performerName(row({ stage_name: null }))).toBe('first');
-    expect(performerName(row({ stage_name: null, handle: null }))).toBe('Performer');
+    expect(performerName(row({ stage_name: null, handle: null }))).toBe('Name hidden');
+    expect(performerName(row({ stage_name: null, handle: null, guest_name: 'Door Name' }))).toBe(
+      'Door Name',
+    );
     expect(performerName(null)).toBe('Performer');
   });
 });

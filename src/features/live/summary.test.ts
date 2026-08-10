@@ -8,6 +8,7 @@ const row = (over: Partial<LiveRow>): LiveRow => ({
   created_at: '2026-08-10T18:00:00.000Z',
   stage_name: 'Someone',
   handle: 'someone',
+  guest_name: null,
   performer_id: 'p-1',
   on_deck_at: null,
   ...over,

@@ -58,8 +58,16 @@ export default function SettingsScreen() {
       ) : blocked.data.length === 0 ? (
         <Body>Nobody is blocked. Blocking hides that user from you everywhere in the app.</Body>
       ) : (
-        blocked.data
-          .filter((b): b is typeof b & { blocked_id: string } => b.blocked_id != null)
+        <>
+          {unblock.isError ? (
+            <ErrorText>
+              {unblock.error instanceof Error
+                ? unblock.error.message
+                : 'Could not unblock them. Try again.'}
+            </ErrorText>
+          ) : null}
+          {blocked.data
+            .filter((b): b is typeof b & { blocked_id: string } => b.blocked_id != null)
           .map((b) => (
             <View key={b.blocked_id} style={styles.blockRow}>
               <Text style={styles.blockText}>
@@ -75,7 +83,8 @@ export default function SettingsScreen() {
                 }
               />
             </View>
-          ))
+          ))}
+        </>
       )}
 
       <Text style={styles.sectionTitle}>Help</Text>

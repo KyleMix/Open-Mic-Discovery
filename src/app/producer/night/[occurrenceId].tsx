@@ -234,7 +234,7 @@ export default function NightScreen() {
             </Text>
             {pending.map((r) => (
               <Text key={r.id} style={styles.pendingName}>
-                {r.stage_name ?? r.handle ?? 'Performer'}
+                {r.stage_name ?? r.handle ?? 'Name hidden'}
               </Text>
             ))}
             {draw.isError ? (
@@ -267,7 +267,7 @@ export default function NightScreen() {
                 <Text style={styles.slot}>{row.slot_position ?? '·'}</Text>
                 <View style={styles.rowBody}>
                   <Text style={styles.name}>
-                    {row.stage_name ?? row.handle ?? row.guest_name ?? 'Performer'}
+                    {row.stage_name ?? row.handle ?? row.guest_name ?? 'Name hidden'}
                     {row.guest_name ? ' (walk-in)' : ''}
                   </Text>
                   <Text style={row.on_deck_at ? styles.onDeckMeta : styles.meta}>
@@ -371,7 +371,7 @@ export default function NightScreen() {
                 <Text style={styles.slot}>·</Text>
                 <View style={styles.rowBody}>
                   <Text style={styles.name}>
-                    {row.stage_name ?? row.handle ?? row.guest_name ?? 'Performer'}
+                    {row.stage_name ?? row.handle ?? row.guest_name ?? 'Name hidden'}
                     {row.guest_name ? ' (walk-in)' : ''}
                   </Text>
                 </View>

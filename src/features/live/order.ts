@@ -9,6 +9,7 @@ export type LiveRow = {
   created_at: string | null;
   stage_name: string | null;
   handle: string | null;
+  guest_name: string | null;
   performer_id: string | null;
   on_deck_at: string | null;
 };
@@ -65,5 +66,12 @@ export function liveOrder(rows: LiveRow[]): LiveOrder {
 }
 
 export function performerName(row: LiveRow | null): string {
-  return row?.stage_name ?? row?.handle ?? 'Performer';
+  if (!row) {
+    return 'Performer';
+  }
+  // Walk-ins carry their door name. An account row whose profile the
+  // viewer cannot read (banned account, or a block between host and
+  // performer) resolves to nulls; own that state instead of inventing a
+  // person called "Performer".
+  return row.stage_name ?? row.handle ?? row.guest_name ?? 'Name hidden';
 }

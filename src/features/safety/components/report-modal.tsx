@@ -91,6 +91,13 @@ export function ReportModal({
                   Thank you. Reports are reviewed within 24 hours and acted on when they break the
                   rules everyone accepted.
                 </Body>
+                {block.isError ? (
+                  <ErrorText>
+                    {block.error instanceof Error
+                      ? block.error.message
+                      : 'Could not block them. Try again.'}
+                  </ErrorText>
+                ) : null}
                 {blockableUserId && session && blockableUserId !== session.user.id ? (
                   <Button
                     label="Also block this user"

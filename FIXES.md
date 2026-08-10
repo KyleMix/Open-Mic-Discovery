@@ -49,7 +49,7 @@ Status: `pending`, `in progress`, `done <commit>`, `logged only` (console-side o
 | 25 | Producer edits invisible to viewing performer | useMicDetail subscribes to the viewed series' occurrences and series row; focusManager (item 4) covers foregrounding | done |
 | 26 | Cancel/pause does not invalidate favorites/Going | useInvalidateSeries also invalidates plan and favorites | done |
 | 27 | Blocking does not hide a blocked host's mics | search_discover filters mics whose owner is in a block pair with the caller (enrichment phase, pgTAP proves blocker/guest asymmetry) | done |
-| 28 | Report-modal block + Settings unblock fail silently; blocked/banned rows render "Performer" | Render errors; stable roster fallback label | pending |
+| 28 | Report-modal block + Settings unblock fail silently; blocked/banned rows render "Performer" | Block/unblock failures rendered; roster and Live name chain falls to guest_name then 'Name hidden' | done |
 | 29 | Admin mutations silent; Actioned leaves content live; no target preview; held credits unapprovable | Per-section error banners; Take down moderates the target before stamping; reports show their target's content; held credits reviewable | done |
 | 30 | Claim review silent failure; claims/next-nights lack states | Claims error state + review error rendered on My Mics | done |
 | 31 | Read-only admins locked out of admin screen | am_admin_reader RPC (pgTAP); queue readable to allowlisted readers with actions hidden; profile link shows for them | done |
