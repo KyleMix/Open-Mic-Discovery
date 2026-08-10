@@ -210,9 +210,23 @@ export async function completeOnboarding(input: OnboardingInput): Promise<void> 
   // The handle is derived from the stage name, so two people picking the same
   // stage name is expected rather than exceptional. Retry with a suffix; asking
   // someone to invent a unique handle is the field this change removed.
+  // A previous attempt may have created the profile and then failed on a
+  // later insert. profiles.id is the primary key, so re-inserting answers
+  // 23505 exactly like a handle collision: without this check the retry
+  // loop burned five suffixed handles and then blamed the stage name for a
+  // conflict no stage name could fix.
+  const { data: existing, error: existingError } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('id', input.userId)
+    .maybeSingle();
+  if (existingError) {
+    throw userError(existingError, 'Could not finish setup. Check your connection and try again.');
+  }
+
   const base = deriveHandleBase(input.stageName);
   let lastError: PostgrestError | null = null;
-  for (let attempt = 0; attempt < 5; attempt++) {
+  for (let attempt = 0; existing == null && attempt < 5; attempt++) {
     const handle = attempt === 0 ? base : handleWithSuffix(base, randomHandleSuffix());
     const { error } = await supabase.from('profiles').insert({
       id: input.userId,
@@ -246,26 +260,30 @@ export async function completeOnboarding(input: OnboardingInput): Promise<void> 
     // the worst possible introduction; translate it like everything else.
     throw userError(lastError, 'Could not finish setup. Check your connection and try again.');
   }
+  // ignoreDuplicates keeps a resubmit after a partial failure from dying on
+  // the row a previous attempt already created.
   if (input.isPerformer) {
-    const { error } = await supabase.from('performer_profiles').insert({
-      profile_id: input.userId,
-      disciplines: input.disciplines,
-    });
+    const { error } = await supabase
+      .from('performer_profiles')
+      .upsert({ profile_id: input.userId, disciplines: input.disciplines }, {
+        onConflict: 'profile_id',
+        ignoreDuplicates: true,
+      });
     if (error) {
       throw userError(error, 'Could not finish setup. Try again.');
     }
   }
   if (input.isProducer) {
-    const { error } = await supabase.from('producer_profiles').insert({
-      profile_id: input.userId,
-    });
+    const { error } = await supabase
+      .from('producer_profiles')
+      .upsert({ profile_id: input.userId }, { onConflict: 'profile_id', ignoreDuplicates: true });
     if (error) {
       throw userError(error, 'Could not finish setup. Try again.');
     }
   }
-  const { error: prefsError } = await supabase.from('notification_prefs').insert({
-    profile_id: input.userId,
-  });
+  const { error: prefsError } = await supabase
+    .from('notification_prefs')
+    .upsert({ profile_id: input.userId }, { onConflict: 'profile_id', ignoreDuplicates: true });
   if (prefsError) {
     throw userError(prefsError, 'Could not finish setup. Try again.');
   }

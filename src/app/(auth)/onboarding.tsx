@@ -1,9 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ageSignalError } from '@/features/auth/ageSignal';
-import { completeOnboarding } from '@/features/auth/api';
+import { completeOnboarding, signOut } from '@/features/auth/api';
 import { useSession } from '@/features/auth/session';
 import { validateBirthYear, validateDisplayName } from '@/features/auth/validation';
 import { geocodeHomeArea } from '@/features/profile/geocode';
@@ -13,6 +14,7 @@ import { Body, Button, ErrorText, Field, Screen, Title } from '@/components/ui';
 import { spacing } from '@/theme';
 
 export default function OnboardingScreen() {
+  const router = useRouter();
   const { session } = useSession();
   const queryClient = useQueryClient();
   const acceptedEulaVersion = useOnboardingStore((s) => s.acceptedEulaVersion);
@@ -26,6 +28,16 @@ export default function OnboardingScreen() {
   const [errors, setErrors] = useState<Record<string, string | null>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // The accepted version lives in memory only, so a reload (OTA update,
+  // memory pressure) or a direct deep link lands here without it. The EULA
+  // screen is the one that can restock it; go there instead of failing the
+  // submit with a message nothing on this screen can act on.
+  useEffect(() => {
+    if (session && !acceptedEulaVersion) {
+      router.replace('/(auth)/eula');
+    }
+  }, [session, acceptedEulaVersion, router]);
 
   async function submit() {
     const area = normalizeHomeArea({ city: homeCity, region: homeRegion, postalCode: homeZip });
@@ -47,7 +59,7 @@ export default function OnboardingScreen() {
       return;
     }
     if (!session || !acceptedEulaVersion) {
-      setError('Session expired. Sign in again.');
+      setError('Your session expired. Sign out below, then sign in again.');
       return;
     }
     setBusy(true);
@@ -149,6 +161,15 @@ export default function OnboardingScreen() {
         />
         {error ? <ErrorText>{error}</ErrorText> : null}
         <Button label="Finish setup" busy={busy} disabled={busy} onPress={submit} />
+        <Button
+          label="Not now: sign out"
+          kind="secondary"
+          onPress={() => {
+            // The gate holds this screen until setup finishes, so leaving
+            // needs a real way out rather than a trap, same as the EULA.
+            signOut().catch(() => setError('Could not sign out. Check your connection.'));
+          }}
+        />
       </ScrollView>
     </Screen>
   );

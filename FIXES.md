@@ -22,9 +22,9 @@ Status: `pending`, `in progress`, `done <commit>`, `logged only` (console-side o
 | 3 | Mic page swaps to next week at showtime; slot/on-deck vanish | src/features/discovery/queries.ts, src/app/mic/[id].tsx | Include in-progress occurrence (4h trailing cutoff matching the Going tab) and skip completed nights; nextOccurrence helper + tests | done f77d7c7 |
 | 4 | Offline: error branch hides persisted cache; AuthGate replaces app with error screen | src/lib/query-client.ts, src/app/_layout.tsx, tab screens, mic/[id] | Branch on error-and-no-data; gate only blocks with no data; banner global; online/focus managers wired | pending |
 | 5 | Cold-start deep link has no back stack or tabs | src/app/_layout.tsx | unstable_settings anchor (tabs) | done 686f338 |
-| 6 | Onboarding is a trap; partial failure gives unwinnable handle error | src/app/(auth)/onboarding.tsx, src/features/auth/api.ts | Sign-out escape; idempotent completeOnboarding | pending |
+| 6 | Onboarding is a trap; partial failure gives unwinnable handle error | src/app/(auth)/onboarding.tsx, src/features/auth/api.ts | Sign-out escape button; EULA redirect when the in-memory acceptance is gone; profile pre-check + upsert-on-conflict make resubmits safe | in progress |
 | 7 | Pause/cancel/restore/resume report success on refused writes | src/features/producer/queries.ts | Zero-row checks on pause/cancel/restore/resume + denied-writes coverage | done d6954ef |
-| 8 | Producer management screens unguarded for non-owners | src/app/producer/*.tsx | canManageSeries mirrors the RLS predicate; NotYourMic state on manage/night/live/analytics/credits; host-role prompt on new | in progress |
+| 8 | Producer management screens unguarded for non-owners | src/app/producer/*.tsx | canManageSeries mirrors the RLS predicate; NotYourMic state on manage/night/live/analytics/credits; host-role prompt on new | done c67f9ea |
 | 9 | Restore night / resume listing errors never rendered | src/app/producer/[id].tsx | Render pause/resume/restore errors on the manage screen; poster DB write awaited into posterError | done d6954ef |
 | 10 | auth-callback spins forever for onboarded accounts | src/app/auth-callback.tsx | Navigate on successful exchange (returnTo or tabs); gate still runs the new-account funnel | done aa3b912 |
 
