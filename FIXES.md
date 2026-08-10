@@ -37,7 +37,7 @@ Status: `pending`, `in progress`, `done <commit>`, `logged only` (console-side o
 | 13 | Lottery spots-left misinformation pre/post draw | drawEntrantsLabel pre-draw, drawnSpotsLabel post-draw, first-come copy unchanged; footer gets drawDone | done |
 | 14 | Spots/counts never update live on mic page | Spots/counts poll every 20s while the window is open (RLS keeps other entrants' rows out of realtime); roster events also refresh spots | done |
 | 15 | Roster misses withdrawals (replica identity) | 20260810000600: replica identity full + mic_series/mic_occurrences added to the realtime publication, pgTAP pinned | done |
-| 16 | Live screen says nobody signed up on undrawn lottery | Count requested rows; link to draw | pending |
+| 16 | Live screen says nobody signed up on undrawn lottery | Live screen names the undrawn draw and links to the list screen; test added | done |
 | 17 | Withdraw Undo post-draw limbo + wrong copy | Withdraw confirm copy branches by method and draw state; undo rejoin explains a draw that ran in the meantime | done |
 | 18 | Series delete/unapprove silently erases Going entries | Soft-delete or rejection cancels committed future nights (existing cancellation push carries it); pause untouched by design | done |
 | 19 | Start-time change never notifies signed-up performers | occurrences_notify_time_change queues a mic-local notice for active signups | done |

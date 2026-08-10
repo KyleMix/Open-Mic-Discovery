@@ -30,6 +30,7 @@ jest.mock('@/features/auth/queries', () => ({
 jest.mock('expo-router', () => ({
   Stack: { Screen: () => null },
   useLocalSearchParams: () => ({ occurrenceId: 'occ-1' }),
+  useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
 }));
 jest.mock('@/features/producer/queries', () => ({
   useNightContext: () => ({
@@ -180,6 +181,18 @@ describe('running the night', () => {
     mockRoster = [];
     await render(<LiveScreen />);
     expect(screen.getByText('That is the whole list')).toBeTruthy();
+  });
+
+  it('names an undrawn draw instead of claiming nobody signed up', async () => {
+    mockRoster = [
+      performer({ id: 'sg-1', status: 'requested', slot_position: null }),
+      performer({ id: 'sg-2', status: 'requested', slot_position: null, stage_name: 'Second' }),
+    ];
+    await render(<LiveScreen />);
+    expect(
+      screen.getByText(/2 names are in the draw, and the draw has not run yet/),
+    ).toBeTruthy();
+    expect(screen.getByText('Open the list screen')).toBeTruthy();
   });
 
   it('asks before ending the show, because it cannot be tapped by accident', async () => {

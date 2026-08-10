@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -39,6 +39,7 @@ import { fonts, palette, spacing, type } from '@/theme';
  * costs nothing.
  */
 export default function LiveScreen() {
+  const router = useRouter();
   const { occurrenceId } = useLocalSearchParams<{ occurrenceId: string }>();
   const { session } = useSession();
   const profile = useOwnProfile(session?.user.id);
@@ -203,6 +204,10 @@ export default function LiveScreen() {
 
   const rows = roster.data as LiveRow[];
   const live = liveOrder(rows);
+  // An undrawn lottery has everyone in requested, which liveOrder does not
+  // count: without this the screen told a host who forgot to draw that
+  // nobody signed up while a full room waited.
+  const undrawn = rows.filter((r) => r.status === 'requested').length;
   const counts = liveCounts(rows, live.order.length, live.done);
   const room = spotsOpen(spots.data?.spots_left, spots.data?.capacity);
   const waitlist = rows.filter((r) => r.status === 'waitlisted');
@@ -331,11 +336,19 @@ export default function LiveScreen() {
           <Title>That is the whole list</Title>
           <Body>
             {live.done === 0
-              ? 'Nobody is on the list for tonight yet. Names appear here as they sign up.'
+              ? undrawn > 0
+                ? `${undrawn === 1 ? 'One name is' : `${undrawn} names are`} in the draw, and the draw has not run yet. Run it from the list screen and the running order appears here.`
+                : 'Nobody is on the list for tonight yet. Names appear here as they sign up.'
               : waitlist.length > 0
                 ? `${live.done} performed, and ${waitlist.length === 1 ? 'one person is' : `${waitlist.length} people are`} still waiting. Add somebody below and they go straight to the stage.`
                 : `${live.done} performed. Nobody is waiting, so that is the night.`}
           </Body>
+          {undrawn > 0 && live.done === 0 ? (
+            <Button
+              label="Open the list screen"
+              onPress={() => router.push(`/producer/night/${occurrenceId}`)}
+            />
+          ) : null}
         </>
       )}
 
