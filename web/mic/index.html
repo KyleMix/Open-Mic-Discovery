@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Open Mic Explorer</title>
+    <meta
+      name="description"
+      content="Find open mics near you, see when signups open, and get on the list."
+    />
+    <!--
+  Landing page for shared mic links: /open-mics/mic/<uuid>.
+
+  Every path under /open-mics/mic/ rewrites here (see web/_redirects); a
+  static export cannot pre-render unknown uuids. People with the app never
+  see this page once the universal link association files carry real values,
+  because the OS routes the link straight into the app. Everyone else gets
+  this: what the app is, a button that tries the app anyway, and the stores.
+
+  Store buttons stay disabled until the owner fills in data-app-store and
+  data-play-store below, the same honest-placeholder pattern as the
+  delete-account page. No analytics, no external requests.
+-->
+    <style>
+      :root {
+        --bg: #0b0b0f;
+        --bg-elevated: #16161d;
+        --border: #2e2e3a;
+        --text: #f4f4f6;
+        --text-secondary: #a8a8b3;
+        --brand: #0ffea7;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 24px;
+      }
+      main {
+        max-width: 420px;
+        width: 100%;
+        padding-top: 8vh;
+      }
+      .mark {
+        color: var(--brand);
+        font-size: 40px;
+      }
+      h1 {
+        font-size: 26px;
+        margin: 16px 0 8px;
+      }
+      p {
+        color: var(--text-secondary);
+        line-height: 1.5;
+        margin-bottom: 12px;
+      }
+      .card {
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        margin-top: 20px;
+        padding: 20px;
+      }
+      a.button,
+      button.button {
+        background: var(--brand);
+        border: 0;
+        border-radius: 12px;
+        color: #0b0b0f;
+        cursor: pointer;
+        display: block;
+        font-size: 16px;
+        font-weight: 600;
+        margin-top: 12px;
+        padding: 14px;
+        text-align: center;
+        text-decoration: none;
+        width: 100%;
+      }
+      a.button.secondary,
+      button.button.secondary {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text);
+      }
+      .button[aria-disabled='true'] {
+        cursor: default;
+        opacity: 0.45;
+      }
+      .note {
+        color: var(--text-secondary);
+        font-size: 13px;
+        margin-top: 14px;
+      }
+    </style>
+  </head>
+  <body data-app-store="" data-play-store="">
+    <main>
+      <div class="mark" aria-hidden="true">&#9679;</div>
+      <h1>This open mic lives in the app</h1>
+      <p>
+        Someone shared a mic night with you from Open Mic Explorer, the app for finding open mics,
+        seeing when signups open, and getting on the list.
+      </p>
+      <div class="card">
+        <button class="button" id="open-app" type="button">Open in the app</button>
+        <a class="button secondary" id="app-store" aria-disabled="true" role="button"
+          >App Store: coming soon</a
+        >
+        <a class="button secondary" id="play-store" aria-disabled="true" role="button"
+          >Google Play: coming soon</a
+        >
+        <p class="note" id="note">
+          If the app is installed, the button above jumps straight to this mic.
+        </p>
+      </div>
+    </main>
+    <script>
+      (function () {
+        // /open-mics/mic/<id> carries the mic id; the custom scheme reuses it.
+        var match = location.pathname.match(/\/mic\/([0-9a-fA-F-]{36})/);
+        var micPath = match ? 'mic/' + match[1] : '';
+        document.getElementById('open-app').addEventListener('click', function () {
+          location.href = 'openmicexplorer://' + micPath;
+        });
+        ['app-store', 'play-store'].forEach(function (id) {
+          var el = document.getElementById(id);
+          var url = document.body.dataset[id === 'app-store' ? 'appStore' : 'playStore'];
+          if (url) {
+            el.href = url;
+            el.removeAttribute('aria-disabled');
+            el.textContent =
+              id === 'app-store' ? 'Get it on the App Store' : 'Get it on Google Play';
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,5 @@
+# Shared mic links carry a uuid a static export cannot pre-render; every
+# one of them serves the single landing page. 200 keeps the uuid in the
+# address bar so the page can offer the matching openmicexplorer:// link.
+# Paths are as the site serves them, under the /open-mics prefix.
+/open-mics/mic/* /open-mics/mic/ 200
