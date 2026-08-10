@@ -4,6 +4,11 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/screen-header';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
+import { useOwnProfile } from '@/features/auth/queries';
+import { useSession } from '@/features/auth/session';
+import { useMicDetail } from '@/features/discovery/queries';
+import { NotYourMic } from '@/features/producer/components/not-your-mic';
+import { canManageSeries } from '@/features/producer/ownership';
 import { getSupabase } from '@/lib/supabase';
 import { userError } from '@/lib/user-error';
 import { fonts, palette, spacing, type } from '@/theme';
@@ -11,6 +16,9 @@ import { fonts, palette, spacing, type } from '@/theme';
 /** Signups and turnout per night for one listing. */
 export default function AnalyticsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { session } = useSession();
+  const profile = useOwnProfile(session?.user.id);
+  const detail = useMicDetail(id);
 
   const stats = useQuery({
     queryKey: ['analytics', id],
@@ -33,11 +41,33 @@ export default function AnalyticsScreen() {
     },
   });
 
-  if (stats.isPending) {
+  // RLS filters other people's signups to zero rather than erroring, so
+  // without this gate a stranger saw a well-formed page reading "nobody
+  // ever signs up here" about someone else's mic.
+  if (!session) {
+    return (
+      <>
+        <ScreenHeader title="Analytics" />
+        <NotYourMic seriesId={id} />
+      </>
+    );
+  }
+  if (stats.isPending || detail.isPending || profile.isPending) {
     return (
       <>
         <ScreenHeader title="Analytics" />
         <LoadingView label="Crunching the numbers" />
+      </>
+    );
+  }
+  if (
+    detail.data?.series &&
+    !canManageSeries(detail.data.series, session.user.id, profile.data?.is_admin ?? false)
+  ) {
+    return (
+      <>
+        <ScreenHeader title="Analytics" />
+        <NotYourMic seriesId={id} />
       </>
     );
   }

@@ -347,7 +347,9 @@ export function useOccurrenceContext(occurrenceId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await getSupabase()
         .from('mic_occurrences')
-        .select('id, starts_at, status, override_title, series:mic_series(id, title, timezone)')
+        .select(
+          'id, starts_at, status, override_title, series:mic_series(id, title, timezone, owner_id, created_by)',
+        )
         .eq('id', occurrenceId!)
         .maybeSingle();
       if (error) {
@@ -370,7 +372,9 @@ export function useNightContext(occurrenceId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await getSupabase()
         .from('mic_occurrences')
-        .select('*, series:mic_series(id, title, signup_method, timezone, set_length_minutes)')
+        .select(
+          '*, series:mic_series(id, title, signup_method, timezone, set_length_minutes, owner_id, created_by)',
+        )
         .eq('id', occurrenceId!)
         .maybeSingle();
       if (error) {

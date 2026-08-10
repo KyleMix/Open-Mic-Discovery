@@ -11,7 +11,11 @@ import { liveOrder, performerName, type LiveRow } from '@/features/live/order';
 import { liveCounts, spotsOpen } from '@/features/live/summary';
 import { clockCaption, clockFace, timerTone } from '@/features/live/timer';
 import { ScreenHeader } from '@/components/screen-header';
+import { useOwnProfile } from '@/features/auth/queries';
+import { useSession } from '@/features/auth/session';
 import { liveWindow } from '@/features/live/window';
+import { NotYourMic } from '@/features/producer/components/not-your-mic';
+import { canManageSeries } from '@/features/producer/ownership';
 import { useEndShow, useNightContext, useReopenShow } from '@/features/producer/queries';
 import { ROSTER_STATUS_LABELS } from '@/features/signups/labels';
 import {
@@ -36,6 +40,8 @@ import { fonts, palette, spacing, type } from '@/theme';
  */
 export default function LiveScreen() {
   const { occurrenceId } = useLocalSearchParams<{ occurrenceId: string }>();
+  const { session } = useSession();
+  const profile = useOwnProfile(session?.user.id);
   const night = useNightContext(occurrenceId);
   const roster = useRoster(occurrenceId);
   const spots = useNightSpots(occurrenceId);
@@ -87,11 +93,32 @@ export default function LiveScreen() {
     ? `${night.data.override_title ?? night.data.series.title} · Live`
     : 'Live';
 
-  if (night.isPending || roster.isPending) {
+  // Same gate as the night screen: an occurrence id is public, the show
+  // controls are not.
+  if (!session) {
+    return (
+      <>
+        <ScreenHeader title={headerTitle} />
+        <NotYourMic seriesId={night.data?.series?.id} />
+      </>
+    );
+  }
+  if (night.isPending || roster.isPending || profile.isPending) {
     return (
       <>
         <ScreenHeader title={headerTitle} />
         <LoadingView label="Loading the night" />
+      </>
+    );
+  }
+  if (
+    night.data?.series &&
+    !canManageSeries(night.data.series, session.user.id, profile.data?.is_admin ?? false)
+  ) {
+    return (
+      <>
+        <ScreenHeader title={headerTitle} />
+        <NotYourMic seriesId={night.data.series.id} />
       </>
     );
   }

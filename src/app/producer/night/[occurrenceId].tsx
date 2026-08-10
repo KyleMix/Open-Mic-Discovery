@@ -23,10 +23,14 @@ import {
   Title,
 } from '@/components/ui';
 import { ScreenHeader } from '@/components/screen-header';
+import { useOwnProfile } from '@/features/auth/queries';
+import { useSession } from '@/features/auth/session';
 import { formatRelativeDay } from '@/features/discovery/date-label';
 import { liveWindow } from '@/features/live/window';
 import { useNightAttendance, usePlanRoster } from '@/features/plans/queries';
 import { attendanceSummary } from '@/features/plans/summary';
+import { NotYourMic } from '@/features/producer/components/not-your-mic';
+import { canManageSeries } from '@/features/producer/ownership';
 import { useNightContext, useOccurrenceContext } from '@/features/producer/queries';
 import { isWalkIn } from '@/features/producer/signup-opens';
 import { ReportModal } from '@/features/safety/components/report-modal';
@@ -50,6 +54,8 @@ import { disciplineAccents, fonts, minTouchTarget, palette, spacing, type } from
 export default function NightScreen() {
   const router = useRouter();
   const { occurrenceId } = useLocalSearchParams<{ occurrenceId: string }>();
+  const { session } = useSession();
+  const profile = useOwnProfile(session?.user.id);
   const roster = useRoster(occurrenceId);
   const context = useOccurrenceContext(occurrenceId);
   const draw = useDrawLottery();
@@ -81,11 +87,33 @@ export default function NightScreen() {
       )}`
     : 'The list';
 
-  if (roster.isPending) {
+  // The occurrence id is public, but the list is the host's. Without this
+  // gate a stranger's deep link rendered an RLS-emptied roster as
+  // "Nobody on the list yet", a false statement about a real night.
+  if (!session) {
+    return (
+      <>
+        <ScreenHeader title={headerTitle} />
+        <NotYourMic seriesId={context.data?.series?.id} />
+      </>
+    );
+  }
+  if (roster.isPending || context.isPending || profile.isPending) {
     return (
       <>
         <ScreenHeader title={headerTitle} />
         <LoadingView label="Loading the list" />
+      </>
+    );
+  }
+  if (
+    context.data?.series &&
+    !canManageSeries(context.data.series, session.user.id, profile.data?.is_admin ?? false)
+  ) {
+    return (
+      <>
+        <ScreenHeader title={headerTitle} />
+        <NotYourMic seriesId={context.data.series.id} />
       </>
     );
   }

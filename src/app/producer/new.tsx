@@ -4,10 +4,11 @@ import { View } from 'react-native';
 
 import { useDiscardGuard } from '@/components/discard-guard';
 import { Body, Button, Screen, Title } from '@/components/ui';
+import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
 import { SeriesForm, type SeriesFormValues } from '@/features/producer/components/series-form';
 import { signupOpensInterval } from '@/features/producer/signup-opens';
-import { useCreateSeries } from '@/features/producer/queries';
+import { useCreateSeries, useEnableProducerRole } from '@/features/producer/queries';
 import { setReturnTo } from '@/stores/return-to';
 import { palette } from '@/theme';
 
@@ -15,6 +16,8 @@ export default function NewSeriesScreen() {
   const router = useRouter();
   const pathname = usePathname();
   const { session } = useSession();
+  const profile = useOwnProfile(session?.user.id);
+  const enableRole = useEnableProducerRole();
   const create = useCreateSeries();
   const [dirty, setDirty] = useState(false);
   const { guardElement, bypassGuard } = useDiscardGuard({
@@ -73,6 +76,28 @@ export default function NewSeriesScreen() {
               setReturnTo(pathname);
               router.push('/(auth)/sign-in');
             }}
+          />
+        </Screen>
+      ) : profile.data && !profile.data.is_producer ? (
+        // Without the role, the listing this form creates would be invisible
+        // from the My Mics tab, which shows the become-a-host pitch instead.
+        <Screen>
+          <Title>Turn on hosting first</Title>
+          <Body>
+            Adding a mic needs the host role on your account. It sits alongside performing; most
+            people in a scene do both.
+          </Body>
+          {enableRole.isError ? (
+            <Body>
+              {enableRole.error instanceof Error
+                ? enableRole.error.message
+                : 'Could not turn on hosting. Try again.'}
+            </Body>
+          ) : null}
+          <Button
+            label="Turn on hosting"
+            busy={enableRole.isPending}
+            onPress={() => enableRole.mutate(session.user.id)}
           />
         </Screen>
       ) : (

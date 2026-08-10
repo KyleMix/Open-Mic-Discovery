@@ -6,6 +6,8 @@ import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ConfirmSheet, DiscardPrompt } from '@/components/confirm-sheet';
 import { ScreenHeader } from '@/components/screen-header';
 import { useDiscardGuard } from '@/components/discard-guard';
+import { NotYourMic } from '@/features/producer/components/not-your-mic';
+import { canManageSeries } from '@/features/producer/ownership';
 import { Glyph } from '@/components/glyph';
 import {
   Body,
@@ -17,6 +19,7 @@ import {
   Screen,
   Title,
 } from '@/components/ui';
+import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
 import { freshness } from '@/features/discovery/freshness';
 import { formatRelativeDay } from '@/features/discovery/date-label';
@@ -56,6 +59,7 @@ export default function ManageSeriesScreen() {
   const updateOccurrence = useUpdateOccurrence();
 
   const { session } = useSession();
+  const profile = useOwnProfile(session?.user.id);
   const [editing, setEditing] = useState(false);
   const [editorDirty, setEditorDirty] = useState(false);
   const [confirmCloseEditor, setConfirmCloseEditor] = useState(false);
@@ -106,6 +110,24 @@ export default function ManageSeriesScreen() {
           <ErrorText>Could not load this listing.</ErrorText>
           <Button label="Try again" onPress={() => detail.refetch()} />
         </Screen>
+      </>
+    );
+  }
+  // The listing itself is public, so this route loads for anyone with the
+  // id; the console it renders must not be.
+  if (!session || profile.isPending) {
+    return (
+      <>
+        <ScreenHeader title="My mic" />
+        {session ? <LoadingView label="Loading your mic" /> : <NotYourMic seriesId={id} />}
+      </>
+    );
+  }
+  if (!canManageSeries(detail.data.series, session.user.id, profile.data?.is_admin ?? false)) {
+    return (
+      <>
+        <ScreenHeader title="My mic" />
+        <NotYourMic seriesId={id} />
       </>
     );
   }

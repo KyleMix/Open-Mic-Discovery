@@ -17,7 +17,11 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ScreenHeader } from '@/components/screen-header';
 import { Body, Button, ErrorText, Field, LoadingView, Screen, Title } from '@/components/ui';
 import { AvatarCircle } from '@/features/profile/avatar-circle';
+import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
+import { useMicDetail } from '@/features/discovery/queries';
+import { NotYourMic } from '@/features/producer/components/not-your-mic';
+import { canManageSeries } from '@/features/producer/ownership';
 import { setReturnTo } from '@/stores/return-to';
 import {
   useManageCredits,
@@ -57,8 +61,10 @@ export default function CreditsScreen() {
   const router = useRouter();
   const pathname = usePathname();
   const credits = useManageCredits(id);
+  const profile = useOwnProfile(session?.user.id);
+  const detail = useMicDetail(id);
 
-  if (credits.isPending) {
+  if (credits.isPending || (session && (detail.isPending || profile.isPending))) {
     return (
       <>
         <ScreenHeader title="Lineup" />
@@ -93,6 +99,20 @@ export default function CreditsScreen() {
             }}
           />
         </Screen>
+      </>
+    );
+  }
+  // Credits are publicly readable, so this editor loaded for anyone with
+  // the id and presented live Change and Remove buttons on someone else's
+  // lineup. The writes were refused; the screen should not offer them.
+  if (
+    detail.data?.series &&
+    !canManageSeries(detail.data.series, session.user.id, profile.data?.is_admin ?? false)
+  ) {
+    return (
+      <>
+        <ScreenHeader title="Lineup" />
+        <NotYourMic seriesId={id} />
       </>
     );
   }
