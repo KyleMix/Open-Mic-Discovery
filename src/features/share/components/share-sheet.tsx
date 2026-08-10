@@ -103,6 +103,7 @@ function SheetBody({ seriesId, onClose }: { seriesId: string; onClose: () => voi
         <Text style={styles.heading} maxFontSizeMultiplier={maxFontScale}>
           Could not load this mic
         </Text>
+        <Button label="Try again" onPress={() => detail.refetch()} />
         <Button label="Close" kind="secondary" onPress={onClose} />
       </View>
     );

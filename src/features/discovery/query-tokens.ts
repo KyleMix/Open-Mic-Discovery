@@ -40,21 +40,23 @@ const DAY_NAMES = [
 
 // Phrases before words so "this weekend" is never consumed as "weekend"
 // plus a stray "this". The age patterns end on a lookahead because \b
-// does not follow a "+".
+// does not follow a "+". Word tokens bound on whitespace or the string
+// ends, not \b: a word boundary sits at a hyphen too, and "Free-For-All"
+// is a mic's name, not a price filter.
 const RULES: Rule[] = [
   { pattern: /\bthis weekend\b/i, token: { kind: 'when', when: 'weekend' } },
   { pattern: /\bthis week\b/i, token: { kind: 'when', when: 'week' } },
   { pattern: /\bnear me\b/i, token: { kind: 'nearMe' } },
   { pattern: /\ball ages\b/i, token: { kind: 'age', age: 'all_ages' } },
-  { pattern: /\btonight\b/i, token: { kind: 'when', when: 'tonight' } },
-  { pattern: /\btoday\b/i, token: { kind: 'when', when: 'tonight' } },
-  { pattern: /\btomorrow\b/i, token: { kind: 'when', when: 'tomorrow' } },
-  { pattern: /\bweekend\b/i, token: { kind: 'when', when: 'weekend' } },
-  { pattern: /\bfree\b/i, token: { kind: 'free' } },
+  { pattern: /(?<=^|\s)tonight(?=$|\s)/i, token: { kind: 'when', when: 'tonight' } },
+  { pattern: /(?<=^|\s)today(?=$|\s)/i, token: { kind: 'when', when: 'tonight' } },
+  { pattern: /(?<=^|\s)tomorrow(?=$|\s)/i, token: { kind: 'when', when: 'tomorrow' } },
+  { pattern: /(?<=^|\s)weekend(?=$|\s)/i, token: { kind: 'when', when: 'weekend' } },
+  { pattern: /(?<=^|\s)free(?=$|\s)/i, token: { kind: 'free' } },
   { pattern: /\b18\+(?=\s|$)/i, token: { kind: 'age', age: 'eighteen_plus' } },
   { pattern: /\b21\+(?=\s|$)/i, token: { kind: 'age', age: 'twenty_one_plus' } },
   ...DAY_NAMES.map((name, i) => ({
-    pattern: new RegExp(`\\b${name}\\b`, 'i'),
+    pattern: new RegExp(`(?<=^|\\s)${name}(?=$|\\s)`, 'i'),
     token: { kind: 'day', day: i + 1 } as QueryToken,
   })),
 ];

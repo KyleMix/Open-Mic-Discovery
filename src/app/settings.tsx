@@ -54,7 +54,10 @@ export default function SettingsScreen() {
       {blocked.isPending ? (
         <Body>Loading...</Body>
       ) : blocked.isError ? (
-        <ErrorText>Could not load blocked users.</ErrorText>
+        <>
+          <ErrorText>Could not load blocked users.</ErrorText>
+          <Button label="Try again" kind="secondary" onPress={() => blocked.refetch()} />
+        </>
       ) : blocked.data.length === 0 ? (
         <Body>Nobody is blocked. Blocking hides that user from you everywhere in the app.</Body>
       ) : (

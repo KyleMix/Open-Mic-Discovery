@@ -141,7 +141,12 @@ function MyNights({ userId, onOpenMic }: { userId: string; onOpenMic: (id: strin
     return <Body>Loading your nights...</Body>;
   }
   if (nights.isError) {
-    return <ErrorText>Could not load your nights.</ErrorText>;
+    return (
+      <>
+        <ErrorText>Could not load your nights.</ErrorText>
+        <Button label="Try again" kind="secondary" onPress={() => nights.refetch()} />
+      </>
+    );
   }
   const now = new Date().getTime();
   const withDates = nights.data.filter(

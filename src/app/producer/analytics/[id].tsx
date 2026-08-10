@@ -112,11 +112,13 @@ export default function AnalyticsScreen() {
           headerTintColor: palette.text,
         }}
       />
-      <View style={styles.totalsRow}>
-        <Total label="Signups" value={totals.signups} />
-        <Total label="Performed" value={totals.performed} />
-        <Total label="No-shows" value={totals.noShows} />
-      </View>
+      {nights.length > 0 ? (
+        <View style={styles.totalsRow}>
+          <Total label="Signups" value={totals.signups} />
+          <Total label="Performed" value={totals.performed} />
+          <Total label="No-shows" value={totals.noShows} />
+        </View>
+      ) : null}
       {nights.length === 0 ? (
         <Body>No nights yet. Analytics fill in as your mic runs.</Body>
       ) : (

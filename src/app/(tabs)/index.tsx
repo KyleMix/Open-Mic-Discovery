@@ -123,11 +123,17 @@ export default function DiscoverScreen() {
         return;
       }
       const store = useFiltersStore.getState();
+      // Days collect into one set ("monday tuesday" means both), applied
+      // after any when token so the two never fight through setDays
+      // clearing when and vice versa.
+      const dayTokens = parsed.tokens.flatMap((t) => (t.kind === 'day' ? [t.day] : []));
       for (const token of parsed.tokens) {
         if (token.kind === 'when') {
-          store.setWhen(token.when);
+          if (dayTokens.length === 0) {
+            store.setWhen(token.when);
+          }
         } else if (token.kind === 'day') {
-          store.setDays([token.day]);
+          store.setDays(dayTokens);
         } else if (token.kind === 'free') {
           store.setFreeOnly(true);
         } else if (token.kind === 'age') {
@@ -268,7 +274,7 @@ export default function DiscoverScreen() {
           </Pressable>
         ) : null}
       </View>
-      {!manualCenter && !profileCenter && !profile.isPending ? (
+      {!manualCenter && !profileCenter && (session ? !profile.isPending : true) ? (
         <Text style={styles.locationNote}>
           Showing the default Seattle area, not your own. Use the locate button, or search your city
           and tap Browse near it.

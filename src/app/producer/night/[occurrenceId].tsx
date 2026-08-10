@@ -510,6 +510,11 @@ function LiveEntry({
   onOpen: () => void;
 }) {
   const night = useNightContext(occurrenceId);
+  if (night.isError) {
+    // A silently missing Go live button reads as "not show time yet",
+    // which is the wrong thing to tell a host at show time.
+    return <ErrorText>Could not check whether the show can go live. Pull to refresh.</ErrorText>;
+  }
   if (!night.data) {
     return null;
   }
@@ -532,6 +537,14 @@ function WhoIsComing({ occurrenceId }: { occurrenceId: string | undefined }) {
   const counts = useNightAttendance(occurrenceId);
   const roster = usePlanRoster(occurrenceId);
 
+  if (counts.isError) {
+    return (
+      <View style={styles.comingBox}>
+        <Text style={styles.sectionTitle}>Who is coming</Text>
+        <ErrorText>Headcount unavailable right now. Pull to refresh.</ErrorText>
+      </View>
+    );
+  }
   if (counts.isPending || !counts.data) {
     return null;
   }

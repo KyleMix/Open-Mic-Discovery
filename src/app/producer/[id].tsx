@@ -102,7 +102,7 @@ export default function ManageSeriesScreen() {
       </>
     );
   }
-  if (detail.isError || !detail.data) {
+  if (detail.isError) {
     return (
       <>
         <ScreenHeader title="My mic" />
@@ -110,6 +110,20 @@ export default function ManageSeriesScreen() {
           <Title>My mic</Title>
           <ErrorText>Could not load this listing.</ErrorText>
           <Button label="Try again" onPress={() => detail.refetch()} />
+        </Screen>
+      </>
+    );
+  }
+  if (!detail.data) {
+    // A deleted listing is gone; a Try again that can never succeed is a
+    // treadmill, not an error state.
+    return (
+      <>
+        <ScreenHeader title="My mic" />
+        <Screen>
+          <Title>Not found</Title>
+          <Body>This listing is no longer available.</Body>
+          <Button label="Back to My Mics" onPress={() => router.replace('/(tabs)/producer')} />
         </Screen>
       </>
     );
@@ -392,7 +406,10 @@ export default function ManageSeriesScreen() {
         {occurrences.isPending ? (
           <Body>Loading nights...</Body>
         ) : occurrences.isError ? (
-          <ErrorText>Could not load upcoming nights.</ErrorText>
+          <>
+            <ErrorText>Could not load upcoming nights.</ErrorText>
+            <Button label="Try again" kind="secondary" onPress={() => occurrences.refetch()} />
+          </>
         ) : occurrences.data.length === 0 ? (
           <Body>No upcoming nights. Resume the listing or adjust the schedule.</Body>
         ) : (

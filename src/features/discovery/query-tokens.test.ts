@@ -92,3 +92,29 @@ describe('tokenLabel', () => {
     expect(tokenLabel({ kind: 'nearMe' })).toBe('Near me');
   });
 });
+
+describe('token boundaries', () => {
+  it('leaves hyphenated names alone', () => {
+    const parsed = parseQueryTokens('Free-For-All');
+    expect(parsed.tokens).toHaveLength(0);
+    expect(parsed.text).toBe('Free-For-All');
+  });
+
+  it('still strips the word standing free', () => {
+    const parsed = parseQueryTokens('free comedy tonight');
+    expect(parsed.tokens).toEqual(
+      expect.arrayContaining([{ kind: 'free' }, { kind: 'when', when: 'tonight' }]),
+    );
+    expect(parsed.text).toBe('comedy');
+  });
+
+  it('collects several day words', () => {
+    const parsed = parseQueryTokens('monday tuesday');
+    expect(parsed.tokens).toEqual(
+      expect.arrayContaining([
+        { kind: 'day', day: 1 },
+        { kind: 'day', day: 2 },
+      ]),
+    );
+  });
+});
