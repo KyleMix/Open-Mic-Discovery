@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Glyph, disciplineGlyphs, signupMethodGlyphs } from '@/components/glyph';
@@ -9,6 +10,7 @@ import {
   cardStewardship,
 } from '@/features/discovery/components/stewardship-badge';
 import { useSession } from '@/features/auth/session';
+import { costLabel } from '@/features/discovery/cost';
 import { formatNextDate } from '@/features/discovery/date-label';
 import { formatMilesFromMeters } from '@/features/discovery/distance';
 import { freshness } from '@/features/discovery/freshness';
@@ -16,6 +18,7 @@ import { transformedImageUrl } from '@/lib/image-url';
 import { spotsLabel } from '@/features/signups/capacity';
 import type { NearbyMic } from '@/features/discovery/queries';
 import { describeRecurrence } from '@/features/discovery/recurrence';
+import { ShareSheet } from '@/features/share/components/share-sheet';
 import { useFavorites, useToggleFavorite } from '@/features/favorites/queries';
 import { disciplineAccents, fonts, palette, spacing, type, type Discipline } from '@/theme';
 
@@ -35,12 +38,11 @@ export const SIGNUP_METHOD_DESCRIPTIONS: Record<NearbyMic['signup_method'], stri
   host_booked: 'The host chooses the lineup.',
 };
 
-// Re-exported for the screens that already import it from here.
+// Re-exported for the screens that already import them from here. costLabel
+// lives in its own module so the share card model can price a night without
+// importing this component (which imports the share sheet: a cycle).
 export { formatNextDate };
-
-export function costLabel(costCents: number): string {
-  return costCents === 0 ? 'Free' : `$${(costCents / 100).toFixed(costCents % 100 === 0 ? 0 : 2)}`;
-}
+export { costLabel };
 
 /**
  * What the card actually draws, rather than a whole nearby row. Search returns
@@ -121,7 +123,9 @@ export function MicCard({ mic, onPress }: Props) {
               {(mic.disciplines as Discipline[]).map((d) => (
                 <Glyph key={d} name={disciplineGlyphs[d]} size={16} color={disciplineAccents[d]} />
               ))}
-              {session ? <View style={styles.starSpacer} /> : null}
+              {/* Room for the star and share overlays, which are siblings
+                rather than children so buttons never nest. */}
+              <View style={session ? styles.overlaySpacerWide : styles.overlaySpacer} />
             </View>
           </View>
           <Text numberOfLines={1} style={styles.venue}>
@@ -163,7 +167,32 @@ export function MicCard({ mic, onPress }: Props) {
         </View>
       </PressableScale>
       <CardStar seriesId={mic.series_id} title={mic.title} />
+      <CardShare seriesId={mic.series_id} title={mic.title} />
     </View>
+  );
+}
+
+/**
+ * Sharing straight from the card: word of mouth is the growth loop, and a
+ * detail-screen detour is one screen too many for "send this to a friend".
+ * Same sibling-overlay rule as the star, so buttons never nest.
+ */
+function CardShare({ seriesId, title }: { seriesId: string; title: string }) {
+  const { session } = useSession();
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Share ${title}`}
+        hitSlop={12}
+        onPress={() => setOpen(true)}
+        style={[styles.share, session ? styles.shareBesideStar : null]}
+      >
+        <Ionicons name="share-outline" size={18} color={palette.textSecondary} />
+      </Pressable>
+      <ShareSheet seriesId={seriesId} open={open} onClose={() => setOpen(false)} />
+    </>
   );
 }
 
@@ -203,7 +232,7 @@ function CardStar({ seriesId, title }: { seriesId: string; title: string }) {
 
 const styles = StyleSheet.create({
   // Overlaid on the card's top-right corner, where the title row reserves
-  // its spot with starSpacer, so the tap targets never nest.
+  // room with the overlay spacers, so the tap targets never nest.
   star: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -214,8 +243,25 @@ const styles = StyleSheet.create({
     top: spacing.md,
     zIndex: 1,
   },
-  starSpacer: {
+  share: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 24,
+    minWidth: 24,
+    position: 'absolute',
+    right: spacing.md,
+    top: spacing.md,
+    zIndex: 1,
+  },
+  // Signed in, the star holds the corner and share sits inside it.
+  shareBesideStar: {
+    right: spacing.md + 32,
+  },
+  overlaySpacer: {
     width: 24,
+  },
+  overlaySpacerWide: {
+    width: 56,
   },
   card: {
     backgroundColor: palette.bgElevated,

@@ -44,7 +44,7 @@ import { PlanToggle } from '@/features/plans/components/plan-toggle';
 import { useSubmitClaim } from '@/features/producer/queries';
 import { DiscardPrompt } from '@/components/confirm-sheet';
 import { SignUpPrompt } from '@/features/auth/components/sign-up-prompt';
-import { shareMic } from '@/features/discovery/share';
+import { ShareSheet } from '@/features/share/components/share-sheet';
 import { ReportModal } from '@/features/safety/components/report-modal';
 import { FLAG_REASON_LABELS } from '@/features/safety/labels';
 import { SignupCard } from '@/features/signups/components/signup-card';
@@ -168,6 +168,7 @@ function MicDetail({
   const [claimOpen, setClaimOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [savePrompt, setSavePrompt] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   function openDirections() {
     if (!venue) {
@@ -233,15 +234,7 @@ function MicDetail({
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`Share ${series.title}`}
-              onPress={() =>
-                shareMic({
-                  series_id: series.id,
-                  title: series.title,
-                  venue_name: venue?.name ?? null,
-                  next_starts_at: next?.starts_at ?? null,
-                  timezone: series.timezone,
-                }).catch(() => null)
-              }
+              onPress={() => setShareOpen(true)}
               style={styles.iconTap}
             >
               <Ionicons name="share-outline" size={24} color={palette.textSecondary} />
@@ -466,6 +459,7 @@ function MicDetail({
           <Text style={styles.flagText}>Report abusive content</Text>
         </Pressable>
 
+        <ShareSheet seriesId={series.id} open={shareOpen} onClose={() => setShareOpen(false)} />
         <FlagModal seriesId={series.id} visible={flagOpen} onClose={() => setFlagOpen(false)} />
         <ClaimModal seriesId={series.id} visible={claimOpen} onClose={() => setClaimOpen(false)} />
         <ReportModal
