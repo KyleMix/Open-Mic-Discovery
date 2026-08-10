@@ -11,6 +11,16 @@ require('react-native-reanimated').setUpTests();
 // binary, so any component tree containing a map fails to even import under
 // Jest. Stub it to plain views: the tests that render the producer form are
 // about its logic, not about map rendering, which e2e covers on a device.
+// expo-media-library's shared-object base class needs a native binary and
+// throws at import time under Jest, which sinks any suite whose tree can
+// reach the share sheet. The sheet's tests care about intent and caption
+// logic; saving to the camera roll is a device concern, e2e territory.
+jest.mock('expo-media-library', () => ({
+  __esModule: true,
+  requestPermissionsAsync: jest.fn(async () => ({ granted: true })),
+  saveToLibraryAsync: jest.fn(async () => undefined),
+}));
+
 jest.mock('react-native-maps', () => {
   const React = require('react');
   const { View } = require('react-native');

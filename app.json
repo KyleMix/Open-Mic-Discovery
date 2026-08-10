@@ -188,6 +188,14 @@
         }
       ],
       [
+        "expo-media-library",
+        {
+          "photosPermission": false,
+          "savePhotosPermission": "Open Mic Explorer adds a share image to your photos only when you tap Save image. It never reads your library.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ],
+      [
         "expo-calendar",
         {
           "calendarPermission": "Open Mic Explorer adds a mic night to your calendar only when you tap Add to my calendar. It never reads your events.",
