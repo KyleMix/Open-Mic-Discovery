@@ -10,8 +10,9 @@ import { useSession } from '@/features/auth/session';
 import { formatRelativeDay } from '@/features/discovery/date-label';
 import { useEnablePerformerRole } from '@/features/profile/queries';
 import { costLabel } from '@/features/discovery/components/mic-card';
-import { spotsDetail } from '@/features/signups/capacity';
+import { drawEntrantsLabel, drawnSpotsLabel, spotsDetail } from '@/features/signups/capacity';
 import {
+  DRAW_DONE_LABEL,
   SIGNUPS_CLOSED_LABEL,
   STATUS_LABELS,
   ordinal,
@@ -183,7 +184,12 @@ export function SignupCard({
                 {mySignup.data.slot_position != null
                   ? ` (${slotLabel(mySignup.data.slot_position)})`
                   : ''}
-                . Re-signing up later puts you at the end of the list.
+                .{' '}
+                {signupMethod === 'lottery'
+                  ? ['drawn', 'waitlisted'].includes(mySignup.data.status)
+                    ? 'The draw has run, so there is no way back in for this night.'
+                    : 'You can put your name back in until the host runs the draw.'
+                  : 'Re-signing up later puts you at the end of the list.'}
               </Body>
               <Button
                 label="Yes, withdraw"
@@ -233,6 +239,8 @@ export function SignupCard({
     );
   } else if (window.state === 'closed') {
     content = <Body>{SIGNUPS_CLOSED_LABEL}</Body>;
+  } else if (signupMethod === 'lottery' && counts.data?.draw_done) {
+    content = <Body>{DRAW_DONE_LABEL}</Body>;
   } else {
     content = (
       <>
@@ -272,10 +280,20 @@ export function SignupCard({
 
   // Shown in every state, including before signups open and after they close:
   // "how full is this" is the question, and the answer does not depend on
-  // whether this particular person can act on it yet.
-  const fullness = spots.data
-    ? spotsDetail(spots.data.spots_left, spots.data.capacity, spots.data.planning_performers ?? 0)
-    : null;
+  // whether this particular person can act on it yet. A lottery answers it
+  // differently: before the draw nobody holds a spot ("12 of 12 spots
+  // left" on a 40-entrant night was misinformation), and after it the list
+  // is set rather than open to a waitlist.
+  const fullness =
+    signupMethod === 'lottery'
+      ? counts.data?.draw_done
+        ? drawnSpotsLabel(spots.data?.spots_left, spots.data?.capacity)
+        : counts.data
+          ? drawEntrantsLabel(counts.data.entrants, counts.data.capacity)
+          : null
+      : spots.data
+        ? spotsDetail(spots.data.spots_left, spots.data.capacity, spots.data.planning_performers ?? 0)
+        : null;
 
   // The terms of the room sit beside the commit button in every state:
   // nobody should have to scroll two cards down to learn the list closes

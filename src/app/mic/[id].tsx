@@ -558,6 +558,7 @@ function SignupFooter({
       window.state === 'not_yet' ? formatRelativeDay(window.opensAt.toISOString(), timezone) : null,
     taken: counts.data?.taken ?? null,
     capacity: counts.data?.capacity ?? null,
+    drawDone: counts.data?.draw_done ?? false,
   });
   if (!cta) {
     return null;

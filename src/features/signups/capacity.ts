@@ -35,6 +35,38 @@ export function spotsLabel(spotsLeft: number | null | undefined): SpotsLabel | n
   };
 }
 
+/**
+ * Lottery fullness before the draw: nobody holds a spot yet, so "12 of 12
+ * spots left" on a 40-entrant night was misinformation. The honest number
+ * is how crowded the draw is.
+ */
+export function drawEntrantsLabel(entrants: number, capacity: number | null): string | null {
+  if (entrants <= 0) {
+    return null;
+  }
+  const names = entrants === 1 ? '1 name in the draw' : `${entrants} names in the draw`;
+  if (capacity == null) {
+    return `${names}.`;
+  }
+  return `${names} for ${capacity === 1 ? '1 spot' : `${capacity} spots`}.`;
+}
+
+/**
+ * Lottery fullness after the draw. The first-come wording invites the
+ * waitlist; a run draw refuses new entries, so this one does not.
+ */
+export function drawnSpotsLabel(
+  spotsLeft: number | null | undefined,
+  capacity: number | null | undefined,
+): string | null {
+  if (spotsLeft == null || capacity == null) {
+    return null;
+  }
+  return spotsLeft <= 0
+    ? `The list is set: all ${capacity} spots went in the draw.`
+    : `${spotsLeft} of ${capacity} spots still open after the draw.`;
+}
+
 /** The longer form for the mic page, where there is room for the whole story. */
 export function spotsDetail(
   spotsLeft: number | null | undefined,

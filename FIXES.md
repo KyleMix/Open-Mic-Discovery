@@ -18,7 +18,7 @@ Status: `pending`, `in progress`, `done <commit>`, `logged only` (console-side o
 | # | Finding | Files | Change | Status |
 | - | ------- | ----- | ------ | ------ |
 | 1 | Walk-in reorder/redraw fails permanently (slot-move trigger inserts null profile_id) | supabase/migrations | Null guard in queue_slot_move_notification + pgTAP (walk-in-slot-moves.test.sql) | done 33fd7e9 |
-| 2 | Post-draw entrants stuck "In the draw"; draw allowed while window open | supabase/migrations, signups feature | Draw closes signups for the night (server side done: lifecycle refusal with named reason, post-draw walk-ins land via confirm-or-waitlist, draw guarded to lottery/scheduled, signup_counts reports entrants and draw_done); client card work tracked with items 13 and 17 | in progress |
+| 2 | Post-draw entrants stuck "In the draw"; draw allowed while window open | supabase/migrations, signups feature | Draw closes signups for the night: server (c05771e) and client card/footer drawn states | done |
 | 3 | Mic page swaps to next week at showtime; slot/on-deck vanish | src/features/discovery/queries.ts, src/app/mic/[id].tsx | Include in-progress occurrence (4h trailing cutoff matching the Going tab) and skip completed nights; nextOccurrence helper + tests | done f77d7c7 |
 | 4 | Offline: error branch hides persisted cache; AuthGate replaces app with error screen | src/lib/query-client.ts, src/app/_layout.tsx, tab screens, mic/[id] | Branch on error-and-no-data (six screens); gate blocks only when nothing cached and lets a failed EULA check through; banner mounted globally; onlineManager/focusManager wired to expo-network/AppState | done 0190d46 |
 | 5 | Cold-start deep link has no back stack or tabs | src/app/_layout.tsx | unstable_settings anchor (tabs) | done 686f338 |
@@ -32,13 +32,13 @@ Status: `pending`, `in progress`, `done <commit>`, `logged only` (console-side o
 
 | # | Finding | Change | Status |
 | - | ------- | ------ | ------ |
-| 11 | Join 42501 blanket-mapped to "not open" | Distinguish causes; honest copy with support path | pending |
+| 11 | Join 42501 blanket-mapped to "not open" | Join 42501 now passes the draw contract message through and names both remaining causes with a support pointer | done |
 | 12 | Sanctions never surfaced in app | Sanction banner with reason/expiry | pending |
-| 13 | Lottery spots-left misinformation pre/post draw | Entrant count in counts RPC; per-method copy | pending |
+| 13 | Lottery spots-left misinformation pre/post draw | drawEntrantsLabel pre-draw, drawnSpotsLabel post-draw, first-come copy unchanged; footer gets drawDone | done |
 | 14 | Spots/counts never update live on mic page | Occurrence-scoped realtime + invalidate spots/counts | pending |
 | 15 | Roster misses withdrawals (replica identity) | alter table signups replica identity full | pending |
 | 16 | Live screen says nobody signed up on undrawn lottery | Count requested rows; link to draw | pending |
-| 17 | Withdraw Undo post-draw limbo + wrong copy | Branch copy/behavior once draw ran | pending |
+| 17 | Withdraw Undo post-draw limbo + wrong copy | Withdraw confirm copy branches by method and draw state; undo rejoin explains a draw that ran in the meantime | done |
 | 18 | Series delete/unapprove silently erases Going entries | Cancel future occurrences on delete/unapprove (migration) | pending |
 | 19 | Start-time change never notifies signed-up performers | starts_at-change notification trigger (migration) | pending |
 | 20 | Cancelled next night invisible on cards | Surface next_status through search_discover + card strike | pending |

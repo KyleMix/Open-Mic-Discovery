@@ -60,6 +60,9 @@ export function signupsOpenLabel(opensLabel: string): string {
 export const SIGNUPS_CLOSED_LABEL =
   'Signups are closed. Walk-ups may still be possible at the venue.';
 
+/** A run draw closes the night (20260810000500); the card and footer both say so. */
+export const DRAW_DONE_LABEL = 'The draw for this night has run, so signups are closed.';
+
 export function spotsTakenLabel(taken: number, capacity: number | null): string {
   if (capacity == null) {
     return taken === 1 ? '1 signed up so far' : `${taken} signed up so far`;

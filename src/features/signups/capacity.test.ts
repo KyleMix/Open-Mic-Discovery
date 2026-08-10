@@ -1,4 +1,4 @@
-import { spotsDetail, spotsLabel } from './capacity';
+import { drawEntrantsLabel, drawnSpotsLabel, spotsDetail, spotsLabel } from './capacity';
 
 describe('how full a night reads', () => {
   it('counts down as people take spots', () => {
@@ -57,5 +57,25 @@ describe('the longer form on the mic page', () => {
   it('says nothing without a cap to count against', () => {
     expect(spotsDetail(null, 20)).toBeNull();
     expect(spotsDetail(4, null)).toBeNull();
+  });
+});
+
+describe('drawEntrantsLabel', () => {
+  it('counts the draw instead of pretending spots are open', () => {
+    expect(drawEntrantsLabel(40, 12)).toBe('40 names in the draw for 12 spots.');
+    expect(drawEntrantsLabel(1, 1)).toBe('1 name in the draw for 1 spot.');
+  });
+
+  it('says nothing when the draw is empty or uncapped nights lack a number', () => {
+    expect(drawEntrantsLabel(0, 12)).toBeNull();
+    expect(drawEntrantsLabel(3, null)).toBe('3 names in the draw.');
+  });
+});
+
+describe('drawnSpotsLabel', () => {
+  it('marks the list as set without inviting a waitlist', () => {
+    expect(drawnSpotsLabel(0, 12)).toBe('The list is set: all 12 spots went in the draw.');
+    expect(drawnSpotsLabel(4, 12)).toBe('4 of 12 spots still open after the draw.');
+    expect(drawnSpotsLabel(null, 12)).toBeNull();
   });
 });

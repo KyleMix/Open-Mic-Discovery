@@ -1,5 +1,6 @@
 import {
   CTA_LABELS,
+  DRAW_DONE_LABEL,
   ENABLE_PERFORMING_DETAIL,
   SIGNUPS_CLOSED_LABEL,
   signupsOpenLabel,
@@ -36,6 +37,8 @@ type Input = {
   /** Taken-versus-capacity, when known. */
   taken: number | null;
   capacity: number | null;
+  /** True once a lottery night's draw has run; the night takes no entries. */
+  drawDone: boolean;
 };
 
 /**
@@ -78,6 +81,9 @@ export function signupCta(input: Input): SignupCta {
   }
   if (input.windowState === 'closed') {
     return { kind: 'status', label: SIGNUPS_CLOSED_LABEL };
+  }
+  if (input.signupMethod === 'lottery' && input.drawDone) {
+    return { kind: 'status', label: DRAW_DONE_LABEL };
   }
   const detail =
     input.taken != null && input.signupMethod !== 'lottery'

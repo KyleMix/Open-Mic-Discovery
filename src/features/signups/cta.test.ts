@@ -12,9 +12,21 @@ const base = {
   opensLabel: 'This Friday',
   taken: null,
   capacity: null,
+  drawDone: false,
 } as const;
 
 describe('signupCta', () => {
+  it('closes a lottery once the draw has run', () => {
+    expect(signupCta({ ...base, signupMethod: 'lottery', drawDone: true })).toEqual({
+      kind: 'status',
+      label: 'The draw for this night has run, so signups are closed.',
+    });
+    // An entrant still sees their own status, not the closed notice.
+    expect(
+      signupCta({ ...base, signupMethod: 'lottery', drawDone: true, myStatus: 'drawn', mySlot: 2 }),
+    ).toEqual({ kind: 'status', label: 'Drawn: on the list · Slot 2' });
+  });
+
   it('offers the join action when the window is open', () => {
     expect(signupCta({ ...base })).toEqual({
       kind: 'join',

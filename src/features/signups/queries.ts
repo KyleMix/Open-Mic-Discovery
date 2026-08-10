@@ -7,7 +7,7 @@ import { registerPushToken } from '@/lib/notifications';
 import { uniqueChannelTopic } from '@/lib/realtime';
 import { getSupabase } from '@/lib/supabase';
 import { JOIN_LIST_MUTATION_KEY } from '@/features/signups/join-key';
-import { statusWithSlot } from '@/features/signups/labels';
+import { DRAW_DONE_LABEL, statusWithSlot } from '@/features/signups/labels';
 import { userError } from '@/lib/user-error';
 import type { Database } from '@/types/database.types';
 
@@ -167,7 +167,17 @@ export function useJoinList() {
         .single();
       if (error) {
         if (error.code === '42501') {
-          throw new Error('Signups are not open for this night.');
+          // The lifecycle trigger names one refusal in its message (the
+          // draw-closes-signups contract from 20260810000500); a bare RLS
+          // refusal names nothing, and it has more than one cause: window
+          // closed, sanctioned account, blocked by the host. Claiming
+          // "not open" for all of them told a blocked performer to come
+          // back later, forever.
+          throw new Error(
+            error.message?.includes('draw for this night has already run')
+              ? DRAW_DONE_LABEL
+              : 'You cannot sign up for this night. The window may have closed, or this account may not be able to sign up here. If that seems wrong, reach support from Settings.',
+          );
         }
         if (error.code === '23505') {
           throw new Error('You are already on this list.');
@@ -215,7 +225,11 @@ export function useWithdraw() {
     if (error && error.code !== '23505') {
       const friendly =
         error.code === '42501'
-          ? new Error('Could not put you back on: signups closed for this night.')
+          ? new Error(
+              error.message?.includes('draw for this night has already run')
+                ? 'Could not put you back on: the draw ran in the meantime.'
+                : 'Could not put you back on: signups closed for this night.',
+            )
           : userError(error, 'Could not put you back on the list. Try again from the mic page.');
       toast.show(friendly.message);
       return;
