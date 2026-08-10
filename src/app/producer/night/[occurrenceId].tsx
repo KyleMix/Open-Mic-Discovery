@@ -37,6 +37,7 @@ import { ReportModal } from '@/features/safety/components/report-modal';
 import { ROSTER_STATUS_LABELS } from '@/features/signups/labels';
 import {
   useAddWalkIn,
+  useRemoveWalkIn,
   useDrawLottery,
   useMarkOnDeck,
   useRoster,
@@ -63,6 +64,7 @@ export default function NightScreen() {
   const setStatus = useSetSignupStatus();
   const onDeck = useMarkOnDeck();
   const addWalkIn = useAddWalkIn();
+  const removeWalkIn = useRemoveWalkIn();
   const [walkInName, setWalkInName] = useState('');
 
   // Visible randomization: shuffle names on screen while the server draws.
@@ -319,7 +321,21 @@ export default function NightScreen() {
                       icon="flag-outline"
                       onPress={() => setReporting(row)}
                     />
-                  ) : null}
+                  ) : (
+                    // Walk-ins are host-typed, so a mistyped door name needs
+                    // a way off the list; account holders withdraw
+                    // themselves.
+                    <IconAction
+                      label={`Remove ${row.guest_name ?? 'this walk-in'} from the list`}
+                      icon="trash-outline"
+                      color={palette.danger}
+                      onPress={() => {
+                        if (row.id != null) {
+                          removeWalkIn.mutate(row.id);
+                        }
+                      }}
+                    />
+                  )}
                 </View>
               ) : row.status === 'performed' || row.status === 'no_show' ? (
                 <IconAction
@@ -360,6 +376,13 @@ export default function NightScreen() {
         {addWalkIn.isError ? (
           <ErrorText>
             {addWalkIn.error instanceof Error ? addWalkIn.error.message : 'Could not add them.'}
+          </ErrorText>
+        ) : null}
+        {removeWalkIn.isError ? (
+          <ErrorText>
+            {removeWalkIn.error instanceof Error
+              ? removeWalkIn.error.message
+              : 'Could not remove them from the list. Try again.'}
           </ErrorText>
         ) : null}
 

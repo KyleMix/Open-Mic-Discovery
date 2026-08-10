@@ -57,11 +57,11 @@ Status: `pending`, `in progress`, `done <commit>`, `logged only` (console-side o
 | 33 | No AppState auth refresh wiring; refresh failure unhandled | Auth refresh follows AppState (start/stop on foreground); session loss now lands on real guest states everywhere (items 8/34) | done |
 | 34 | Guest deep links spin forever on admin/test-kit/edit-profile; test-kit headerless | test-kit and admin check session before the forever-pending profile query; test-kit renders its header in every branch; edit-profile gets a guest state | done |
 | 35 | No +not-found route | Styled +not-found.tsx with an escape to Discover | done |
-| 36 | Association-file placeholder values pass the guard tests | Tests reject TODO placeholders (deploy step remains owner's) | pending |
-| 37 | Map showsUserLocation fires OS prompt out of context | Gate on granted permission | pending |
-| 38 | Failed headcounts render as zeros | "count unavailable" on error | pending |
-| 39 | Producer role off with live listings silent; role updates lack zero-row checks | Warn when owning series; zero-row checks | pending |
-| 40 | Walk-in cannot be removed | Wire useRemoveWalkIn to roster row | pending |
+| 36 | Association-file placeholder values pass the guard tests | Linking test warns loudly on the TODO placeholders and asserts real-value format once filled; deploy remains an owner step | done |
+| 37 | Map showsUserLocation fires OS prompt out of context | Map draws the blue dot only when permission already exists; no implicit OS prompt | done |
+| 38 | Failed headcounts render as zeros | Night rows say "Headcount unavailable right now" on a failed count | done |
+| 39 | Producer role off with live listings silent; role updates lack zero-row checks | Inline warning when hosting is toggled off over live listings; zero-row checks on both role updates | done |
+| 40 | Walk-in cannot be removed | Trash control on walk-in rows with rendered errors | done |
 | 41 | Draw the lottery vs Name draw; hardcoded CTA; host vs producer | Name draw everywhere; CTA_LABELS; host wins (gate) | pending |
 
 ## P2

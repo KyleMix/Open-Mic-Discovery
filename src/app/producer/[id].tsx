@@ -406,6 +406,10 @@ export default function ManageSeriesScreen() {
                   <Text style={styles.cancelledNote}>
                     Cancelled{occ.cancellation_note ? `: ${occ.cancellation_note}` : ''}
                   </Text>
+                ) : attendance.isError ? (
+                  // A failed count is not "nobody is coming"; a host reads
+                  // zeros as permission to stay home.
+                  <Text style={styles.nightCount}>Headcount unavailable right now</Text>
                 ) : (
                   <Text style={styles.nightCount}>
                     {attendanceSummary(

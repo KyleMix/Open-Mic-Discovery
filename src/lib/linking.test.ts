@@ -79,4 +79,32 @@ describe('deep link configuration', () => {
     expect(link.target.package_name).toBe(appJson.expo.android.package);
     expect(link.target.sha256_cert_fingerprints.length).toBeGreaterThan(0);
   });
+
+  // The association files ship with TODO placeholders until the owner has
+  // the Apple Team ID and Play signing fingerprint (docs/DEPLOY_WEB.md).
+  // The suite used to pass silently on the placeholders, which read as
+  // "universal links verified" when every shared link was falling back to
+  // the web. This warns loudly while they remain, and once real values
+  // land it starts asserting their format so a typo cannot pass either.
+  it('does not mistake the deploy placeholders for working universal links', () => {
+    const appId = aasa.applinks.details[0]?.appIDs[0] ?? '';
+    const prints = assetLinks[0]?.target.sha256_cert_fingerprints ?? [];
+    const placeholders = [
+      appId.startsWith('TODO') ? 'apple-app-site-association TODO_TEAM_ID' : null,
+      prints.some((f) => f.startsWith('TODO')) ? 'assetlinks.json TODO fingerprint' : null,
+    ].filter(Boolean);
+    if (placeholders.length > 0) {
+      console.warn(
+        `Universal links are DEAD until these deploy with real values: ${placeholders.join(
+          ', ',
+        )}. See docs/DEPLOY_WEB.md.`,
+      );
+    }
+    if (!appId.startsWith('TODO')) {
+      expect(appId).toMatch(/^[A-Z0-9]{10}\.com\.openmicexplorer\.app$/);
+    }
+    for (const f of prints.filter((x) => !x.startsWith('TODO'))) {
+      expect(f).toMatch(/^([0-9A-F]{2}:){31}[0-9A-F]{2}$/);
+    }
+  });
 });

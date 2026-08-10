@@ -19,6 +19,7 @@ import {
 } from '@/components/ui';
 import { validateDisplayName, validateRoles } from '@/features/auth/validation';
 import { useOwnProfile, usePerformerDisciplines } from '@/features/auth/queries';
+import { useMySeries } from '@/features/producer/queries';
 import { useSession } from '@/features/auth/session';
 import { AvatarCircle } from '@/features/profile/avatar-circle';
 import { pickAndUploadAvatar } from '@/features/profile/avatar';
@@ -105,6 +106,9 @@ function EditProfileForm({
   const toast = useToast();
   const update = useUpdateProfile(userId);
   const updateRoles = useUpdateRoles(userId);
+  // Only consulted for the warning below; hosts rarely mean to abandon
+  // live listings by flipping a toggle.
+  const mySeries = useMySeries(userId);
 
   const [isPerformer, setIsPerformer] = useState(profile.is_performer);
   const [isProducer, setIsProducer] = useState(profile.is_producer);
@@ -297,6 +301,13 @@ function EditProfileForm({
           value={isProducer}
           onToggle={setIsProducer}
         />
+        {!isProducer && profile.is_producer && (mySeries.data?.length ?? 0) > 0 ? (
+          <Body>
+            You still run {mySeries.data!.length === 1 ? 'a mic' : `${mySeries.data!.length} mics`}.
+            Turning this off hides them from you, but they stay live for everyone else until you
+            pause them from My Mics first.
+          </Body>
+        ) : null}
         {errors.roles ? <ErrorText>{errors.roles}</ErrorText> : null}
         {isPerformer ? (
           <>

@@ -1,5 +1,6 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import * as Location from 'expo-location';
 import MapView, { Marker, type Region } from 'react-native-maps';
 import Supercluster from 'supercluster';
 
@@ -34,6 +35,24 @@ function regionToZoom(region: Region): number {
  * accent and glyph; mixed-discipline mics render neutral with a layered dot.
  */
 export function MicMap({ mics, center, onSelect }: Props) {
+  // showsUserLocation makes the OS fire its permission prompt by itself,
+  // which broke the app's in-context-ask posture (the prompt is supposed to
+  // follow the deliberate locate tap and its explanation). Check quietly
+  // and only draw the blue dot when permission already exists.
+  const [locationGranted, setLocationGranted] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    Location.getForegroundPermissionsAsync()
+      .then((p) => {
+        if (!cancelled) {
+          setLocationGranted(p.status === 'granted');
+        }
+      })
+      .catch(() => null);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const mapRef = useRef<MapView>(null);
   const [region, setRegion] = useState<Region>({
     latitude: center.lat,
@@ -80,7 +99,7 @@ export function MicMap({ mics, center, onSelect }: Props) {
       style={StyleSheet.absoluteFill}
       initialRegion={region}
       onRegionChangeComplete={setRegion}
-      showsUserLocation
+      showsUserLocation={locationGranted}
       showsMyLocationButton={false}
       toolbarEnabled={false}
       accessibilityLabel="Map of open mics"

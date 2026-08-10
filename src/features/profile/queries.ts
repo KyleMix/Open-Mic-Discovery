@@ -61,12 +61,19 @@ export function useEnablePerformerRole() {
   return useMutation({
     mutationFn: async (userId: string) => {
       const supabase = getSupabase();
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .update({ is_performer: true })
-        .eq('id', userId);
+        .eq('id', userId)
+        .select('id');
       if (error) {
         throw userError(error, 'Could not turn on performing. Try again.');
+      }
+      // A refused update comes back as zero rows, not an error; without
+      // this the button spun, settled, and the card still said the role
+      // was missing, forever.
+      if (!data || data.length === 0) {
+        throw new Error('Could not turn on performing for this account.');
       }
       const { error: ppError } = await supabase
         .from('performer_profiles')
@@ -97,12 +104,16 @@ export function useUpdateRoles(userId: string | undefined) {
         throw new Error('Not signed in.');
       }
       const supabase = getSupabase();
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .update({ is_performer: isPerformer, is_producer: isProducer })
-        .eq('id', userId);
+        .eq('id', userId)
+        .select('id');
       if (error) {
         throw userError(error, 'Could not update your roles. Try again.');
+      }
+      if (!data || data.length === 0) {
+        throw new Error('Could not update your roles. You may need to sign in again.');
       }
       if (isPerformer) {
         const { error: ppError } = await supabase
