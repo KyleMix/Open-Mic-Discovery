@@ -5,7 +5,7 @@
  * raising. A refused update therefore comes back as `{ error: null }`, byte
  * identical to one that changed a row. Every update in this app asks for the
  * affected ids back and treats an empty set as a refusal; these tests hold
- * all eight sites to that.
+ * every such site to that.
  *
  * The assertion is on what the mutation does (reject, with a message a person
  * can read) rather than on how the query builder was chained, so it stays
@@ -16,8 +16,10 @@ import { act, renderHook } from '@testing-library/react-native';
 
 import { useUpdateProfile } from '@/features/profile/queries';
 import {
+  useCancelNight,
   useConfirmSeries,
   useEnableProducerRole,
+  usePauseSeries,
   useUpdateOccurrence,
   useUpdateSeries,
 } from '@/features/producer/queries';
@@ -78,6 +80,27 @@ const WRITE_SITES: WriteCase[] = [
         seriesId: 'series-1',
         patch: { status: 'cancelled', cancellation_note: 'Venue closed tonight.' },
       });
+    },
+  },
+  {
+    name: 'useCancelNight',
+    refusedMessage: 'Could not cancel this night. You may no longer manage this mic.',
+    invoke: async (wrapper) => {
+      const { result } = await renderHook(() => useCancelNight(), { wrapper });
+      return result.current.mutateAsync({
+        occurrenceId: 'occurrence-1',
+        seriesId: 'series-1',
+        note: null,
+        dateLabel: 'Tonight',
+      });
+    },
+  },
+  {
+    name: 'usePauseSeries',
+    refusedMessage: 'Could not pause this listing. You may no longer manage this mic.',
+    invoke: async (wrapper) => {
+      const { result } = await renderHook(() => usePauseSeries(), { wrapper });
+      return result.current.mutateAsync('series-1');
     },
   },
   {

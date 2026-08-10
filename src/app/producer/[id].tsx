@@ -122,7 +122,9 @@ export default function ManageSeriesScreen() {
     try {
       const url = await pickAndUploadPoster(session.user.id, series.id);
       if (url) {
-        updateSeries.mutate({ seriesId: series.id, patch: { poster_url: url } });
+        // Awaited so a refused database write lands in posterError instead
+        // of the poster looking uploaded and silently never attaching.
+        await updateSeries.mutateAsync({ seriesId: series.id, patch: { poster_url: url } });
       }
     } catch (e) {
       setPosterError(e instanceof Error ? e.message : 'Could not upload the poster. Try again.');
@@ -272,6 +274,20 @@ export default function ManageSeriesScreen() {
             />
           </View>
         </View>
+        {pauseSeries.isError ? (
+          <ErrorText>
+            {pauseSeries.error instanceof Error
+              ? pauseSeries.error.message
+              : 'Could not pause the listing. Try again.'}
+          </ErrorText>
+        ) : null}
+        {updateSeries.isError && !editing ? (
+          <ErrorText>
+            {updateSeries.error instanceof Error
+              ? updateSeries.error.message
+              : 'Could not save the changes. Try again.'}
+          </ErrorText>
+        ) : null}
 
         <Text style={styles.sectionTitle}>Lineup</Text>
         <Button
@@ -339,6 +355,13 @@ export default function ManageSeriesScreen() {
         ) : null}
 
         <Text style={styles.sectionTitle}>Upcoming nights</Text>
+        {updateOccurrence.isError ? (
+          <ErrorText>
+            {updateOccurrence.error instanceof Error
+              ? updateOccurrence.error.message
+              : 'Could not save that night. Try again.'}
+          </ErrorText>
+        ) : null}
         {occurrences.isPending ? (
           <Body>Loading nights...</Body>
         ) : occurrences.isError ? (

@@ -131,14 +131,17 @@ export function useCancelNight() {
   const toast = useToast();
 
   async function restore(occurrenceId: string, seriesId: string): Promise<void> {
-    const { error } = await getSupabase()
+    const { data, error } = await getSupabase()
       .from('mic_occurrences')
       .update({ status: 'scheduled', cancellation_note: null })
       .eq('id', occurrenceId)
-      .eq('status', 'cancelled');
-    if (error) {
+      .eq('status', 'cancelled')
+      .select('id');
+    if (error || !data || data.length === 0) {
       toast.show(
-        userError(error, 'Could not restore the night. Check it on the Manage screen.').message,
+        error
+          ? userError(error, 'Could not restore the night. Check it on the Manage screen.').message
+          : 'Could not restore the night. Check it on the Manage screen.',
       );
       return;
     }
@@ -158,12 +161,19 @@ export function useCancelNight() {
       /** Already-formatted night name for the toast, e.g. "Tonight". */
       dateLabel: string;
     }) => {
-      const { error } = await getSupabase()
+      const { data, error } = await getSupabase()
         .from('mic_occurrences')
         .update({ status: 'cancelled', cancellation_note: note })
-        .eq('id', occurrenceId);
+        .eq('id', occurrenceId)
+        .select('id');
       if (error) {
         throw userError(error, 'Could not cancel that night. Try again.');
+      }
+      // RLS filters a refused update to zero rows without an error. Without
+      // this check a host who no longer manages the mic (or is sanctioned)
+      // got a confident receipt naming notifications that were never sent.
+      if (!data || data.length === 0) {
+        throw new Error('Could not cancel this night. You may no longer manage this mic.');
       }
       return seriesId;
     },
@@ -189,12 +199,17 @@ export function usePauseSeries() {
   const toast = useToast();
 
   async function resume(seriesId: string): Promise<void> {
-    const { error } = await getSupabase()
+    const { data, error } = await getSupabase()
       .from('mic_series')
       .update({ is_active: true })
-      .eq('id', seriesId);
-    if (error) {
-      toast.show(userError(error, 'Could not resume the listing. Try again from My Mics.').message);
+      .eq('id', seriesId)
+      .select('id');
+    if (error || !data || data.length === 0) {
+      toast.show(
+        error
+          ? userError(error, 'Could not resume the listing. Try again from My Mics.').message
+          : 'Could not resume the listing. Try again from My Mics.',
+      );
       return;
     }
     invalidate(seriesId);
@@ -203,12 +218,18 @@ export function usePauseSeries() {
 
   return useMutation({
     mutationFn: async (seriesId: string) => {
-      const { error } = await getSupabase()
+      const { data, error } = await getSupabase()
         .from('mic_series')
         .update({ is_active: false })
-        .eq('id', seriesId);
+        .eq('id', seriesId)
+        .select('id');
       if (error) {
         throw userError(error, 'Could not pause the listing. Try again.');
+      }
+      // Same zero-row rule as useUpdateSeries: a silently filtered update
+      // must not produce a "Listing paused" receipt.
+      if (!data || data.length === 0) {
+        throw new Error('Could not pause this listing. You may no longer manage this mic.');
       }
     },
     onSuccess: (_d, seriesId) => {
