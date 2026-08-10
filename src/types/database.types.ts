@@ -3132,6 +3132,7 @@ export type Database = {
           disciplines: Database['public']['Enums']['discipline'][];
           distance_m: number;
           featured_name: string;
+          host_name: string;
           is_active: boolean;
           last_confirmed_at: string;
           lat: number;

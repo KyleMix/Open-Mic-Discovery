@@ -66,6 +66,8 @@ export type MicCardMic = {
   poster_url: string | null;
   /** Guest on the next night, if the producer named one. */
   featured_name: string | null;
+  /** Host credit for the next night; null when nobody is credited. */
+  host_name: string | null;
   /** Spots left on the next night; null when the host set no cap. */
   spots_left: number | null;
 };
@@ -95,6 +97,8 @@ export function MicCard({ mic, onPress }: Props) {
       <PressableScale
         accessibilityRole="button"
         accessibilityLabel={`${mic.title} at ${mic.venue_name}. ${when}. ${
+          mic.featured_name ? `Featuring ${mic.featured_name}. ` : ''
+        }${mic.host_name ? `Hosted by ${mic.host_name}. ` : ''}${
           SIGNUP_METHOD_LABELS[mic.signup_method]
         }. ${costLabel(mic.cost_cents)}. ${fresh.label}.`}
         onPress={onPress}
@@ -139,6 +143,11 @@ export function MicCard({ mic, onPress }: Props) {
           {mic.featured_name ? (
             <Text numberOfLines={1} style={styles.featured}>
               Featuring {mic.featured_name}
+            </Text>
+          ) : null}
+          {mic.host_name ? (
+            <Text numberOfLines={1} style={styles.host}>
+              Hosted by {mic.host_name}
             </Text>
           ) : null}
           <View style={styles.metaRow}>
@@ -318,6 +327,10 @@ const styles = StyleSheet.create({
   featured: {
     color: disciplineAccents.music,
     fontFamily: fonts.medium,
+    fontSize: type.caption.fontSize,
+  },
+  host: {
+    color: palette.textSecondary,
     fontSize: type.caption.fontSize,
   },
   metaRow: {

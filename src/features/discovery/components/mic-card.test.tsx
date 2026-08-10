@@ -54,6 +54,7 @@ const SEARCH_ROW: DiscoverResult = {
   next_status: null as unknown as DiscoverResult['next_status'],
   poster_url: null as unknown as string,
   featured_name: null as unknown as string,
+  host_name: null as unknown as string,
   capacity: null as unknown as number,
   spots_left: null as unknown as number,
   owner_id: null as unknown as string,
@@ -93,5 +94,29 @@ describe('MicCard from a search result', () => {
   it('and says nothing at all when it does not', async () => {
     await renderCard(<MicCard mic={SEARCH_ROW} onPress={jest.fn()} />);
     expect(screen.queryByText(/Featuring/)).toBeNull();
+  });
+
+  it('names the host when the listing credits one', async () => {
+    await renderCard(
+      <MicCard mic={{ ...SEARCH_ROW, host_name: 'Maggie McCrary' }} onPress={jest.fn()} />,
+    );
+    expect(screen.getByText('Hosted by Maggie McCrary')).toBeTruthy();
+  });
+
+  it('shows no host line when nobody is credited', async () => {
+    await renderCard(<MicCard mic={SEARCH_ROW} onPress={jest.fn()} />);
+    expect(screen.queryByText(/Hosted by/)).toBeNull();
+  });
+
+  it('reads both names to screen readers along with the rest of the card', async () => {
+    await renderCard(
+      <MicCard
+        mic={{ ...SEARCH_ROW, featured_name: 'Nia Guest', host_name: 'Maggie McCrary' }}
+        onPress={jest.fn()}
+      />,
+    );
+    expect(
+      screen.getByLabelText(/Featuring Nia Guest\. Hosted by Maggie McCrary\./),
+    ).toBeTruthy();
   });
 });

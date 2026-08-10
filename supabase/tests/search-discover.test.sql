@@ -3,7 +3,7 @@
 -- seed lacks: a theater/theatre venue pair, an accented cafe, a host with
 -- a searchable surname, and a two-night-a-week mic for the day filter.
 begin;
-select plan(21);
+select plan(27);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures (as postgres; queries below run as anon).
@@ -55,6 +55,55 @@ insert into mic_series (id, venue_id, created_by, owner_id, title, disciplines,
    'a0000000-0000-4000-a000-0000000000d1', 'a0000000-0000-4000-a000-0000000000d1',
    'Torchlite Showcase', '{comedy}', 'FREQ=WEEKLY;BYDAY=TU', current_date, '21:00',
    'America/Los_Angeles', 'lottery', 0, now(), 'approved');
+
+-- Credits. Inserted as postgres, which skips the moderation guard, so the
+-- status is explicit: only approved credits may ever surface in search.
+insert into mic_credits (series_id, occurrence_id, role, profile_id, name,
+                         moderation_status, created_by) values
+  -- The cafe mic: a linked host, whose stage name must beat the typed
+  -- fallback, and a series-level featured default.
+  ('c0000000-0000-4000-c000-0000000000d2', null, 'host',
+   'a0000000-0000-4000-a000-0000000000d1', 'Typed Fallback', 'approved',
+   'a0000000-0000-4000-a000-0000000000d1'),
+  ('c0000000-0000-4000-c000-0000000000d2', null, 'featured', null,
+   'Serena Series', 'approved', 'a0000000-0000-4000-a000-0000000000d1'),
+  -- The torchlight mic: unlinked series defaults for both roles.
+  ('c0000000-0000-4000-c000-0000000000d3', null, 'host', null, 'Hank Host',
+   'approved', 'a0000000-0000-4000-a000-0000000000d1'),
+  ('c0000000-0000-4000-c000-0000000000d3', null, 'featured', null,
+   'Serena Series Three', 'approved', 'a0000000-0000-4000-a000-0000000000d1'),
+  -- The torchlite mic: a pending credit, which must never surface.
+  ('c0000000-0000-4000-c000-0000000000d4', null, 'host', null, 'Pending Host',
+   'pending', 'a0000000-0000-4000-a000-0000000000d1');
+
+-- The cafe mic's next night gets both a featured credit override and typed
+-- occurrence text, so precedence among all three featured sources is
+-- observable on one row. The night lookup mirrors the RPC's own next-night
+-- rule, start grace included, so both pick the same occurrence whatever the
+-- wall clock says.
+insert into mic_credits (series_id, occurrence_id, role, name, moderation_status, created_by)
+select 'c0000000-0000-4000-c000-0000000000d2', o.id, 'featured', 'Nova Nightly',
+       'approved', 'a0000000-0000-4000-a000-0000000000d1'
+from mic_occurrences o
+where o.series_id = 'c0000000-0000-4000-c000-0000000000d2'
+  and o.status <> 'cancelled' and o.starts_at >= now() - interval '60 minutes'
+order by o.starts_at limit 1;
+
+update mic_occurrences set featured_name = 'Tessa Typed'
+where id = (
+  select o.id from mic_occurrences o
+  where o.series_id = 'c0000000-0000-4000-c000-0000000000d2'
+    and o.status <> 'cancelled' and o.starts_at >= now() - interval '60 minutes'
+  order by o.starts_at limit 1);
+
+-- The torchlight mic's next night gets typed text only: it must beat the
+-- series-level featured credit.
+update mic_occurrences set featured_name = 'Tessa Typed Three'
+where id = (
+  select o.id from mic_occurrences o
+  where o.series_id = 'c0000000-0000-4000-c000-0000000000d3'
+    and o.status <> 'cancelled' and o.starts_at >= now() - interval '60 minutes'
+  order by o.starts_at limit 1);
 
 set local role anon;
 select set_config('request.jwt.claims', '', true);
@@ -203,6 +252,62 @@ select is(
    where o.series_id = 'c0000000-0000-4000-c000-0000000000d1'
      and o.starts_at >= now() and o.status <> 'cancelled'),
   'a cancelled night is skipped in favor of the next scheduled one'
+);
+
+-- ---------------------------------------------------------------------------
+-- Credits on the card: host and featured resolve per row.
+-- ---------------------------------------------------------------------------
+
+-- A linked host credit resolves through the profile, so the stage name wins
+-- over the typed fallback.
+select is(
+  (select host_name from search_discover(null, 47.6062, -122.3321)
+   where series_id = 'c0000000-0000-4000-c000-0000000000d2'),
+  'Maggie McCrary',
+  'a linked host credit shows the stage name on the search row'
+);
+
+-- A series-level host credit covers every night without an override.
+select is(
+  (select host_name from search_discover(null, 47.6062, -122.3321)
+   where series_id = 'c0000000-0000-4000-c000-0000000000d3'),
+  'Hank Host',
+  'a series host credit names the host on the search row'
+);
+
+-- Featured precedence, most specific first: the night credit beats both the
+-- occurrence's typed text and the series default.
+select is(
+  (select featured_name from search_discover(null, 47.6062, -122.3321)
+   where series_id = 'c0000000-0000-4000-c000-0000000000d2'),
+  'Nova Nightly',
+  'a night featured credit beats the typed text and the series default'
+);
+
+-- Typed occurrence text is per-night information, so it beats the series
+-- default credit when no night credit exists.
+select is(
+  (select featured_name from search_discover(null, 47.6062, -122.3321)
+   where series_id = 'c0000000-0000-4000-c000-0000000000d3'),
+  'Tessa Typed Three',
+  'typed featured text on the night beats the series featured credit'
+);
+
+-- A pending credit never surfaces: the row shows no host at all.
+select is(
+  (select host_name from search_discover(null, 47.6062, -122.3321)
+   where series_id = 'c0000000-0000-4000-c000-0000000000d4'),
+  null::text,
+  'a pending host credit never reaches the search row'
+);
+
+-- No credit and no typed name: both columns stay null and the card shows
+-- neither line.
+select is(
+  (select featured_name from search_discover(null, 47.6062, -122.3321)
+   where series_id = 'c0000000-0000-4000-c000-0000000000d4'),
+  null::text,
+  'a mic with no featured credit and no typed name shows nothing'
 );
 
 -- ---------------------------------------------------------------------------

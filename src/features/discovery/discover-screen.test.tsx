@@ -82,6 +82,7 @@ const ROW = {
   next_status: 'scheduled',
   poster_url: null,
   featured_name: null,
+  host_name: null,
   capacity: null,
   spots_left: null,
   owner_id: null,
