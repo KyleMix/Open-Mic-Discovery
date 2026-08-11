@@ -120,7 +120,22 @@ jobs:
           script: |
             adb install android/app/build/outputs/apk/release/app-release.apk
             adb reverse tcp:54321 tcp:54321
-            maestro test e2e/
+            # Diagnostic capture (temporary). Every flow fails with a blank
+            # screen and no router error boundary, which means the crash is
+            # above the app tree, where nothing in ~/.maestro/tests records it.
+            # Run logcat across the flows and print the crash-relevant lines to
+            # the job log so the actual startup stack is visible without
+            # downloading artifacts.
+            adb logcat -c || true
+            adb logcat > /tmp/logcat.txt 2>&1 &
+            LOGCAT_PID=$!
+            maestro test e2e/ ; MAESTRO_EXIT=$?
+            kill "$LOGCAT_PID" 2>/dev/null || true
+            echo "===== logcat: startup crash / RN lines ====="
+            grep -aE "ReactNativeJS|ReactNative |AndroidRuntime|FATAL EXCEPTION|Reanimated|[Ww]orklet|beginning of crash|com\.openmicexplorer" /tmp/logcat.txt | tail -250 || true
+            echo "===== logcat: last 80 lines (fallback) ====="
+            tail -80 /tmp/logcat.txt || true
+            exit "$MAESTRO_EXIT"
 
       - name: Run the Maestro flows on Maestro Cloud
         if: env.RUN_ON_MAESTRO_CLOUD == 'true'
