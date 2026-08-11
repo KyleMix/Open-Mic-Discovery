@@ -25,6 +25,9 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'supabase/**'
+      # The workflow re-runs when its own definition changes, so a fix to the
+      # e2e setup is validated by the e2e run on the same PR.
+      - '.github/workflows/e2e.yml'
 
 concurrency:
   group: e2e-${{ github.ref }}
@@ -66,9 +69,16 @@ jobs:
       - name: Prebuild the Android project
         run: npx expo prebuild --platform android --no-install
 
-      - name: Build the debug APK
+      # Release, not debug, on purpose. A debug APK loads its JS from a Metro
+      # dev server at launch, and CI runs none (no `expo start`, no
+      # `adb reverse tcp:8081`), so a debug build opens to the "unable to load
+      # script" screen and every Maestro flow fails at its first assertion.
+      # This is why e2e never passed. The release build embeds the JS bundle,
+      # so the APK is self-contained; Expo's prebuild signs the release variant
+      # with the debug keystore, so no signing secret is needed.
+      - name: Build the release APK
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleRelease --no-daemon
 
       - name: Install Maestro
         run: |
@@ -88,20 +98,22 @@ jobs:
         with:
           api-level: 34
           arch: x86_64
-          # 10.0.2.2 is the emulator's route to the host's local Supabase.
+          # The APK was built with the local API URL (127.0.0.1:54321, from the
+          # "Point the app at the local stack" step). EXPO_PUBLIC_* values are
+          # inlined at build time, so a runtime env override cannot change them;
+          # adb reverse routes the emulator's localhost:54321 to the host's
+          # Supabase, which is what makes the baked URL reachable.
           script: |
-            adb install android/app/build/outputs/apk/debug/app-debug.apk
+            adb install android/app/build/outputs/apk/release/app-release.apk
             adb reverse tcp:54321 tcp:54321
             maestro test e2e/
-        env:
-          EXPO_PUBLIC_SUPABASE_URL: http://10.0.2.2:54321
 
       - name: Run the Maestro flows on Maestro Cloud
         if: env.RUN_ON_MAESTRO_CLOUD == 'true'
         run: |
           maestro cloud \
             --api-key "${{ secrets.MAESTRO_CLOUD_API_KEY }}" \
-            --app-file android/app/build/outputs/apk/debug/app-debug.apk \
+            --app-file android/app/build/outputs/apk/release/app-release.apk \
             e2e/
 
       - name: Upload Maestro logs on failure

@@ -115,21 +115,25 @@ export function useUpdateRoles(userId: string | undefined) {
       if (!data || data.length === 0) {
         throw new Error('Could not update your roles. You may need to sign in again.');
       }
-      if (isPerformer) {
-        const { error: ppError } = await supabase
-          .from('performer_profiles')
-          .upsert({ profile_id: userId, disciplines }, { onConflict: 'profile_id' });
-        if (ppError) {
-          throw userError(ppError, 'Could not update your roles. Try again.');
-        }
+      // The two role upserts touch different tables and do not depend on each
+      // other, so they run together rather than as two serial round trips.
+      const [ppResult, prResult] = await Promise.all([
+        isPerformer
+          ? supabase
+              .from('performer_profiles')
+              .upsert({ profile_id: userId, disciplines }, { onConflict: 'profile_id' })
+          : Promise.resolve({ error: null }),
+        isProducer
+          ? supabase
+              .from('producer_profiles')
+              .upsert({ profile_id: userId }, { onConflict: 'profile_id', ignoreDuplicates: true })
+          : Promise.resolve({ error: null }),
+      ]);
+      if (ppResult.error) {
+        throw userError(ppResult.error, 'Could not update your roles. Try again.');
       }
-      if (isProducer) {
-        const { error: prError } = await supabase
-          .from('producer_profiles')
-          .upsert({ profile_id: userId }, { onConflict: 'profile_id', ignoreDuplicates: true });
-        if (prError) {
-          throw userError(prError, 'Could not update your roles. Try again.');
-        }
+      if (prResult.error) {
+        throw userError(prResult.error, 'Could not update your roles. Try again.');
       }
     },
     onSuccess: () => {

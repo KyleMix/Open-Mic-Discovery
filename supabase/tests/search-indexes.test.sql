@@ -4,7 +4,7 @@
 -- answer. These assertions pin the trigram indexes that make it answerable,
 -- and pin the behaviour that must not have changed when they were added.
 begin;
-select plan(9);
+select plan(12);
 
 select is(
   (select count(*)::int from pg_extension where extname = 'pg_trgm'),
@@ -34,6 +34,25 @@ select ok(pg_temp.is_trgm_gin('venues_name_trgm'),
   'venues.name has a trigram GIN index');
 select ok(pg_temp.is_trgm_gin('venues_city_trgm'),
   'venues.city has a trigram GIN index');
+
+-- People search (20260811000400). handle is a citext unique btree a leading
+-- wildcard cannot use, and stage_name had no index at all, so both people
+-- screens seq scanned profiles. Same trigram-GIN requirement as above.
+select ok(pg_temp.is_trgm_gin('profiles_handle_trgm'),
+  'profiles.handle has a trigram GIN index');
+select ok(pg_temp.is_trgm_gin('profiles_stage_name_trgm'),
+  'profiles.stage_name has a trigram GIN index');
+
+-- The moderation-queue partial indexes exist and are partial (a full-table
+-- index would work but defeats the point of a tiny pending-only index).
+select ok(
+  (select count(*)::int from pg_class i
+     join pg_index x on x.indexrelid = i.oid
+    where i.relname in ('profiles_pending_idx', 'venues_pending_idx',
+                        'mic_series_pending_idx', 'mic_credits_pending_idx',
+                        'listing_flags_open_idx')
+      and x.indpred is not null) = 5,
+  'the five moderation-queue reads each have a partial index');
 
 -- ---------------------------------------------------------------------------
 -- Behaviour is unchanged. The indexes were added precisely so that the query

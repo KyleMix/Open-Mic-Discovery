@@ -2,7 +2,7 @@
 -- and RLS. The search RPC has its own suite; this one proves the surface it
 -- stands on stays in step with the source tables.
 begin;
-select plan(13);
+select plan(17);
 
 -- Every seeded series has a search document (backfill ran).
 select is(
@@ -102,6 +102,45 @@ select is(
   1,
   'restoring a series restores its search document'
 );
+
+-- A hidden host's name must never ride along in search, but the series stays
+-- searchable on its own title and venue. The stage name is 'Maggie Renamed'
+-- at this point (renamed above); 'maggie' is host-only, while 'renamed' also
+-- appears in the venue name, so the host assertions query 'maggie'.
+insert into user_sanctions (user_id, type, scope, reason, created_by)
+values ('a0000000-0000-4000-a000-00000000ceca', 'banned', 'all_writes',
+        'Indexed name must vanish on a ban.', 'a0000000-0000-4000-a000-00000000ceca');
+select ok(
+  (select not (document @@ to_tsquery('simple', 'maggie'))
+   from series_search where series_id = 'c0000000-0000-4000-c000-00000000cafe'),
+  'banning the host removes their stage name from search'
+);
+select ok(
+  (select document @@ to_tsquery('simple', 'reverie')
+   from series_search where series_id = 'c0000000-0000-4000-c000-00000000cafe'),
+  'the banned host still leaves the series searchable on its title'
+);
+update user_sanctions
+   set lifted_at = now(), lifted_by = 'a0000000-0000-4000-a000-00000000ceca',
+       lift_reason = 'Appeal upheld.'
+ where user_id = 'a0000000-0000-4000-a000-00000000ceca' and type = 'banned';
+select ok(
+  (select document @@ to_tsquery('simple', 'maggie')
+   from series_search where series_id = 'c0000000-0000-4000-c000-00000000cafe'),
+  'lifting the ban restores the host name to search'
+);
+
+-- A rejected host is hidden the same way, and now resyncs on the status change.
+update profiles set moderation_status = 'rejected'
+ where id = 'a0000000-0000-4000-a000-00000000ceca';
+select ok(
+  (select not (document @@ to_tsquery('simple', 'maggie'))
+   from series_search where series_id = 'c0000000-0000-4000-c000-00000000cafe'),
+  'a rejected host name is not searchable'
+);
+update profiles set moderation_status = 'approved'
+ where id = 'a0000000-0000-4000-a000-00000000ceca';
+
 set local role anon;
 select set_config('request.jwt.claims', '', true);
 select cmp_ok(
@@ -110,14 +149,18 @@ select cmp_ok(
 );
 reset role;
 
--- Writes are trigger-only: no API role may modify the table directly.
+-- Writes are trigger-only: no API role may modify the table directly. The
+-- write grant was revoked from anon and authenticated (20260811000300), so the
+-- denial now comes from the missing privilege, ahead of RLS: series_search has
+-- no write policy at all, and every real write is a SECURITY DEFINER sync
+-- function.
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', 'a0000000-0000-4000-a000-00000000ceca', 'role', 'authenticated')::text, true);
 select throws_ok(
   $$ insert into series_search (series_id, document, fuzzy)
      values ('c0000000-0000-4000-c000-00000000cafe', to_tsvector('x'), 'x') $$,
   '42501',
-  'new row violates row-level security policy for table "series_search"',
+  'permission denied for table series_search',
   'authenticated cannot write search documents directly'
 );
 reset role;

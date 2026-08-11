@@ -41,7 +41,31 @@ export function usePerformerDisciplines(userId: string | undefined) {
   });
 }
 
-/** The newest EULA text, needed for the acceptance gate. */
+/**
+ * The newest EULA version string only. This is all the acceptance gate needs
+ * (it compares the profile's accepted version to the latest), and it runs on
+ * every cold start, so it deliberately does not pull body_md: that markdown
+ * is a few kilobytes read only when the terms screen is actually shown.
+ */
+export function useLatestEulaVersion() {
+  return useQuery({
+    queryKey: ['eula', 'latest', 'version'],
+    queryFn: async () => {
+      const { data, error } = await getSupabase()
+        .from('eula_versions')
+        .select('version')
+        .order('published_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) {
+        throw userError(error, 'Could not load the terms. Check your connection and try again.');
+      }
+      return data;
+    },
+  });
+}
+
+/** The newest EULA text, including the body markdown for the terms screen. */
 export function useLatestEula() {
   return useQuery({
     queryKey: ['eula', 'latest'],

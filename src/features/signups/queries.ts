@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 
 import { useToast } from '@/components/toast';
 import { registerPushToken } from '@/lib/notifications';
+import { timed } from '@/lib/query-timing';
 import { uniqueChannelTopic } from '@/lib/realtime';
 import { getSupabase } from '@/lib/supabase';
 import { JOIN_LIST_MUTATION_KEY } from '@/features/signups/join-key';
@@ -273,12 +274,14 @@ export function useRoster(occurrenceId: string | undefined) {
     queryKey: ['signup', 'roster', occurrenceId],
     enabled: !!occurrenceId,
     queryFn: async (): Promise<RosterRow[]> => {
-      const { data, error } = await getSupabase()
-        .from('signup_roster')
-        .select('*')
-        .eq('occurrence_id', occurrenceId!)
-        .order('slot_position', { ascending: true, nullsFirst: false })
-        .order('created_at');
+      const { data, error } = await timed('signups:roster', () =>
+        getSupabase()
+          .from('signup_roster')
+          .select('*')
+          .eq('occurrence_id', occurrenceId!)
+          .order('slot_position', { ascending: true, nullsFirst: false })
+          .order('created_at'),
+      );
       if (error) {
         throw userError(error, 'Could not load the list. Try again.');
       }

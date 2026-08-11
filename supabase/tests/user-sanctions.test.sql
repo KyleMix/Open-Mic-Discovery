@@ -171,6 +171,15 @@ create temp table target_occ as
      and s.owner_id is distinct from '00000000-0000-4000-a000-000000000001'
      and now() >= o.starts_at - s.signup_opens
      and now() <= o.starts_at - s.signup_closes
+     -- The seed gives 0001 a demo signup on whichever night of series c-001
+     -- is next; when the clock makes that night the soonest open window,
+     -- the control insert below hits its unique key. Scope to nights neither
+     -- fixture performer is already on, the same shape as the F-021 fix.
+     and not exists (
+       select 1 from signups sg
+        where sg.occurrence_id = o.id
+          and sg.performer_id in ('00000000-0000-4000-a000-000000000001',
+                                  '00000000-0000-4000-a000-000000000003'))
    order by o.starts_at
    limit 1;
 grant select on target_occ to authenticated;
