@@ -1,9 +1,17 @@
 # App Store and Google Play Submission Checklist
 
-The complete owner runbook for getting Open Mic Finder onto the Apple App
-Store and Google Play. Work top to bottom; each phase depends on the ones
-before it. Items marked (done) are already implemented in this repo and are
-listed so you can verify them, not redo them.
+> **SUPERSEDED, 2026-08-11.** The current, shorter runbook is
+> `docs/LAUNCH-CHECKLIST.md`; where the two disagree, that file wins.
+> This one predates the Explorer rebrand and the removal of in-app
+> purchases. A reconciliation pass has corrected the values that would
+> misdeclare the app (name, bundle id, URL scheme, RevenueCat secrets,
+> stale test counts), but treat this file as background detail, not as
+> the checklist you work from.
+
+The complete owner runbook for getting Open Mic Explorer onto the Apple
+App Store and Google Play. Work top to bottom; each phase depends on the
+ones before it. Items marked (done) are already implemented in this repo
+and are listed so you can verify them, not redo them.
 
 Companion files: store copy in `STORE_LISTING.md`, guideline mapping in
 `../COMPLIANCE.md`, privacy form answers in `../privacy/APPLE_PRIVACY.md`
@@ -13,10 +21,10 @@ notes and demo-account plan in the repo root `REVIEW_NOTES.md`.
 
 ## Phase 1: Accounts and identity
 
-- [ ] Finalize the app name. The repo ships as "Open Mic Finder"
-      (`app.json` name, store copy, EULA, privacy policy). If you change
-      it, sweep `app.json`, `docs/store/STORE_LISTING.md`, both privacy
-      docs, and the EULA seed before building.
+- [x] Finalize the app name: done. The app is "Open Mic Explorer"
+      (`app.json` name, store copy, EULA, privacy policy). If it ever
+      changes again, sweep `app.json`, `docs/store/STORE_LISTING.md`,
+      both privacy docs, and the EULA seed before building.
 - [ ] Enroll in the Apple Developer Program (developer.apple.com, 99 USD
       per year). Enrolling as a company requires a D-U-N-S number; as an
       individual, your legal name shows as the seller.
@@ -26,10 +34,10 @@ notes and demo-account plan in the repo root `REVIEW_NOTES.md`.
       production access is granted. Budget this into the timeline or
       register as an organization.
 - [ ] In App Store Connect: create the app record with bundle id
-      `com.openmicfinder.app`, primary language, and the name and subtitle
+      `com.openmicexplorer.app`, primary language, and the name and subtitle
       from `STORE_LISTING.md`. Reserve the name early; names are
       first-come in App Store Connect.
-- [ ] In Play Console: create the app with package `com.openmicfinder.app`.
+- [ ] In Play Console: create the app with package `com.openmicexplorer.app`.
 - [ ] Buy or confirm the product domain (the support address, privacy
       policy, and deletion page all live on it).
 
@@ -43,15 +51,18 @@ notes and demo-account plan in the repo root `REVIEW_NOTES.md`.
       with the rest, then regenerate types (`npm run db:types` against the
       hosted project) and commit them.
 - [ ] `supabase link` then `supabase db push` to apply all migrations.
-- [ ] Run the pgTAP suite against a staging copy if possible (358 tests
-      currently pass locally via `scripts/db/verify-local.sh`).
-- [ ] Deploy the push-sender Edge Function:
-      `supabase functions deploy push-sender`.
+- [ ] Run the pgTAP suite against a staging copy if possible (806
+      assertions pass locally as of 2026-08-11 via
+      `scripts/db/verify-local.sh`).
+- [ ] Deploy both Edge Functions:
+      `supabase functions deploy push-sender` and
+      `supabase functions deploy deletion-request`.
 - [ ] Create the vault secrets `push_sender_url` and `push_sender_token`
       (per the header of migration 20260803000700) so the pg_cron push
       schedule can invoke the function.
-- [ ] Add `openmic://reset-password` to the hosted project's Auth redirect
-      allow list (forgot-password flow).
+- [ ] Add `openmicexplorer://reset-password` and
+      `openmicexplorer://auth-callback` to the hosted project's Auth
+      redirect allow list.
 - [ ] Configure Auth providers:
   - [ ] Sign in with Apple: create a Services ID and key in the Apple
         Developer portal, add them to Supabase Auth. Apple requires this
@@ -92,15 +103,15 @@ notes and demo-account plan in the repo root `REVIEW_NOTES.md`.
         regeneration, which invalidates the SHA-1.
   - iOS uses Apple Maps and needs no key.
 - [ ] Expo/EAS:
-  - [ ] `eas init` to create the project (writes the project id into
-        `app.json`; commit it).
+  - [x] `eas init`: done. The project exists (owner `kylem_ix`) and its
+        id is committed in `app.json`.
   - [ ] `eas credentials` to set up iOS distribution certs and the Android
         keystore (let EAS manage them).
-  - [ ] Set EAS secrets: `EXPO_PUBLIC_SUPABASE_URL`,
-        `EXPO_PUBLIC_SUPABASE_ANON_KEY`, `EXPO_PUBLIC_SENTRY_DSN`,
-        `EXPO_PUBLIC_REVENUECAT_IOS_KEY`,
-        `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY`, plus the Sentry auth token
-        for source map uploads.
+  - [ ] Set EAS env vars: `EXPO_PUBLIC_SUPABASE_URL`,
+        `EXPO_PUBLIC_SUPABASE_ANON_KEY`, `EXPO_PUBLIC_SENTRY_DSN`, plus
+        the Sentry auth token for source map uploads. There are no
+        RevenueCat keys: the purchase SDK was removed and the app sells
+        nothing.
   - [ ] If you want OTA JS fixes, run `eas update:configure` (adds the
         updates URL and runtime version policy to `app.json`); the build
         channels in `eas.json` are already set up.
@@ -117,8 +128,9 @@ notes and demo-account plan in the repo root `REVIEW_NOTES.md`.
 - [ ] Host the privacy policy from `../privacy/PRIVACY_POLICY.md` at a
       public URL. The same text ships inside the app (done); the URL is
       what the store forms need.
-- [ ] Host the account deletion page from `ACCOUNT_DELETION_PAGE.md` at a
-      public URL (Play requires it; Apple reviewers look for it).
+- [ ] Host the account deletion page (`web/delete-account/index.html`,
+      see `ACCOUNT_DELETION_PAGE.md` for the pointer doc) at a public URL
+      (Play requires it; Apple reviewers look for it).
 - [ ] Optional but recommended: host the terms of use on the web too (the
       in-app EULA gate is done and is what Apple 1.2 requires).
 
@@ -202,8 +214,6 @@ notes and demo-account plan in the repo root `REVIEW_NOTES.md`.
       Music), content rights declaration.
 - [ ] Pricing: Free. Availability: launch countries.
 - [ ] In-App Purchases: none. The app sells nothing; skip this section.
-      submission (first subscription must be submitted with an app
-      version), with review screenshot and notes.
 - [ ] Age rating questionnaire. Answer from the evidence below, not from a
       target tier. This list used to say "land 17+", a tier Apple retired
       when it moved to 13+/16+/18+, and it disagreed with `STORE_LISTING.md`,
@@ -273,9 +283,8 @@ notes and demo-account plan in the repo root `REVIEW_NOTES.md`.
   - [ ] App access: provide the reviewer credentials from
         `REVIEW_NOTES.md` with step-by-step access notes.
 - [ ] Monetization: none. The app sells nothing; skip this section.
-      activate it.
 - [ ] Countries and pricing: free, launch countries.
-- [ ] Release path: internal testing (validate install and IAP), then
+- [ ] Release path: internal testing (validate the install), then
       closed testing if your account requires the 12-tester 14-day gate,
       then production. Staged rollout at 10 to 20 percent first is wise.
 - [ ] Play review is mostly automated and usually clears within hours to

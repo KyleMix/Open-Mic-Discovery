@@ -4,7 +4,7 @@ This file is for App Store and Play reviewers, and for anyone evaluating a build
 
 ## Current state: feature complete (Phases 0 through 8 built)
 
-Every screen is functional; there are no placeholder screens, dead links, or stubbed tabs. Remaining before store submission are owner-side setup steps only (hosted backend, store accounts, provider credentials, final art): the full checklist lives in `docs/store/STORE_LISTING.md`.
+Every screen is functional; there are no placeholder screens, dead links, or stubbed tabs. Remaining before store submission are owner-side setup steps only (hosted backend, store accounts, provider credentials, final art): the current checklist lives in `docs/LAUNCH-CHECKLIST.md` (store copy is in `docs/store/STORE_LISTING.md`).
 
 ## Demo credentials
 
