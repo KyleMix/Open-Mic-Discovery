@@ -41,7 +41,12 @@
 -- setting is_producer true leaves it unchanged.
 
 -- ---------------------------------------------------------------------------
--- Finding 4 (real, medium). Banned / unapproved host names are readable by
+-- Finding 4 (real, medium). APPLIED 2026-08-11 as migration
+-- supabase/migrations/20260811000100_search_hides_hidden_hosts.sql (with a
+-- down file and four pgTAP assertions in search-surface.test.sql). The notes
+-- below are retained as the record of what it addressed.
+--
+-- Banned / unapproved host names are readable by
 -- anon through series_search.
 --
 -- build_series_search (20260807000200) joins profiles host filtering only
