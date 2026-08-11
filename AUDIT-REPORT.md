@@ -8,6 +8,16 @@ Headline: the codebase is in strong shape. It is not the code that blocks submis
 
 ---
 
+## Known platform limitation: `spatial_ref_sys` is writable by API roles on the current Supabase image
+
+Surfaced while getting PR #13's CI green. PostGIS's `spatial_ref_sys` (the coordinate-system reference table every distance query reads) has no row level security, and on the Supabase Postgres image the CI now pulls, the table is owned by `supabase_admin`, which granted INSERT/UPDATE/DELETE on it directly to `anon` and `authenticated`. Proven from CI: the table owner is `supabase_admin`, the grantor is `supabase_admin`, and the migration role `postgres` is not a member of it. By Postgres rules only the grantor, a member of it, or a superuser can revoke a grant, so no migration running as `postgres` can revoke these or take ownership. The repo's lock migrations (`20260801000700`, `20260806000200`) worked on the older image and cannot on this one; this is a Supabase platform behavior, common to PostGIS-on-Supabase, not anything this codebase introduced (the default branch hits it identically).
+
+Practical exposure: an anonymous API caller could in principle `DELETE FROM spatial_ref_sys` and break distance queries, if `public` is exposed through PostgREST (the default). It is a denial-of-service surface, not a data-privacy one.
+
+What was done: `grants-and-rls.test.sql` still asserts the lock where the migration role owns the table (plain Postgres, the older image), and skips those three write assertions with a loud diagnostic where the platform owns it, so CI is honest rather than red on a fact we cannot change. Owner action, tracked in `docs/LAUNCH-CHECKLIST.md`: raise the writable-`spatial_ref_sys` advisor with Supabase, and if it must be closed, the real fix is to install PostGIS in a schema PostgREST does not expose (a large, separate migration), not a grant change.
+
+---
+
 ## 1. Launch blockers
 
 These will cause a rejection, a broken store requirement, or a silently broken primary feature. None is a crash in the shipping app.

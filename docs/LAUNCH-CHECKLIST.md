@@ -88,6 +88,19 @@ key restriction (step 4), and rotating the admin password published in
 also lists stale docs to reconcile before filling the store forms; see
 `AUDIT-REPORT.md` section 6.
 
+One platform limitation to be aware of, not blocking: on the current
+Supabase Postgres image, PostGIS's `spatial_ref_sys` table is owned by
+`supabase_admin` and is writable by the `anon` and `authenticated` API
+roles, and no migration of ours can revoke that (the migration role is
+not a member of the owner). This is a standard PostGIS-on-Supabase
+advisor finding, not something this app introduced. It is a
+denial-of-service surface only (an anon caller could delete coordinate
+rows and break distance queries), no private data. If you want it
+closed, raise it with Supabase support, or install PostGIS into a schema
+PostgREST does not expose (a large, separate migration). The pgTAP suite
+asserts the lock where we can and skips it, loudly, where the platform
+owns it. Full write-up in `AUDIT-REPORT.md`.
+
 The critical path, and what is genuinely parallel:
 
 ```
