@@ -58,9 +58,10 @@ function Chip({ label, active, onPress, activeColor, icon, dismissible }: ChipPr
       accessibilityLabel={dismissible ? `Remove filter: ${label}` : label}
       accessibilityState={{ selected: active }}
       onPress={onPress}
-      style={[
+      style={({ pressed }) => [
         styles.chip,
         active && [styles.chipActive, activeColor ? { borderColor: activeColor } : null],
+        pressed && styles.chipPressed,
       ]}
     >
       {icon}
@@ -244,6 +245,9 @@ const styles = StyleSheet.create({
   chipActive: {
     backgroundColor: palette.bgPressed,
     borderColor: palette.text,
+  },
+  chipPressed: {
+    backgroundColor: palette.bgPressed,
   },
   chipLabel: {
     color: palette.textSecondary,

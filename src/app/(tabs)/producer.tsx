@@ -70,7 +70,16 @@ export default function ProducerScreen() {
     );
   }
   const claimsBox = profile.data?.is_admin ? (
-    claims.isError ? (
+    claims.isPending ? (
+      // Holds the section while the check runs, so the box does not pop in
+      // above the list when data lands.
+      <View style={styles.claimsBox}>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+          Pending claims
+        </Text>
+        <Body>Checking for claim requests...</Body>
+      </View>
+    ) : claims.isError ? (
       <View style={styles.claimsBox}>
         <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
           Pending claims

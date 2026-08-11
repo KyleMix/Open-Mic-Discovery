@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { useEffect } from 'react';
 
 import { STARTED_GRACE_MS } from '@/features/discovery/next-occurrence';
+import { timed } from '@/lib/query-timing';
 import { getSupabase } from '@/lib/supabase';
 import { uniqueChannelTopic } from '@/lib/realtime';
 import { userError } from '@/lib/user-error';
@@ -39,9 +40,11 @@ export function useDiscoverFeed(
     // makes a dead search take three backoffs to admit failure.
     retry: 1,
     queryFn: async ({ signal }): Promise<DiscoverResult[]> => {
-      const { data, error } = await getSupabase()
-        .rpc('search_discover', filtersToDiscoverArgs(filters, center, trimmed))
-        .abortSignal(signal);
+      const { data, error } = await timed('discover:feed', () =>
+        getSupabase()
+          .rpc('search_discover', filtersToDiscoverArgs(filters, center, trimmed))
+          .abortSignal(signal),
+      );
       if (error) {
         // No cause asserted here: userError supplies the connection wording
         // when it really was the connection, and a code-specific message
@@ -161,19 +164,21 @@ export function useMicDetail(seriesId: string | undefined) {
     enabled: !!seriesId,
     queryFn: async () => {
       const supabase = getSupabase();
-      const [seriesRes, occurrencesRes] = await Promise.all([
-        supabase.from('mic_series').select('*, venue:venues(*)').eq('id', seriesId!).maybeSingle(),
-        supabase
-          .from('mic_occurrences')
-          .select('*')
-          .eq('series_id', seriesId!)
-          // Trails the clock so tonight's mic stays on its own page while
-          // the show runs; at showtime the page used to flip to next week
-          // and take the performer's slot and on-deck state with it.
-          .gte('starts_at', new Date(Date.now() - STARTED_GRACE_MS).toISOString())
-          .order('starts_at')
-          .limit(6),
-      ]);
+      const [seriesRes, occurrencesRes] = await timed('mic:detail', () =>
+        Promise.all([
+          supabase.from('mic_series').select('*, venue:venues(*)').eq('id', seriesId!).maybeSingle(),
+          supabase
+            .from('mic_occurrences')
+            .select('*')
+            .eq('series_id', seriesId!)
+            // Trails the clock so tonight's mic stays on its own page while
+            // the show runs; at showtime the page used to flip to next week
+            // and take the performer's slot and on-deck state with it.
+            .gte('starts_at', new Date(Date.now() - STARTED_GRACE_MS).toISOString())
+            .order('starts_at')
+            .limit(6),
+        ]),
+      );
       if (seriesRes.error) {
         throw userError(seriesRes.error, 'Could not load this listing. Try again.');
       }

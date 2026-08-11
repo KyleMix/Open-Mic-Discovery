@@ -271,6 +271,7 @@ export default function DiscoverScreen() {
           accessibilityRole="button"
           accessibilityLabel="Open system settings to allow location"
           onPress={() => Linking.openSettings().catch(() => null)}
+          style={({ pressed }) => [styles.textLink, pressed && styles.textLinkPressed]}
         >
           <Text maxFontSizeMultiplier={maxFontScale} style={styles.settingsLink}>
             Open settings
@@ -286,6 +287,7 @@ export default function DiscoverScreen() {
             accessibilityRole="button"
             accessibilityLabel="Go back to your home area"
             onPress={() => setManualCenter(null)}
+            style={({ pressed }) => [styles.textLink, pressed && styles.textLinkPressed]}
           >
             <Text maxFontSizeMultiplier={maxFontScale} style={styles.centerReset}>
               Back to home area
@@ -434,7 +436,7 @@ function ZeroResults({
         </>
       ) : null}
       <Button label="Clear all filters" kind="secondary" onPress={onClearFilters} />
-      <Body>Know a mic we are missing? Add it from the My Mics tab.</Body>
+      <Body>Know a mic we are missing? Add it from the My mics tab.</Body>
     </View>
   );
 }
@@ -478,12 +480,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.xs,
   },
+  // Text links still get a full-size touch box.
+  textLink: {
+    justifyContent: 'center',
+    minHeight: minTouchTarget,
+  },
+  textLinkPressed: {
+    opacity: 0.6,
+  },
   settingsLink: {
     color: palette.text,
     fontFamily: fonts.medium,
     fontSize: type.caption.fontSize,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
     textDecorationLine: 'underline',
   },
   centerRow: {

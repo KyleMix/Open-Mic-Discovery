@@ -78,7 +78,7 @@ function ToastBar({ toast, onDone }: { toast: NonNullable<ToastState>; onDone: (
               toast.action?.onPress();
               onDone();
             }}
-            style={styles.action}
+            style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
           >
             <Text maxFontSizeMultiplier={maxFontScale} style={styles.actionLabel}>
               {toast.action.label}
@@ -89,7 +89,7 @@ function ToastBar({ toast, onDone }: { toast: NonNullable<ToastState>; onDone: (
           accessibilityRole="button"
           accessibilityLabel="Dismiss message"
           onPress={onDone}
-          style={styles.action}
+          style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
         >
           <Text maxFontSizeMultiplier={maxFontScale} style={styles.dismissLabel}>
             ✕
@@ -131,6 +131,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: minTouchTarget,
     minWidth: minTouchTarget,
+  },
+  actionPressed: {
+    opacity: 0.6,
   },
   actionLabel: {
     color: palette.warning,

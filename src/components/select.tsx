@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui';
 import { fonts, maxFontScale, minTouchTarget, palette, radius, spacing, type } from '@/theme';
@@ -57,6 +58,7 @@ function SheetShell({
   children: React.ReactNode;
   footer?: React.ReactNode;
 }) {
+  const insets = useSafeAreaInsets();
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.backdrop}>
@@ -66,7 +68,9 @@ function SheetShell({
           style={styles.backdropTouch}
           onPress={onClose}
         />
-        <View style={styles.sheet}>
+        {/* The sheet sits on the physical screen bottom; the footer button
+            must clear the home indicator. */}
+        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
           <View style={styles.grabber} />
           <Text maxFontSizeMultiplier={maxFontScale} style={styles.sheetTitle}>
             {title}
@@ -96,7 +100,11 @@ function OptionRow({
       accessibilityLabel={option.label}
       accessibilityState={role === 'radio' ? { selected } : { checked: selected }}
       onPress={onPress}
-      style={[styles.optionRow, selected && styles.optionRowActive]}
+      style={({ pressed }) => [
+        styles.optionRow,
+        selected && styles.optionRowActive,
+        pressed && styles.optionRowPressed,
+      ]}
     >
       <View style={styles.optionText}>
         <Text
@@ -284,7 +292,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     borderWidth: 1,
     maxHeight: '70%',
-    paddingBottom: spacing.lg,
   },
   grabber: {
     alignSelf: 'center',
@@ -320,9 +327,12 @@ const styles = StyleSheet.create({
   optionRowActive: {
     borderColor: palette.text,
   },
+  optionRowPressed: {
+    backgroundColor: palette.bgPressed,
+  },
   optionText: {
     flex: 1,
-    gap: spacing.xxs,
+    gap: spacing.xs,
   },
   optionLabel: {
     color: palette.textSecondary,

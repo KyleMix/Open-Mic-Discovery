@@ -234,7 +234,7 @@ function MicDetail({
               accessibilityRole="button"
               accessibilityLabel={`Share ${series.title}`}
               onPress={() => setShareOpen(true)}
-              style={styles.sharePill}
+              style={({ pressed }) => [styles.sharePill, pressed && styles.sharePillPressed]}
             >
               {/* Labeled, not a bare glyph: sharing is how mics and the app
                   spread, so the affordance has to read at a glance. */}
@@ -477,7 +477,7 @@ function MicDetail({
           accessibilityRole="button"
           accessibilityLabel="Flag this listing as wrong or dead"
           onPress={() => setFlagOpen(true)}
-          style={styles.flagButton}
+          style={({ pressed }) => [styles.flagButton, pressed && styles.flagButtonPressed]}
         >
           <Glyph name="flag-listing" size={16} color={palette.textSecondary} />
           <Text maxFontSizeMultiplier={maxFontScale} style={styles.flagText}>
@@ -490,7 +490,7 @@ function MicDetail({
             accessibilityRole="button"
             accessibilityLabel="Claim this mic if you run it"
             onPress={() => setClaimOpen(true)}
-            style={styles.flagButton}
+            style={({ pressed }) => [styles.flagButton, pressed && styles.flagButtonPressed]}
           >
             {/* Ionicons, not a signup-method glyph: that icon already means
                 "invite only" on this same screen. */}
@@ -505,7 +505,7 @@ function MicDetail({
           accessibilityRole="button"
           accessibilityLabel="Report this mic for abuse"
           onPress={() => setReportOpen(true)}
-          style={styles.flagButton}
+          style={({ pressed }) => [styles.flagButton, pressed && styles.flagButtonPressed]}
         >
           <Ionicons name="flag-outline" size={16} color={palette.textSecondary} />
           <Text maxFontSizeMultiplier={maxFontScale} style={styles.flagText}>
@@ -708,6 +708,7 @@ function ClaimModal({
   const [evidence, setEvidence] = useState('');
   const [done, setDone] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const insets = useSafeAreaInsets();
 
   function reallyClose() {
     setEvidence('');
@@ -729,7 +730,7 @@ function ClaimModal({
     <Modal visible={visible} animationType="slide" transparent onRequestClose={close}>
       <View style={styles.modalBackdrop}>
         <KeyboardShift>
-          <View style={styles.modalSheet}>
+          <View style={[styles.modalSheet, { paddingBottom: Math.max(insets.bottom, spacing.xl) }]}>
             {confirmDiscard ? (
               <DiscardPrompt onDiscard={reallyClose} onKeep={() => setConfirmDiscard(false)} />
             ) : done ? (
@@ -739,7 +740,7 @@ function ClaimModal({
                 </Text>
                 <Body>
                   We review claims by hand to keep listings trustworthy. Once approved, this mic
-                  appears in your My Mics tab with full control.
+                  appears in your My mics tab with full control.
                 </Body>
                 <Button label="Done" onPress={close} />
               </>
@@ -820,7 +821,7 @@ function FavoriteStar({
         accessibilityRole="button"
         accessibilityLabel="Save this mic"
         onPress={onSignedOutPress}
-        style={{ minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
+        style={({ pressed }) => [styles.starButton, pressed && styles.starButtonPressed]}
       >
         <Ionicons name="star-outline" size={24} color={palette.textSecondary} />
       </Pressable>
@@ -834,7 +835,7 @@ function FavoriteStar({
       accessibilityState={{ selected: active }}
       disabled={toggle.isPending || isFavorite.isPending}
       onPress={() => toggle.mutate({ userId: session.user.id, seriesId, favorite: !active })}
-      style={{ minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
+      style={({ pressed }) => [styles.starButton, pressed && styles.starButtonPressed]}
     >
       <Ionicons
         name={active ? 'star' : 'star-outline'}
@@ -879,6 +880,7 @@ function FlagModal({
   const [details, setDetails] = useState('');
   const [done, setDone] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const insets = useSafeAreaInsets();
 
   function reallyClose() {
     setReason(null);
@@ -911,7 +913,7 @@ function FlagModal({
     <Modal visible={visible} animationType="slide" transparent onRequestClose={close}>
       <View style={styles.modalBackdrop}>
         <KeyboardShift>
-          <View style={styles.modalSheet}>
+          <View style={[styles.modalSheet, { paddingBottom: Math.max(insets.bottom, spacing.xl) }]}>
             {confirmDiscard ? (
               <DiscardPrompt onDiscard={reallyClose} onKeep={() => setConfirmDiscard(false)} />
             ) : done ? (
@@ -949,7 +951,11 @@ function FlagModal({
                     accessibilityRole="radio"
                     accessibilityState={{ selected: reason === r.reason }}
                     onPress={() => setReason(r.reason)}
-                    style={[styles.reasonRow, reason === r.reason && styles.reasonRowActive]}
+                    style={({ pressed }) => [
+                      styles.reasonRow,
+                      reason === r.reason && styles.reasonRowActive,
+                      pressed && styles.reasonRowPressed,
+                    ]}
                   >
                     <Text maxFontSizeMultiplier={maxFontScale} style={styles.reasonText}>
                       {r.label}
@@ -1056,8 +1062,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.xs,
     justifyContent: 'center',
-    minHeight: 36,
+    minHeight: minTouchTarget,
     paddingHorizontal: spacing.md,
+  },
+  sharePillPressed: {
+    backgroundColor: palette.bgPressed,
   },
   sharePillText: {
     color: palette.brand,
@@ -1087,7 +1096,7 @@ const styles = StyleSheet.create({
   },
   when: {
     color: palette.text,
-    fontFamily: fonts.medium,
+    fontFamily: fonts.semibold,
     fontSize: type.heading.fontSize,
   },
   nextDate: {
@@ -1119,7 +1128,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   fact: {
-    gap: spacing.xxs,
+    gap: spacing.xs,
   },
   factLabel: {
     color: palette.textFaint,
@@ -1148,13 +1157,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: spacing.sm,
-    minHeight: 44,
+    minHeight: minTouchTarget,
     paddingVertical: spacing.sm,
+  },
+  flagButtonPressed: {
+    opacity: 0.6,
   },
   flagText: {
     color: palette.textSecondary,
     fontSize: type.body.fontSize,
     textDecorationLine: 'underline',
+  },
+  starButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: minTouchTarget,
+    minWidth: minTouchTarget,
+  },
+  starButtonPressed: {
+    opacity: 0.6,
   },
   modalBackdrop: {
     backgroundColor: palette.scrim,
@@ -1167,7 +1188,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     gap: spacing.sm,
     padding: spacing.lg,
-    paddingBottom: spacing.xl,
   },
   modalTitle: {
     color: palette.text,
@@ -1179,12 +1199,15 @@ const styles = StyleSheet.create({
     borderColor: palette.border,
     borderRadius: radius.sm,
     borderWidth: 1,
-    minHeight: 44,
+    minHeight: minTouchTarget,
     justifyContent: 'center',
     paddingHorizontal: spacing.md,
   },
   reasonRowActive: {
     borderColor: palette.text,
+  },
+  reasonRowPressed: {
+    backgroundColor: palette.bgPressed,
   },
   reasonText: {
     color: palette.text,
@@ -1196,9 +1219,10 @@ const styles = StyleSheet.create({
  * Who is on the next night. Resolved against that occurrence, so a one-off
  * guest host shows instead of the regular one, and says so.
  *
- * Renders nothing at all while loading or on failure: credits are an addition
- * to a listing that already stands on its own, and a spinner or an error
- * banner here would interrupt the thing someone actually came to read.
+ * Renders nothing while loading: credits are an addition to a listing that
+ * already stands on its own, and a spinner here would interrupt the thing
+ * someone actually came to read. A failed fetch does say so in one quiet
+ * line, because silence would misreport a night that has a host or guest.
  */
 function MicCredits({ seriesId, occurrenceId }: { seriesId: string; occurrenceId: string | null }) {
   const credits = useSeriesCredits(seriesId);
@@ -1206,6 +1230,13 @@ function MicCredits({ seriesId, occurrenceId }: { seriesId: string; occurrenceId
   // page: the sheet needs the credit's own id and name, and nothing above
   // this component knows which credits resolved for this night.
   const [reporting, setReporting] = useState<Credit | null>(null);
+  if (credits.isError) {
+    return (
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.costNote}>
+        Could not load who is hosting this mic. Pull down to refresh and try again.
+      </Text>
+    );
+  }
   if (!credits.data || credits.data.length === 0) {
     return null;
   }

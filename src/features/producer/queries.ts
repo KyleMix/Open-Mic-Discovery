@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useToast } from '@/components/toast';
 import { quotedIlikePattern } from '@/lib/postgrest';
+import { timed } from '@/lib/query-timing';
 import { getSupabase } from '@/lib/supabase';
 import { userError } from '@/lib/user-error';
 import type { Database } from '@/types/database.types';
@@ -213,8 +214,8 @@ export function usePauseSeries() {
     if (error || !data || data.length === 0) {
       toast.show(
         error
-          ? userError(error, 'Could not resume the listing. Try again from My Mics.').message
-          : 'Could not resume the listing. Try again from My Mics.',
+          ? userError(error, 'Could not resume the listing. Try again from My mics.').message
+          : 'Could not resume the listing. Try again from My mics.',
       );
       return;
     }
@@ -403,13 +404,15 @@ export function useNextNights(seriesIds: string[]) {
     queryKey: ['producer', 'next-nights', [...seriesIds].sort()],
     enabled: seriesIds.length > 0,
     queryFn: async (): Promise<Record<string, NextNight>> => {
-      const { data, error } = await getSupabase()
-        .from('mic_occurrences')
-        .select('id, series_id, starts_at, signups(count)')
-        .in('series_id', seriesIds)
-        .eq('status', 'scheduled')
-        .gte('starts_at', new Date().toISOString())
-        .order('starts_at');
+      const { data, error } = await timed('producer:nextNights', () =>
+        getSupabase()
+          .from('mic_occurrences')
+          .select('id, series_id, starts_at, signups(count)')
+          .in('series_id', seriesIds)
+          .eq('status', 'scheduled')
+          .gte('starts_at', new Date().toISOString())
+          .order('starts_at'),
+      );
       if (error) {
         throw userError(error, 'Could not load the upcoming nights. Try again.');
       }

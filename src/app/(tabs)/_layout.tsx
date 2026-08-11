@@ -50,15 +50,6 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="network"
-        options={{
-          title: 'Network',
-          tabBarBadge: waiting > 0 ? waiting : undefined,
-          tabBarBadgeStyle: { backgroundColor: disciplineAccents.poetry, color: palette.bg },
-          tabBarIcon: ({ color, size }) => <Ionicons name="people" color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
         name="producer"
         options={{
           title: 'My mics',
@@ -69,6 +60,10 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: 'Profile',
+          // Network moved under Profile; its waiting-request badge moved
+          // with it so an ask is still seen without a push.
+          tabBarBadge: waiting > 0 ? waiting : undefined,
+          tabBarBadgeStyle: { backgroundColor: disciplineAccents.poetry, color: palette.bg },
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-circle" color={color} size={size} />
           ),

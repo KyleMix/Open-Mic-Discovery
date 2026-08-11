@@ -3,6 +3,7 @@
  * Light values exist for system components that demand them, but every
  * screen defaults to the dark palette.
  */
+import { Platform } from 'react-native';
 
 export const palette = {
   /** Brand green, sampled from the Open Mic Explorer mark. */
@@ -54,8 +55,6 @@ export const disciplineAccents = {
 export type Discipline = keyof typeof disciplineAccents;
 
 export const spacing = {
-  /** Hairline gap inside stacked text rows. */
-  xxs: 2,
   xs: 4,
   sm: 8,
   md: 16,
@@ -100,8 +99,11 @@ export const type = {
  * Static JSON cannot import; change those four together with the palette.
  */
 
-/** Minimum touch target size per accessibility standards. */
-export const minTouchTarget = 44;
+/**
+ * Minimum touch target size per platform accessibility standards:
+ * 44pt on iOS (HIG), 48dp on Android (Material).
+ */
+export const minTouchTarget = Platform.OS === 'android' ? 48 : 44;
 
 /**
  * Dynamic type policy: text scales with the system setting, capped so

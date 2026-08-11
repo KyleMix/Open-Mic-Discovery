@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
   },
   names: {
     flex: 1,
-    gap: 2,
+    gap: spacing.xs,
   },
   name: {
     color: palette.text,

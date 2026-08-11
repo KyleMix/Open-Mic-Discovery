@@ -80,6 +80,7 @@ export default function NightScreen() {
   const [shuffling, setShuffling] = useState<RosterRow[] | null>(null);
   const [reporting, setReporting] = useState<RosterRow | null>(null);
   const [confirmNoShow, setConfirmNoShow] = useState<RosterRow | null>(null);
+  const [confirmRemoveWalkIn, setConfirmRemoveWalkIn] = useState<RosterRow | null>(null);
   const [confirmRedraw, setConfirmRedraw] = useState(false);
   const shuffleTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   useEffect(() => {
@@ -117,10 +118,22 @@ export default function NightScreen() {
       </>
     );
   }
-  if (
-    context.data?.series &&
-    !canManageSeries(context.data.series, session.user.id, profile.data?.is_admin ?? false)
-  ) {
+  // The gate needs the series row to say yes or no. Without this branch a
+  // failed context query skipped the gate and the RLS-emptied roster
+  // rendered "Nobody on the list yet" about a real night.
+  if (context.isError || !context.data?.series) {
+    return (
+      <>
+        <ScreenHeader title={headerTitle} />
+        <Screen>
+          <Title>The list</Title>
+          <ErrorText>Could not load this night. Check your connection.</ErrorText>
+          <Button label="Try again" onPress={() => context.refetch()} />
+        </Screen>
+      </>
+    );
+  }
+  if (!canManageSeries(context.data.series, session.user.id, profile.data?.is_admin ?? false)) {
     return (
       <>
         <ScreenHeader title={headerTitle} />
@@ -345,11 +358,7 @@ export default function NightScreen() {
                       label={`Remove ${row.guest_name ?? 'this walk-in'} from the list`}
                       icon="trash-outline"
                       color={palette.danger}
-                      onPress={() => {
-                        if (row.id != null) {
-                          removeWalkIn.mutate(row.id);
-                        }
-                      }}
+                      onPress={() => setConfirmRemoveWalkIn(row)}
                     />
                   )}
                 </View>
@@ -447,6 +456,20 @@ export default function NightScreen() {
             {reorder.error instanceof Error ? reorder.error.message : 'Could not reorder the list.'}
           </ErrorText>
         ) : null}
+        {confirmRemoveWalkIn ? (
+          <ConfirmSheet
+            title={`Remove ${confirmRemoveWalkIn.guest_name ?? 'this walk-in'} from the list?`}
+            body="They lose their spot. Adding them again puts them at the end of the list."
+            confirmLabel="Remove them"
+            onConfirm={() => {
+              if (confirmRemoveWalkIn.id != null) {
+                removeWalkIn.mutate(confirmRemoveWalkIn.id);
+              }
+              setConfirmRemoveWalkIn(null);
+            }}
+            onClose={() => setConfirmRemoveWalkIn(null)}
+          />
+        ) : null}
         {confirmNoShow ? (
           <ConfirmSheet
             title={`Mark ${confirmNoShow.stage_name ?? confirmNoShow.handle ?? 'this performer'} as a no-show?`}
@@ -540,7 +563,17 @@ function WhoIsComing({ occurrenceId }: { occurrenceId: string | undefined }) {
       </View>
     );
   }
-  if (counts.isPending || !counts.data) {
+  if (counts.isPending) {
+    return (
+      <View style={styles.comingBox}>
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+          Who is coming
+        </Text>
+        <Body>Checking the headcount...</Body>
+      </View>
+    );
+  }
+  if (!counts.data) {
     return null;
   }
 
@@ -589,7 +622,7 @@ function IconAction({
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      style={styles.iconAction}
+      style={({ pressed }) => [styles.iconAction, pressed && styles.iconActionPressed]}
     >
       <Ionicons name={icon} size={22} color={color} />
     </Pressable>
@@ -676,7 +709,7 @@ const styles = StyleSheet.create({
   },
   rowBody: {
     flex: 1,
-    gap: spacing.xxs,
+    gap: spacing.xs,
   },
   name: {
     color: palette.text,
@@ -710,5 +743,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: minTouchTarget,
     minWidth: minTouchTarget,
+  },
+  iconActionPressed: {
+    backgroundColor: palette.bgPressed,
+    borderRadius: radius.sm,
   },
 });

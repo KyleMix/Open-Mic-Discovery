@@ -1,4 +1,5 @@
 import { Modal, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Body, Button } from '@/components/ui';
 import { fonts, maxFontScale, palette, spacing, type } from '@/theme';
@@ -13,10 +14,13 @@ type Props = {
 
 /** One bottom-sheet confirmation, shared instead of re-implemented per screen. */
 export function ConfirmSheet({ title, body, confirmLabel, onConfirm, onClose }: Props) {
+  const insets = useSafeAreaInsets();
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.backdrop}>
-        <View style={styles.sheet}>
+        {/* The sheet reaches the physical screen bottom, so the last button
+            must clear the home indicator, not just have decorative padding. */}
+        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.xl) }]}>
           <Text maxFontSizeMultiplier={maxFontScale} style={styles.title}>
             {title}
           </Text>
@@ -65,7 +69,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     gap: spacing.sm,
     padding: spacing.lg,
-    paddingBottom: spacing.xl,
   },
   title: {
     color: palette.text,

@@ -24,6 +24,9 @@ import { fonts, palette } from '@/theme';
  *   push the wordmark off the canvas.
  * - Only the three bundled Poppins weights appear. An unbundled weight
  *   would silently fall back and wreck the captured layout.
+ * - Every Text pins maxFontSizeMultiplier to 1: this is artwork on a fixed
+ *   canvas, and system font scaling would overflow the exported image the
+ *   sharer never re-checks.
  */
 
 export const CARD_BASE = 360;
@@ -41,7 +44,7 @@ export function ShareCard({ model, variant, size }: Props) {
   const secondary = withPoster ? palette.textSecondaryOnImage : palette.textSecondary;
   // Story safe zones: Instagram overlays its own UI on the top and bottom
   // ~13% of the canvas, so the content column pads well clear of both.
-  const vertical = variant === 'story' ? 90 * s : 0;
+  const vertical = variant === 'story' ? 88 * s : 0;
 
   return (
     <View style={[styles.card, { width: size, height }]}>
@@ -70,10 +73,11 @@ export function ShareCard({ model, variant, size }: Props) {
           </Svg>
         </>
       ) : null}
-      <View style={[styles.column, { padding: 30 * s, paddingVertical: 28 * s + vertical }]}>
+      <View style={[styles.column, { padding: 32 * s, paddingVertical: 28 * s + vertical }]}>
         <View style={styles.topRow}>
           <Text
             numberOfLines={1}
+            maxFontSizeMultiplier={1}
             style={[
               styles.eyebrow,
               { fontSize: 13 * s, letterSpacing: 2 * s, maxWidth: size * 0.72 },
@@ -81,7 +85,7 @@ export function ShareCard({ model, variant, size }: Props) {
           >
             {model.eyebrow}
           </Text>
-          <View style={[styles.chip, { gap: 6 * s }]}>
+          <View style={[styles.chip, { gap: 4 * s }]}>
             <View
               style={{
                 width: 7 * s,
@@ -90,13 +94,13 @@ export function ShareCard({ model, variant, size }: Props) {
                 backgroundColor: model.accent,
               }}
             />
-            <Text style={[styles.discipline, { fontSize: 10 * s, letterSpacing: 1.7 * s }]}>
+            <Text maxFontSizeMultiplier={1} style={[styles.discipline, { fontSize: 10 * s, letterSpacing: 1.7 * s }]}>
               {model.discipline}
             </Text>
           </View>
         </View>
         <View style={styles.middle}>
-          <Text numberOfLines={3} style={[styles.title, { fontSize: 38 * s, lineHeight: 43 * s }]}>
+          <Text numberOfLines={3} maxFontSizeMultiplier={1} style={[styles.title, { fontSize: 38 * s, lineHeight: 43 * s }]}>
             {model.title}
           </Text>
           <View
@@ -105,17 +109,18 @@ export function ShareCard({ model, variant, size }: Props) {
               height: 4 * s,
               borderRadius: 2 * s,
               backgroundColor: palette.brand,
-              marginVertical: 18 * s,
+              marginVertical: 16 * s,
             }}
           />
           {model.venue ? (
-            <Text numberOfLines={1} style={[styles.venue, { fontSize: 20 * s }]}>
+            <Text numberOfLines={1} maxFontSizeMultiplier={1} style={[styles.venue, { fontSize: 20 * s }]}>
               {model.venue}
             </Text>
           ) : null}
           <Text
             numberOfLines={1}
-            style={[styles.meta, { fontSize: 14 * s, marginTop: 7 * s, color: secondary }]}
+            maxFontSizeMultiplier={1}
+            style={[styles.meta, { fontSize: 14 * s, marginTop: 8 * s, color: secondary }]}
           >
             {model.meta}
           </Text>
@@ -123,13 +128,14 @@ export function ShareCard({ model, variant, size }: Props) {
         <View style={styles.bottomRow}>
           <Text
             numberOfLines={1}
+            maxFontSizeMultiplier={1}
             style={[styles.place, { fontSize: 13 * s, color: secondary, maxWidth: size * 0.5 }]}
           >
             {model.place ?? ''}
           </Text>
-          <View style={[styles.lockup, { gap: 6 * s }]}>
+          <View style={[styles.lockup, { gap: 4 * s }]}>
             <LogoMark size={20 * s} />
-            <Text style={[styles.wordmark, { fontSize: 10 * s, letterSpacing: 1.5 * s }]}>
+            <Text maxFontSizeMultiplier={1} style={[styles.wordmark, { fontSize: 10 * s, letterSpacing: 1.5 * s }]}>
               OPEN MIC EXPLORER
             </Text>
           </View>

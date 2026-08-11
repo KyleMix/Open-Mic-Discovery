@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Modal, Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, LoadingView } from '@/components/ui';
 import { useToast } from '@/components/toast';
@@ -10,7 +11,7 @@ import { buildCardModel, type ShareCardMic } from '@/features/share/card-data';
 import { shareCaption, type ShareIntent } from '@/features/share/captions';
 import { ShareCard } from '@/features/share/components/share-card';
 import { useMySignup } from '@/features/signups/queries';
-import { fonts, maxFontScale, palette, radius, spacing, type } from '@/theme';
+import { fonts, maxFontScale, minTouchTarget, palette, radius, spacing, type } from '@/theme';
 
 // Native-backed modules, loaded at use time only: statically importing
 // them pulled them into Expo Router's server render, which crashed on a
@@ -43,6 +44,7 @@ type Props = {
 };
 
 export function ShareSheet({ seriesId, open, onClose }: Props) {
+  const insets = useSafeAreaInsets();
   if (!open) {
     return null;
   }
@@ -58,7 +60,9 @@ export function ShareSheet({ seriesId, open, onClose }: Props) {
           style={styles.backdropTouch}
           onPress={onClose}
         />
-        <View style={styles.sheet}>
+        {/* Clears the home indicator: the last button sits at the very
+            bottom of the physical screen. */}
+        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.xl) }]}>
           <SheetBody seriesId={seriesId} onClose={onClose} />
         </View>
       </View>
@@ -336,7 +340,7 @@ function IntentTab({
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
       onPress={onPress}
-      style={[styles.tab, active && styles.tabActive]}
+      style={({ pressed }) => [styles.tab, active && styles.tabActive, pressed && styles.tabPressed]}
     >
       <Text
         style={[styles.tabLabel, active && styles.tabLabelActive]}
@@ -362,7 +366,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: spacing.lg,
-    paddingBottom: spacing.xl,
   },
   body: {
     gap: spacing.sm,
@@ -385,15 +388,20 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   tab: {
+    alignItems: 'center',
     borderColor: palette.border,
     borderRadius: radius.pill,
     borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: minTouchTarget,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
   },
   tabActive: {
     backgroundColor: palette.bgPressed,
     borderColor: palette.brand,
+  },
+  tabPressed: {
+    backgroundColor: palette.bgPressed,
   },
   tabLabel: {
     color: palette.textSecondary,

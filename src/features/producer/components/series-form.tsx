@@ -153,7 +153,11 @@ type Props = {
 };
 
 function chipStyle(active: boolean) {
-  return [styles.chip, active && styles.chipActive];
+  return ({ pressed }: { pressed: boolean }) => [
+    styles.chip,
+    active && styles.chipActive,
+    pressed && styles.chipPressed,
+  ];
 }
 
 /** The first calendar date on or after the anchor that the rule generates,
@@ -818,6 +822,18 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
               onChangeText={setVenueQuery}
               placeholder="Venue name or city"
             />
+            {venueQuery.trim().length >= 2 && venueResults.isPending ? (
+              <Body>Searching venues...</Body>
+            ) : null}
+            {venueResults.isError ? (
+              <ErrorText>Could not search venues. Check your connection and try again.</ErrorText>
+            ) : null}
+            {venueResults.data?.length === 0 && venueQuery.trim().length >= 2 ? (
+              <Body>
+                No listed venue matches that.
+                {existing ? ' Try another name.' : ' Add it as a new venue below.'}
+              </Body>
+            ) : null}
             {venueResults.data?.map((v) => (
               <Pressable
                 key={v.id}
@@ -863,7 +879,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     color: palette.text,
-    fontFamily: fonts.medium,
+    fontFamily: fonts.semibold,
     fontSize: type.heading.fontSize,
     marginTop: spacing.sm,
   },
@@ -888,9 +904,13 @@ const styles = StyleSheet.create({
     backgroundColor: palette.bgPressed,
     borderColor: palette.text,
   },
+  chipPressed: {
+    backgroundColor: palette.bgPressed,
+  },
   chipText: {
     color: palette.text,
-    fontSize: 14,
+    fontFamily: fonts.medium,
+    fontSize: type.label.fontSize,
   },
   preview: {
     color: palette.success,
@@ -919,7 +939,7 @@ const styles = StyleSheet.create({
     borderColor: palette.border,
     borderRadius: radius.sm,
     borderWidth: 1,
-    gap: spacing.xxs,
+    gap: spacing.xs,
     padding: spacing.md,
   },
   venueMeta: {

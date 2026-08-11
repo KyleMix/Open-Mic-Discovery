@@ -41,10 +41,8 @@ describe('routeForPushPayload', () => {
     expect(getSupabase().maybeSingle).not.toHaveBeenCalled();
   });
 
-  it('routes network payloads to the Network tab', async () => {
-    await expect(routeForPushPayload({ network: true, other_id: 'p1' })).resolves.toBe(
-      '/(tabs)/network',
-    );
+  it('routes network payloads to the Network screen', async () => {
+    await expect(routeForPushPayload({ network: true, other_id: 'p1' })).resolves.toBe('/network');
     // Anything but the literal true is not a network payload.
     await expect(routeForPushPayload({ network: 'yes' })).resolves.toBeNull();
   });

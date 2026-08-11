@@ -1,12 +1,12 @@
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Platform, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
 
 import { signInWithApple, signInWithEmail, signInWithGoogle } from '@/features/auth/api';
 import { validateEmail } from '@/features/auth/validation';
 import { Logo } from '@/components/logo';
 import { Body, Button, ErrorText, Field, FormScreen } from '@/components/ui';
-import { maxFontScale, palette, spacing } from '@/theme';
+import { maxFontScale, minTouchTarget, palette, spacing } from '@/theme';
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -63,10 +63,24 @@ export default function SignInScreen() {
         onChangeText={setPassword}
       />
       {error ? <ErrorText>{error}</ErrorText> : null}
-      <Link href="/(auth)/forgot-password">
-        <Text maxFontSizeMultiplier={maxFontScale} style={{ color: palette.textSecondary }}>
-          Forgot password?
-        </Text>
+      {/* asChild puts the touch box on a Pressable sized to the minimum
+          target; the bare Link was only as tall as its text. */}
+      <Link href="/(auth)/forgot-password" asChild>
+        <Pressable
+          accessibilityRole="link"
+          style={({ pressed }) => [
+            {
+              alignSelf: 'flex-start',
+              justifyContent: 'center',
+              minHeight: minTouchTarget,
+            },
+            pressed && { opacity: 0.6 },
+          ]}
+        >
+          <Text maxFontSizeMultiplier={maxFontScale} style={{ color: palette.textSecondary }}>
+            Forgot password?
+          </Text>
+        </Pressable>
       </Link>
       <Button
         label="Sign in"

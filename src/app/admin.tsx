@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { ConfirmSheet } from '@/components/confirm-sheet';
 import { ScreenHeader } from '@/components/screen-header';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { useOwnProfile } from '@/features/auth/queries';
@@ -34,6 +36,11 @@ export default function AdminScreen() {
   const moderate = useModerateContent();
   const resolveReport = useResolveReport();
   const resolveFlag = useResolveFlag();
+  // Taking content down is one-way from this screen; it asks first.
+  const [confirmTakedown, setConfirmTakedown] = useState<{
+    reportId: string;
+    target: { type: keyof typeof REPORT_TARGET_LABELS; id: string };
+  } | null>(null);
 
   if (!session) {
     return (
@@ -142,10 +149,8 @@ export default function AdminScreen() {
                 label="Take down"
                 busy={resolveReport.isPending}
                 onPress={() =>
-                  resolveReport.mutate({
+                  setConfirmTakedown({
                     reportId: r.id,
-                    adminId: session.user.id,
-                    actioned: true,
                     target: { type: r.target_type, id: r.target_id },
                   })
                 }
@@ -263,6 +268,24 @@ export default function AdminScreen() {
           ) : null}
         </View>
       ))}
+
+      {confirmTakedown ? (
+        <ConfirmSheet
+          title={`Take down this ${REPORT_TARGET_LABELS[confirmTakedown.target.type].toLowerCase()}?`}
+          body="The content comes down right away and the report is closed. There is no undo from this screen."
+          confirmLabel="Take it down"
+          onConfirm={() => {
+            resolveReport.mutate({
+              reportId: confirmTakedown.reportId,
+              adminId: session.user.id,
+              actioned: true,
+              target: confirmTakedown.target,
+            });
+            setConfirmTakedown(null);
+          }}
+          onClose={() => setConfirmTakedown(null)}
+        />
+      ) : null}
     </ScrollView>
   );
 }
