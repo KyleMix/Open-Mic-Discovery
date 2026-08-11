@@ -8,6 +8,7 @@ import { useEffect, useRef } from 'react';
 
 import { useToast } from '@/components/toast';
 import { registerPushToken } from '@/lib/notifications';
+import { timed } from '@/lib/query-timing';
 import { getSupabase } from '@/lib/supabase';
 import { userError } from '@/lib/user-error';
 import type { Database } from '@/types/database.types';
@@ -60,12 +61,14 @@ export function useFavorites(userId: string | undefined) {
       // card, instead of silently showing the following week.
       const cancelledBySeries: Record<string, string> = {};
       if (seriesIds.length > 0) {
-        const { data: occurrences, error: occError } = await supabase
-          .from('mic_occurrences')
-          .select('series_id, starts_at, status')
-          .in('series_id', seriesIds)
-          .gte('starts_at', new Date().toISOString())
-          .order('starts_at');
+        const { data: occurrences, error: occError } = await timed('favorites:nextNights', () =>
+          supabase
+            .from('mic_occurrences')
+            .select('series_id, starts_at, status')
+            .in('series_id', seriesIds)
+            .gte('starts_at', new Date().toISOString())
+            .order('starts_at'),
+        );
         if (occError) {
           throw userError(
             occError,

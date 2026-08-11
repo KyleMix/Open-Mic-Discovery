@@ -117,10 +117,22 @@ export default function NightScreen() {
       </>
     );
   }
-  if (
-    context.data?.series &&
-    !canManageSeries(context.data.series, session.user.id, profile.data?.is_admin ?? false)
-  ) {
+  // The gate needs the series row to say yes or no. Without this branch a
+  // failed context query skipped the gate and the RLS-emptied roster
+  // rendered "Nobody on the list yet" about a real night.
+  if (context.isError || !context.data?.series) {
+    return (
+      <>
+        <ScreenHeader title={headerTitle} />
+        <Screen>
+          <Title>The list</Title>
+          <ErrorText>Could not load this night. Check your connection.</ErrorText>
+          <Button label="Try again" onPress={() => context.refetch()} />
+        </Screen>
+      </>
+    );
+  }
+  if (!canManageSeries(context.data.series, session.user.id, profile.data?.is_admin ?? false)) {
     return (
       <>
         <ScreenHeader title={headerTitle} />

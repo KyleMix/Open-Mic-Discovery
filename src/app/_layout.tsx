@@ -22,7 +22,7 @@ import { ToastProvider } from '@/components/toast';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
 import { SessionProvider, useSession } from '@/features/auth/session';
 import { SanctionBanner } from '@/features/safety/components/sanction-banner';
-import { useLatestEula, useOwnProfile } from '@/features/auth/queries';
+import { useLatestEulaVersion, useOwnProfile } from '@/features/auth/queries';
 import { observeNotificationTaps, registerPushToken } from '@/lib/notifications';
 import { CACHE_BUSTER, queryClient, queryPersister } from '@/lib/query-client';
 import { initSentry, reportError } from '@/lib/sentry';
@@ -57,7 +57,7 @@ const appTheme = {
 function AuthGate({ children }: { children: ReactNode }) {
   const { session, ready } = useSession();
   const profile = useOwnProfile(session?.user.id);
-  const eula = useLatestEula();
+  const eula = useLatestEulaVersion();
   // Typed routes narrow segments per-route; we branch across groups, so
   // widen to a plain string array.
   const segments: string[] = useSegments();
