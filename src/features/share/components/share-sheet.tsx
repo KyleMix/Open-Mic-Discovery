@@ -11,6 +11,7 @@ import { recordShareEvent, type ShareAction } from '@/features/share/analytics';
 import { buildCardModel, type ShareCardMic } from '@/features/share/card-data';
 import { shareCaption, type ShareIntent } from '@/features/share/captions';
 import { ShareCard } from '@/features/share/components/share-card';
+import { SignupPoster } from '@/features/share/components/signup-poster';
 import { useMySignup } from '@/features/signups/queries';
 import { fonts, maxFontScale, minTouchTarget, palette, radius, spacing, type } from '@/theme';
 
@@ -22,7 +23,6 @@ const loadClipboard = () => import('expo-clipboard');
 const loadMediaLibrary = () => import('expo-media-library');
 const loadSharing = () => import('expo-sharing');
 const loadViewShot = () => import('react-native-view-shot');
-
 
 /**
  * The share bottom sheet, reachable from the mic page and from list cards.
@@ -76,7 +76,7 @@ export function ShareSheet({ seriesId, open, onClose }: Props) {
 const CAPTURE_SIZE = 540;
 const PREVIEW_SIZE = 240;
 
-type Busy = 'share' | 'copy' | 'save' | 'story' | null;
+type Busy = 'share' | 'copy' | 'save' | 'story' | 'poster' | null;
 
 function SheetBody({ seriesId, onClose }: { seriesId: string; onClose: () => void }) {
   const detail = useMicDetail(seriesId);
@@ -84,6 +84,7 @@ function SheetBody({ seriesId, onClose }: { seriesId: string; onClose: () => voi
   const toast = useToast();
   const squareRef = useRef<View>(null);
   const storyRef = useRef<View>(null);
+  const posterRef = useRef<View>(null);
   const [busy, setBusy] = useState<Busy>(null);
   // State alone cannot stop a fast double tap: the second press can land
   // before the disabling re-render does. The ref flips synchronously.
@@ -167,15 +168,15 @@ function SheetBody({ seriesId, onClose }: { seriesId: string; onClose: () => voi
     record('intent_switch');
   }
 
-  async function capture(variant: 'square' | 'story'): Promise<string> {
-    const ref = variant === 'story' ? storyRef : squareRef;
+  async function capture(variant: 'square' | 'story' | 'poster'): Promise<string> {
+    const ref = variant === 'story' ? storyRef : variant === 'poster' ? posterRef : squareRef;
     return loadViewShot().then(({ captureRef }) =>
       captureRef(ref, {
         format: 'png',
         quality: 1,
         result: 'tmpfile',
         width: 1080,
-        height: variant === 'story' ? 1920 : 1080,
+        height: variant === 'story' ? 1920 : variant === 'poster' ? 1440 : 1080,
       }),
     );
   }
@@ -216,7 +217,9 @@ function SheetBody({ seriesId, onClose }: { seriesId: string; onClose: () => voi
         // caption rides the clipboard instead of getting silently lost.
         await (await loadClipboard()).setStringAsync(caption);
         toast.show('Caption copied. Paste it wherever the image lands.');
-        await (await loadSharing()).shareAsync(uri, { mimeType: 'image/png', dialogTitle: series.title });
+        await (
+          await loadSharing()
+        ).shareAsync(uri, { mimeType: 'image/png', dialogTitle: series.title });
         // Best effort: Android does not say whether the person completed it.
         record('share_completed', null);
       }
@@ -249,9 +252,26 @@ function SheetBody({ seriesId, onClose }: { seriesId: string; onClose: () => voi
       if (Platform.OS === 'ios') {
         await Share.share({ url: uri });
       } else {
-        await (await loadSharing()).shareAsync(uri, { mimeType: 'image/png', dialogTitle: series.title });
+        await (
+          await loadSharing()
+        ).shareAsync(uri, { mimeType: 'image/png', dialogTitle: series.title });
       }
       record('story_share');
+    });
+
+  // The host's printable signup sheet: the OS sheet covers AirDrop to a
+  // laptop, print, save, and every messaging target in one gesture.
+  const doPoster = () =>
+    runGuarded('poster', async () => {
+      const uri = await capture('poster');
+      if (Platform.OS === 'ios') {
+        await Share.share({ url: uri });
+      } else {
+        await (
+          await loadSharing()
+        ).shareAsync(uri, { mimeType: 'image/png', dialogTitle: series.title });
+      }
+      record('poster_share');
     });
 
   return (
@@ -313,6 +333,15 @@ function SheetBody({ seriesId, onClose }: { seriesId: string; onClose: () => voi
         busy={busy === 'story'}
         disabled={!!busy}
       />
+      {isOwner ? (
+        <Button
+          label="Signup poster (scan to sign up)"
+          kind="secondary"
+          onPress={doPoster}
+          busy={busy === 'poster'}
+          disabled={!!busy}
+        />
+      ) : null}
 
       {/* Capture targets: mounted, full size, parked off screen. Capturing
           the small preview instead would upscale and soften the export. */}
@@ -323,6 +352,11 @@ function SheetBody({ seriesId, onClose }: { seriesId: string; onClose: () => voi
         <View ref={storyRef} collapsable={false}>
           <ShareCard model={model} variant="story" size={CAPTURE_SIZE} />
         </View>
+        {isOwner ? (
+          <View ref={posterRef} collapsable={false}>
+            <SignupPoster model={model} size={CAPTURE_SIZE} />
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -342,7 +376,11 @@ function IntentTab({
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
       onPress={onPress}
-      style={({ pressed }) => [styles.tab, active && styles.tabActive, pressed && styles.tabPressed]}
+      style={({ pressed }) => [
+        styles.tab,
+        active && styles.tabActive,
+        pressed && styles.tabPressed,
+      ]}
     >
       <Text
         style={[styles.tabLabel, active && styles.tabLabelActive]}

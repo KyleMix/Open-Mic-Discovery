@@ -1,11 +1,16 @@
 /**
  * What the share card draws, computed away from the component so the
  * truncation and phrasing are testable without rendering. The card carries
- * exactly six things by design: title, venue, day and date, signup time,
- * place, wordmark. Anything else belongs in the caption or nowhere.
+ * exactly seven things by design: title, venue, day and date, signup time,
+ * place, wordmark, and a QR code to this mic. Anything else belongs in the
+ * caption or nowhere. The QR is the poster's way into the app: it encodes
+ * the mic's universal link, which opens the app when it is installed and
+ * lands on the store-offering web page when it is not, so every shared
+ * flyer carries its own download path.
  */
 
 import { costLabel } from '@/features/discovery/cost';
+import { micShareUrl } from '@/features/discovery/share';
 import type { CaptionMic } from '@/features/share/captions';
 import {
   cadence,
@@ -34,6 +39,8 @@ export type ShareCardModel = {
   /** "COMEDY", or "VARIETY" for a mixed bill. */
   discipline: string;
   posterUrl: string | null;
+  /** The mic's universal link, drawn as the QR code. */
+  shareUrl: string;
 };
 
 // The card is a fixed canvas, so the caps are tighter than the schema's 120.
@@ -86,5 +93,6 @@ export function buildCardModel(mic: ShareCardMic): ShareCardModel {
     accent: single ? disciplineAccents[single] : disciplineAccents.other,
     discipline: (single ?? 'variety').toUpperCase(),
     posterUrl: mic.poster_url,
+    shareUrl: micShareUrl(mic.series_id),
   };
 }

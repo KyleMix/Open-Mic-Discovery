@@ -83,4 +83,10 @@ describe('the share card model', () => {
     const model = buildCardModel({ ...MIC, disciplines: ['music', 'comedy', 'poetry'] });
     expect(model.discipline).toBe('VARIETY');
   });
+
+  it('carries the universal link for the QR code', () => {
+    expect(buildCardModel(MIC).shareUrl).toBe(
+      'https://www.stonedgooseproductions.com/open-mics/mic/abc-123',
+    );
+  });
 });

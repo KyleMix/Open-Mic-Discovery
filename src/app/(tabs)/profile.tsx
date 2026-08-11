@@ -12,6 +12,7 @@ import { useSession } from '@/features/auth/session';
 import { formatRelativeDay } from '@/features/discovery/date-label';
 import { eventDate } from '@/features/discovery/local-time';
 import { AvatarCircle } from '@/features/profile/avatar-circle';
+import { InviteButton } from '@/features/share/components/invite-button';
 import { homeAreaLabel } from '@/features/profile/home-area';
 import { buildSocialLinks } from '@/features/profile/social';
 import { SocialLinkRow } from '@/components/social-links';
@@ -133,6 +134,7 @@ export default function ProfileScreen() {
         label={waiting > 0 ? `Network (${waiting} waiting)` : 'Network'}
         onPress={() => router.push('/network')}
       />
+      <InviteButton />
       <Button label="Edit profile" kind="secondary" onPress={() => router.push('/edit-profile')} />
       <Button label="Settings" kind="secondary" onPress={() => router.push('/settings')} />
       {p.is_admin || reader.data ? (

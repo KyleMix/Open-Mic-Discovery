@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import { LogoMark } from '@/components/logo';
+import { QrCode } from '@/components/qr-code';
 import type { ShareCardModel } from '@/features/share/card-data';
 import { transformedImageUrl } from '@/lib/image-url';
 import { fonts, palette } from '@/theme';
@@ -94,13 +95,20 @@ export function ShareCard({ model, variant, size }: Props) {
                 backgroundColor: model.accent,
               }}
             />
-            <Text maxFontSizeMultiplier={1} style={[styles.discipline, { fontSize: 10 * s, letterSpacing: 1.7 * s }]}>
+            <Text
+              maxFontSizeMultiplier={1}
+              style={[styles.discipline, { fontSize: 10 * s, letterSpacing: 1.7 * s }]}
+            >
               {model.discipline}
             </Text>
           </View>
         </View>
         <View style={styles.middle}>
-          <Text numberOfLines={3} maxFontSizeMultiplier={1} style={[styles.title, { fontSize: 38 * s, lineHeight: 43 * s }]}>
+          <Text
+            numberOfLines={3}
+            maxFontSizeMultiplier={1}
+            style={[styles.title, { fontSize: 38 * s, lineHeight: 43 * s }]}
+          >
             {model.title}
           </Text>
           <View
@@ -113,7 +121,11 @@ export function ShareCard({ model, variant, size }: Props) {
             }}
           />
           {model.venue ? (
-            <Text numberOfLines={1} maxFontSizeMultiplier={1} style={[styles.venue, { fontSize: 20 * s }]}>
+            <Text
+              numberOfLines={1}
+              maxFontSizeMultiplier={1}
+              style={[styles.venue, { fontSize: 20 * s }]}
+            >
               {model.venue}
             </Text>
           ) : null}
@@ -126,19 +138,36 @@ export function ShareCard({ model, variant, size }: Props) {
           </Text>
         </View>
         <View style={styles.bottomRow}>
-          <Text
-            numberOfLines={1}
-            maxFontSizeMultiplier={1}
-            style={[styles.place, { fontSize: 13 * s, color: secondary, maxWidth: size * 0.5 }]}
-          >
-            {model.place ?? ''}
-          </Text>
-          <View style={[styles.lockup, { gap: 4 * s }]}>
-            <LogoMark size={20 * s} />
-            <Text maxFontSizeMultiplier={1} style={[styles.wordmark, { fontSize: 10 * s, letterSpacing: 1.5 * s }]}>
-              OPEN MIC EXPLORER
+          {/* The left column identifies; the QR delivers: it encodes the
+              mic's universal link, so a scan opens the app when installed
+              and offers both stores when not. Every flyer this app emits
+              carries its own download path. */}
+          <View style={[styles.bottomLeft, { gap: 6 * s, paddingRight: 12 * s }]}>
+            <Text
+              numberOfLines={1}
+              maxFontSizeMultiplier={1}
+              style={[styles.place, { fontSize: 13 * s, color: secondary }]}
+            >
+              {model.place ?? ''}
+            </Text>
+            <View style={[styles.lockup, { gap: 4 * s }]}>
+              <LogoMark size={20 * s} />
+              <Text
+                maxFontSizeMultiplier={1}
+                style={[styles.wordmark, { fontSize: 10 * s, letterSpacing: 1.5 * s }]}
+              >
+                OPEN MIC EXPLORER
+              </Text>
+            </View>
+            <Text
+              numberOfLines={2}
+              maxFontSizeMultiplier={1}
+              style={[styles.scanHint, { fontSize: 10 * s, color: secondary }]}
+            >
+              Scan for details and signups. Free on iPhone and Android.
             </Text>
           </View>
+          <QrCode value={model.shareUrl} size={76 * s} />
         </View>
       </View>
     </View>
@@ -186,11 +215,17 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
   },
   bottomRow: {
-    alignItems: 'center',
+    alignItems: 'flex-end',
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
+  bottomLeft: {
+    flex: 1,
+  },
   place: {
+    fontFamily: fonts.regular,
+  },
+  scanHint: {
     fontFamily: fonts.regular,
   },
   lockup: {

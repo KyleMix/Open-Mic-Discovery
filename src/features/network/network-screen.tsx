@@ -20,6 +20,7 @@ import { SignUpPrompt } from '@/features/auth/components/sign-up-prompt';
 import { useSession } from '@/features/auth/session';
 import { eventDate, eventTime } from '@/features/discovery/local-time';
 import { PersonRow } from '@/features/network/components/person-row';
+import { InviteButton } from '@/features/share/components/invite-button';
 import {
   useAcceptRequest,
   useConnectionNights,
@@ -128,10 +129,13 @@ export function NetworkScreen() {
           ) : search.isError ? (
             <ErrorText>Could not search. Check your connection.</ErrorText>
           ) : search.data.length === 0 ? (
-            <Body>
-              Nobody matches that yet. People show up here once they have an account, so tell them
-              about the app at the next mic.
-            </Body>
+            <>
+              <Body>
+                Nobody matches that yet. People show up here once they have an account, so send them
+                the app and connect when they land.
+              </Body>
+              <InviteButton label="Send them the app" />
+            </>
           ) : (
             search.data.map((person) => (
               <PersonRow
@@ -236,10 +240,13 @@ export function NetworkScreen() {
           </ErrorText>
         ) : null}
         {connected.length === 0 ? (
-          <Body>
-            Nobody yet. Search for the people you cross paths with at mics; once you both say yes,
-            their socials and their upcoming nights show here.
-          </Body>
+          <>
+            <Body>
+              Nobody yet. Search for the people you cross paths with at mics; once you both say yes,
+              their socials and their upcoming nights show here. Not on the app? Send it to them.
+            </Body>
+            <InviteButton label="Invite someone" />
+          </>
         ) : (
           connected.map((row) => (
             <ConnectionCard

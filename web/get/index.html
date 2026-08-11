@@ -3,23 +3,23 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Open Mic Explorer</title>
+    <title>Get Open Mic Explorer</title>
     <meta
       name="description"
-      content="Find open mics near you, see when signups open, and get on the list."
+      content="Open Mic Explorer finds open mics near you, shows when signups open, and gets you on the list. Free on iPhone and Android."
     />
     <!--
-  Landing page for shared mic links: /open-mics/mic/<uuid>.
+  The invite landing page: /open-mics/get.
 
-  Every path under /open-mics/mic/ rewrites here (see web/_redirects); a
-  static export cannot pre-render unknown uuids. People with the app never
-  see this page once the universal link association files carry real values,
-  because the OS routes the link straight into the app. Everyone else gets
-  this: what the app is, a button that tries the app anyway, and the stores.
+  Every "get the app" surface points here: the in-app invite message, the
+  QR code on shared flyers, and the signup posters hosts print. One URL for
+  both platforms, because an invite is sent before the sender knows what
+  phone the receiver carries.
 
   Store buttons stay disabled until the owner fills in data-app-store and
-  data-play-store below, the same honest-placeholder pattern as the
-  delete-account page. No analytics, no external requests.
+  data-play-store below, the same honest-placeholder pattern as web/mic.
+  The visitor's own platform is listed first when the user agent gives it
+  away; both always show. No analytics, no external requests.
 -->
     <style>
       :root {
@@ -60,6 +60,11 @@
         color: var(--text-secondary);
         line-height: 1.5;
         margin-bottom: 12px;
+      }
+      ul {
+        color: var(--text-secondary);
+        line-height: 1.6;
+        margin: 0 0 12px 20px;
       }
       .card {
         background: var(--bg-elevated);
@@ -104,53 +109,52 @@
   <body data-app-store="" data-play-store="">
     <main>
       <div class="mark" aria-hidden="true">&#9679;</div>
-      <h1>Sign up for this mic in the app</h1>
-      <p>
-        Someone shared a mic night with you from Open Mic Explorer. The app shows this mic's next
-        night, how its list works, and gets you on it from your phone. Free, on both stores.
-      </p>
+      <h1>Open Mic Explorer</h1>
+      <p>Someone wants to see you at an open mic. The app is how the scene finds its nights:</p>
+      <ul>
+        <li>Every music, comedy, and poetry mic near you, on one map</li>
+        <li>When signups open, how the list works, and what it costs</li>
+        <li>Sign up from your phone and know your spot before you leave home</li>
+      </ul>
       <div class="card" id="stores">
-        <button class="button" id="open-app" type="button">Open in the app</button>
         <a class="button secondary" id="app-store" aria-disabled="true" role="button"
           >App Store: coming soon</a
         >
         <a class="button secondary" id="play-store" aria-disabled="true" role="button"
           >Google Play: coming soon</a
         >
-        <p class="note" id="note">
-          If the app is installed, the button above jumps straight to this mic. After installing,
-          open this link again to land on the same mic.
-        </p>
+        <button class="button secondary" id="open-app" type="button">
+          Already have it? Open the app
+        </button>
+        <p class="note">Free on iPhone and Android. No account needed to browse.</p>
       </div>
     </main>
     <script>
       (function () {
-        // /open-mics/mic/<id> carries the mic id; the custom scheme reuses it.
-        var match = location.pathname.match(/\/mic\/([0-9a-fA-F-]{36})/);
-        var micPath = match ? 'mic/' + match[1] : '';
-        document.getElementById('open-app').addEventListener('click', function () {
-          location.href = 'openmicexplorer://' + micPath;
-        });
+        var ua = navigator.userAgent || '';
+        var isAndroid = /Android/i.test(ua);
+        var stores = document.getElementById('stores');
         ['app-store', 'play-store'].forEach(function (id) {
           var el = document.getElementById(id);
           var url = document.body.dataset[id === 'app-store' ? 'appStore' : 'playStore'];
           if (url) {
             el.href = url;
             el.removeAttribute('aria-disabled');
+            el.classList.remove('secondary');
             el.textContent =
               id === 'app-store' ? 'Get it on the App Store' : 'Get it on Google Play';
           }
         });
-        // The visitor's own store first; both stay visible, because links
-        // get forwarded across platforms.
-        if (/Android/i.test(navigator.userAgent || '')) {
-          document
-            .getElementById('stores')
-            .insertBefore(
-              document.getElementById('play-store'),
-              document.getElementById('app-store'),
-            );
+        // The visitor's own store first; both stay visible.
+        if (isAndroid) {
+          stores.insertBefore(
+            document.getElementById('play-store'),
+            document.getElementById('app-store'),
+          );
         }
+        document.getElementById('open-app').addEventListener('click', function () {
+          location.href = 'openmicexplorer://';
+        });
       })();
     </script>
   </body>
