@@ -29,7 +29,7 @@ appId: com.openmicexplorer.app
 # Content is populated regardless: the seeded region renders listings.
 - assertVisible: 'Rusty Fret Open Mic.*'
 # Search is the obvious way to look at other areas.
-- tapOn: 'Search by city or venue'
+- tapOn: 'Search mic, venue, city, or host'
 - inputText: 'Tacoma'
 - extendedWaitUntil:
     visible: '.*Tacoma.*'
