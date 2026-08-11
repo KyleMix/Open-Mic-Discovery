@@ -174,7 +174,7 @@ What the number says to fix, in order of points recoverable: confirmations and p
 
 ## Re-audit after fixes
 
-Every deduction-producing item was fixed except the 6-destination tab bar, which the owner chose to keep pending a product decision. Same method, same benchmark, re-measured on the fixed tree.
+Every deduction-producing item was fixed. The tab bar question was settled by moving Network under the Profile tab (its waiting-request badge moved to the Profile tab icon, and the Profile screen carries a Network button with the waiting count), bringing the bar to 5 destinations: Discover, Favorites, Going, My mics, Profile. Same method, same benchmark, re-measured on the fixed tree.
 
 | Category | Max | Before | After |
 | --- | --- | --- | --- |
@@ -182,19 +182,20 @@ Every deduction-producing item was fixed except the 6-destination tab bar, which
 | 2. Accessibility floor | 20 | 10 | 20 |
 | 3. Layout integrity | 15 | 10 | 15 |
 | 4. State coverage | 15 | 14 | 15 |
-| 5. Navigation and platform fit | 10 | 8 | 8 |
+| 5. Navigation and platform fit | 10 | 8 | 10 |
 | 6. Interaction feedback | 10 | 0 | 10 |
 | 7. Copy and content | 10 | 2 | 10 |
-| **Raw total** | **100** | **55** | **97** |
+| **Raw total** | **100** | **55** | **99** |
 | **Blocker cap** | 69 | triggered | not triggered |
-| **Capped total** | | **55** | **97** |
+| **Capped total** | | **55** | **99** |
 
-Band: **97 = store-ready (90 to 100)**.
+Band: **99 = store-ready (90 to 100)**.
 
-Arithmetic for the two remaining deductions:
+Arithmetic for the one remaining deduction:
 
 - Category 1, distinct font size and weight combinations: 12 remain after consolidation (28 semibold; 20 semibold; 16 regular, medium, semibold; 15 medium; 15 Poppins-regular logo wordmark; 13 regular, medium, semibold; 13 Poppins-regular stewardship badge; 72 semibold clock). 12 falls in the 10 to 14 bracket → deduct 1. Going under 10 would mean changing the brand wordmark's weight or removing the live clock's display size, neither of which the audit recommends.
-- Category 5, tab bar: 6 destinations, unchanged by owner decision → deduct 2.
+
+Category 5 re-checks after the move: 5 tab destinations (in range); the relocated Network screen renders a header in every state, so it keeps a clear back path; push payloads for connection activity deep-link to the new `/network` stack route; no dead ends introduced → deduct 0.
 
 Counts behind the cleared deductions, re-measured:
 

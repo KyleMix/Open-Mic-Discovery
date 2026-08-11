@@ -10,12 +10,14 @@ import { getSupabase } from '@/lib/supabase';
 import { createTestQueryClient, createWrapper, type QueryWrapper } from '@/test/query-harness';
 import { createFakeSupabase, neverResolves, type FakeHandler } from '@/test/supabase-fake';
 
-import NetworkScreen from '@/app/(tabs)/network';
+import NetworkScreen from '@/app/network';
 
 jest.mock('@/lib/supabase', () => ({ getSupabase: jest.fn() }));
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
   usePathname: () => '/network',
+  // The route renders its header via Stack.Screen in every state.
+  Stack: { Screen: () => null },
 }));
 jest.mock('@/features/auth/session', () => ({ useSession: jest.fn() }));
 

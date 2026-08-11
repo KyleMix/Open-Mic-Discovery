@@ -105,9 +105,10 @@ export async function routeForPushPayload(data: unknown): Promise<string | null>
   if (!payload) {
     return null;
   }
-  // Connection requests and accepts land on the tab where the answer is.
+  // Connection requests and accepts land on the screen where the answer
+  // is. Network lives under the Profile tab as a stack screen.
   if (payload.network) {
-    return '/(tabs)/network';
+    return '/network';
   }
   if (payload.series_id) {
     return `/mic/${payload.series_id}`;

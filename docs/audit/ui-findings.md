@@ -1,6 +1,6 @@
 # UI Findings
 
-Status after the fix pass: every scored finding is fixed except the 6-destination tab bar (owner decision, pending). Fixed: B-1, B-2, H-1 through H-5, M-1, M-7, M-8, M-11 through M-16, M-18, P-3, and the eula half of M-5. Still open, unscored: M-2 (reset-password scroll), M-3 (backdrop-tap consistency), M-4 (chip radii values), the body-font half of M-5, M-6 (state padding jump), M-9 (1.6x cap policy), M-10 (reduce motion on modals), M-17 (border contrast), and the Polish list. Line numbers below refer to commit `0739d0d`, before the fixes.
+Status after the fix pass: every scored finding is fixed. The 6-destination tab bar was resolved by moving Network under the Profile tab (5 destinations remain; the request badge moved to the Profile tab icon). Fixed: B-1, B-2, H-1 through H-5, M-1, M-7, M-8, M-11 through M-16, M-18, P-3, and the eula half of M-5. Still open, unscored: M-2 (reset-password scroll), M-3 (backdrop-tap consistency), M-4 (chip radii values), the body-font half of M-5, M-6 (state padding jump), M-9 (1.6x cap policy), M-10 (reduce motion on modals), M-17 (border contrast), and the Polish list. Line numbers below refer to commit `0739d0d`, before the fixes.
 
 Phase 2 of the visual and usability audit. Every finding cites file and line at commit `0739d0d`. Measurements are computed, not estimated; anything not measurable from code alone is marked Unverified. Companion documents: `ui-inventory.md`, `ui-score.md`.
 

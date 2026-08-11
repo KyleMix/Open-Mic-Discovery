@@ -4,6 +4,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { signOut } from '@/features/auth/api';
 import { useOwnProfile } from '@/features/auth/queries';
+import { useMyConnections } from '@/features/network/queries';
+import { splitConnections } from '@/features/network/summary';
 import { useIsAdminReader } from '@/features/safety/queries';
 import { SignUpPrompt } from '@/features/auth/components/sign-up-prompt';
 import { useSession } from '@/features/auth/session';
@@ -34,6 +36,10 @@ export default function ProfileScreen() {
   // Read-only reviewers get the queue link too; the queue itself hides the
   // action buttons from them.
   const reader = useIsAdminReader(session?.user.id);
+  // Network lives under this tab now; the count keeps a waiting request
+  // visible from here, same as the badge on the tab icon.
+  const connections = useMyConnections(session?.user.id);
+  const waiting = connections.data ? splitConnections(connections.data).requests.length : 0;
   const [error, setError] = useState<string | null>(null);
 
   // Browsing is open, so this tab is reachable with no account at all.
@@ -123,7 +129,11 @@ export default function ProfileScreen() {
         <MyNights userId={p.id} onOpenMic={(id) => router.push(`/mic/${id}`)} />
       ) : null}
       {error ? <ErrorText>{error}</ErrorText> : null}
-      <Button label="Edit profile" onPress={() => router.push('/edit-profile')} />
+      <Button
+        label={waiting > 0 ? `Network (${waiting} waiting)` : 'Network'}
+        onPress={() => router.push('/network')}
+      />
+      <Button label="Edit profile" kind="secondary" onPress={() => router.push('/edit-profile')} />
       <Button label="Settings" kind="secondary" onPress={() => router.push('/settings')} />
       {p.is_admin || reader.data ? (
         <Button label="Moderation queue" kind="secondary" onPress={() => router.push('/admin')} />

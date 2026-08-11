@@ -11,7 +11,7 @@ Audit date: 2026-08-11. Audited at commit `0739d0d`.
 | Route / file | Job |
 | --- | --- |
 | `src/app/_layout.tsx` | Root layout: fonts, query persistence, theme, toast and banner providers, auth gate, error boundary. |
-| `src/app/(tabs)/_layout.tsx` | Tab bar with 6 destinations: Discover, Favorites, Going, Network, My mics, Profile. |
+| `src/app/(tabs)/_layout.tsx` | Tab bar with 6 destinations: Discover, Favorites, Going, Network, My mics, Profile. (Post-audit: Network moved to a stack route under Profile; 5 destinations remain.) |
 | `src/app/(auth)/_layout.tsx` | Stack for the auth funnel with per-screen titles. |
 | `src/app/+native-intent.tsx` | Deep link path rewriting, no UI. |
 
@@ -22,7 +22,7 @@ Audit date: 2026-08-11. Audited at commit `0739d0d`.
 | `src/app/(tabs)/index.tsx` | Discover: search input, filter bar, map or list of nearby mics, zero-result recovery. |
 | `src/app/(tabs)/favorites.tsx` | Saved mics as MicCards; signed-out pitch. |
 | `src/app/(tabs)/going.tsx` | Upcoming nights the user committed to, soonest first. |
-| `src/app/(tabs)/network.tsx` | Re-export of `features/network/network-screen.tsx`: connections, requests, people search, connection nights, privacy toggle. |
+| `src/app/(tabs)/network.tsx` | Re-export of `features/network/network-screen.tsx`: connections, requests, people search, connection nights, privacy toggle. (Post-audit: now `src/app/network.tsx`, a stack route reached from Profile.) |
 | `src/app/(tabs)/producer.tsx` | My mics: the host's listings with freshness confirm, admin claim review inset. |
 | `src/app/(tabs)/profile.tsx` | Own profile: identity, roles, socials, My nights history, links to settings and admin. |
 
