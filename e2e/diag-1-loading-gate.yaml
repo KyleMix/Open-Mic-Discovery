@@ -11,6 +11,6 @@ appId: com.openmicexplorer.app
 ---
 - launchApp:
     clearState: true
-- assertVisible:
-    text: 'Getting things ready'
+- extendedWaitUntil:
+    visible: 'Getting things ready'
     timeout: 12000

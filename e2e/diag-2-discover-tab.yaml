@@ -10,6 +10,6 @@ appId: com.openmicexplorer.app
 ---
 - launchApp:
     clearState: true
-- assertVisible:
-    text: 'Discover'
+- extendedWaitUntil:
+    visible: 'Discover'
     timeout: 12000

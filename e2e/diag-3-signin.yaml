@@ -8,6 +8,6 @@ appId: com.openmicexplorer.app
 ---
 - launchApp:
     clearState: true
-- assertVisible:
-    text: 'Sign in'
+- extendedWaitUntil:
+    visible: 'Sign in'
     timeout: 12000
