@@ -51,6 +51,43 @@ Done, and not blocking anything:
   `b44e6a07-5276-481b-9679-8e3e1e681692`. No `eas init` needed.
 - The reviewer seed, the legal export, and this checklist.
 
+### Pre-launch audit, 2026-08-11 (updates the numbers above)
+
+A full pre-launch audit ran on 2026-08-11 (report at `AUDIT-REPORT.md`).
+It found no code-shaped launch blocker: the blockers are all owner-only
+account and deploy steps, listed in the steps below and unchanged by the
+audit. Current verification, superseding the 2026-08-09 line above: 554
+Jest tests, 806 pgTAP assertions, typecheck and lint clean, on a rebuilt
+database.
+
+Four additive migrations were applied and are already in the chain (no
+separate action, `supabase db push` runs them in order). None changes a
+table shape, so none needs a type regeneration:
+
+- `20260811000100_search_hides_hidden_hosts` closes a leak where a
+  banned or unapproved host's stage name stayed readable through
+  `series_search`.
+- `20260811000200_profiles_cannot_self_delete` stops a user setting
+  their own `deleted_at` and freezing their profile. Deletion still runs
+  through `delete_account_for` (RLS-bypassing), unaffected.
+- `20260811000300_defense_in_depth_revokes` takes back write grants no
+  policy uses (and `EXECUTE` on `delete_account_for`), leaving the
+  guest-share `anon` insert on `share_events` in place.
+- `20260811000400_search_and_queue_indexes` adds trigram indexes for the
+  people searches and partial indexes for the moderation queue. Applied
+  as plain `CREATE INDEX` because a fresh project's tables are empty; if
+  you ever apply them to an already-populated database out of band,
+  build each with `CREATE INDEX CONCURRENTLY` instead.
+
+The launch blockers the audit flagged are the owner-only items already
+in this checklist: the two `.well-known` association placeholders (step
+7), the deletion-page `data-function-url` (step 3 / step 7), the
+`eas.json` `ascAppId` (step 5), the support mailbox (step 8), the Maps
+key restriction (step 4), and rotating the admin password published in
+`REVIEW_NOTES.md` (do this when you seed production, step 3). The audit
+also lists stale docs to reconcile before filling the store forms; see
+`AUDIT-REPORT.md` section 6.
+
 The critical path, and what is genuinely parallel:
 
 ```
@@ -150,8 +187,8 @@ it takes up to five days).
   us-west (closest to your users).
 - Apply the schema: with the Supabase CLI logged in,
   `npx supabase link --project-ref <ref>` then `npx supabase db push`
-  (runs all 71 migrations in order, including the stewardship one, D2, and
-  this pass's audit migration).
+  (runs the full migration chain in order, including the stewardship one,
+  D2, and the four 2026-08-11 pre-launch audit migrations).
 - Then, in the dashboard:
   - Storage: create public buckets `avatars` and `posters` if `db push`
     did not (policies ship in the migrations).
