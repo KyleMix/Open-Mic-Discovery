@@ -16,7 +16,17 @@
 --   WITH CHECK there is belt-and-suspenders, not a fix. No change proposed.
 
 -- ---------------------------------------------------------------------------
--- Finding 5 (real, low severity, self-inflicted). A user can lock their own
+-- Finding 5 (real, low severity, self-inflicted). APPLIED 2026-08-11 as
+-- migration supabase/migrations/20260811000200_profiles_cannot_self_delete.sql
+-- (with a down file and a pgTAP assertion in rls.test.sql). It added
+-- `deleted_at is null` to the `profiles owner update` WITH CHECK, which is the
+-- right layer: delete_account_for is SECURITY DEFINER owned by a superuser and
+-- bypasses RLS, so deletion keeps working while the API path is refused. The
+-- roles half below was WITHDRAWN: is_producer / is_performer are self-set by
+-- design (onboarding and the role toggle write them), not a review_claim
+-- bypass, so pinning them would break onboarding. Notes retained as record.
+--
+-- A user can lock their own
 -- profile permanently.
 --
 -- `profiles owner update` WITH CHECK is only `id = auth.uid()`. Nothing stops

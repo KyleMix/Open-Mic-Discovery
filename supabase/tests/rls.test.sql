@@ -1,7 +1,7 @@
 -- RLS enforcement tests. Runs under pgTAP inside a rolled-back transaction.
 -- Impersonation follows the platform mechanism: SET ROLE + request.jwt.claims.
 begin;
-select plan(26);
+select plan(27);
 
 -- Seeded demo users:
 --   p1 performer, p2 producer, p3 dual role, p4 admin.
@@ -103,6 +103,17 @@ select is(
   (select is_admin from profiles where id = auth.uid()),
   false,
   'is_admin cannot be self-granted'
+);
+
+-- Self-deleting the profile is refused by the owner-update WITH CHECK, so a
+-- user cannot freeze their own row into a state account deletion never
+-- produces. Deletion runs through delete_account_for (SECURITY DEFINER, RLS
+-- bypassed), which is unaffected.
+select throws_ok(
+  $$update profiles set deleted_at = now() where id = auth.uid()$$,
+  '42501',
+  'new row violates row-level security policy for table "profiles"',
+  'a user cannot soft-delete their own profile through the API'
 );
 
 -- Free-text edits pass through the automated filter (clean text stays live;
