@@ -83,9 +83,16 @@ jobs:
       # This is why e2e never passed. The release build embeds the JS bundle,
       # so the APK is self-contained; Expo's prebuild signs the release variant
       # with the debug keystore, so no signing secret is needed.
+      # Skip the release lint pass (lintVitalRelease / lintVitalAnalyzeRelease).
+      # assembleRelease pulls in Android's release lint, whose worker crashes on
+      # the CI runner with an OutOfMemoryError (Metaspace) inside AGP's own lint
+      # code, failing the build after the APK is already assembled. The e2e job
+      # only needs the APK; lint is already covered by the "Typecheck, lint,
+      # unit tests" job (expo lint), so there is nothing to gain by running it
+      # here and everything to lose to the OOM.
       - name: Build the release APK
         working-directory: android
-        run: ./gradlew assembleRelease --no-daemon
+        run: ./gradlew assembleRelease -x lintVitalRelease -x lintVitalAnalyzeRelease --no-daemon
 
       - name: Install Maestro
         run: |
