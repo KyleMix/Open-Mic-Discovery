@@ -12,7 +12,7 @@
 -- from the moment it exists, and nothing in the schema objects. These tests
 -- are that objection.
 begin;
-select plan(16);
+select plan(24);
 
 -- ---------------------------------------------------------------------------
 -- The exception that proves the rule: spatial_ref_sys.
@@ -214,6 +214,59 @@ select is_empty(
   $$ select r.title from search_mics('Rusty Fret') r
       where r.series_id = '20000000-0000-4000-c000-000000000001' $$,
   'and switching it off removes it from search_mics, as it already does from mics_near'
+);
+
+-- ---------------------------------------------------------------------------
+-- Defense in depth: the blanket write grant was taken back where no policy
+-- could ever use it (20260811000300). RLS still denies these, so these are
+-- belt-and-suspenders, but a revoked grant is one fewer thing depending on a
+-- policy being present and correct.
+-- ---------------------------------------------------------------------------
+-- anon loses writes on the three tables whose write policies are all
+-- authenticated-only.
+select ok(
+  not has_table_privilege('anon', 'public.connections', 'INSERT')
+  and not has_table_privilege('anon', 'public.connections', 'UPDATE')
+  and not has_table_privilege('anon', 'public.connections', 'DELETE'),
+  'anon holds no write on connections'
+);
+select ok(
+  not has_table_privilege('anon', 'public.mic_credits', 'INSERT')
+  and not has_table_privilege('anon', 'public.mic_credits', 'DELETE'),
+  'anon holds no write on mic_credits'
+);
+select ok(
+  not has_table_privilege('anon', 'public.attendance_plans', 'INSERT')
+  and not has_table_privilege('anon', 'public.attendance_plans', 'DELETE'),
+  'anon holds no write on attendance_plans'
+);
+-- authenticated keeps its writes there, because those policies are the real
+-- write path.
+select ok(
+  has_table_privilege('authenticated', 'public.connections', 'INSERT'),
+  'authenticated keeps its connections write, which its policies use'
+);
+-- series_search has no write policy at all, so neither API role writes it.
+select ok(
+  not has_table_privilege('anon', 'public.series_search', 'INSERT')
+  and not has_table_privilege('authenticated', 'public.series_search', 'INSERT'),
+  'no API role may write series_search directly'
+);
+select ok(
+  has_table_privilege('authenticated', 'public.series_search', 'SELECT'),
+  'but authenticated still reads series_search, which the search RPCs need'
+);
+-- share_events keeps anon INSERT, because guest shares are a real path.
+select ok(
+  has_table_privilege('anon', 'public.share_events', 'INSERT'),
+  'anon keeps its share_events insert, its guest-share policy is load-bearing'
+);
+-- delete_account_for is no longer callable by an API role directly; only the
+-- SECURITY DEFINER wrappers reach it (deletion.test.sql proves they still do).
+select ok(
+  not has_function_privilege('authenticated', 'private.delete_account_for(uuid)', 'EXECUTE')
+  and not has_function_privilege('anon', 'private.delete_account_for(uuid)', 'EXECUTE'),
+  'no API role may execute delete_account_for directly'
 );
 
 select * from finish();

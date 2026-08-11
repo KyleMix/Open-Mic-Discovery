@@ -149,14 +149,18 @@ select cmp_ok(
 );
 reset role;
 
--- Writes are trigger-only: no API role may modify the table directly.
+-- Writes are trigger-only: no API role may modify the table directly. The
+-- write grant was revoked from anon and authenticated (20260811000300), so the
+-- denial now comes from the missing privilege, ahead of RLS: series_search has
+-- no write policy at all, and every real write is a SECURITY DEFINER sync
+-- function.
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', 'a0000000-0000-4000-a000-00000000ceca', 'role', 'authenticated')::text, true);
 select throws_ok(
   $$ insert into series_search (series_id, document, fuzzy)
      values ('c0000000-0000-4000-c000-00000000cafe', to_tsvector('x'), 'x') $$,
   '42501',
-  'new row violates row-level security policy for table "series_search"',
+  'permission denied for table series_search',
   'authenticated cannot write search documents directly'
 );
 reset role;

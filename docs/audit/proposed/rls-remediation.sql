@@ -81,7 +81,10 @@
 -- while their approved series still matches on its title.
 
 -- ---------------------------------------------------------------------------
--- Finding 6 (defense in depth). private.delete_account_for(uuid) has no
+-- Finding 6 (defense in depth). APPLIED 2026-08-11 as migration
+-- supabase/migrations/20260811000300_defense_in_depth_revokes.sql.
+--
+-- private.delete_account_for(uuid) has no
 -- authorization check of its own and carries EXECUTE for authenticated via the
 -- blanket grant in 20260728001200. It is safe today only because `private` is
 -- not in PostgREST's exposed schemas (supabase/config.toml). One config line
@@ -96,7 +99,16 @@
 -- authenticated caller cannot execute delete_account_for directly.
 
 -- ---------------------------------------------------------------------------
--- Finding 7 (defense in depth). The blanket `alter default privileges ...
+-- Finding 7 (defense in depth). APPLIED 2026-08-11 as migration
+-- supabase/migrations/20260811000300_defense_in_depth_revokes.sql, with the
+-- scope corrected: share_events was EXCLUDED (anon holds a real guest-share
+-- INSERT policy, so its write grant is load-bearing), the connections /
+-- mic_credits / attendance_plans revokes are anon-only (authenticated writes
+-- through its policies), and series_search is revoked from both roles (it has
+-- no write policy; writes are DEFINER-only). The sketch below listed all five
+-- from anon, which would have broken guest sharing; retained as record.
+--
+-- The blanket `alter default privileges ...
 -- grant all on tables to anon` (20260728001200) means later public tables
 -- arrive with INSERT/UPDATE/DELETE granted to anon. RLS default-deny covers
 -- it, and report_triage and user_sanctions explicitly revoke it back with a
