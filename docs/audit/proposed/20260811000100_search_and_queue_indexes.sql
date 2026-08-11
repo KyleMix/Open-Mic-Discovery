@@ -1,4 +1,8 @@
--- PROPOSED, NOT APPLIED. Awaiting owner review (pre-launch audit, 2026-08-11).
+-- APPLIED 2026-08-11 as supabase/migrations/20260811000400_search_and_queue_indexes.sql
+-- (with a down file and assertions in search-indexes.test.sql). This file is
+-- retained only as the original proposal; the live version uses plain CREATE
+-- INDEX because the migration chain applies to a fresh project. The rest of
+-- this text is the record of what it addressed.
 --
 -- Do not place this in supabase/migrations/ until reviewed. When approved,
 -- move it there under a fresh timestamp and add a matching down/ file that
