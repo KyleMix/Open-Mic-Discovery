@@ -39,6 +39,13 @@ jobs:
     timeout-minutes: 60
     env:
       RUN_ON_MAESTRO_CLOUD: 'false'
+      # The release build runs @sentry/react-native's gradle hook, which tries
+      # to upload source maps and fails in CI with "An organization ID or slug
+      # is required" because no Sentry org or token is configured here (nor
+      # should there be). This skips the upload while still producing the JS
+      # bundle the APK needs. Real release builds upload from EAS, which has the
+      # Sentry secrets.
+      SENTRY_DISABLE_AUTO_UPLOAD: 'true'
     steps:
       - uses: actions/checkout@v4
 
