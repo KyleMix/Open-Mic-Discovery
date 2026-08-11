@@ -25,6 +25,9 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'supabase/**'
+      # The workflow re-runs when its own definition changes, so a fix to the
+      # e2e setup is validated by the e2e run on the same PR.
+      - '.github/workflows/e2e.yml'
 
 concurrency:
   group: e2e-${{ github.ref }}
