@@ -14,6 +14,42 @@
 begin;
 select plan(24);
 
+-- Diagnostics (not assertions): if the spatial_ref_sys lock regresses on a new
+-- Postgres image, these print who still holds the write and whether the
+-- migration role can revoke it, so the failure is read off the test output
+-- instead of guessed at. Env-agnostic: no role name is hardcoded, and an empty
+-- ACL prints "(none)".
+select diag(
+  'spatial_ref_sys owner: '
+  || (select r.rolname from pg_class c join pg_roles r on r.oid = c.relowner
+       where c.oid = 'public.spatial_ref_sys'::regclass)
+);
+select diag(
+  'spatial_ref_sys write ACL: '
+  || coalesce((
+       select string_agg(
+         format('%s<-%s:%s',
+           coalesce(pg_get_userbyid(nullif(a.grantee, 0)), 'PUBLIC'),
+           pg_get_userbyid(a.grantor),
+           a.privilege_type),
+         ', ')
+       from pg_class c cross join lateral aclexplode(c.relacl) a
+       where c.oid = 'public.spatial_ref_sys'::regclass
+         and a.privilege_type in ('INSERT', 'UPDATE', 'DELETE')
+     ), '(none)')
+);
+select diag(
+  'migration role can assume surviving grantors: '
+  || coalesce((
+       select string_agg(distinct
+         pg_get_userbyid(a.grantor) || '=' || pg_has_role(current_user, a.grantor, 'MEMBER')::text,
+         ', ')
+       from pg_class c cross join lateral aclexplode(c.relacl) a
+       where c.oid = 'public.spatial_ref_sys'::regclass
+         and a.privilege_type in ('INSERT', 'UPDATE', 'DELETE')
+     ), '(none)')
+);
+
 -- ---------------------------------------------------------------------------
 -- The exception that proves the rule: spatial_ref_sys.
 --
