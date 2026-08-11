@@ -1,0 +1,98 @@
+-- PROPOSED RLS remediation, NOT APPLIED. Pre-launch audit, 2026-08-11.
+--
+-- These touch RLS policies and privilege grants, which the audit brief holds
+-- for owner review. Each needs a pgTAP assertion added alongside it (the repo
+-- convention) before it goes into supabase/migrations/. Ordered by severity.
+--
+-- IMPORTANT non-findings, recorded so they are not re-investigated:
+--   The "cross-tenant write via missing WITH CHECK" concern on
+--   `occurrences owner update`, `credits manager update`, and
+--   `venues creator update` is NOT exploitable. Postgres uses a policy's
+--   USING expression as the implicit WITH CHECK for UPDATE when none is
+--   given, so the NEW row's series_id/created_by is validated against
+--   ownership and the move is rejected. Verified by probe: a producer
+--   attempting `update mic_occurrences set series_id = <other owner's series>`
+--   gets "new row violates row-level security policy". Adding an explicit
+--   WITH CHECK there is belt-and-suspenders, not a fix. No change proposed.
+
+-- ---------------------------------------------------------------------------
+-- Finding 5 (real, low severity, self-inflicted). A user can lock their own
+-- profile permanently.
+--
+-- `profiles owner update` WITH CHECK is only `id = auth.uid()`. Nothing stops
+-- a client sending `deleted_at = now()`; USING then requires `deleted_at is
+-- null`, so every later self-update is refused and the row is frozen in a
+-- state delete_account() never produces (auth user still live, profile
+-- orphaned). The same policy also lets a user self-set is_producer /
+-- is_performer, bypassing the review_claim grant path.
+--
+-- Fix: pin deleted_at and the role/moderation columns in a BEFORE UPDATE
+-- trigger for end-user writes (admins and service role exempt), the same
+-- shape guard_profile_writes already uses for is_admin and eula_accepted_at.
+-- Sketch (fold into private.guard_profile_writes rather than a new trigger):
+--
+--   if not private.is_admin() then
+--     new.deleted_at    := old.deleted_at;      -- only delete_account_for sets this
+--     new.is_producer   := old.is_producer;     -- granted via review_claim only
+--     new.is_performer  := old.is_performer;
+--   end if;
+--
+-- Add pgTAP: an authenticated self-update setting deleted_at leaves it null;
+-- setting is_producer true leaves it unchanged.
+
+-- ---------------------------------------------------------------------------
+-- Finding 4 (real, medium). Banned / unapproved host names are readable by
+-- anon through series_search.
+--
+-- build_series_search (20260807000200) joins profiles host filtering only
+-- `host.deleted_at is null`, not moderation_status and not is_banned. And
+-- profiles_search_sync fires only ON UPDATE OF stage_name, deleted_at, so a
+-- host being rejected or banned never rebuilds the affected search rows.
+-- series_search is `using (true)` to anon, so `select fuzzy from series_search`
+-- returns the stage names of pending, rejected, and banned hosts, the one
+-- identifier public_profiles goes out of its way to suppress.
+--
+-- Fix, two parts:
+--   1. In build_series_search, gate the host contribution on the host being
+--      visible: add to the host join
+--        and host.moderation_status = 'approved'
+--        and not private.is_banned(host.id)
+--      (or LEFT JOIN and null the stage_name term when those fail, so the
+--      series row still indexes on its own title/venue text).
+--   2. Widen profiles_search_sync to also fire ON UPDATE OF moderation_status
+--      so a ban or rejection resyncs the host's series rows immediately.
+--
+-- Add pgTAP: ban a host, assert their stage_name disappears from series_search
+-- while their approved series still matches on its title.
+
+-- ---------------------------------------------------------------------------
+-- Finding 6 (defense in depth). private.delete_account_for(uuid) has no
+-- authorization check of its own and carries EXECUTE for authenticated via the
+-- blanket grant in 20260728001200. It is safe today only because `private` is
+-- not in PostgREST's exposed schemas (supabase/config.toml). One config line
+-- from being an "any user deletes any account by uuid" primitive. The repo
+-- already revokes several private helpers for exactly this reason.
+--
+--   revoke execute on function private.delete_account_for(uuid)
+--     from anon, authenticated;
+--
+-- The wrappers delete_account() (SECURITY DEFINER, uses auth.uid()) and
+-- delete_account_web() (service role only) keep working. Add pgTAP: an
+-- authenticated caller cannot execute delete_account_for directly.
+
+-- ---------------------------------------------------------------------------
+-- Finding 7 (defense in depth). The blanket `alter default privileges ...
+-- grant all on tables to anon` (20260728001200) means later public tables
+-- arrive with INSERT/UPDATE/DELETE granted to anon. RLS default-deny covers
+-- it, and report_triage and user_sanctions explicitly revoke it back with a
+-- written rationale, but connections, share_events, series_search,
+-- mic_credits, and attendance_plans did not. Match the existing pattern:
+--
+--   revoke insert, update, delete on public.connections       from anon;
+--   revoke insert, update, delete on public.share_events       from anon;
+--   revoke insert, update, delete on public.series_search      from anon;
+--   revoke insert, update, delete on public.mic_credits        from anon;
+--   revoke insert, update, delete on public.attendance_plans   from anon;
+--
+-- (anon holds no session, so it can never satisfy these tables' RLS anyway;
+-- this closes the surface rather than fixing a live hole.)

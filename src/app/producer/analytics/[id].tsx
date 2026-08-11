@@ -61,10 +61,23 @@ export default function AnalyticsScreen() {
       </>
     );
   }
-  if (
-    detail.data?.series &&
-    !canManageSeries(detail.data.series, session.user.id, profile.data?.is_admin ?? false)
-  ) {
+  // The gate below needs the series row to say yes or no. Without this
+  // branch, a failed detail query skipped the gate and the RLS-emptied
+  // stats rendered as a well-formed "0 signups" page about someone
+  // else's mic (the live screen already handles it this way).
+  if (detail.isError || !detail.data?.series) {
+    return (
+      <>
+        <ScreenHeader title="Analytics" />
+        <Screen>
+          <Title>Analytics</Title>
+          <ErrorText>Could not load this mic. Check your connection.</ErrorText>
+          <Button label="Try again" onPress={() => detail.refetch()} />
+        </Screen>
+      </>
+    );
+  }
+  if (!canManageSeries(detail.data.series, session.user.id, profile.data?.is_admin ?? false)) {
     return (
       <>
         <ScreenHeader title="Analytics" />

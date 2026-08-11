@@ -105,10 +105,21 @@ export default function CreditsScreen() {
   // Credits are publicly readable, so this editor loaded for anyone with
   // the id and presented live Change and Remove buttons on someone else's
   // lineup. The writes were refused; the screen should not offer them.
-  if (
-    detail.data?.series &&
-    !canManageSeries(detail.data.series, session.user.id, profile.data?.is_admin ?? false)
-  ) {
+  // The gate needs the series row to say yes or no, so a failed detail
+  // query must not fall through to the editor.
+  if (detail.isError || !detail.data?.series) {
+    return (
+      <>
+        <ScreenHeader title="Lineup" />
+        <Screen>
+          <Title>Lineup</Title>
+          <ErrorText>Could not load this mic. Check your connection.</ErrorText>
+          <Button label="Try again" onPress={() => detail.refetch()} />
+        </Screen>
+      </>
+    );
+  }
+  if (!canManageSeries(detail.data.series, session.user.id, profile.data?.is_admin ?? false)) {
     return (
       <>
         <ScreenHeader title="Lineup" />
