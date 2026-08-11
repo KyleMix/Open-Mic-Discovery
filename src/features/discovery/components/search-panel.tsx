@@ -48,7 +48,7 @@ export function SearchPanel({ onPickRecent, onPickSaved, query }: Props) {
                 accessibilityRole="button"
                 accessibilityLabel={`Run saved search ${sv.name}`}
                 onPress={() => onPickSaved(sv)}
-                style={styles.row}
+                style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
               >
                 <Ionicons name="bookmark" size={16} color={palette.textSecondary} />
                 <Text maxFontSizeMultiplier={maxFontScale} style={styles.rowLabel}>
@@ -58,9 +58,8 @@ export function SearchPanel({ onPickRecent, onPickSaved, query }: Props) {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`Delete saved search ${sv.name}`}
-                hitSlop={8}
                 onPress={() => removeSaved(sv.name)}
-                style={styles.rowAction}
+                style={({ pressed }) => [styles.rowAction, pressed && styles.rowPressed]}
               >
                 <Ionicons name="close" size={16} color={palette.textFaint} />
               </Pressable>
@@ -79,6 +78,7 @@ export function SearchPanel({ onPickRecent, onPickSaved, query }: Props) {
               accessibilityRole="button"
               accessibilityLabel="Clear recent searches"
               onPress={clearRecent}
+              style={({ pressed }) => [styles.textAction, pressed && styles.rowPressed]}
             >
               <Text maxFontSizeMultiplier={maxFontScale} style={styles.clear}>
                 Clear
@@ -91,7 +91,7 @@ export function SearchPanel({ onPickRecent, onPickSaved, query }: Props) {
               accessibilityRole="button"
               accessibilityLabel={`Search again for ${q}`}
               onPress={() => onPickRecent(q)}
-              style={styles.row}
+              style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
             >
               <Ionicons name="time-outline" size={16} color={palette.textSecondary} />
               <Text maxFontSizeMultiplier={maxFontScale} style={styles.rowLabel}>
@@ -131,7 +131,7 @@ export function SearchPanel({ onPickRecent, onPickSaved, query }: Props) {
                 setSaveName('');
                 setSaving(false);
               }}
-              style={styles.row}
+              style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
             >
               <Text
                 maxFontSizeMultiplier={maxFontScale}
@@ -146,7 +146,7 @@ export function SearchPanel({ onPickRecent, onPickSaved, query }: Props) {
             accessibilityRole="button"
             accessibilityLabel="Save this search and its filters"
             onPress={() => setSaving(true)}
-            style={styles.row}
+            style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
           >
             <Ionicons name="bookmark-outline" size={16} color={palette.textSecondary} />
             <Body>Save this search</Body>
@@ -199,6 +199,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: minTouchTarget,
     minWidth: minTouchTarget,
+  },
+  // Text actions still get a full-size touch box.
+  textAction: {
+    justifyContent: 'center',
+    minHeight: minTouchTarget,
+    paddingHorizontal: spacing.sm,
+  },
+  rowPressed: {
+    opacity: 0.6,
   },
   rowLabel: {
     color: palette.text,

@@ -1,4 +1,5 @@
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MultiSelectField } from '@/components/select';
 import { Button, ToggleRow } from '@/components/ui';
@@ -52,9 +53,10 @@ function SheetChip({
       accessibilityLabel={label}
       accessibilityState={{ selected: active }}
       onPress={onPress}
-      style={[
+      style={({ pressed }) => [
         styles.chip,
         active && [styles.chipActive, activeColor ? { borderColor: activeColor } : null],
+        pressed && styles.chipPressed,
       ]}
     >
       <Text
@@ -98,6 +100,7 @@ function Section({
  */
 export function FilterSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const filters = useFiltersStore();
+  const insets = useSafeAreaInsets();
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -108,7 +111,9 @@ export function FilterSheet({ visible, onClose }: { visible: boolean; onClose: (
           style={styles.backdropTouch}
           onPress={onClose}
         />
-        <View style={styles.sheet}>
+        {/* Clears the home indicator: the footer buttons sit at the very
+            bottom of the physical screen. */}
+        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
           <View style={styles.grabber} />
           <Text maxFontSizeMultiplier={maxFontScale} style={styles.title}>
             Filters
@@ -230,7 +235,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     borderWidth: 1,
     maxHeight: '85%',
-    paddingBottom: spacing.lg,
   },
   grabber: {
     alignSelf: 'center',
@@ -282,6 +286,9 @@ const styles = StyleSheet.create({
   chipActive: {
     backgroundColor: palette.bgPressed,
     borderColor: palette.text,
+  },
+  chipPressed: {
+    backgroundColor: palette.bgPressed,
   },
   chipLabel: {
     color: palette.textSecondary,

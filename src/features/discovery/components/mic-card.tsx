@@ -25,6 +25,7 @@ import {
   disciplineAccents,
   fonts,
   maxFontScale,
+  minTouchTarget,
   palette,
   radius,
   spacing,
@@ -240,9 +241,12 @@ function CardShare({ seriesId, title }: { seriesId: string; title: string }) {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Share ${title}`}
-        hitSlop={12}
         onPress={() => setOpen(true)}
-        style={[styles.share, session ? styles.shareBesideStar : null]}
+        style={({ pressed }) => [
+          styles.share,
+          session ? styles.shareBesideStar : null,
+          pressed && styles.overlayPressed,
+        ]}
       >
         <Ionicons name="share-outline" size={18} color={palette.textSecondary} />
       </Pressable>
@@ -272,9 +276,8 @@ function CardStar({ seriesId, title }: { seriesId: string; title: string }) {
       accessibilityLabel={active ? `Remove ${title} from favorites` : `Add ${title} to favorites`}
       accessibilityState={{ selected: active }}
       disabled={toggle.isPending || favorites.isPending}
-      hitSlop={12}
       onPress={() => toggle.mutate({ userId: session.user.id, seriesId, favorite: !active })}
-      style={styles.star}
+      style={({ pressed }) => [styles.star, pressed && styles.overlayPressed]}
     >
       <Ionicons
         name={active ? 'star' : 'star-outline'}
@@ -287,36 +290,42 @@ function CardStar({ seriesId, title }: { seriesId: string; title: string }) {
 
 const styles = StyleSheet.create({
   // Overlaid on the card's top-right corner, where the title row reserves
-  // room with the overlay spacers, so the tap targets never nest.
+  // room with the overlay spacers, so the tap targets never nest. Each box
+  // is a full minimum touch target, and the two never overlap: the old
+  // 24pt boxes with hitSlop shared a 16pt band where a tap aimed at the
+  // star opened the share sheet.
   star: {
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 24,
-    minWidth: 24,
+    minHeight: minTouchTarget,
+    minWidth: minTouchTarget,
     position: 'absolute',
-    right: spacing.md,
-    top: spacing.md,
+    right: spacing.xs,
+    top: spacing.xs,
     zIndex: 1,
   },
   share: {
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 24,
-    minWidth: 24,
+    minHeight: minTouchTarget,
+    minWidth: minTouchTarget,
     position: 'absolute',
-    right: spacing.md,
-    top: spacing.md,
+    right: spacing.xs,
+    top: spacing.xs,
     zIndex: 1,
   },
-  // Signed in, the star holds the corner and share sits inside it.
+  // Signed in, the star holds the corner and share sits fully beside it.
   shareBesideStar: {
-    right: spacing.md + 32,
+    right: spacing.xs + minTouchTarget,
+  },
+  overlayPressed: {
+    opacity: 0.6,
   },
   overlaySpacer: {
-    width: 24,
+    width: minTouchTarget - spacing.sm,
   },
   overlaySpacerWide: {
-    width: 56,
+    width: minTouchTarget * 2 - spacing.sm,
   },
   card: {
     backgroundColor: palette.bgElevated,

@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ConfirmSheet, DiscardPrompt } from '@/components/confirm-sheet';
 import { ScreenHeader } from '@/components/screen-header';
@@ -61,6 +62,7 @@ export default function ManageSeriesScreen() {
 
   const { session } = useSession();
   const profile = useOwnProfile(session?.user.id);
+  const insets = useSafeAreaInsets();
   const [editing, setEditing] = useState(false);
   const [editorDirty, setEditorDirty] = useState(false);
   const [confirmCloseEditor, setConfirmCloseEditor] = useState(false);
@@ -123,7 +125,7 @@ export default function ManageSeriesScreen() {
         <Screen>
           <Title>Not found</Title>
           <Body>This listing is no longer available.</Body>
-          <Button label="Back to My Mics" onPress={() => router.replace('/(tabs)/producer')} />
+          <Button label="Back to My mics" onPress={() => router.replace('/(tabs)/producer')} />
         </Screen>
       </>
     );
@@ -555,7 +557,9 @@ export default function ManageSeriesScreen() {
           onRequestClose={() => setConfirmPause(false)}
         >
           <View style={styles.modalBackdrop}>
-            <View style={styles.modalSheet}>
+            <View
+              style={[styles.modalSheet, { paddingBottom: Math.max(insets.bottom, spacing.xl) }]}
+            >
               <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
                 Pause this listing?
               </Text>
@@ -594,6 +598,7 @@ function NightModal({
 }) {
   const update = useUpdateOccurrence();
   const cancelNight = useCancelNight();
+  const insets = useSafeAreaInsets();
   const [note, setNote] = useState('');
   const initialTitle = occurrence.override_title ?? '';
   const initialCost =
@@ -652,7 +657,7 @@ function NightModal({
     <Modal visible transparent animationType="slide" onRequestClose={close}>
       <View style={styles.modalBackdrop}>
         <KeyboardShift>
-          <View style={styles.modalSheet}>
+          <View style={[styles.modalSheet, { paddingBottom: Math.max(insets.bottom, spacing.xl) }]}>
             {confirmDiscard ? (
               <DiscardPrompt onDiscard={onClose} onKeep={() => setConfirmDiscard(false)} />
             ) : (
@@ -795,20 +800,18 @@ const styles = StyleSheet.create({
     fontSize: type.heading.fontSize,
     marginTop: spacing.sm,
   },
+  // Info stacks above the actions: five content-width buttons beside a
+  // flexible column overflowed a 375pt screen and crushed the date.
   nightRow: {
-    alignItems: 'center',
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
     borderRadius: radius.md,
     borderWidth: 1,
-    flexDirection: 'row',
     gap: spacing.sm,
-    justifyContent: 'space-between',
     padding: spacing.md,
   },
   nightInfo: {
-    flex: 1,
-    gap: spacing.xxs,
+    gap: spacing.xs,
   },
   nightDate: {
     color: palette.text,
@@ -851,6 +854,7 @@ const styles = StyleSheet.create({
   },
   nightActions: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
   },
   modalBackdrop: {
@@ -864,6 +868,5 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     gap: spacing.sm,
     padding: spacing.lg,
-    paddingBottom: spacing.xl,
   },
 });

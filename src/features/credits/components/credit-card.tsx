@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   },
   text: {
     flex: 1,
-    gap: spacing.xxs,
+    gap: spacing.xs,
   },
   role: {
     color: palette.textSecondary,

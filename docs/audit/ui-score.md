@@ -1,5 +1,7 @@
 # UI Score
 
+Re-audited after the fix pass: see "Re-audit after fixes" at the bottom. The original Phase 3 scoring of commit `0739d0d` is preserved below unchanged.
+
 Phase 3 of the visual and usability audit, scored strictly against the fixed benchmark. Every deduction cites the count that produced it; counts come from `ui-inventory.md` (census) and `ui-findings.md` (per-finding measurements). Re-running this audit on the unchanged codebase at commit `0739d0d` reproduces every number.
 
 ## Summary table
@@ -167,3 +169,44 @@ Blocker cap: triggered by B-1 (seven undersized touch targets, threshold is thre
 **Capped total: 55. Band: Blocked (69 and below).**
 
 What the number says to fix, in order of points recoverable: confirmations and pressed states (Category 6, 10 points), copy naming and empty-state actions (Category 7, 8 points), the seven undersized targets and two large-text breaks (Category 2, 10 points), the off-scale spacing and the two stray font sizes (Category 1, 9 points), sheet safe areas and the night-row overflow (Category 3, 5 points), the venue-search states (Category 4, 1 point at minimum granularity). The 6-tab bar costs 2 points in Category 5 but is a product decision to review, not a mechanical fix.
+
+---
+
+## Re-audit after fixes
+
+Every deduction-producing item was fixed except the 6-destination tab bar, which the owner chose to keep pending a product decision. Same method, same benchmark, re-measured on the fixed tree.
+
+| Category | Max | Before | After |
+| --- | --- | --- | --- |
+| 1. Token and consistency discipline | 20 | 11 | 19 |
+| 2. Accessibility floor | 20 | 10 | 20 |
+| 3. Layout integrity | 15 | 10 | 15 |
+| 4. State coverage | 15 | 14 | 15 |
+| 5. Navigation and platform fit | 10 | 8 | 8 |
+| 6. Interaction feedback | 10 | 0 | 10 |
+| 7. Copy and content | 10 | 2 | 10 |
+| **Raw total** | **100** | **55** | **97** |
+| **Blocker cap** | 69 | triggered | not triggered |
+| **Capped total** | | **55** | **97** |
+
+Band: **97 = store-ready (90 to 100)**.
+
+Arithmetic for the two remaining deductions:
+
+- Category 1, distinct font size and weight combinations: 12 remain after consolidation (28 semibold; 20 semibold; 16 regular, medium, semibold; 15 medium; 15 Poppins-regular logo wordmark; 13 regular, medium, semibold; 13 Poppins-regular stewardship badge; 72 semibold clock). 12 falls in the 10 to 14 bracket → deduct 1. Going under 10 would mean changing the brand wordmark's weight or removing the live clock's display size, neither of which the audit recommends.
+- Category 5, tab bar: 6 destinations, unchanged by owner decision → deduct 2.
+
+Counts behind the cleared deductions, re-measured:
+
+- Hardcoded literal rate: 54 / 1638 = 3.30% (under 5% → 0, as before).
+- Spacing values off the 4pt or 8pt scale: 0. The `xxs: 2` token was removed (its 7 usages moved to `xs: 4`), the hardcoded `gap: 2` pair and `marginLeft: 9` were tokenized, and the ShareCard canvas constants moved onto the grid (32, 28+88, 16, 8, 4).
+- Colors beyond the palette: 0 (unchanged).
+- Text pairs failing AA: 0 (unchanged).
+- Touch targets under the platform minimum: 0. All seven undersized controls now carry `minTouchTarget` boxes, and `minTouchTarget` itself is platform-correct (44pt iOS, 48dp Android). The MicCard star/share overlap is gone: both are full-size adjacent boxes.
+- Screens breaking at the largest text size: 0. The manage-mic night rows stack and wrap; the ShareCard pins its canvas text at 1x by design.
+- Safe area violations: 0. Every bottom sheet pads `max(insets.bottom, previous padding)`.
+- Overflow at 375pt: 0 (night rows restructured).
+- State coverage: 108 / 108. Venue search gained searching, empty, and error states; the claims box and Who-is-coming gained loading states; MicCredits reports a failed fetch.
+- Components lacking a pressed state: 0 of the 9 counted (chips, card overlays, list rows, icon actions, toast actions all respond).
+- Destructive actions without confirmation: 0 (walk-in removal, connection removal, and moderation take-down all confirm).
+- Copy: role is "Host" everywhere; the fallback error names failure and fix; both profile empties carry a "Find a mic" action; "My mics" casing matches the tab in all five locations; no CLI vocabulary remains on screen.

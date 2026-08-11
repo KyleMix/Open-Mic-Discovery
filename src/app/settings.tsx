@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Body, Button, ErrorText, Field, KeyboardShift, Screen, Title } from '@/components/ui';
 import { ScreenHeader } from '@/components/screen-header';
@@ -132,12 +133,15 @@ function DeleteConfirmModal({ visible, onClose }: { visible: boolean; onClose: (
   const { session } = useSession();
   const deleteAccount = useDeleteAccount(session?.user.id);
   const [confirmText, setConfirmText] = useState('');
+  const insets = useSafeAreaInsets();
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <KeyboardShift>
-          <View style={styles.sheet}>
+          {/* The sheet reaches the physical screen bottom; the last button
+              must clear the home indicator. */}
+          <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.xl) }]}>
             <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
               Delete your account?
             </Text>
@@ -211,6 +215,5 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     gap: spacing.sm,
     padding: spacing.lg,
-    paddingBottom: spacing.xl,
   },
 });

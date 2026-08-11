@@ -7,7 +7,7 @@ import Supercluster from 'supercluster';
 import { Glyph, disciplineGlyphs } from '@/components/glyph';
 import { formatNextDate } from '@/features/discovery/components/mic-card';
 import type { NearbyMic } from '@/features/discovery/queries';
-import { type Discipline, disciplineAccents, fonts, maxFontScale, palette } from '@/theme';
+import { type Discipline, disciplineAccents, fonts, maxFontScale, palette, type } from '@/theme';
 
 type Props = {
   mics: NearbyMic[];
@@ -202,6 +202,6 @@ const styles = StyleSheet.create({
   clusterCount: {
     color: palette.text,
     fontFamily: fonts.medium,
-    fontSize: 14,
+    fontSize: type.caption.fontSize,
   },
 });

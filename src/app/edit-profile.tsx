@@ -317,7 +317,7 @@ function EditProfileForm({
           <Body>
             You still run {mySeries.data!.length === 1 ? 'a mic' : `${mySeries.data!.length} mics`}.
             Turning this off hides them from you, but they stay live for everyone else until you
-            pause them from My Mics first.
+            pause them from My mics first.
           </Body>
         ) : null}
         {errors.roles ? <ErrorText>{errors.roles}</ErrorText> : null}

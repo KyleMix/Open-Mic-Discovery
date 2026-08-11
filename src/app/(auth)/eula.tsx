@@ -12,7 +12,7 @@ import { userError } from '@/lib/user-error';
 import { useOnboardingStore } from '@/stores/onboarding';
 import { consumeReturnTo } from '@/stores/return-to';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
-import { maxFontScale, palette, radius, spacing, type } from '@/theme';
+import { fonts, maxFontScale, palette, radius, spacing, type } from '@/theme';
 
 export default function EulaScreen() {
   const router = useRouter();
@@ -144,14 +144,14 @@ const styles = StyleSheet.create({
   },
   termsTitle: {
     color: palette.text,
+    fontFamily: fonts.semibold,
     fontSize: type.body.fontSize,
-    fontWeight: '600',
     marginBottom: spacing.sm,
   },
   termsHeading: {
     color: palette.text,
+    fontFamily: fonts.semibold,
     fontSize: type.caption.fontSize,
-    fontWeight: '600',
     marginBottom: spacing.xs,
     marginTop: spacing.sm,
   },

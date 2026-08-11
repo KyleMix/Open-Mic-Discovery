@@ -21,6 +21,13 @@ jest.mock('expo-media-library', () => ({
   saveToLibraryAsync: jest.fn(async () => undefined),
 }));
 
+// Bottom sheets and footers read the safe-area insets. The library's own
+// jest mock keeps any explicitly rendered SafeAreaProvider working and
+// falls back to zero insets when a test renders a sheet without one.
+jest.mock('react-native-safe-area-context', () =>
+  require('react-native-safe-area-context/jest/mock').default,
+);
+
 jest.mock('react-native-maps', () => {
   const React = require('react');
   const { View } = require('react-native');

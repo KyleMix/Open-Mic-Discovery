@@ -248,6 +248,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     justifyContent: 'center',
     minHeight: minTouchTarget + 4,
+    paddingHorizontal: spacing.md,
   },
   buttonSecondary: {
     backgroundColor: palette.bgElevated,

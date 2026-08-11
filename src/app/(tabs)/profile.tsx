@@ -149,6 +149,7 @@ export default function ProfileScreen() {
  * Upcoming nights first, then how much they have played.
  */
 function MyNights({ userId, onOpenMic }: { userId: string; onOpenMic: (id: string) => void }) {
+  const router = useRouter();
   const nights = useMyNights(userId);
   if (nights.isPending) {
     return <Body>Loading your nights...</Body>;
@@ -192,6 +193,7 @@ function MyNights({ userId, onOpenMic }: { userId: string; onOpenMic: (id: strin
           Nights you sign up for land here: your schedule up top, your history under it. Find a mic
           on the Discover tab to start the list.
         </Body>
+        <Button label="Find a mic" kind="secondary" onPress={() => router.navigate('/(tabs)')} />
       </View>
     );
   }
@@ -209,7 +211,10 @@ function MyNights({ userId, onOpenMic }: { userId: string; onOpenMic: (id: strin
           ))}
         </>
       ) : (
-        <Body>Nothing coming up. Find a mic on the Discover tab and get on a list.</Body>
+        <>
+          <Body>Nothing coming up. Find a mic on the Discover tab and get on a list.</Body>
+          <Button label="Find a mic" kind="secondary" onPress={() => router.navigate('/(tabs)')} />
+        </>
       )}
       {past.length > 0 ? (
         <>
@@ -316,7 +321,7 @@ const styles = StyleSheet.create({
   },
   nightBody: {
     flex: 1,
-    gap: spacing.xxs,
+    gap: spacing.xs,
   },
   nightTitle: {
     color: palette.text,

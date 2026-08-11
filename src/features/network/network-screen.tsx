@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { ConfirmSheet } from '@/components/confirm-sheet';
 import { PressableScale } from '@/components/pressable-scale';
 import { SocialLinkRow } from '@/components/social-links';
 import {
@@ -45,6 +46,8 @@ export function NetworkScreen() {
   const { session } = useSession();
   const [term, setTerm] = useState('');
   const [reporting, setReporting] = useState<{ id: string; name: string } | null>(null);
+  // Removing a connection undoes a mutual yes; it asks first.
+  const [confirmRemove, setConfirmRemove] = useState<{ id: string; name: string } | null>(null);
 
   const connections = useMyConnections(session?.user.id);
   const nights = useConnectionNights(session?.user.id);
@@ -242,7 +245,7 @@ export function NetworkScreen() {
             <ConnectionCard
               key={row.other_id!}
               row={row}
-              onRemove={() => remove.mutate({ userId: session.user.id, otherId: row.other_id! })}
+              onRemove={() => setConfirmRemove({ id: row.other_id!, name: row.stage_name! })}
               onReport={() => setReporting({ id: row.other_id!, name: row.stage_name! })}
               removeBusy={remove.isPending}
             />
@@ -293,6 +296,18 @@ export function NetworkScreen() {
         </Body>
       </View>
 
+      {confirmRemove ? (
+        <ConfirmSheet
+          title={`Remove ${confirmRemove.name} from your network?`}
+          body="You each stop seeing the other's socials and nights right away. Reconnecting takes a new request that they accept."
+          confirmLabel="Remove connection"
+          onConfirm={() => {
+            remove.mutate({ userId: session.user.id, otherId: confirmRemove.id });
+            setConfirmRemove(null);
+          }}
+          onClose={() => setConfirmRemove(null)}
+        />
+      ) : null}
       <ReportModal
         visible={reporting !== null}
         onClose={() => setReporting(null)}
@@ -402,7 +417,7 @@ const styles = StyleSheet.create({
     borderColor: palette.border,
     borderRadius: radius.md,
     borderWidth: 1,
-    gap: 2,
+    gap: spacing.xs,
     padding: spacing.md,
   },
   nightWho: {

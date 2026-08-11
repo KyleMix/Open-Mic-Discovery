@@ -1,6 +1,7 @@
 import { usePathname, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DiscardPrompt } from '@/components/confirm-sheet';
 import { Body, Button, ErrorText, Field, KeyboardShift } from '@/components/ui';
@@ -13,7 +14,7 @@ import {
   type ReportReason,
   type ReportTarget,
 } from '@/features/safety/queries';
-import { fonts, maxFontScale, palette, radius, spacing, type } from '@/theme';
+import { fonts, maxFontScale, minTouchTarget, palette, radius, spacing, type } from '@/theme';
 
 const REASONS: { reason: ReportReason; label: string }[] = (
   [
@@ -59,6 +60,7 @@ export function ReportModal({
   const [details, setDetails] = useState('');
   const [done, setDone] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const insets = useSafeAreaInsets();
 
   function reallyClose() {
     setReason(null);
@@ -81,7 +83,9 @@ export function ReportModal({
     <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
       <View style={styles.backdrop}>
         <KeyboardShift>
-          <View style={styles.sheet}>
+          {/* The sheet reaches the physical screen bottom; the last button
+              must clear the home indicator. */}
+          <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.xl) }]}>
             {confirmDiscard ? (
               <DiscardPrompt onDiscard={reallyClose} onKeep={() => setConfirmDiscard(false)} />
             ) : done ? (
@@ -142,7 +146,11 @@ export function ReportModal({
                     accessibilityRole="radio"
                     accessibilityState={{ selected: reason === r.reason }}
                     onPress={() => setReason(r.reason)}
-                    style={[styles.reasonRow, reason === r.reason && styles.reasonRowActive]}
+                    style={({ pressed }) => [
+                      styles.reasonRow,
+                      reason === r.reason && styles.reasonRowActive,
+                      pressed && styles.reasonRowPressed,
+                    ]}
                   >
                     <Text maxFontSizeMultiplier={maxFontScale} style={styles.reasonText}>
                       {r.label}
@@ -199,7 +207,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     gap: spacing.sm,
     padding: spacing.lg,
-    paddingBottom: spacing.xl,
   },
   title: {
     color: palette.text,
@@ -212,11 +219,14 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     borderWidth: 1,
     justifyContent: 'center',
-    minHeight: 44,
+    minHeight: minTouchTarget,
     paddingHorizontal: spacing.md,
   },
   reasonRowActive: {
     borderColor: palette.text,
+  },
+  reasonRowPressed: {
+    backgroundColor: palette.bgPressed,
   },
   reasonText: {
     color: palette.text,

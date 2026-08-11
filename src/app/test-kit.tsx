@@ -143,7 +143,9 @@ export default function TestKitScreen() {
         setMessage(label);
         router.push(path as Parameters<typeof router.push>[0]);
       })
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'That did not work.'));
+      .catch((e: unknown) =>
+        setError(e instanceof Error ? e.message : 'That action failed. Check your connection and try again.'),
+      );
   };
 
   const run = (label: string, promise: Promise<unknown>) => {
@@ -151,7 +153,9 @@ export default function TestKitScreen() {
     setMessage(null);
     promise
       .then(() => setMessage(label))
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'That did not work.'));
+      .catch((e: unknown) =>
+        setError(e instanceof Error ? e.message : 'That action failed. Check your connection and try again.'),
+      );
   };
 
   /**
@@ -207,9 +211,8 @@ export default function TestKitScreen() {
         <View style={styles.notice}>
           <Text maxFontSizeMultiplier={maxFontScale} style={styles.noticeText}>
             This database is running an older test kit (version {s.kit_version ?? 'unknown'}, this
-            build expects {EXPECTED_KIT_VERSION}). Newer scenarios and tools will fail until the
-            migrations are applied. Run supabase db reset, or npx supabase migration up to keep the
-            data you have.
+            build expects {EXPECTED_KIT_VERSION}). Newer scenarios and tools will not work until
+            the database for this environment is updated to match this build.
           </Text>
         </View>
       ) : null}
@@ -361,7 +364,7 @@ export default function TestKitScreen() {
             }
           />
           <Chip
-            label="Producer"
+            label="Host"
             active={profile.data?.is_producer ?? false}
             disabled={busy}
             accent={disciplineAccents.comedy}
@@ -545,7 +548,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     borderWidth: 1,
     justifyContent: 'center',
-    minHeight: minTouchTarget - 4,
+    minHeight: minTouchTarget,
     paddingHorizontal: spacing.md,
   },
   chipPressed: {

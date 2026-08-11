@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { fonts, maxFontScale, palette, type } from '@/theme';
+import { fonts, maxFontScale, palette, spacing, type } from '@/theme';
 
 const MARK = require('../../assets/brand/mark.png');
 
@@ -95,6 +95,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: type.label.fontSize,
     letterSpacing: 0.8,
-    marginLeft: 9,
+    marginLeft: spacing.sm,
   },
 });

@@ -213,8 +213,8 @@ export function usePauseSeries() {
     if (error || !data || data.length === 0) {
       toast.show(
         error
-          ? userError(error, 'Could not resume the listing. Try again from My Mics.').message
-          : 'Could not resume the listing. Try again from My Mics.',
+          ? userError(error, 'Could not resume the listing. Try again from My mics.').message
+          : 'Could not resume the listing. Try again from My mics.',
       );
       return;
     }
