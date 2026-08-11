@@ -450,16 +450,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: spacing.sm,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
   },
   searchInput: {
     backgroundColor: palette.bgElevated,
-    borderColor: palette.border,
+    borderColor: palette.borderInput,
     borderRadius: radius.sm,
     borderWidth: 1,
     color: palette.text,
     flex: 1,
+    fontFamily: fonts.regular,
     fontSize: type.body.fontSize,
     minHeight: minTouchTarget,
     paddingHorizontal: spacing.md,
@@ -476,8 +477,9 @@ const styles = StyleSheet.create({
   },
   locationNote: {
     color: palette.warning,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingTop: spacing.xs,
   },
   // Text links still get a full-size touch box.
@@ -492,7 +494,7 @@ const styles = StyleSheet.create({
     color: palette.text,
     fontFamily: fonts.medium,
     fontSize: type.caption.fontSize,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     textDecorationLine: 'underline',
   },
   centerRow: {
@@ -500,12 +502,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.md,
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingTop: spacing.xs,
   },
   centerLabel: {
     color: palette.textSecondary,
     flexShrink: 1,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   centerReset: {
@@ -516,8 +519,9 @@ const styles = StyleSheet.create({
   },
   fuzzyNote: {
     color: palette.warning,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingTop: spacing.xs,
   },
   mapWrap: {
@@ -525,7 +529,8 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: spacing.sm,
-    padding: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   stale: {
     opacity: 0.6,

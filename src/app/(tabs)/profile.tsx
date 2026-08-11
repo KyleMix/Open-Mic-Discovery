@@ -326,6 +326,7 @@ const styles = StyleSheet.create({
   },
   nightDate: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
     minWidth: 90,
   },
@@ -340,6 +341,7 @@ const styles = StyleSheet.create({
   },
   nightStatus: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   header: {
@@ -353,6 +355,7 @@ const styles = StyleSheet.create({
   },
   handle: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.body.fontSize,
   },
   roles: {
@@ -362,9 +365,10 @@ const styles = StyleSheet.create({
   roleChip: {
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 16,
+    borderRadius: radius.pill,
     borderWidth: 1,
     color: palette.text,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
     overflow: 'hidden',
     paddingHorizontal: spacing.md,
@@ -372,6 +376,7 @@ const styles = StyleSheet.create({
   },
   privateNote: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
 });

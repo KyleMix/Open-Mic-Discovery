@@ -79,10 +79,12 @@ const styles = StyleSheet.create({
   },
   perk: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.body.fontSize,
   },
   footnote: {
     color: palette.textFaint,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
 });

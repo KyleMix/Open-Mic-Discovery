@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { exchangeRecoveryCode, updatePassword } from '@/features/auth/api';
 import { useSession } from '@/features/auth/session';
 import { validatePassword } from '@/features/auth/validation';
-import { Body, Button, ErrorText, Field, LoadingView, Screen, Title } from '@/components/ui';
+import { Body, Button, ErrorText, Field, FormScreen, LoadingView, Screen, Title } from '@/components/ui';
 
 /**
  * Landing screen for the emailed reset link. The link carries a one-time
@@ -103,7 +103,7 @@ export default function ResetPasswordScreen() {
   }
 
   return (
-    <Screen>
+    <FormScreen>
       <Title>Set a new password</Title>
       <Field
         label="New password"
@@ -134,6 +134,6 @@ export default function ResetPasswordScreen() {
       />
       {error ? <ErrorText>{error}</ErrorText> : null}
       <Button label="Save new password" busy={busy} disabled={busy} onPress={submit} />
-    </Screen>
+    </FormScreen>
   );
 }

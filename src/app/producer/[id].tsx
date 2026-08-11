@@ -1,10 +1,11 @@
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ConfirmSheet, DiscardPrompt } from '@/components/confirm-sheet';
+import { useSheetAnimation } from '@/components/sheet-chrome';
 import { ScreenHeader } from '@/components/screen-header';
 import { useDiscardGuard } from '@/components/discard-guard';
 import { NotYourMic } from '@/features/producer/components/not-your-mic';
@@ -63,6 +64,7 @@ export default function ManageSeriesScreen() {
   const { session } = useSession();
   const profile = useOwnProfile(session?.user.id);
   const insets = useSafeAreaInsets();
+  const sheetAnimation = useSheetAnimation();
   const [editing, setEditing] = useState(false);
   const [editorDirty, setEditorDirty] = useState(false);
   const [confirmCloseEditor, setConfirmCloseEditor] = useState(false);
@@ -553,10 +555,16 @@ export default function ManageSeriesScreen() {
         <Modal
           visible
           transparent
-          animationType="slide"
+          animationType={sheetAnimation}
           onRequestClose={() => setConfirmPause(false)}
         >
           <View style={styles.modalBackdrop}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Keep the listing running"
+              style={styles.modalBackdropTouch}
+              onPress={() => setConfirmPause(false)}
+            />
             <View
               style={[styles.modalSheet, { paddingBottom: Math.max(insets.bottom, spacing.xl) }]}
             >
@@ -599,6 +607,7 @@ function NightModal({
   const update = useUpdateOccurrence();
   const cancelNight = useCancelNight();
   const insets = useSafeAreaInsets();
+  const animation = useSheetAnimation();
   const [note, setNote] = useState('');
   const initialTitle = occurrence.override_title ?? '';
   const initialCost =
@@ -654,8 +663,14 @@ function NightModal({
   }
 
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={close}>
+    <Modal visible transparent animationType={animation} onRequestClose={close}>
       <View style={styles.modalBackdrop}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Close this form"
+          style={styles.modalBackdropTouch}
+          onPress={close}
+        />
         <KeyboardShift>
           <View style={[styles.modalSheet, { paddingBottom: Math.max(insets.bottom, spacing.xl) }]}>
             {confirmDiscard ? (
@@ -758,14 +773,17 @@ const styles = StyleSheet.create({
   },
   meta: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   heldNote: {
     color: palette.warning,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   rejectedNote: {
     color: palette.danger,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   freshRow: {
@@ -824,10 +842,12 @@ const styles = StyleSheet.create({
   },
   cancelledNote: {
     color: palette.danger,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   offPatternNote: {
     color: palette.warning,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   liveBox: {
@@ -845,6 +865,7 @@ const styles = StyleSheet.create({
   },
   nightCount: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   featured: {
@@ -862,10 +883,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
   },
+  modalBackdropTouch: {
+    flex: 1,
+  },
   modalSheet: {
     backgroundColor: palette.bgElevated,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: radius.sheet,
+    borderTopRightRadius: radius.sheet,
     gap: spacing.sm,
     padding: spacing.lg,
   },

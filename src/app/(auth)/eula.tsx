@@ -12,7 +12,7 @@ import { userError } from '@/lib/user-error';
 import { useOnboardingStore } from '@/stores/onboarding';
 import { consumeReturnTo } from '@/stores/return-to';
 import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/components/ui';
-import { fonts, maxFontScale, palette, radius, spacing, type } from '@/theme';
+import { fonts, maxReadingFontScale, palette, radius, spacing, type } from '@/theme';
 
 export default function EulaScreen() {
   const router = useRouter();
@@ -88,19 +88,19 @@ export default function EulaScreen() {
       <ScrollView style={styles.terms} accessibilityLabel="Terms of use text">
         {parseEulaMarkdown(eula.data.body_md).map((block, i) =>
           block.kind === 'title' ? (
-            <Text maxFontSizeMultiplier={maxFontScale} key={i} style={styles.termsTitle}>
+            <Text maxFontSizeMultiplier={maxReadingFontScale} key={i} style={styles.termsTitle}>
               {block.text}
             </Text>
           ) : block.kind === 'heading' ? (
-            <Text maxFontSizeMultiplier={maxFontScale} key={i} style={styles.termsHeading}>
+            <Text maxFontSizeMultiplier={maxReadingFontScale} key={i} style={styles.termsHeading}>
               {block.text}
             </Text>
           ) : block.kind === 'bullet' ? (
-            <Text maxFontSizeMultiplier={maxFontScale} key={i} style={styles.termsText}>
+            <Text maxFontSizeMultiplier={maxReadingFontScale} key={i} style={styles.termsText}>
               {'•'} {block.text}
             </Text>
           ) : (
-            <Text maxFontSizeMultiplier={maxFontScale} key={i} style={styles.termsText}>
+            <Text maxFontSizeMultiplier={maxReadingFontScale} key={i} style={styles.termsText}>
               {block.text}
             </Text>
           ),
@@ -138,6 +138,7 @@ const styles = StyleSheet.create({
   },
   termsText: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
     lineHeight: type.caption.lineHeight + 4,
     marginBottom: spacing.sm,

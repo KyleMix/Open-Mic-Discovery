@@ -1,7 +1,7 @@
 import * as Network from 'expo-network';
 import { StyleSheet, Text } from 'react-native';
 
-import { maxFontScale, palette, spacing, type } from '@/theme';
+import { fonts, maxFontScale, palette, spacing, type } from '@/theme';
 
 /**
  * Says when what you are looking at is cached.
@@ -32,6 +32,7 @@ const styles = StyleSheet.create({
   banner: {
     backgroundColor: palette.bgPressed,
     color: palette.warning,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,

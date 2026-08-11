@@ -524,11 +524,13 @@ const styles = StyleSheet.create({
   },
   itemBody: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.body.fontSize,
     lineHeight: type.body.lineHeight,
   },
   itemCaption: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
     lineHeight: type.caption.lineHeight,
   },
@@ -545,7 +547,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: palette.bg,
     borderColor: palette.border,
-    borderRadius: 22,
+    borderRadius: radius.pill,
     borderWidth: 1,
     justifyContent: 'center',
     minHeight: minTouchTarget,
@@ -572,11 +574,13 @@ const styles = StyleSheet.create({
   },
   noticeText: {
     color: palette.text,
+    fontFamily: fonts.regular,
     fontSize: type.body.fontSize,
     lineHeight: type.body.lineHeight,
   },
   success: {
     color: palette.success,
+    fontFamily: fonts.regular,
     fontSize: type.body.fontSize,
     lineHeight: type.body.lineHeight,
   },

@@ -1,8 +1,9 @@
-import { Modal, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Body, Button } from '@/components/ui';
-import { fonts, maxFontScale, palette, spacing, type } from '@/theme';
+import { useSheetAnimation } from '@/components/sheet-chrome';
+import { fonts, maxFontScale, palette, radius, spacing, type } from '@/theme';
 
 type Props = {
   title: string;
@@ -15,9 +16,16 @@ type Props = {
 /** One bottom-sheet confirmation, shared instead of re-implemented per screen. */
 export function ConfirmSheet({ title, body, confirmLabel, onConfirm, onClose }: Props) {
   const insets = useSafeAreaInsets();
+  const animation = useSheetAnimation();
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible transparent animationType={animation} onRequestClose={onClose}>
       <View style={styles.backdrop}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Cancel"
+          style={styles.backdropTouch}
+          onPress={onClose}
+        />
         {/* The sheet reaches the physical screen bottom, so the last button
             must clear the home indicator, not just have decorative padding. */}
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.xl) }]}>
@@ -63,10 +71,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
   },
+  backdropTouch: {
+    flex: 1,
+  },
   sheet: {
     backgroundColor: palette.bgElevated,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: radius.sheet,
+    borderTopRightRadius: radius.sheet,
     gap: spacing.sm,
     padding: spacing.lg,
   },

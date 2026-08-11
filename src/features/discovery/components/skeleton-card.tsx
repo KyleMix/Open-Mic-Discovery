@@ -28,7 +28,8 @@ export function SkeletonCards({ count = 6 }: { count?: number }) {
 const styles = StyleSheet.create({
   list: {
     gap: spacing.sm,
-    padding: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   card: {
     backgroundColor: palette.bgElevated,

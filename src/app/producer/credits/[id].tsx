@@ -416,7 +416,8 @@ const styles = StyleSheet.create({
     backgroundColor: palette.bg,
     flexGrow: 1,
     gap: spacing.md,
-    padding: spacing.md,
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl,
   },
   section: {
     backgroundColor: palette.bgElevated,
@@ -466,6 +467,7 @@ const styles = StyleSheet.create({
   },
   handle: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
 });

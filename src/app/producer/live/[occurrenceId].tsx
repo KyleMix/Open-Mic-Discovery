@@ -497,6 +497,7 @@ const styles = StyleSheet.create({
   },
   label: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
     marginTop: spacing.sm,
     textTransform: 'uppercase',
@@ -521,6 +522,7 @@ const styles = StyleSheet.create({
   },
   clockNote: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
     textAlign: 'center',
   },
@@ -558,6 +560,7 @@ const styles = StyleSheet.create({
   },
   statCaption: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
     textAlign: 'center',
   },
@@ -653,6 +656,7 @@ const styles = StyleSheet.create({
   },
   rowMeta: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   onDeckMeta: {

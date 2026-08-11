@@ -892,7 +892,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 18,
+    borderRadius: radius.pill,
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.xs,
@@ -944,6 +944,7 @@ const styles = StyleSheet.create({
   },
   venueMeta: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
 });

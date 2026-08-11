@@ -18,6 +18,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Glyph, disciplineGlyphs, signupMethodGlyphs } from '@/components/glyph';
+import { useSheetAnimation } from '@/components/sheet-chrome';
 import {
   Body,
   Button,
@@ -709,6 +710,7 @@ function ClaimModal({
   const [done, setDone] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const insets = useSafeAreaInsets();
+  const animation = useSheetAnimation();
 
   function reallyClose() {
     setEvidence('');
@@ -727,8 +729,14 @@ function ClaimModal({
   }
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={close}>
+    <Modal visible={visible} animationType={animation} transparent onRequestClose={close}>
       <View style={styles.modalBackdrop}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Close this form"
+          style={styles.modalBackdropTouch}
+          onPress={close}
+        />
         <KeyboardShift>
           <View style={[styles.modalSheet, { paddingBottom: Math.max(insets.bottom, spacing.xl) }]}>
             {confirmDiscard ? (
@@ -881,6 +889,7 @@ function FlagModal({
   const [done, setDone] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const insets = useSafeAreaInsets();
+  const animation = useSheetAnimation();
 
   function reallyClose() {
     setReason(null);
@@ -910,8 +919,14 @@ function FlagModal({
   }
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={close}>
+    <Modal visible={visible} animationType={animation} transparent onRequestClose={close}>
       <View style={styles.modalBackdrop}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Close this form"
+          style={styles.modalBackdropTouch}
+          onPress={close}
+        />
         <KeyboardShift>
           <View style={[styles.modalSheet, { paddingBottom: Math.max(insets.bottom, spacing.xl) }]}>
             {confirmDiscard ? (
@@ -1031,6 +1046,7 @@ const styles = StyleSheet.create({
   },
   footerDetail: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
     textAlign: 'center',
   },
@@ -1084,6 +1100,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   freshText: {
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   card: {
@@ -1101,6 +1118,7 @@ const styles = StyleSheet.create({
   },
   nextDate: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.body.fontSize,
   },
   overrideNote: {
@@ -1110,6 +1128,7 @@ const styles = StyleSheet.create({
   },
   cancelNote: {
     color: palette.danger,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   methodRow: {
@@ -1132,6 +1151,7 @@ const styles = StyleSheet.create({
   },
   factLabel: {
     color: palette.textFaint,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   factValue: {
@@ -1141,6 +1161,7 @@ const styles = StyleSheet.create({
   },
   costNote: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   featured: {
@@ -1165,6 +1186,7 @@ const styles = StyleSheet.create({
   },
   flagText: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.body.fontSize,
     textDecorationLine: 'underline',
   },
@@ -1182,10 +1204,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
   },
+  modalBackdropTouch: {
+    flex: 1,
+  },
   modalSheet: {
     backgroundColor: palette.bgElevated,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: radius.sheet,
+    borderTopRightRadius: radius.sheet,
     gap: spacing.sm,
     padding: spacing.lg,
   },
@@ -1211,6 +1236,7 @@ const styles = StyleSheet.create({
   },
   reasonText: {
     color: palette.text,
+    fontFamily: fonts.regular,
     fontSize: type.body.fontSize,
   },
 });

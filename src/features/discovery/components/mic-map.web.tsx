@@ -62,6 +62,7 @@ const styles = StyleSheet.create({
   },
   noteText: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   row: {
@@ -79,6 +80,7 @@ const styles = StyleSheet.create({
   },
   meta: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
 });

@@ -92,6 +92,7 @@ const styles = StyleSheet.create({
   },
   role: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
     textTransform: 'uppercase',
   },

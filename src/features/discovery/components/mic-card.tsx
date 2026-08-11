@@ -369,10 +369,12 @@ const styles = StyleSheet.create({
   },
   venue: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   when: {
     color: palette.text,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   cancelledNight: {
@@ -391,6 +393,7 @@ const styles = StyleSheet.create({
   },
   host: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   metaRow: {
@@ -409,6 +412,7 @@ const styles = StyleSheet.create({
   },
   metaText: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
 });

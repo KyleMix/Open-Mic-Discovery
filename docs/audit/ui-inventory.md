@@ -127,9 +127,9 @@ Single source: `src/theme/tokens.ts`, re-exported by `src/theme/index.ts`.
 | --- | --- | --- |
 | Colors | `tokens.ts` `palette` (13 entries), `brandColors` (3), `disciplineAccents` (4) | Real tokens. Zero hex/rgba literals exist outside `tokens.ts` (verified by grep; app.json mirrors 4 values by documented necessity). |
 | Spacing | `tokens.ts` `spacing` xxs 2, xs 4, sm 8, md 16, lg 24, xl 32, xxl 48 | Real tokens. Note: `xxs: 2` is itself off the 4pt sub-grid. 10 spacing literals bypass the scale (see findings). |
-| Radii | `tokens.ts` `radius` sm 10, md 12, lg 14, pill 999 | Real tokens, but incomplete: the bottom-sheet corner (20) is hardcoded in 6 files, and chip radii 22/18/16 are hardcoded per component. |
+| Radii | `tokens.ts` `radius` sm 10, md 12, lg 14, sheet 20, pill 999 | Real tokens. (Post-audit: `sheet` added and adopted by every bottom sheet; all chips unified on `pill`.) |
 | Type scale | `tokens.ts` `type` title 28/34, heading 20/26, body 16/22, label 15/20, caption 13/18 | Real tokens. Two literal escapes: `fontSize: 14` in `series-form.tsx:893` and `mic-map.tsx:205`, `fontSize: 72` clock in `live/[occurrenceId].tsx:512`. |
-| Fonts | `tokens.ts` `fonts` Poppins 400/500/600 | Real tokens, but `type.body`/`type.caption` styles in `ui.tsx` set no `fontFamily`, so body text renders in the system font; `eula.tsx:148,154` uses `fontWeight: '600'` instead of `fonts.semibold`. |
+| Fonts | `tokens.ts` `fonts` Poppins 400/500/600 | Real tokens. (Post-audit: every sized text style carries a `fontFamily`, so body and caption copy render in Poppins app-wide.) |
 | Shadows / elevation | None defined | The app is flat by design: surfaces separate by `bgElevated` fill plus 1px `border`. No shadow or elevation values anywhere. Consistent. |
 | Touch target | `tokens.ts` `minTouchTarget = 44` | Real token, applied widely via `minHeight`/`minWidth`. 44 meets iOS but is under Android's 48dp (see findings). |
 | Dynamic type | `tokens.ts` `maxFontScale = 1.6` | Real token, applied as `maxFontSizeMultiplier` on nearly every Text (exception: ShareCard). |

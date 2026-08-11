@@ -160,7 +160,8 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: spacing.md,
-    padding: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   row: {
     gap: spacing.xs,
@@ -187,6 +188,7 @@ const styles = StyleSheet.create({
   },
   cancelNote: {
     color: palette.warning,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
 });

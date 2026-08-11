@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, Text } from 'react-native';
 import { Screen, Title } from '@/components/ui';
 import { parseEulaMarkdown } from '@/features/auth/eula-markdown';
 import { PRIVACY_POLICY_MD } from '@/features/legal/privacy-policy';
-import { fonts, maxFontScale, palette, radius, spacing, type } from '@/theme';
+import { fonts, maxReadingFontScale, palette, radius, spacing, type } from '@/theme';
 
 /**
  * The privacy policy, reachable by guests, by accounts still at the EULA
@@ -27,19 +27,19 @@ export default function PrivacyScreen() {
       <ScrollView style={styles.policy} accessibilityLabel="Privacy policy text">
         {parseEulaMarkdown(PRIVACY_POLICY_MD).map((block, i) =>
           block.kind === 'title' ? (
-            <Text maxFontSizeMultiplier={maxFontScale} key={i} style={styles.policyTitle}>
+            <Text maxFontSizeMultiplier={maxReadingFontScale} key={i} style={styles.policyTitle}>
               {block.text}
             </Text>
           ) : block.kind === 'heading' ? (
-            <Text maxFontSizeMultiplier={maxFontScale} key={i} style={styles.policyHeading}>
+            <Text maxFontSizeMultiplier={maxReadingFontScale} key={i} style={styles.policyHeading}>
               {block.text}
             </Text>
           ) : block.kind === 'bullet' ? (
-            <Text maxFontSizeMultiplier={maxFontScale} key={i} style={styles.policyText}>
+            <Text maxFontSizeMultiplier={maxReadingFontScale} key={i} style={styles.policyText}>
               {'•'} {block.text}
             </Text>
           ) : (
-            <Text maxFontSizeMultiplier={maxFontScale} key={i} style={styles.policyText}>
+            <Text maxFontSizeMultiplier={maxReadingFontScale} key={i} style={styles.policyText}>
               {block.text}
             </Text>
           ),
@@ -60,6 +60,7 @@ const styles = StyleSheet.create({
   },
   policyText: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
     lineHeight: type.caption.lineHeight + 4,
     marginBottom: spacing.sm,

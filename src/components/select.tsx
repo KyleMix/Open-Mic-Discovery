@@ -4,6 +4,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui';
+import { SheetGrabber, useSheetAnimation } from '@/components/sheet-chrome';
 import { fonts, maxFontScale, minTouchTarget, palette, radius, spacing, type } from '@/theme';
 
 export type SelectOption<T extends string | number> = {
@@ -59,8 +60,9 @@ function SheetShell({
   footer?: React.ReactNode;
 }) {
   const insets = useSafeAreaInsets();
+  const animation = useSheetAnimation();
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible transparent animationType={animation} onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <Pressable
           accessibilityRole="button"
@@ -71,7 +73,7 @@ function SheetShell({
         {/* The sheet sits on the physical screen bottom; the footer button
             must clear the home indicator. */}
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
-          <View style={styles.grabber} />
+          <SheetGrabber />
           <Text maxFontSizeMultiplier={maxFontScale} style={styles.sheetTitle}>
             {title}
           </Text>
@@ -257,7 +259,7 @@ const styles = StyleSheet.create({
   trigger: {
     alignItems: 'center',
     backgroundColor: palette.bgElevated,
-    borderColor: palette.border,
+    borderColor: palette.borderInput,
     borderRadius: radius.sm,
     borderWidth: 1,
     flexDirection: 'row',
@@ -272,6 +274,7 @@ const styles = StyleSheet.create({
   triggerText: {
     color: palette.text,
     flex: 1,
+    fontFamily: fonts.regular,
     fontSize: type.body.fontSize,
   },
   triggerPlaceholder: {
@@ -288,18 +291,10 @@ const styles = StyleSheet.create({
   sheet: {
     backgroundColor: palette.bg,
     borderColor: palette.border,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: radius.sheet,
+    borderTopRightRadius: radius.sheet,
     borderWidth: 1,
     maxHeight: '70%',
-  },
-  grabber: {
-    alignSelf: 'center',
-    backgroundColor: palette.border,
-    borderRadius: 3,
-    height: 5,
-    marginVertical: spacing.sm,
-    width: 44,
   },
   sheetTitle: {
     color: palette.text,
@@ -344,6 +339,7 @@ const styles = StyleSheet.create({
   },
   optionDescription: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
     lineHeight: type.caption.lineHeight,
   },

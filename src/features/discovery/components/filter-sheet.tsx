@@ -2,6 +2,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MultiSelectField } from '@/components/select';
+import { SheetGrabber, useSheetAnimation } from '@/components/sheet-chrome';
 import { Button, ToggleRow } from '@/components/ui';
 import {
   SIGNUP_METHOD_DESCRIPTIONS,
@@ -15,6 +16,7 @@ import {
   maxFontScale,
   minTouchTarget,
   palette,
+  radius,
   spacing,
   type,
 } from '@/theme';
@@ -101,9 +103,10 @@ function Section({
 export function FilterSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const filters = useFiltersStore();
   const insets = useSafeAreaInsets();
+  const animation = useSheetAnimation();
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType={animation} onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <Pressable
           accessibilityRole="button"
@@ -114,7 +117,7 @@ export function FilterSheet({ visible, onClose }: { visible: boolean; onClose: (
         {/* Clears the home indicator: the footer buttons sit at the very
             bottom of the physical screen. */}
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
-          <View style={styles.grabber} />
+          <SheetGrabber />
           <Text maxFontSizeMultiplier={maxFontScale} style={styles.title}>
             Filters
           </Text>
@@ -231,18 +234,10 @@ const styles = StyleSheet.create({
   sheet: {
     backgroundColor: palette.bg,
     borderColor: palette.border,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: radius.sheet,
+    borderTopRightRadius: radius.sheet,
     borderWidth: 1,
     maxHeight: '85%',
-  },
-  grabber: {
-    alignSelf: 'center',
-    backgroundColor: palette.border,
-    borderRadius: 3,
-    height: 5,
-    marginVertical: spacing.sm,
-    width: 44,
   },
   title: {
     color: palette.text,
@@ -266,6 +261,7 @@ const styles = StyleSheet.create({
   },
   sectionCaption: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   chipWrap: {
@@ -277,7 +273,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 22,
+    borderRadius: radius.pill,
     borderWidth: 1,
     justifyContent: 'center',
     minHeight: minTouchTarget,

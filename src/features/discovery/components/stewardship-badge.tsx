@@ -59,6 +59,7 @@ export function StewardshipBadge({ ownerId, verified = false, variant = 'detail'
 const styles = StyleSheet.create({
   badge: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   detail: {

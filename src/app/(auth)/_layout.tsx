@@ -1,15 +1,17 @@
 import { Stack } from 'expo-router';
+import { useReducedMotion } from 'react-native-reanimated';
 
 import { palette } from '@/theme';
 
 export default function AuthLayout() {
+  const reduceMotion = useReducedMotion();
   return (
     <Stack
       screenOptions={{
         headerStyle: { backgroundColor: palette.bg },
         headerTintColor: palette.text,
         contentStyle: { backgroundColor: palette.bg },
-        animation: 'slide_from_right',
+        animation: reduceMotion ? 'fade' : 'slide_from_right',
       }}
     >
       <Stack.Screen name="sign-in" options={{ title: 'Sign in' }} />

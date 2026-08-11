@@ -160,7 +160,7 @@ export function SearchPanel({ onPickRecent, onPickSaved, query }: Props) {
 const styles = StyleSheet.create({
   panel: {
     gap: spacing.md,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
   },
   section: {
@@ -211,6 +211,7 @@ const styles = StyleSheet.create({
   },
   rowLabel: {
     color: palette.text,
+    fontFamily: fonts.regular,
     fontSize: type.body.fontSize,
   },
   saveForm: {
@@ -220,11 +221,12 @@ const styles = StyleSheet.create({
   },
   saveInput: {
     backgroundColor: palette.bgElevated,
-    borderColor: palette.border,
+    borderColor: palette.borderInput,
     borderRadius: radius.sm,
     borderWidth: 1,
     color: palette.text,
     flex: 1,
+    fontFamily: fonts.regular,
     fontSize: type.body.fontSize,
     minHeight: minTouchTarget,
     paddingHorizontal: spacing.md,

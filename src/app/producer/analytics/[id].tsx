@@ -200,6 +200,7 @@ const styles = StyleSheet.create({
   },
   totalLabel: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   nightRow: {
@@ -219,6 +220,7 @@ const styles = StyleSheet.create({
   },
   nightCount: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.body.fontSize,
   },
 });

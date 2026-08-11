@@ -364,10 +364,12 @@ const styles = StyleSheet.create({
   },
   spots: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   terms: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   spotsFull: {

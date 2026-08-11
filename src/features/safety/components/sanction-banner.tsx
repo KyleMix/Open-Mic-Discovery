@@ -3,7 +3,7 @@ import { StyleSheet, Text } from 'react-native';
 import { useSession } from '@/features/auth/session';
 import { sanctionMessage } from '@/features/safety/labels';
 import { useMySanction } from '@/features/safety/queries';
-import { maxFontScale, palette, spacing, type } from '@/theme';
+import { fonts, maxFontScale, palette, spacing, type } from '@/theme';
 
 /**
  * A live sanction, said once at the top of the app instead of leaking out
@@ -28,6 +28,7 @@ const styles = StyleSheet.create({
   banner: {
     backgroundColor: palette.bgPressed,
     color: palette.danger,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,

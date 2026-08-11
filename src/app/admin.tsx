@@ -354,6 +354,7 @@ const styles = StyleSheet.create({
   },
   itemBody: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   actions: {

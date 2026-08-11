@@ -1,10 +1,11 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Body, Button, ErrorText, Field, KeyboardShift, Screen, Title } from '@/components/ui';
 import { ScreenHeader } from '@/components/screen-header';
+import { useSheetAnimation } from '@/components/sheet-chrome';
 import { SignUpPrompt } from '@/features/auth/components/sign-up-prompt';
 import { useSession } from '@/features/auth/session';
 import { useBlockedUsers, useDeleteAccount, useUnblockUser } from '@/features/safety/queries';
@@ -134,10 +135,17 @@ function DeleteConfirmModal({ visible, onClose }: { visible: boolean; onClose: (
   const deleteAccount = useDeleteAccount(session?.user.id);
   const [confirmText, setConfirmText] = useState('');
   const insets = useSafeAreaInsets();
+  const animation = useSheetAnimation();
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType={animation} onRequestClose={onClose}>
       <View style={styles.backdrop}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Keep my account"
+          style={styles.backdropTouch}
+          onPress={onClose}
+        />
         <KeyboardShift>
           {/* The sheet reaches the physical screen bottom; the last button
               must clear the home indicator. */}
@@ -202,6 +210,7 @@ const styles = StyleSheet.create({
   },
   blockText: {
     color: palette.text,
+    fontFamily: fonts.regular,
     fontSize: type.body.fontSize,
   },
   backdrop: {
@@ -209,10 +218,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
   },
+  backdropTouch: {
+    flex: 1,
+  },
   sheet: {
     backgroundColor: palette.bgElevated,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: radius.sheet,
+    borderTopRightRadius: radius.sheet,
     gap: spacing.sm,
     padding: spacing.lg,
   },

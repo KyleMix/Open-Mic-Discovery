@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: spacing.md,
-    padding: spacing.md,
+    padding: spacing.lg,
     paddingBottom: spacing.xxl,
   },
   section: {
@@ -406,10 +406,12 @@ const styles = StyleSheet.create({
   },
   already: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   noLinks: {
     color: palette.textFaint,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   nightRow: {
@@ -427,10 +429,12 @@ const styles = StyleSheet.create({
   },
   nightWhat: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.body.fontSize,
   },
   nightWhen: {
     color: palette.textFaint,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
 });

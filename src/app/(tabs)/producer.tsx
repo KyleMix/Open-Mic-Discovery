@@ -270,7 +270,8 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: spacing.md,
-    padding: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   header: {
     gap: spacing.md,
@@ -297,6 +298,7 @@ const styles = StyleSheet.create({
   },
   claimText: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   claimActions: {
@@ -331,10 +333,12 @@ const styles = StyleSheet.create({
   },
   pausedTag: {
     color: palette.warning,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   cardMeta: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   nextNight: {

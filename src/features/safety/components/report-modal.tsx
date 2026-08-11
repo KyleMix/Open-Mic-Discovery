@@ -4,6 +4,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DiscardPrompt } from '@/components/confirm-sheet';
+import { useSheetAnimation } from '@/components/sheet-chrome';
 import { Body, Button, ErrorText, Field, KeyboardShift } from '@/components/ui';
 import { useSession } from '@/features/auth/session';
 import { setReturnTo } from '@/stores/return-to';
@@ -61,6 +62,7 @@ export function ReportModal({
   const [done, setDone] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const insets = useSafeAreaInsets();
+  const animation = useSheetAnimation();
 
   function reallyClose() {
     setReason(null);
@@ -80,8 +82,14 @@ export function ReportModal({
   }
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
+    <Modal visible={visible} transparent animationType={animation} onRequestClose={close}>
       <View style={styles.backdrop}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Close the report form"
+          style={styles.backdropTouch}
+          onPress={close}
+        />
         <KeyboardShift>
           {/* The sheet reaches the physical screen bottom; the last button
               must clear the home indicator. */}
@@ -201,10 +209,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
   },
+  backdropTouch: {
+    flex: 1,
+  },
   sheet: {
     backgroundColor: palette.bgElevated,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: radius.sheet,
+    borderTopRightRadius: radius.sheet,
     gap: spacing.sm,
     padding: spacing.lg,
   },
@@ -230,6 +241,7 @@ const styles = StyleSheet.create({
   },
   reasonText: {
     color: palette.text,
+    fontFamily: fonts.regular,
     fontSize: type.body.fontSize,
   },
 });

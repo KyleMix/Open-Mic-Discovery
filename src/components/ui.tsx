@@ -13,7 +13,16 @@ import {
 } from 'react-native';
 
 import { PressableScale } from '@/components/pressable-scale';
-import { fonts, maxFontScale, minTouchTarget, palette, radius, spacing, type } from '@/theme';
+import {
+  fonts,
+  maxFontScale,
+  maxReadingFontScale,
+  minTouchTarget,
+  palette,
+  radius,
+  spacing,
+  type,
+} from '@/theme';
 
 export function Screen({ children }: { children: ReactNode }) {
   return <View style={styles.screen}>{children}</View>;
@@ -64,8 +73,10 @@ export function Title({ children }: { children: ReactNode }) {
 }
 
 export function Body({ children }: { children: ReactNode }) {
+  // Running text scales past the chrome cap: it lives in flexible or
+  // scrolling layouts that grow with it.
   return (
-    <Text maxFontSizeMultiplier={maxFontScale} style={styles.body}>
+    <Text maxFontSizeMultiplier={maxReadingFontScale} style={styles.body}>
       {children}
     </Text>
   );
@@ -73,7 +84,11 @@ export function Body({ children }: { children: ReactNode }) {
 
 export function ErrorText({ children }: { children: ReactNode }) {
   return (
-    <Text accessibilityRole="alert" maxFontSizeMultiplier={maxFontScale} style={styles.error}>
+    <Text
+      accessibilityRole="alert"
+      maxFontSizeMultiplier={maxReadingFontScale}
+      style={styles.error}
+    >
       {children}
     </Text>
   );
@@ -211,16 +226,19 @@ const styles = StyleSheet.create({
   },
   body: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.body.fontSize,
     lineHeight: type.body.lineHeight,
   },
   caption: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
     lineHeight: type.caption.lineHeight,
   },
   error: {
     color: palette.danger,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
     lineHeight: type.caption.lineHeight,
   },
@@ -234,10 +252,11 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: palette.bgElevated,
-    borderColor: palette.border,
+    borderColor: palette.borderInput,
     borderWidth: 1,
     borderRadius: radius.sm,
     color: palette.text,
+    fontFamily: fonts.regular,
     fontSize: type.body.fontSize,
     minHeight: minTouchTarget,
     paddingHorizontal: spacing.md,

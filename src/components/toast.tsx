@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import {
   createContext,
   useCallback,
@@ -91,9 +92,7 @@ function ToastBar({ toast, onDone }: { toast: NonNullable<ToastState>; onDone: (
           onPress={onDone}
           style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
         >
-          <Text maxFontSizeMultiplier={maxFontScale} style={styles.dismissLabel}>
-            ✕
-          </Text>
+          <Ionicons name="close" size={18} color={palette.textSecondary} />
         </Pressable>
       </View>
     </View>
@@ -123,6 +122,7 @@ const styles = StyleSheet.create({
   message: {
     color: palette.text,
     flexShrink: 1,
+    fontFamily: fonts.regular,
     fontSize: type.body.fontSize,
     lineHeight: type.body.lineHeight,
   },
@@ -137,11 +137,6 @@ const styles = StyleSheet.create({
   },
   actionLabel: {
     color: palette.warning,
-    fontFamily: fonts.semibold,
-    fontSize: type.body.fontSize,
-  },
-  dismissLabel: {
-    color: palette.textSecondary,
     fontFamily: fonts.semibold,
     fontSize: type.body.fontSize,
   },

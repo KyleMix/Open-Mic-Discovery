@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
+import { useReducedMotion } from 'react-native-reanimated';
 import {
   AccessibilityInfo,
   Pressable,
@@ -75,6 +76,9 @@ export default function NightScreen() {
   const addWalkIn = useAddWalkIn();
   const removeWalkIn = useRemoveWalkIn();
   const [walkInName, setWalkInName] = useState('');
+  // The draw's shuffle is decoration; under reduced motion the list holds
+  // still and the busy label plus the completion announcement carry it.
+  const reduceMotion = useReducedMotion();
 
   // Visible randomization: shuffle names on screen while the server draws.
   const [shuffling, setShuffling] = useState<RosterRow[] | null>(null);
@@ -184,9 +188,11 @@ export default function NightScreen() {
     }
     const pool = [...roster.data];
     setShuffling(pool);
-    shuffleTimer.current = setInterval(() => {
-      setShuffling((cur) => (cur ? [...cur].sort(() => Math.random() - 0.5) : cur));
-    }, 120);
+    if (!reduceMotion) {
+      shuffleTimer.current = setInterval(() => {
+        setShuffling((cur) => (cur ? [...cur].sort(() => Math.random() - 0.5) : cur));
+      }, 120);
+    }
     draw.mutate(occurrenceId, {
       onSettled: () => {
         if (shuffleTimer.current) {
@@ -668,6 +674,7 @@ const styles = StyleSheet.create({
   },
   pendingName: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.body.fontSize,
   },
   row: {
@@ -718,6 +725,7 @@ const styles = StyleSheet.create({
   },
   meta: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
   },
   onDeckMeta: {

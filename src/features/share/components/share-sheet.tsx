@@ -3,6 +3,7 @@ import { Modal, Platform, Pressable, Share, StyleSheet, Text, View } from 'react
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, LoadingView } from '@/components/ui';
+import { useSheetAnimation } from '@/components/sheet-chrome';
 import { useToast } from '@/components/toast';
 import { useSession } from '@/features/auth/session';
 import { useMicDetail } from '@/features/discovery/queries';
@@ -45,11 +46,12 @@ type Props = {
 
 export function ShareSheet({ seriesId, open, onClose }: Props) {
   const insets = useSafeAreaInsets();
+  const animation = useSheetAnimation();
   if (!open) {
     return null;
   }
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible transparent animationType={animation} onRequestClose={onClose}>
       <View style={styles.backdrop}>
         {/* A sibling touch layer, not a wrapper: a backdrop button wrapping
             the sheet nests <button> inside <button> on web, which is invalid
@@ -363,8 +365,8 @@ const styles = StyleSheet.create({
   },
   sheet: {
     backgroundColor: palette.bgElevated,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: radius.sheet,
+    borderTopRightRadius: radius.sheet,
     padding: spacing.lg,
   },
   body: {
@@ -413,6 +415,7 @@ const styles = StyleSheet.create({
   },
   caption: {
     color: palette.textSecondary,
+    fontFamily: fonts.regular,
     fontSize: type.caption.fontSize,
     lineHeight: type.caption.lineHeight,
   },

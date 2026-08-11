@@ -16,6 +16,7 @@ import {
 } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, type ReactNode } from 'react';
+import { useReducedMotion } from 'react-native-reanimated';
 
 import { OfflineBanner } from '@/components/offline-banner';
 import { ToastProvider } from '@/components/toast';
@@ -220,6 +221,9 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 export default function RootLayout() {
   // Brand typography; screens render with the system font until loaded.
   useFonts({ Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold });
+  // Screens cross-fade instead of sliding for people who asked the OS to
+  // reduce motion; PressableScale already covers presses the same way.
+  const reduceMotion = useReducedMotion();
   return (
     <PersistQueryClientProvider
       client={queryClient}
@@ -236,7 +240,12 @@ export default function RootLayout() {
             <OfflineBanner />
             <SanctionBanner />
             <AuthGate>
-              <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  animation: reduceMotion ? 'fade' : 'slide_from_right',
+                }}
+              >
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="(auth)" />
               </Stack>

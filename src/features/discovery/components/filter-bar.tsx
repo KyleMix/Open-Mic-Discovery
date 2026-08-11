@@ -20,6 +20,7 @@ import {
   maxFontScale,
   minTouchTarget,
   palette,
+  radius,
   spacing,
   type,
 } from '@/theme';
@@ -229,13 +230,13 @@ const styles = StyleSheet.create({
   },
   row: {
     gap: spacing.sm,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
   },
   chip: {
     alignItems: 'center',
     backgroundColor: palette.bgElevated,
     borderColor: palette.border,
-    borderRadius: 22,
+    borderRadius: radius.pill,
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.xs,

@@ -12,6 +12,10 @@ export const palette = {
   bgElevated: '#16161D',
   bgPressed: '#22222B',
   border: '#2E2E3A',
+  // Boundary for interactive controls (inputs, pickers): meets the 3:1
+  // non-text contrast minimum on bg (3.68:1) and bgElevated (3.37:1),
+  // where the decorative card border deliberately stays quiet.
+  borderInput: '#6A6A76',
   text: '#F4F4F6',
   textSecondary: '#A8A8B3',
   // Faint but still readable: the quietest color allowed for meaningful
@@ -64,13 +68,15 @@ export const spacing = {
 } as const;
 
 /**
- * Corner radii. sm: inputs and small chips, md: buttons and cards,
- * lg: prominent cards and sheets, pill: fully rounded.
+ * Corner radii. sm: inputs, md: buttons and cards, lg: prominent cards,
+ * sheet: the top corners of every bottom sheet, pill: fully rounded
+ * (chips and stadium buttons at any height).
  */
 export const radius = {
   sm: 10,
   md: 12,
   lg: 14,
+  sheet: 20,
   pill: 999,
 } as const;
 
@@ -111,3 +117,9 @@ export const minTouchTarget = Platform.OS === 'android' ? 48 : 44;
  * Applied via maxFontSizeMultiplier on the shared primitives.
  */
 export const maxFontScale = 1.6;
+
+/**
+ * Running text (Body, errors, legal text) lives in flexible or scrolling
+ * layouts and can honor more of the accessibility range than chrome can.
+ */
+export const maxReadingFontScale = 2.5;
