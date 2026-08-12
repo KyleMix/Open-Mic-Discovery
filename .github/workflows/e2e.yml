@@ -64,9 +64,19 @@ jobs:
       - run: supabase start
       - name: Point the app at the local stack
         run: |
+          # `supabase status -o env` prints shell-quoted values, e.g.
+          #   API_URL="http://127.0.0.1:54321"
+          # The literal quotes must be stripped before the value reaches
+          # $GITHUB_ENV: GitHub does not unquote, so a quoted value is inlined
+          # verbatim as EXPO_PUBLIC_SUPABASE_URL='"http://127.0.0.1:54321"',
+          # which fails supabase-js's ^https?:// check ("Invalid supabaseUrl")
+          # and crashes the app at startup before anything renders. cut -f2-
+          # keeps '=' inside values (JWT anon keys), tr -d '"' drops the quotes.
           STATUS=$(supabase status -o env)
-          echo "$STATUS" | grep API_URL | sed 's/^API_URL=/EXPO_PUBLIC_SUPABASE_URL=/' >> "$GITHUB_ENV"
-          echo "$STATUS" | grep ANON_KEY | sed 's/^ANON_KEY=/EXPO_PUBLIC_SUPABASE_ANON_KEY=/' >> "$GITHUB_ENV"
+          API_URL=$(echo "$STATUS" | grep '^API_URL=' | cut -d= -f2- | tr -d '"')
+          ANON_KEY=$(echo "$STATUS" | grep '^ANON_KEY=' | cut -d= -f2- | tr -d '"')
+          echo "EXPO_PUBLIC_SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "EXPO_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
 
       - uses: actions/setup-java@v4
         with:
@@ -120,22 +130,7 @@ jobs:
           script: |
             adb install android/app/build/outputs/apk/release/app-release.apk
             adb reverse tcp:54321 tcp:54321
-            # Diagnostic capture (temporary). Every flow fails with a blank
-            # screen and no router error boundary, which means the crash is
-            # above the app tree, where nothing in ~/.maestro/tests records it.
-            # Run logcat across the flows and print the crash-relevant lines to
-            # the job log so the actual startup stack is visible without
-            # downloading artifacts.
-            adb logcat -c || true
-            adb logcat > /tmp/logcat.txt 2>&1 &
-            LOGCAT_PID=$!
-            maestro test e2e/ ; MAESTRO_EXIT=$?
-            kill "$LOGCAT_PID" 2>/dev/null || true
-            echo "===== logcat: startup crash / RN lines ====="
-            grep -aE "ReactNativeJS|ReactNative |AndroidRuntime|FATAL EXCEPTION|Reanimated|[Ww]orklet|beginning of crash|com\.openmicexplorer" /tmp/logcat.txt | tail -250 || true
-            echo "===== logcat: last 80 lines (fallback) ====="
-            tail -80 /tmp/logcat.txt || true
-            exit "$MAESTRO_EXIT"
+            maestro test e2e/
 
       - name: Run the Maestro flows on Maestro Cloud
         if: env.RUN_ON_MAESTRO_CLOUD == 'true'
