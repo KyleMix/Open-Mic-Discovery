@@ -26,13 +26,16 @@ website side to render them rather than rewrite them.
 | `https://www.stonedgooseproductions.com/open-mics/delete-account` | `web/delete-account/index.html`                                                                | Google Play web deletion requirement. Linked from the Play Data Safety form.              |
 | `https://www.stonedgooseproductions.com/open-mics/privacy`        | TODO(owner): host the privacy policy here                                                      | Linked from the paywall (Apple 3.1.2), the delete-account page, and both store listings.  |
 | `https://www.stonedgooseproductions.com/open-mics/terms`          | TODO(owner): host the EULA text here (same text as the in-app `eula_versions` current version) | Linked from the paywall (Apple 3.1.2).                                                    |
-| `https://www.stonedgooseproductions.com/open-mics/mic/<uuid>`     | `web/mic/index.html` via the rewrite in `web/_redirects`                                       | Where shared mic links land for people without the app. The share sheet emits these URLs. |
+| `https://www.stonedgooseproductions.com/open-mics/mic/<uuid>`     | `web/mic/index.html` via the rewrite in `web/_redirects`                                       | Where shared mic links land for people without the app. The share sheet emits these URLs, and the QR code on every shared flyer encodes them. |
+| `https://www.stonedgooseproductions.com/open-mics/get`            | `web/get/index.html`                                                                           | The invite landing page: both store buttons plus an open-the-app fallback. The in-app "Invite friends" message points here. |
 
 The host must honor `web/_redirects` (Cloudflare Pages and Netlify both read
 it) or an equivalent rewrite of `/open-mics/mic/*` to `/open-mics/mic/`,
 because the uuid in the path cannot be pre-rendered. When the store listings
 go live, fill `data-app-store` and `data-play-store` on the page's `<body>`
-so the store buttons enable themselves.
+so the store buttons enable themselves. The same two attributes exist on
+`web/get/index.html`; fill both pages in the same deploy so the invite
+landing and the shared-mic landing never disagree about availability.
 
 The page must be reachable with no login and no app install.
 

@@ -1,10 +1,10 @@
-# Open Mic Finder: Investor Pitch
+# Open Mic Explorer: Investor Pitch
 
 Find a mic. Get on the list.
 
 One app that puts every open mic (music, comedy, and poetry) on one map, and takes a performer from "what is happening Tuesday near me" to "I am on the list" without leaving the app.
 
-All screenshots in this document are captured from the current build of the app running against the real database and seed data. Nothing here is a mockup.
+All screenshots in this document are captured from a real build of the app (2026-07-29) running against the real database and seed data. Nothing here is a mockup.
 
 ---
 
@@ -20,7 +20,7 @@ The people running these nights have it worst: a host managing a 25-name lottery
 
 ## 2. The product
 
-Open Mic Finder is a two-sided mobile app, shipping to the Apple App Store and Google Play, with one account covering both sides of the mic. That mirrors how real scenes work: the person performing on Tuesday is often the person hosting on Wednesday.
+Open Mic Explorer is a two-sided mobile app, shipping to the Apple App Store and Google Play, with one account covering both sides of the mic. That mirrors how real scenes work: the person performing on Tuesday is often the person hosting on Wednesday.
 
 <table>
 <tr>
@@ -91,26 +91,24 @@ The performer side is deliberately free forever, because performer density is wh
 
 ## 5. Business model
 
-The monetization stack is already built and shipped in the codebase: RevenueCat wrapping StoreKit and Google Play Billing, entitlement checks that fail closed in production, and a paywall with Restore Purchases where a reviewer will find it. The engineering distance to the first dollar of revenue is zero.
+The launch build is deliberately free end to end: every feature is free to every account, and no payment SDK ships in v1 (owner decision recorded 2026-07-30 in ARCHITECTURE.md). The full monetization stack (RevenueCat wrapping StoreKit and Google Play Billing, fail-closed entitlement checks, a review-compliant paywall with Restore Purchases) was built and verified in this codebase and then removed from the launch build rather than left dormant, for two reasons: a dormant paywall is a liability at App Store review, and free producer tools are what tip a city. The stack lives in git history; turning Producer Pro on is a restore of already-written, already-reviewed code plus store product configuration, not new engineering.
 
 <table>
 <tr>
-<td width="33%"><img src="screenshots/producer-pro.png" alt="Producer Pro paywall" /></td>
-<td width="33%"><img src="screenshots/profile.png" alt="Dual role profile" /></td>
-<td width="33%"></td>
+<td width="50%"><img src="screenshots/profile.png" alt="Dual role profile" /></td>
+<td width="50%"></td>
 </tr>
 <tr>
-<td>The paywall as it exists in the app today. Listing a mic, confirming accuracy, and cancelling nights stay free for every producer, because fresh listings are the whole point.</td>
-<td>One account, both roles. The performer-to-producer upgrade path lives inside the product itself.</td>
+<td>One account, both roles. The performer-to-producer upgrade path lives inside the product itself. Listing a mic, confirming accuracy, and cancelling nights stay free for every producer forever, because fresh listings are the whole point.</td>
 <td></td>
 </tr>
 </table>
 
-### Revenue line 1: Producer Pro (built, shipping)
+### Revenue line 1: Producer Pro (built and shelved for launch; first to re-enable)
 
 Subscription for the people running the night. Free: listing, one-tap confirm, cancellations, read-only roster. Pro: signup list management (lottery draws, reorder, waitlist promotion, performed and no-show tracking), realtime stage-side updates, on-deck push announcements, and listing analytics.
 
-- Proposed price: $9.99 per month or $79.99 per year (prices configured in the stores, not hardcoded; A/B testable via RevenueCat offerings).
+- Proposed price: $9.99 per month or $79.99 per year (prices configured in the stores, not hardcoded; A/B testable via RevenueCat offerings once re-enabled).
 - Store fee at our scale: 15% under both stores' small business programs. Net roughly $8.49 per monthly sub.
 - Producer churn is structurally low: the mic recurs every week, and the tool replaces a paper list the host hates. This behaves like prosumer SaaS, not consumer subscription.
 
@@ -160,15 +158,15 @@ CAC is field labor and community management, not paid acquisition.
 
 This is not a deck describing a future app. Phases 0 through 8 of the build plan are complete and the codebase is store-submission ready pending owner accounts and credentials:
 
-- Full schema with PostGIS geosearch, 16 tables, row level security on every table, 128 database tests plus 84 app tests passing.
+- Full schema with PostGIS geosearch, 32 tables, row level security on every table, 806 database test assertions plus 554 app tests passing (verified 2026-08-11).
 - Discovery (map and list), plain-language filters, search, personalized defaults around a private home area.
 - Signups end to end: walk-in lists, visible lottery draws, waitlists, realtime roster, push notifications, on-deck announcements.
 - Producer suite: two-minute listing builder, one-tap freshness confirmation, this-night-only vs all-future edits, cancellations with reasons, posters, analytics.
 - Trust and compliance built to Apple's 2026 UGC enforcement: EULA gate, report and block enforced server side, automated content filter, moderation queue with 24-hour target, two-tap account deletion, age gating, privacy manifests. This is a moat against small competitors in its own right: most indie apps in this category cannot get through review.
-- Monetization live in code: RevenueCat, Producer Pro entitlement, paywall, Restore Purchases, fails closed in production.
-- EAS build profiles, store listing copy, and a submission checklist (docs/store/STORE_LISTING.md) are in the repo.
+- Monetization deliberately out of the launch build: the Producer Pro stack was built, verified, and then removed so v1 ships free with one fewer review surface. Re-enabling it is a code restore plus store product setup, not a build.
+- EAS build profiles, store listing copy, and a launch checklist (docs/LAUNCH-CHECKLIST.md) are in the repo.
 
-Remaining before the stores: hosted Supabase project, Apple and Google developer accounts, RevenueCat products, provider credentials, final art, and the TestFlight and Play internal testing cycle. That is configuration and review time, not engineering risk.
+Remaining before the stores: hosted Supabase project, Apple and Google developer accounts, provider credentials, final art, and the TestFlight and Play internal testing cycle. That is configuration and review time, not engineering risk.
 
 ## 9. The ask
 
@@ -185,4 +183,4 @@ The milestone this round buys: one region where the majority of active mics are 
 
 ---
 
-_Screenshots captured 2026-07-29 from the app running against the seeded development database. Demo data shown (mic names, venues, performers) is the repo's Pacific Northwest seed set._
+_Screenshots captured 2026-07-29 from the app running against the seeded development database, before the rename to Open Mic Explorer and the removal of the paywall. Demo data shown (mic names, venues, performers) is the repo's Pacific Northwest seed set._

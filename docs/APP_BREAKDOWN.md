@@ -1,4 +1,16 @@
-# Open Mic Finder: Full App Breakdown
+# Open Mic Explorer: Full App Breakdown
+
+> **DATED SNAPSHOT, partially reconciled.** Written 2026-07-29 from the
+> repo state at migration `20260728001500`. The app has moved on since:
+> it was renamed Open Mic Explorer (bundle id `com.openmicexplorer.app`),
+> the RevenueCat purchase layer was REMOVED (the app now sells nothing
+> and ships no payment SDK), the reanimated pin moved to 4.5.1 with
+> worklets 0.10.1, and the test counts grew to 554 Jest tests and 806
+> pgTAP assertions as of 2026-08-11. A reconciliation pass corrected the
+> name, monetization, and pin claims below, but section-level details
+> (counts, migration lists, gap lists) still describe the 2026-07-29
+> state. Current canonical sources: `AUDIT-REPORT.md` and
+> `docs/LAUNCH-CHECKLIST.md`.
 
 ## How to use this document
 
@@ -20,7 +32,7 @@ If this document and the live code disagree, the code wins. Verify claims agains
 
 ## 1. What the app is
 
-**Open Mic Finder** (bundle id `com.openmicfinder.app`, npm package `openmic`) is a production iOS and Android app that helps people find local open mics for **music, comedy, and poetry**, and helps the people who run those mics keep listings accurate and manage signups.
+**Open Mic Explorer** (bundle id `com.openmicexplorer.app`, npm package `openmicexplorer`) is a production iOS and Android app that helps people find local open mics for **music, comedy, and poetry**, and helps the people who run those mics keep listings accurate and manage signups.
 
 Two roles share one account (dual role is the common case in real scenes, not an edge case):
 
@@ -68,17 +80,17 @@ Two roles share one account (dual role is the common case in real scenes, not an
 | Maps          | react-native-maps 1.27.2 with supercluster clustering (in-house component, not the unmaintained wrapper lib) |
 | Location      | expo-location, foreground only, requested in context                                                         |
 | Notifications | expo-notifications + Expo Push, driven by a database outbox                                                  |
-| Payments      | RevenueCat (`react-native-purchases`) for Producer Pro only                                                  |
+| Payments      | None. In-app purchases were removed; the app sells nothing and ships no payment SDK                          |
 | Errors        | Sentry via `@sentry/react-native`, inert without a DSN                                                       |
 | Build/ship    | EAS Build, Submit, Update (development, preview, production channels)                                        |
 | Tests         | Jest + jest-expo + React Native Testing Library; pgTAP for the database; Maestro YAML for e2e                |
 
 ### Pins that must move together (do not violate)
 
-- `react-native-reanimated 4.5.0` + `react-native-worklets 0.10.0`: upgrade both at once or neither, only to an Expo-documented SDK-compatible pairing. RN 0.82+ removed the legacy architecture, so New Architecture with Reanimated 4 is the only option on this stack.
+- `react-native-reanimated 4.5.1` + `react-native-worklets 0.10.1`: upgrade both at once or neither, only to an Expo-documented SDK-compatible pairing. RN 0.82+ removed the legacy architecture, so New Architecture with Reanimated 4 is the only option on this stack.
 - All `expo-*` packages upgrade only via `npx expo install`.
 - TypeScript stays at `~6.0.3` (the SDK 57 template pin). Do not jump to TypeScript 7 until the Expo toolchain adopts it.
-- Paid slots must never use IAP: paying for a slot at a real-world open mic is a real-world service under Apple 3.1.5(a) and would use an external processor. RevenueCat/StoreKit is only for Producer Pro (a digital service).
+- Paid slots must never use IAP: paying for a slot at a real-world open mic is a real-world service under Apple 3.1.5(a) and would use an external processor if payment handling ever lands. (v1 ships no payments at all; the RevenueCat layer this rule once referenced was removed.)
 
 ---
 
@@ -91,10 +103,10 @@ Open-Mic-Discovery/
 │   ├── (tabs)/       index (Discover), favorites, producer (My Mics), profile
 │   ├── mic/[id]      public mic detail
 │   ├── producer/     new, [id] manage, night/[occurrenceId] roster, analytics/[id]
-│   ├── admin, settings, notification-prefs, edit-profile, paywall
+│   ├── admin, settings, notification-prefs, edit-profile
 ├── src/components/   shared primitives (ui.tsx, glyph.tsx, logo.tsx)
 ├── src/features/     feature modules: auth, discovery, producer, signups,
-│                     favorites, profile, safety, notifications, calendar, pro
+│                     favorites, profile, safety, notifications, calendar
 ├── src/lib/          supabase client, query client, env, sentry, notifications
 ├── src/stores/       Zustand stores (filters.ts, onboarding.ts)
 ├── src/theme/        tokens.ts (single source of truth for color/spacing/type)
@@ -161,7 +173,7 @@ Notifications use an outbox pattern: DB triggers and three pg_cron queue jobs (f
 
 ### Screens
 
-Four tabs: **Discover** (search, locate, map/list toggle, filter bar, `mics_near`/`search_mics` results sorted soonest-then-nearest), **Favorites**, **My Mics** (producer dashboard, one-tap confirm, admin claim queue), **Profile**. Stack routes: `mic/[id]` (detail with freshness badge, signup card, favorite, directions, calendar, report, flag), `producer/new` and `producer/[id]` (SeriesForm with a non-technical recurrence builder), `producer/night/[occurrenceId]` (live roster: visible lottery shuffle, up/down reorder, performed/no-show, on-deck megaphone, Realtime-synced), `producer/analytics/[id]` (Pro-gated), `paywall`, `settings` (including typed-confirmation account deletion), `notification-prefs`, `edit-profile`, `admin` (moderation queue).
+Four tabs: **Discover** (search, locate, map/list toggle, filter bar, `mics_near`/`search_mics` results sorted soonest-then-nearest), **Favorites**, **My Mics** (producer dashboard, one-tap confirm, admin claim queue), **Profile**. Stack routes: `mic/[id]` (detail with freshness badge, signup card, favorite, directions, calendar, report, flag), `producer/new` and `producer/[id]` (SeriesForm with a non-technical recurrence builder), `producer/night/[occurrenceId]` (live roster: visible lottery shuffle, up/down reorder, performed/no-show, on-deck megaphone, Realtime-synced), `producer/analytics/[id]`, `settings` (including typed-confirmation account deletion), `notification-prefs`, `edit-profile`, `admin` (moderation queue).
 
 ### Patterns to follow when writing code here
 
@@ -172,7 +184,7 @@ Four tabs: **Discover** (search, locate, map/list toggle, filter bar, `mics_near
 - **State ladder:** every screen explicitly handles the four states in order: `isPending` renders `LoadingView`, `isError` renders `ErrorText` plus a "Try again" button wired to refetch, empty data renders a titled empty state with a useful next action, then success. `src/app/(tabs)/index.tsx` is the canonical example.
 - **Platform splits** use file extensions (`mic-map.tsx` vs `mic-map.web.tsx`), not runtime checks.
 - **Accessibility:** shared primitives in `src/components/ui.tsx` carry `accessibilityRole`/`accessibilityLabel`/`accessibilityState`; keep that when adding components.
-- **Monetization boundaries:** entitlement resolution is a pure tested function (`src/features/pro/status.ts`); dev builds without keys unlock Pro and say so, unconfigured production builds fail closed.
+- **Monetization boundaries:** none remain in code. The entitlement layer (`src/features/pro/`) and paywall route were removed with the purchase SDK; every feature is free to every account.
 
 ---
 
@@ -267,7 +279,7 @@ Delivered: the 10-glyph UI set. Still undelivered: app icon, Android adaptive ic
 
 ### Owner-gated launch checklist (from `docs/store/STORE_LISTING.md`)
 
-Apple Developer and Play Console accounts; hosted Supabase project (`supabase db push`, deploy `push-sender`, production demo accounts, replace seed credentials in REVIEW_NOTES); EAS project and secrets (Supabase URL and anon key, Sentry DSN, RevenueCat keys); RevenueCat `producer_pro` entitlement with a monthly product in both stores plus a verified buy/reinstall/restore cycle; Google Maps API key for Android; Sign in with Apple and Google OAuth configured; final art; production builds; TestFlight and Play internal testing; `eas submit`.
+Apple Developer and Play Console accounts; hosted Supabase project (`supabase db push`, deploy the Edge Functions, production demo accounts, replace seed credentials in REVIEW_NOTES); EAS env vars (Supabase URL and anon key, Sentry DSN; no RevenueCat keys, purchases were removed); Google Maps API key for Android; Sign in with Apple and Google OAuth configured; final art; production builds; TestFlight and Play internal testing; `eas submit`. The current version of this list is `docs/LAUNCH-CHECKLIST.md`.
 
 ---
 
@@ -321,7 +333,7 @@ Each prompt is written to stand alone in a fresh Claude session on this repo. Pa
 
 ### P12: Pre-submission compliance sweep
 
-> Read docs/COMPLIANCE.md, docs/privacy/APPLE_PRIVACY.md, docs/privacy/PLAY_DATA_SAFETY.md, and docs/store/STORE_LISTING.md. Verify each claimed guideline mapping still points at real, current code (files move; claims rot). Confirm: account deletion is reachable in two taps from Settings, the EULA re-acceptance gate triggers on version bump, Restore Purchases is findable on the paywall, location permission copy matches the in-context request, and REVIEW_NOTES.md credentials will exist on the hosted project. Produce a gap list ordered by rejection risk; fix only doc-level gaps, and list code gaps for review instead of changing behavior.
+> Read docs/COMPLIANCE.md, docs/privacy/APPLE_PRIVACY.md, docs/privacy/PLAY_DATA_SAFETY.md, and docs/store/STORE_LISTING.md. Verify each claimed guideline mapping still points at real, current code (files move; claims rot). Confirm: account deletion is reachable in two taps from Settings, the EULA re-acceptance gate triggers on version bump, location permission copy matches the in-context request, and REVIEW_NOTES.md credentials will exist on the hosted project. (There is no paywall and no Restore Purchases button to check: the app sells nothing.) Produce a gap list ordered by rejection risk; fix only doc-level gaps, and list code gaps for review instead of changing behavior.
 
 ---
 

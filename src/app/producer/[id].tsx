@@ -35,6 +35,7 @@ import { SeriesForm, type SeriesFormValues } from '@/features/producer/component
 import { isWalkIn, signupOpensInterval } from '@/features/producer/signup-opens';
 import { rruleMatches } from '@/features/producer/rrule-match';
 import { pickAndUploadPoster } from '@/features/producer/poster';
+import { ShareSheet } from '@/features/share/components/share-sheet';
 import {
   useCancelNight,
   useConfirmSeries,
@@ -70,6 +71,7 @@ export default function ManageSeriesScreen() {
   const [confirmCloseEditor, setConfirmCloseEditor] = useState(false);
   const [posterBusy, setPosterBusy] = useState(false);
   const [posterError, setPosterError] = useState<string | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
   const [confirmPause, setConfirmPause] = useState(false);
   const [nightAction, setNightAction] = useState<{
     occurrence: Occurrence;
@@ -371,6 +373,16 @@ export default function ManageSeriesScreen() {
         />
         {posterError ? <ErrorText>{posterError}</ErrorText> : null}
 
+        <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+          Spread the word
+        </Text>
+        <Body>
+          Share a flyer for your night, or export the scan-to-sign-up poster and hang it at the
+          venue. Everything you share carries a QR code that opens this mic in the app, and offers
+          the App Store and Google Play to anyone without it.
+        </Body>
+        <Button label="Share this mic" kind="secondary" onPress={() => setShareOpen(true)} />
+
         {editing ? (
           <View style={styles.editorBox}>
             <Body>
@@ -587,6 +599,8 @@ export default function ManageSeriesScreen() {
           </View>
         </Modal>
       ) : null}
+
+      <ShareSheet seriesId={series.id} open={shareOpen} onClose={() => setShareOpen(false)} />
     </View>
   );
 }

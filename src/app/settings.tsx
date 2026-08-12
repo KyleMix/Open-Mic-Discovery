@@ -9,6 +9,7 @@ import { useSheetAnimation } from '@/components/sheet-chrome';
 import { SignUpPrompt } from '@/features/auth/components/sign-up-prompt';
 import { useSession } from '@/features/auth/session';
 import { useBlockedUsers, useDeleteAccount, useUnblockUser } from '@/features/safety/queries';
+import { InviteButton } from '@/features/share/components/invite-button';
 import { SUPPORT_EMAIL, contactSupport } from '@/lib/support';
 import { fonts, maxFontScale, palette, radius, spacing, type } from '@/theme';
 
@@ -37,6 +38,15 @@ export default function SettingsScreen() {
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
       <ScreenHeader title="Settings" />
       <Title>Settings</Title>
+
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+        Spread the word
+      </Text>
+      <Body>
+        The app gets better the more of your scene is on it. Send the download link to the people
+        you cross paths with at mics.
+      </Body>
+      <InviteButton />
 
       <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
         Notifications

@@ -1723,7 +1723,7 @@ export type Database = {
           intent: string;
           occurrence_id: string | null;
           profile_id: string | null;
-          series_id: string;
+          series_id: string | null;
         };
         Insert: {
           action: string;
@@ -1733,7 +1733,7 @@ export type Database = {
           intent: string;
           occurrence_id?: string | null;
           profile_id?: string | null;
-          series_id: string;
+          series_id?: string | null;
         };
         Update: {
           action?: string;
@@ -1743,7 +1743,7 @@ export type Database = {
           intent?: string;
           occurrence_id?: string | null;
           profile_id?: string | null;
-          series_id?: string;
+          series_id?: string | null;
         };
         Relationships: [
           {

@@ -3,7 +3,7 @@
 -- event under someone else's id, nobody but an admin can read any of it
 -- back, and the rows cannot be edited after the fact.
 begin;
-select plan(12);
+select plan(17);
 
 -- Fixture: an approved mic to share.
 insert into venues (id, name, address_line, city, region, location, moderation_status)
@@ -74,6 +74,45 @@ select throws_ok(
 );
 
 -- ---------------------------------------------------------------------------
+-- App invites: the one event with no mic attached (20260811000500).
+-- ---------------------------------------------------------------------------
+insert into share_events (profile_id, series_id, intent, action, channel)
+values ('00000000-0000-4000-a000-000000000001', null, 'invite', 'app_invite',
+        'com.apple.UIKit.activity.Message');
+select pass('a signed-in person can record an app invite with no series');
+
+select throws_ok(
+  $$insert into share_events (profile_id, series_id, intent, action)
+    values ('00000000-0000-4000-a000-000000000001', null, 'neutral', 'sheet_open')$$,
+  '23514',
+  null,
+  'but no other action may drop the series'
+);
+
+select throws_ok(
+  $$insert into share_events (profile_id, series_id, intent, action)
+    values ('00000000-0000-4000-a000-000000000001',
+            '20000000-0000-4000-c000-0000000000e1', 'invite', 'app_invite')$$,
+  '23514',
+  null,
+  'and an invite may not smuggle a series in'
+);
+
+select throws_ok(
+  $$insert into share_events (profile_id, series_id, intent, action)
+    values ('00000000-0000-4000-a000-000000000001', null, 'performer', 'app_invite')$$,
+  '23514',
+  null,
+  'and an invite carries only the invite intent'
+);
+
+-- The host's signup poster is a normal mic share under a new action.
+insert into share_events (profile_id, series_id, intent, action)
+values ('00000000-0000-4000-a000-000000000001',
+        '20000000-0000-4000-c000-0000000000e1', 'producer', 'poster_share');
+select pass('a signup poster share records like any other mic share');
+
+-- ---------------------------------------------------------------------------
 -- A guest shares without an account.
 -- ---------------------------------------------------------------------------
 reset role;
@@ -105,11 +144,11 @@ select is(
 reset role;
 select is(
   (select count(*)::int from share_events),
-  3,
-  'all three inserts landed and the update and delete attempts changed nothing'
+  5,
+  'all five inserts landed and the update and delete attempts changed nothing'
 );
 select is(
-  (select count(*)::int from share_events where intent = 'producer'),
+  (select count(*)::int from share_events where intent = 'producer' and action <> 'poster_share'),
   0,
   'the refused update wrote no rows'
 );
