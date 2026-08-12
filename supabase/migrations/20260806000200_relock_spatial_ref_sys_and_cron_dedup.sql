@@ -63,6 +63,12 @@ end $$;
 -- 20260803000700 as push-sender. Running both delivers the same batch to
 -- the function twice a minute and races the sent_at update. Keep the
 -- batched drain; unschedule the duplicate.
+-- Wrapped like its sibling cron migrations (20260801000900, 20260803000700):
+-- on 2026-08-12 this block failed hard during a hosted `db push` while the
+-- editor-run equivalent worked, so a cron hiccup here must not stop the
+-- chain. If the warning fires, verify by hand that cron.job lists
+-- drain-notification-outbox and NOT push-sender, and run the inner
+-- unschedule from the dashboard SQL editor if the duplicate remains.
 do $$
 begin
   if exists (select 1 from pg_extension where extname = 'pg_cron') then
@@ -70,4 +76,6 @@ begin
       perform cron.unschedule('push-sender');
     end if;
   end if;
+exception when others then
+  raise warning 'push-sender cron dedup skipped here: %. Check cron.job and unschedule push-sender manually if it remains.', sqlerrm;
 end $$;
