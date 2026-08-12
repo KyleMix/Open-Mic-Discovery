@@ -24,6 +24,7 @@ import { Body, Button, ErrorText, LoadingView, Screen, Title } from '@/component
 import { SessionProvider, useSession } from '@/features/auth/session';
 import { SanctionBanner } from '@/features/safety/components/sanction-banner';
 import { useLatestEulaVersion, useOwnProfile } from '@/features/auth/queries';
+import { getConfigError } from '@/lib/env';
 import { observeNotificationTaps, registerPushToken } from '@/lib/notifications';
 import { CACHE_BUSTER, queryClient, queryPersister } from '@/lib/query-client';
 import { initSentry, reportError } from '@/lib/sentry';
@@ -218,12 +219,39 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   );
 }
 
+/**
+ * Shown when the build is missing or has a malformed EXPO_PUBLIC_SUPABASE_*
+ * value. This is a build-time fault baked into the binary, so there is no
+ * retry: createClient would throw the moment any provider touched it, which
+ * previously surfaced only as a blank screen behind the generic error
+ * boundary. Naming the exact variable turns a silent boot failure into a
+ * one-line fix for whoever built it.
+ */
+function ConfigErrorScreen({ detail }: { detail: string }) {
+  return (
+    <Screen>
+      <Title>App is not configured</Title>
+      <Body>
+        This build is missing configuration it needs to start. This is set when the app is built,
+        so it cannot be fixed from the device. Rebuild with the required values set.
+      </Body>
+      <ErrorText>{detail}</ErrorText>
+    </Screen>
+  );
+}
+
 export default function RootLayout() {
   // Brand typography; screens render with the system font until loaded.
   useFonts({ Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold });
   // Screens cross-fade instead of sliding for people who asked the OS to
   // reduce motion; PressableScale already covers presses the same way.
   const reduceMotion = useReducedMotion();
+  // Fail fast and legibly on a misconfigured build, before any provider
+  // constructs the Supabase client and throws deep in the tree.
+  const configError = getConfigError();
+  if (configError) {
+    return <ConfigErrorScreen detail={configError} />;
+  }
   return (
     <PersistQueryClientProvider
       client={queryClient}
