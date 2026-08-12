@@ -35,14 +35,21 @@ For every type below: Shared = No. Sold = No. Processed ephemerally = No
 unless noted. All collection is required for the feature it powers but the
 features themselves are optional, so mark Optional where noted.
 
-**Location, Approximate location.** Collected: Yes, optional. Purpose: App
-functionality (nearby search). Only while using the app, only after an
-in-context tap (`src/features/discovery/location.ts`). Not stored server
-side; used transiently for the query. Mark "Processed ephemerally".
+**Location, Approximate location.** Collected: Yes, Required. Purpose: App
+functionality. Ephemeral: No. Two flows fall under this type and the
+stricter one governs the answers: the in-context "near me" tap is
+transient (`src/features/discovery/location.ts`), but the required home
+area is city/ZIP geocoded on device into approximate coordinates stored
+privately on the profile (never exposed in any view, deleted with the
+account). Stored means not ephemeral; required at onboarding means
+Required. This matches the Apple declaration (Coarse Location, linked).
 
-**Location, Precise location.** Same answers as approximate location. The
-foreground permission covers both; background location is never requested
-(`app.json`: isAndroidBackgroundLocationEnabled false).
+**Location, Precise location.** Collected: Yes, optional (users can
+decline the in-context permission and the app remains fully usable).
+Purpose: App functionality (nearby search). Ephemeral: Yes; precise
+coordinates are used transiently for the query and never stored server
+side. Background location is never requested (`app.json`:
+isAndroidBackgroundLocationEnabled false).
 
 **Personal info, Name.** Collected: Yes (display name and handle).
 Purpose: App functionality (public profile). Required.
