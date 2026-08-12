@@ -161,7 +161,7 @@ Blocking on owner action before submit:
 - [ ] B1: fill real Team ID and Play signing SHA-256 into both `web/.well-known/` files and deploy them at the domain root; verify with Apple's AASA validator and `adb shell pm get-app-links`.
 - [ ] B2: set `data-function-url` on the deployed deletion page to the real Edge Function URL; curl it to confirm a 400 on empty body.
 - [x] B3 (Done 2026-08-12): `eas.json` `submit.production.ios.ascAppId` set to the real app record id (6800515935).
-- [ ] B4: create the `kyle@stonedgooseproductions.com` mailbox and confirm it receives external mail.
+- [x] B4 (Done 2026-08-12): `kyle@stonedgooseproductions.com` mailbox created; it matches `SUPPORT_EMAIL` in `src/lib/support.ts`, the EULA, and the deletion page. Verify external send and reply once, then enter it in both store consoles (IARC already has it).
 - [ ] B5: rotate the admin password published in `REVIEW_NOTES.md`; keep the bootstrap allowlist owner-only; confirm hosted-project email confirmation is on.
 - [ ] Confirm the production Supabase project is Pro tier, us-west, migrations pushed, reviewer seed loaded (per launch checklist step 3).
 - [ ] Restrict the Google Maps Android key (Cloud Console application + API restriction) and record the verification date in the submission checklist.
