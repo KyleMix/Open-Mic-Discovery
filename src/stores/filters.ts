@@ -28,6 +28,25 @@ export const AGE_LABELS: Record<AgeRestriction, string> = {
   twenty_one_plus: '21+',
 };
 
+export const DISCIPLINES: Discipline[] = ['music', 'comedy', 'poetry', 'other'];
+export const DISCIPLINE_LABELS: Record<Discipline, string> = {
+  music: 'Music',
+  comedy: 'Comedy',
+  poetry: 'Poetry',
+  other: 'Other',
+};
+
+export const WHEN_PICKS: { when: WhenFilter; label: string }[] = [
+  { when: 'tonight', label: 'Tonight' },
+  { when: 'tomorrow', label: 'Tomorrow' },
+  { when: 'week', label: 'This week' },
+  { when: 'weekend', label: 'This weekend' },
+];
+
+export const WHEN_LABELS: Record<WhenFilter, string> = Object.fromEntries(
+  WHEN_PICKS.map(({ when, label }) => [when, label]),
+) as Record<WhenFilter, string>;
+
 export type DiscoveryFilters = {
   disciplines: Discipline[];
   /**
@@ -154,10 +173,10 @@ export function isoWeekday(date: Date): number {
 export const WEEKEND_DAYS = [5, 6, 7];
 
 /**
- * How many filters live only inside the All filters sheet, for the badge on
- * its button. Discipline, the When quick picks, and Free have their own
- * visible controls, and every sheet filter also renders an applied chip in
- * the bar, so this count is a summary, not the only trace.
+ * How many filters live behind the sheet's Advanced section, for the badge
+ * on its expander. Discipline, When, and Free are the sheet's headline
+ * questions, and every advanced filter also renders an applied chip in the
+ * bar, so this count is a summary, not the only trace.
  */
 export function sheetFilterCount(filters: DiscoveryFilters): number {
   let count = 0;
@@ -169,6 +188,31 @@ export function sheetFilterCount(filters: DiscoveryFilters): number {
   }
   count += filters.methods.length;
   count += filters.ages.length;
+  if (filters.radiusKm !== DEFAULT_FILTERS.radiusKm) {
+    count += 1;
+  }
+  return count;
+}
+
+/**
+ * Every filter that deviates from the defaults, counted for the badge on
+ * the main Filters button: with the choice chips folded into the sheet,
+ * this number is what tells you the feed is narrowed at all.
+ */
+export function activeFilterCount(filters: DiscoveryFilters): number {
+  let count = filters.disciplines.length + filters.methods.length + filters.ages.length;
+  if (filters.when !== null) {
+    count += 1;
+  }
+  if (filters.days.length > 0) {
+    count += 1;
+  }
+  if (filters.freeOnly) {
+    count += 1;
+  }
+  if (filters.timeOfDay !== null) {
+    count += 1;
+  }
   if (filters.radiusKm !== DEFAULT_FILTERS.radiusKm) {
     count += 1;
   }
