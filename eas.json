@@ -33,7 +33,7 @@
   "submit": {
     "production": {
       "ios": {
-        "ascAppId": "PASTE-NUMERIC-APP-ID-FROM-APP-STORE-CONNECT"
+        "ascAppId": "6800515935"
       },
       "android": {
         "serviceAccountKeyPath": "./play-service-account.json",

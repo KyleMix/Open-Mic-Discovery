@@ -12,6 +12,10 @@ module.exports = defineConfig([
   {
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
+      // qrcode-generator@2 is installed and typechecks, but it resolves only
+      // through its package "exports" map, which eslint-plugin-import's node
+      // resolver cannot read. Scoped ignore, not a missing dependency.
+      'import/no-unresolved': ['error', { ignore: ['^qrcode-generator$'] }],
     },
   },
 ]);
