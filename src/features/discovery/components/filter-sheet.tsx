@@ -1,6 +1,9 @@
+import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Glyph, disciplineGlyphs } from '@/components/glyph';
 import { MultiSelectField } from '@/components/select';
 import { SheetGrabber, useSheetAnimation } from '@/components/sheet-chrome';
 import { Button, ToggleRow } from '@/components/ui';
@@ -9,8 +12,16 @@ import {
   SIGNUP_METHOD_LABELS,
 } from '@/features/discovery/components/mic-card';
 import { RADIUS_CHOICES } from '@/features/discovery/distance';
-import { AGE_LABELS, TIME_WINDOWS, useFiltersStore, type TimeOfDay } from '@/stores/filters';
+import type { WhenFilter } from '@/features/discovery/query-tokens';
 import {
+  AGE_LABELS,
+  TIME_WINDOWS,
+  sheetFilterCount,
+  useFiltersStore,
+  type TimeOfDay,
+} from '@/stores/filters';
+import {
+  type Discipline,
   disciplineAccents,
   fonts,
   maxFontScale,
@@ -24,6 +35,21 @@ import type { Database } from '@/types/database.types';
 
 type SignupMethod = Database['public']['Enums']['signup_method'];
 type AgeRestriction = Database['public']['Enums']['age_restriction'];
+
+export const DISCIPLINES: Discipline[] = ['music', 'comedy', 'poetry', 'other'];
+export const DISCIPLINE_LABELS: Record<Discipline, string> = {
+  music: 'Music',
+  comedy: 'Comedy',
+  poetry: 'Poetry',
+  other: 'Other',
+};
+
+export const WHEN_PICKS: { when: WhenFilter; label: string }[] = [
+  { when: 'tonight', label: 'Tonight' },
+  { when: 'tomorrow', label: 'Tomorrow' },
+  { when: 'week', label: 'This week' },
+  { when: 'weekend', label: 'This weekend' },
+];
 
 const AGES: AgeRestriction[] = ['all_ages', 'eighteen_plus', 'twenty_one_plus'];
 
@@ -43,11 +69,13 @@ function SheetChip({
   active,
   onPress,
   activeColor,
+  icon,
 }: {
   label: string;
   active: boolean;
   onPress: () => void;
   activeColor?: string;
+  icon?: React.ReactNode;
 }) {
   return (
     <Pressable
@@ -61,6 +89,7 @@ function SheetChip({
         pressed && styles.chipPressed,
       ]}
     >
+      {icon}
       <Text
         maxFontSizeMultiplier={maxFontScale}
         style={[styles.chipLabel, active && styles.chipLabelActive]}
@@ -96,14 +125,33 @@ function Section({
 }
 
 /**
- * Everything beyond the quick chips, one labeled question per section, in
- * words a first-time visitor understands. Producers get dense forms;
- * performers get this.
+ * All the filters in one place, nothing cut off and nothing to sideways
+ * scroll: the main questions (what kind of mic, when, free) sit on top
+ * with every choice visible, and the long tail lives behind an Advanced
+ * filters expander that opens already expanded when any of it applies.
+ * One labeled question per section, in words a first-time visitor
+ * understands. Producers get dense forms; performers get this.
  */
 export function FilterSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const filters = useFiltersStore();
   const insets = useSafeAreaInsets();
   const animation = useSheetAnimation();
+
+  const advancedCount = sheetFilterCount(filters);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  // Each open starts fresh: expanded when an advanced filter already
+  // applies (hiding an active filter would make results lie), folded
+  // otherwise so the main questions stay front and center. Adjusted
+  // during render on the visibility edge, the pattern from
+  // react.dev/learn/you-might-not-need-an-effect.
+  const [wasVisible, setWasVisible] = useState(visible);
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
+    if (visible) {
+      setAdvancedOpen(advancedCount > 0);
+    }
+  }
 
   return (
     <Modal visible={visible} transparent animationType={animation} onRequestClose={onClose}>
@@ -122,34 +170,49 @@ export function FilterSheet({ visible, onClose }: { visible: boolean; onClose: (
             Filters
           </Text>
           <ScrollView contentContainerStyle={styles.scroll}>
-            <Section title="Which days?" caption="Pick as many as you like.">
+            <Section title="What kind of mic?">
               <View style={styles.chipWrap}>
-                {DAYS.map(({ day, label }) => (
-                  <SheetChip
-                    key={day}
-                    label={label}
-                    active={filters.days.includes(day)}
-                    activeColor={disciplineAccents.music}
-                    onPress={() => filters.toggleDay(day)}
-                  />
-                ))}
+                <SheetChip
+                  label="All"
+                  active={filters.disciplines.length === 0}
+                  onPress={() => filters.selectDiscipline(null)}
+                />
+                {DISCIPLINES.map((d) => {
+                  const active = filters.disciplines.includes(d);
+                  return (
+                    <SheetChip
+                      key={d}
+                      label={DISCIPLINE_LABELS[d]}
+                      active={active}
+                      activeColor={disciplineAccents[d]}
+                      onPress={() => filters.toggleDiscipline(d)}
+                      icon={
+                        <Glyph
+                          name={disciplineGlyphs[d]}
+                          size={16}
+                          color={active ? disciplineAccents[d] : palette.textSecondary}
+                        />
+                      }
+                    />
+                  );
+                })}
               </View>
             </Section>
 
-            <Section title="What time?">
+            <Section title="When?">
               <View style={styles.chipWrap}>
                 <SheetChip
-                  label="Any time"
-                  active={filters.timeOfDay === null}
-                  onPress={() => filters.setTimeOfDay(null)}
+                  label="Any day"
+                  active={filters.when === null && filters.days.length === 0}
+                  onPress={() => filters.setWhen(null)}
                 />
-                {(Object.keys(TIME_WINDOWS) as TimeOfDay[]).map((t) => (
+                {WHEN_PICKS.map(({ when, label }) => (
                   <SheetChip
-                    key={t}
-                    label={TIME_WINDOWS[t].label}
-                    active={filters.timeOfDay === t}
-                    activeColor={disciplineAccents.comedy}
-                    onPress={() => filters.setTimeOfDay(filters.timeOfDay === t ? null : t)}
+                    key={when}
+                    label={label}
+                    active={filters.when === when}
+                    activeColor={disciplineAccents.music}
+                    onPress={() => filters.setWhen(filters.when === when ? null : when)}
                   />
                 ))}
               </View>
@@ -164,53 +227,111 @@ export function FilterSheet({ visible, onClose }: { visible: boolean; onClose: (
               />
             </Section>
 
-            <Section
-              title="How you get on stage"
-              caption="Only show mics that sign people up this way."
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={
+                advancedCount > 0
+                  ? `Advanced filters, ${advancedCount} active`
+                  : 'Advanced filters'
+              }
+              accessibilityState={{ expanded: advancedOpen }}
+              onPress={() => setAdvancedOpen((open) => !open)}
+              style={({ pressed }) => [styles.advancedToggle, pressed && styles.chipPressed]}
             >
-              <MultiSelectField
-                label="Signup style"
-                placeholder="Any way"
-                values={filters.methods}
-                options={METHODS.map((m) => ({
-                  value: m,
-                  label: SIGNUP_METHOD_LABELS[m],
-                  description: SIGNUP_METHOD_DESCRIPTIONS[m],
-                }))}
-                onChange={filters.setMethods}
+              <Text maxFontSizeMultiplier={maxFontScale} style={styles.advancedToggleLabel}>
+                {advancedCount > 0 ? `Advanced filters (${advancedCount})` : 'Advanced filters'}
+              </Text>
+              <Ionicons
+                name={advancedOpen ? 'chevron-up' : 'chevron-down'}
+                size={18}
+                color={palette.text}
               />
-            </Section>
+            </Pressable>
 
-            <Section
-              title="Who can get in?"
-              caption="Based on the venue's age policy. Venues that have not said stay hidden while this is on."
-            >
-              <View style={styles.chipWrap}>
-                {AGES.map((a) => (
-                  <SheetChip
-                    key={a}
-                    label={AGE_LABELS[a]}
-                    active={filters.ages.includes(a)}
-                    activeColor={disciplineAccents.comedy}
-                    onPress={() => filters.toggleAge(a)}
-                  />
-                ))}
-              </View>
-            </Section>
+            {advancedOpen ? (
+              <>
+                <Section title="Which days?" caption="Pick as many as you like.">
+                  <View style={styles.chipWrap}>
+                    {DAYS.map(({ day, label }) => (
+                      <SheetChip
+                        key={day}
+                        label={label}
+                        active={filters.days.includes(day)}
+                        activeColor={disciplineAccents.music}
+                        onPress={() => filters.toggleDay(day)}
+                      />
+                    ))}
+                  </View>
+                </Section>
 
-            <Section title="How far will you go?">
-              <View style={styles.chipWrap}>
-                {RADIUS_CHOICES.map(({ km, label }) => (
-                  <SheetChip
-                    key={km}
-                    label={label}
-                    active={filters.radiusKm === km}
-                    activeColor={disciplineAccents.poetry}
-                    onPress={() => filters.setRadiusKm(km)}
+                <Section title="What time?">
+                  <View style={styles.chipWrap}>
+                    <SheetChip
+                      label="Any time"
+                      active={filters.timeOfDay === null}
+                      onPress={() => filters.setTimeOfDay(null)}
+                    />
+                    {(Object.keys(TIME_WINDOWS) as TimeOfDay[]).map((t) => (
+                      <SheetChip
+                        key={t}
+                        label={TIME_WINDOWS[t].label}
+                        active={filters.timeOfDay === t}
+                        activeColor={disciplineAccents.comedy}
+                        onPress={() => filters.setTimeOfDay(filters.timeOfDay === t ? null : t)}
+                      />
+                    ))}
+                  </View>
+                </Section>
+
+                <Section
+                  title="How you get on stage"
+                  caption="Only show mics that sign people up this way."
+                >
+                  <MultiSelectField
+                    label="Signup style"
+                    placeholder="Any way"
+                    values={filters.methods}
+                    options={METHODS.map((m) => ({
+                      value: m,
+                      label: SIGNUP_METHOD_LABELS[m],
+                      description: SIGNUP_METHOD_DESCRIPTIONS[m],
+                    }))}
+                    onChange={filters.setMethods}
                   />
-                ))}
-              </View>
-            </Section>
+                </Section>
+
+                <Section
+                  title="Who can get in?"
+                  caption="Based on the venue's age policy. Venues that have not said stay hidden while this is on."
+                >
+                  <View style={styles.chipWrap}>
+                    {AGES.map((a) => (
+                      <SheetChip
+                        key={a}
+                        label={AGE_LABELS[a]}
+                        active={filters.ages.includes(a)}
+                        activeColor={disciplineAccents.comedy}
+                        onPress={() => filters.toggleAge(a)}
+                      />
+                    ))}
+                  </View>
+                </Section>
+
+                <Section title="How far will you go?">
+                  <View style={styles.chipWrap}>
+                    {RADIUS_CHOICES.map(({ km, label }) => (
+                      <SheetChip
+                        key={km}
+                        label={label}
+                        active={filters.radiusKm === km}
+                        activeColor={disciplineAccents.poetry}
+                        onPress={() => filters.setRadiusKm(km)}
+                      />
+                    ))}
+                  </View>
+                </Section>
+              </>
+            ) : null}
           </ScrollView>
           <View style={styles.footer}>
             <Button label="Show mics" onPress={onClose} />
@@ -275,6 +396,8 @@ const styles = StyleSheet.create({
     borderColor: palette.border,
     borderRadius: radius.pill,
     borderWidth: 1,
+    flexDirection: 'row',
+    gap: spacing.xs,
     justifyContent: 'center',
     minHeight: minTouchTarget,
     paddingHorizontal: spacing.md,
@@ -293,6 +416,22 @@ const styles = StyleSheet.create({
   },
   chipLabelActive: {
     color: palette.text,
+  },
+  advancedToggle: {
+    alignItems: 'center',
+    backgroundColor: palette.bgElevated,
+    borderColor: palette.border,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    minHeight: minTouchTarget,
+    paddingHorizontal: spacing.md,
+  },
+  advancedToggleLabel: {
+    color: palette.text,
+    fontFamily: fonts.medium,
+    fontSize: type.body.fontSize,
   },
   footer: {
     gap: spacing.sm,

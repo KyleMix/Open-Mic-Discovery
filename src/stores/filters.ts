@@ -154,10 +154,10 @@ export function isoWeekday(date: Date): number {
 export const WEEKEND_DAYS = [5, 6, 7];
 
 /**
- * How many filters live only inside the All filters sheet, for the badge on
- * its button. Discipline, the When quick picks, and Free have their own
- * visible controls, and every sheet filter also renders an applied chip in
- * the bar, so this count is a summary, not the only trace.
+ * How many filters live behind the sheet's Advanced filters expander, for
+ * the badge on that button. Discipline, the When quick picks, and Free sit
+ * in the main part of the sheet, and every advanced filter also renders an
+ * applied chip in the bar, so this count is a summary, not the only trace.
  */
 export function sheetFilterCount(filters: DiscoveryFilters): number {
   let count = 0;
@@ -173,6 +173,20 @@ export function sheetFilterCount(filters: DiscoveryFilters): number {
     count += 1;
   }
   return count;
+}
+
+/**
+ * Every applied filter, for the badge on the bar's Filters button: each
+ * selected discipline, the When quick pick, Free, and everything the
+ * advanced count already covers.
+ */
+export function activeFilterCount(filters: DiscoveryFilters): number {
+  return (
+    filters.disciplines.length +
+    (filters.when !== null ? 1 : 0) +
+    (filters.freeOnly ? 1 : 0) +
+    sheetFilterCount(filters)
+  );
 }
 
 /** True when any filter deviates from the defaults (drives the Reset chip). */

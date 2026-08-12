@@ -1,20 +1,23 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { Glyph, disciplineGlyphs } from '@/components/glyph';
-import { FilterSheet } from '@/features/discovery/components/filter-sheet';
+import {
+  DISCIPLINE_LABELS,
+  FilterSheet,
+  WHEN_PICKS,
+} from '@/features/discovery/components/filter-sheet';
 import { SIGNUP_METHOD_LABELS } from '@/features/discovery/components/mic-card';
 import { radiusLabel } from '@/features/discovery/distance';
-import type { WhenFilter } from '@/features/discovery/query-tokens';
 import {
   AGE_LABELS,
   TIME_WINDOWS,
+  activeFilterCount,
   hasActiveFilters,
-  sheetFilterCount,
   useFiltersStore,
 } from '@/stores/filters';
 import {
-  type Discipline,
   disciplineAccents,
   fonts,
   maxFontScale,
@@ -25,26 +28,10 @@ import {
   type,
 } from '@/theme';
 
-const DISCIPLINES: Discipline[] = ['music', 'comedy', 'poetry', 'other'];
-const DISCIPLINE_LABELS: Record<Discipline, string> = {
-  music: 'Music',
-  comedy: 'Comedy',
-  poetry: 'Poetry',
-  other: 'Other',
-};
-
-const WHEN_PICKS: { when: WhenFilter; label: string }[] = [
-  { when: 'tonight', label: 'Tonight' },
-  { when: 'tomorrow', label: 'Tomorrow' },
-  { when: 'week', label: 'This week' },
-  { when: 'weekend', label: 'This weekend' },
-];
-
 const DAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 type ChipProps = {
   label: string;
-  active: boolean;
   onPress: () => void;
   activeColor?: string;
   icon?: React.ReactNode;
@@ -52,24 +39,20 @@ type ChipProps = {
   dismissible?: boolean;
 };
 
-function Chip({ label, active, onPress, activeColor, icon, dismissible }: ChipProps) {
+function Chip({ label, onPress, activeColor, icon, dismissible }: ChipProps) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={dismissible ? `Remove filter: ${label}` : label}
-      accessibilityState={{ selected: active }}
       onPress={onPress}
       style={({ pressed }) => [
         styles.chip,
-        active && [styles.chipActive, activeColor ? { borderColor: activeColor } : null],
+        activeColor ? { borderColor: activeColor } : null,
         pressed && styles.chipPressed,
       ]}
     >
       {icon}
-      <Text
-        maxFontSizeMultiplier={maxFontScale}
-        style={[styles.chipLabel, active && styles.chipLabelActive]}
-      >
+      <Text maxFontSizeMultiplier={maxFontScale} style={styles.chipLabel}>
         {dismissible ? `${label} ✕` : label}
       </Text>
     </Pressable>
@@ -77,90 +60,60 @@ function Chip({ label, active, onPress, activeColor, icon, dismissible }: ChipPr
 }
 
 /**
- * The face of discovery: what kind of mic, when, and every other applied
- * constraint as a chip you can see and dismiss. Nothing filters silently:
- * the radius always shows its current value, and each sheet filter
- * surfaces here the moment it applies. The search box feeds the same
- * state: typing "tonight" lights the same Tonight chip a tap would.
+ * The face of discovery: one obvious Filters button that opens every
+ * choice at once, and each applied constraint as a chip you can see and
+ * dismiss. The chips wrap instead of scrolling sideways, so nothing is
+ * ever cut off or hiding past the screen edge. Nothing filters silently:
+ * the radius always shows its current value, every sheet filter surfaces
+ * here the moment it applies, and the search box feeds the same state:
+ * typing "tonight" sets the same Tonight filter a tap would.
  */
 export function FilterBar() {
   const filters = useFiltersStore();
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  const moreCount = sheetFilterCount(filters);
+  const count = activeFilterCount(filters);
+  const whenLabel = WHEN_PICKS.find((p) => p.when === filters.when)?.label;
 
   return (
     <View style={styles.wrap}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.row}
-        accessibilityLabel="What kind of mic"
-      >
-        <Chip
-          label="All"
-          active={filters.disciplines.length === 0}
-          onPress={() => filters.selectDiscipline(null)}
-        />
-        {DISCIPLINES.map((d) => {
-          const active = filters.disciplines.includes(d);
-          return (
-            <Chip
-              key={d}
-              label={DISCIPLINE_LABELS[d]}
-              active={active}
-              activeColor={disciplineAccents[d]}
-              onPress={() => filters.toggleDiscipline(d)}
-              icon={
-                <Glyph
-                  name={disciplineGlyphs[d]}
-                  size={16}
-                  color={active ? disciplineAccents[d] : palette.textSecondary}
-                />
-              }
-            />
-          );
-        })}
-      </ScrollView>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.row}
-        accessibilityLabel="When"
-      >
-        <Chip
-          label="Any day"
-          active={filters.when === null && filters.days.length === 0}
-          onPress={() => filters.setWhen(null)}
-        />
-        {WHEN_PICKS.map(({ when, label }) => (
+      <View style={styles.row} accessibilityLabel="Filters and applied filters">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={count > 0 ? `Filters, ${count} active` : 'Filters'}
+          onPress={() => setSheetOpen(true)}
+          style={({ pressed }) => [styles.filtersButton, pressed && styles.filtersButtonPressed]}
+        >
+          <Ionicons name="options" size={18} color={palette.bg} />
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.filtersButtonLabel}>
+            Filters
+          </Text>
+          {count > 0 ? (
+            <View style={styles.badge}>
+              <Text maxFontSizeMultiplier={maxFontScale} style={styles.badgeLabel}>
+                {count}
+              </Text>
+            </View>
+          ) : null}
+        </Pressable>
+        {filters.disciplines.map((d) => (
           <Chip
-            key={when}
-            label={label}
-            active={filters.when === when}
-            activeColor={disciplineAccents.music}
-            onPress={() => filters.setWhen(filters.when === when ? null : when)}
+            key={d}
+            label={DISCIPLINE_LABELS[d]}
+            activeColor={disciplineAccents[d]}
+            dismissible
+            onPress={() => filters.toggleDiscipline(d)}
+            icon={<Glyph name={disciplineGlyphs[d]} size={16} color={disciplineAccents[d]} />}
           />
         ))}
-      </ScrollView>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.row}
-        accessibilityLabel="Applied filters and more"
-      >
-        <Chip
-          label="Free"
-          active={filters.freeOnly}
-          activeColor={palette.success}
-          onPress={() => filters.setFreeOnly(!filters.freeOnly)}
-        />
-        {/* The radius always constrains results, so it always shows. */}
-        <Chip
-          label={`Within ${radiusLabel(filters.radiusKm)}`}
-          active={false}
-          onPress={() => setSheetOpen(true)}
-        />
+        {whenLabel ? (
+          <Chip
+            label={whenLabel}
+            activeColor={disciplineAccents.music}
+            dismissible
+            onPress={() => filters.setWhen(null)}
+          />
+        ) : null}
         {filters.days.map((day) => {
           // Days come from the picker, always 1 to 7; skip rather than
           // render a blank chip if a stale persisted value ever appears.
@@ -172,17 +125,23 @@ export function FilterBar() {
             <Chip
               key={day}
               label={label}
-              active
               activeColor={disciplineAccents.music}
               dismissible
               onPress={() => filters.toggleDay(day)}
             />
           );
         })}
+        {filters.freeOnly ? (
+          <Chip
+            label="Free"
+            activeColor={palette.success}
+            dismissible
+            onPress={() => filters.setFreeOnly(false)}
+          />
+        ) : null}
         {filters.timeOfDay ? (
           <Chip
             label={TIME_WINDOWS[filters.timeOfDay].label}
-            active
             activeColor={disciplineAccents.comedy}
             dismissible
             onPress={() => filters.setTimeOfDay(null)}
@@ -192,7 +151,6 @@ export function FilterBar() {
           <Chip
             key={m}
             label={SIGNUP_METHOD_LABELS[m]}
-            active
             activeColor={disciplineAccents.poetry}
             dismissible
             onPress={() => filters.toggleMethod(m)}
@@ -202,22 +160,17 @@ export function FilterBar() {
           <Chip
             key={a}
             label={AGE_LABELS[a]}
-            active
             activeColor={disciplineAccents.comedy}
             dismissible
             onPress={() => filters.toggleAge(a)}
           />
         ))}
-        <Chip
-          label={moreCount > 0 ? `More filters (${moreCount})` : 'More filters'}
-          active={moreCount > 0}
-          activeColor={disciplineAccents.poetry}
-          onPress={() => setSheetOpen(true)}
-        />
+        {/* The radius always constrains results, so it always shows. */}
+        <Chip label={`Within ${radiusLabel(filters.radiusKm)}`} onPress={() => setSheetOpen(true)} />
         {hasActiveFilters(filters) ? (
-          <Chip label="Clear all filters" active={false} onPress={filters.reset} />
+          <Chip label="Clear all" onPress={filters.reset} />
         ) : null}
-      </ScrollView>
+      </View>
       <FilterSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} />
     </View>
   );
@@ -225,12 +178,45 @@ export function FilterBar() {
 
 const styles = StyleSheet.create({
   wrap: {
-    gap: spacing.xs,
     paddingVertical: spacing.xs,
   },
   row: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
+  },
+  filtersButton: {
+    alignItems: 'center',
+    backgroundColor: palette.text,
+    borderRadius: radius.pill,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    minHeight: minTouchTarget,
+    paddingHorizontal: spacing.md,
+  },
+  filtersButtonPressed: {
+    opacity: 0.8,
+  },
+  filtersButtonLabel: {
+    color: palette.bg,
+    fontFamily: fonts.medium,
+    fontSize: type.label.fontSize,
+  },
+  badge: {
+    alignItems: 'center',
+    backgroundColor: palette.bg,
+    borderRadius: radius.pill,
+    justifyContent: 'center',
+    minWidth: 20,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+  },
+  badgeLabel: {
+    color: palette.text,
+    fontFamily: fonts.medium,
+    fontSize: type.caption.fontSize,
   },
   chip: {
     alignItems: 'center',
@@ -243,19 +229,12 @@ const styles = StyleSheet.create({
     minHeight: minTouchTarget,
     paddingHorizontal: spacing.md,
   },
-  chipActive: {
-    backgroundColor: palette.bgPressed,
-    borderColor: palette.text,
-  },
   chipPressed: {
     backgroundColor: palette.bgPressed,
   },
   chipLabel: {
-    color: palette.textSecondary,
+    color: palette.text,
     fontFamily: fonts.medium,
     fontSize: type.label.fontSize,
-  },
-  chipLabelActive: {
-    color: palette.text,
   },
 });

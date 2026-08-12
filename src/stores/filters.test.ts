@@ -1,6 +1,7 @@
 import {
   DEFAULT_FILTERS,
   WEEKEND_DAYS,
+  activeFilterCount,
   filtersToDiscoverArgs,
   hasActiveFilters,
   isoWeekday,
@@ -143,6 +144,29 @@ describe('sheetFilterCount', () => {
     expect(
       sheetFilterCount({ ...DEFAULT_FILTERS, methods: ['lottery', 'first_come'], radiusKm: 8 }),
     ).toBe(3);
+  });
+});
+
+describe('activeFilterCount', () => {
+  it('is zero at defaults', () => {
+    expect(activeFilterCount(DEFAULT_FILTERS)).toBe(0);
+  });
+  it('counts main filters the advanced count ignores', () => {
+    expect(activeFilterCount({ ...DEFAULT_FILTERS, when: 'tonight' })).toBe(1);
+    expect(activeFilterCount({ ...DEFAULT_FILTERS, freeOnly: true })).toBe(1);
+    expect(activeFilterCount({ ...DEFAULT_FILTERS, disciplines: ['music', 'comedy'] })).toBe(2);
+  });
+  it('adds the advanced filters on top', () => {
+    expect(
+      activeFilterCount({
+        ...DEFAULT_FILTERS,
+        disciplines: ['music'],
+        when: 'tonight',
+        freeOnly: true,
+        timeOfDay: 'late',
+        radiusKm: 8,
+      }),
+    ).toBe(5);
   });
 });
 
