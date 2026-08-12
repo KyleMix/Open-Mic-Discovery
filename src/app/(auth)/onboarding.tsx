@@ -10,7 +10,7 @@ import { validateBirthYear, validateDisplayName } from '@/features/auth/validati
 import { geocodeHomeArea } from '@/features/profile/geocode';
 import { homeAreaError, homeAreaQuery, normalizeHomeArea } from '@/features/profile/home-area';
 import { useOnboardingStore } from '@/stores/onboarding';
-import { Body, Button, ErrorText, Field, Screen, Title } from '@/components/ui';
+import { Body, Button, ErrorText, Field, KeyboardShift, Screen, Title } from '@/components/ui';
 import { spacing } from '@/theme';
 
 export default function OnboardingScreen() {
@@ -97,81 +97,84 @@ export default function OnboardingScreen() {
   }
 
   return (
-    <Screen>
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets
-      >
-        <Title>What name goes on the list?</Title>
-        <Body>
-          This is your stage name: what hosts and other performers see when you sign up. Your email
-          is never shown to anyone.
-        </Body>
-        <Field
-          label="Stage name"
-          value={stageName}
-          onChangeText={(v) => {
-            setStageName(v);
-            setErrors((e) => ({ ...e, stageName: null }));
-          }}
-          onBlur={() => setErrors((e) => ({ ...e, stageName: validateDisplayName(stageName) }))}
-          error={errors.stageName}
-          placeholder="Demi Delta"
-        />
-        <Body>
-          Where is home? We use this only to show mics near you. It is never shown on your profile
-          or to anyone else.
-        </Body>
-        <View style={styles.areaRow}>
-          <View style={styles.areaCity}>
-            <Field label="City" value={homeCity} onChangeText={setHomeCity} placeholder="Seattle" />
+    <KeyboardShift grow belowHeader>
+      <Screen>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          <Title>What name goes on the list?</Title>
+          <Body>
+            This is your stage name: what hosts and other performers see when you sign up. Your
+            email is never shown to anyone.
+          </Body>
+          <Field
+            label="Stage name"
+            value={stageName}
+            onChangeText={(v) => {
+              setStageName(v);
+              setErrors((e) => ({ ...e, stageName: null }));
+            }}
+            onBlur={() => setErrors((e) => ({ ...e, stageName: validateDisplayName(stageName) }))}
+            error={errors.stageName}
+            placeholder="Demi Delta"
+          />
+          <Body>
+            Where is home? We use this only to show mics near you. It is never shown on your profile
+            or to anyone else.
+          </Body>
+          <View style={styles.areaRow}>
+            <View style={styles.areaCity}>
+              <Field
+                label="City"
+                value={homeCity}
+                onChangeText={setHomeCity}
+                placeholder="Seattle"
+              />
+            </View>
+            <View style={styles.areaRegion}>
+              <Field
+                label="State"
+                autoCapitalize="characters"
+                value={homeRegion}
+                onChangeText={setHomeRegion}
+                placeholder="WA"
+              />
+            </View>
           </View>
-          <View style={styles.areaRegion}>
-            <Field
-              label="State"
-              autoCapitalize="characters"
-              value={homeRegion}
-              onChangeText={setHomeRegion}
-              placeholder="WA"
-            />
-          </View>
-        </View>
-        <Field
-          label="Or ZIP code"
-          inputMode="numeric"
-          value={homeZip}
-          onChangeText={setHomeZip}
-          placeholder="98101"
-        />
-        {errors.homeArea ? <ErrorText>{errors.homeArea}</ErrorText> : null}
-        <Field
-          label="Birth year"
-          inputMode="numeric"
-          value={birthYear}
-          onChangeText={(v) => {
-            setBirthYear(v);
-            setErrors((e) => ({ ...e, birthYear: null }));
-          }}
-          onBlur={() =>
-            setErrors((e) => ({ ...e, birthYear: validateBirthYear(birthYear, new Date()) }))
-          }
-          error={errors.birthYear}
-          placeholder="1994"
-        />
-        {error ? <ErrorText>{error}</ErrorText> : null}
-        <Button label="Finish setup" busy={busy} disabled={busy} onPress={submit} />
-        <Button
-          label="Not now: sign out"
-          kind="secondary"
-          onPress={() => {
-            // The gate holds this screen until setup finishes, so leaving
-            // needs a real way out rather than a trap, same as the EULA.
-            signOut().catch(() => setError('Could not sign out. Check your connection.'));
-          }}
-        />
-      </ScrollView>
-    </Screen>
+          <Field
+            label="Or ZIP code"
+            inputMode="numeric"
+            value={homeZip}
+            onChangeText={setHomeZip}
+            placeholder="98101"
+          />
+          {errors.homeArea ? <ErrorText>{errors.homeArea}</ErrorText> : null}
+          <Field
+            label="Birth year"
+            inputMode="numeric"
+            value={birthYear}
+            onChangeText={(v) => {
+              setBirthYear(v);
+              setErrors((e) => ({ ...e, birthYear: null }));
+            }}
+            onBlur={() =>
+              setErrors((e) => ({ ...e, birthYear: validateBirthYear(birthYear, new Date()) }))
+            }
+            error={errors.birthYear}
+            placeholder="1994"
+          />
+          {error ? <ErrorText>{error}</ErrorText> : null}
+          <Button label="Finish setup" busy={busy} disabled={busy} onPress={submit} />
+          <Button
+            label="Not now: sign out"
+            kind="secondary"
+            onPress={() => {
+              // The gate holds this screen until setup finishes, so leaving
+              // needs a real way out rather than a trap, same as the EULA.
+              signOut().catch(() => setError('Could not sign out. Check your connection.'));
+            }}
+          />
+        </ScrollView>
+      </Screen>
+    </KeyboardShift>
   );
 }
 

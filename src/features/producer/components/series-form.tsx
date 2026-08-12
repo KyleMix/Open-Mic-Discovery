@@ -450,11 +450,10 @@ export function SeriesForm({ existing, busy, error, submitLabel, onSubmit, onDir
   }
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled"
-      automaticallyAdjustKeyboardInsets
-    >
+    // Keyboard avoidance is the host screen's job (KeyboardShift or
+    // FormScreen): this form also renders nested inside the producer
+    // screen's own scroll view, where a second avoider would double-shift.
+    <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <Field
         label="Mic name"
         value={title}

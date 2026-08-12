@@ -15,7 +15,16 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/screen-header';
-import { Body, Button, ErrorText, Field, LoadingView, Screen, Title } from '@/components/ui';
+import {
+  Body,
+  Button,
+  ErrorText,
+  Field,
+  KeyboardShift,
+  LoadingView,
+  Screen,
+  Title,
+} from '@/components/ui';
 import { AvatarCircle } from '@/features/profile/avatar-circle';
 import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
@@ -129,34 +138,36 @@ export default function CreditsScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.page}>
-      <Stack.Screen
-        options={{ headerShown: true, title: occurrenceId ? 'This night' : 'Lineup' }}
-      />
-      <Title>{occurrenceId ? 'Just this night' : 'Every night'}</Title>
-      <Body>
-        {occurrenceId
-          ? 'Set a guest host or a one-off feature. Other nights keep the usual lineup.'
-          : 'Who normally hosts, and who is featured. You can change either for a single night from the Upcoming nights list.'}
-      </Body>
+    <KeyboardShift grow belowHeader>
+      <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
+        <Stack.Screen
+          options={{ headerShown: true, title: occurrenceId ? 'This night' : 'Lineup' }}
+        />
+        <Title>{occurrenceId ? 'Just this night' : 'Every night'}</Title>
+        <Body>
+          {occurrenceId
+            ? 'Set a guest host or a one-off feature. Other nights keep the usual lineup.'
+            : 'Who normally hosts, and who is featured. You can change either for a single night from the Upcoming nights list.'}
+        </Body>
 
-      <RoleEditor
-        role="featured"
-        label="Featured artist"
-        seriesId={id}
-        occurrenceId={occurrenceId}
-        userId={session.user.id}
-        existing={credits.data}
-      />
-      <RoleEditor
-        role="host"
-        label="Host"
-        seriesId={id}
-        occurrenceId={occurrenceId}
-        userId={session.user.id}
-        existing={credits.data}
-      />
-    </ScrollView>
+        <RoleEditor
+          role="featured"
+          label="Featured artist"
+          seriesId={id}
+          occurrenceId={occurrenceId}
+          userId={session.user.id}
+          existing={credits.data}
+        />
+        <RoleEditor
+          role="host"
+          label="Host"
+          seriesId={id}
+          occurrenceId={occurrenceId}
+          userId={session.user.id}
+          existing={credits.data}
+        />
+      </ScrollView>
+    </KeyboardShift>
   );
 }
 

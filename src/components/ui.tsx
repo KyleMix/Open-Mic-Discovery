@@ -1,8 +1,8 @@
-import { type ReactNode } from 'react';
+import { HeaderHeightContext } from 'expo-router/react-navigation';
+import { useContext, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -29,14 +29,32 @@ export function Screen({ children }: { children: ReactNode }) {
 }
 
 /**
+ * Distance from the top of the window to this screen's content: the native
+ * stack header when one is shown, 0 otherwise. KeyboardAvoidingView measures
+ * its own frame relative to the screen content area, so under a header it
+ * undershoots by exactly the header height unless told about it, leaving low
+ * fields covered by the keyboard.
+ */
+function useKeyboardOffset(): number {
+  return useContext(HeaderHeightContext) ?? 0;
+}
+
+/**
  * A Screen for forms: scrolls, and rides above the keyboard so inputs and
  * the submit button are never covered on small phones.
+ *
+ * The padding behavior applies on Android too: with edge-to-edge enforced
+ * (all recent Expo SDKs, targetSdk 35+) the OS never resizes the window for
+ * the keyboard, so the manifest's adjustResize does nothing and a bare
+ * KeyboardAvoidingView with no behavior is a no-op.
  */
 export function FormScreen({ children }: { children: ReactNode }) {
+  const headerHeight = useKeyboardOffset();
   return (
     <KeyboardAvoidingView
       style={styles.flexBg}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior="padding"
+      keyboardVerticalOffset={headerHeight}
     >
       <ScrollView
         style={styles.flexBg}
@@ -49,15 +67,29 @@ export function FormScreen({ children }: { children: ReactNode }) {
   );
 }
 
+type KeyboardShiftProps = {
+  children: ReactNode;
+  grow?: boolean;
+  /**
+   * Set on screens that sit under a native stack header. Leave off inside a
+   * Modal: the sheet covers the whole window, so no offset applies (and the
+   * context would report the header of the screen behind it).
+   */
+  belowHeader?: boolean;
+};
+
 /**
  * Wraps content that contains a text input (a bottom sheet, or a whole
  * scrolling screen with grow) so the keyboard pushes it up, not over it.
+ * See FormScreen for why the behavior is unconditional.
  */
-export function KeyboardShift({ children, grow }: { children: ReactNode; grow?: boolean }) {
+export function KeyboardShift({ children, grow, belowHeader }: KeyboardShiftProps) {
+  const headerHeight = useKeyboardOffset();
   return (
     <KeyboardAvoidingView
       style={grow ? styles.flexBg : undefined}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior="padding"
+      keyboardVerticalOffset={belowHeader ? headerHeight : 0}
     >
       {children}
     </KeyboardAvoidingView>

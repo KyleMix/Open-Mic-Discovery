@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { useDiscardGuard } from '@/components/discard-guard';
-import { Body, Button, Screen, Title } from '@/components/ui';
+import { Body, Button, KeyboardShift, Screen, Title } from '@/components/ui';
 import { useOwnProfile } from '@/features/auth/queries';
 import { useSession } from '@/features/auth/session';
 import { SeriesForm, type SeriesFormValues } from '@/features/producer/components/series-form';
@@ -101,19 +101,21 @@ export default function NewSeriesScreen() {
           />
         </Screen>
       ) : (
-        <SeriesForm
-          busy={create.isPending}
-          error={
-            create.isError
-              ? create.error instanceof Error
-                ? create.error.message
-                : 'Could not create the mic.'
-              : null
-          }
-          submitLabel="Create listing"
-          onSubmit={submit}
-          onDirtyChange={setDirty}
-        />
+        <KeyboardShift grow belowHeader>
+          <SeriesForm
+            busy={create.isPending}
+            error={
+              create.isError
+                ? create.error instanceof Error
+                  ? create.error.message
+                  : 'Could not create the mic.'
+                : null
+            }
+            submitLabel="Create listing"
+            onSubmit={submit}
+            onDirtyChange={setDirty}
+          />
+        </KeyboardShift>
       )}
       {guardElement}
     </View>

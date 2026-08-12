@@ -218,330 +218,335 @@ export default function ManageSeriesScreen() {
           headerTintColor: palette.text,
         }}
       />
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets
-      >
-        <Text maxFontSizeMultiplier={maxFontScale} style={styles.title}>
-          {series.title}
-        </Text>
-        {series.moderation_status === 'pending' ? (
-          <Text maxFontSizeMultiplier={maxFontScale} style={styles.heldNote}>
-            Held for review: a moderator checks the wording before this listing goes public. Right
-            now only you can see it.
+      <KeyboardShift grow belowHeader>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.title}>
+            {series.title}
           </Text>
-        ) : series.moderation_status === 'rejected' ? (
-          <>
-            <Text maxFontSizeMultiplier={maxFontScale} style={styles.rejectedNote}>
-              This listing was rejected in review and is not public. Edit the wording to resubmit,
-              or contact support.
+          {series.moderation_status === 'pending' ? (
+            <Text maxFontSizeMultiplier={maxFontScale} style={styles.heldNote}>
+              Held for review: a moderator checks the wording before this listing goes public. Right
+              now only you can see it.
             </Text>
-            <Button
-              label="Contact support"
-              kind="secondary"
-              onPress={() => contactSupport(`Rejected listing: ${series.title}`)}
-            />
-          </>
-        ) : null}
-        <Text maxFontSizeMultiplier={maxFontScale} style={styles.meta}>
-          {describeRecurrence(series.rrule, series.start_time) ?? 'Schedule varies'} ·{' '}
-          {series.venue?.name}
-        </Text>
-        <View style={styles.freshRow}>
-          <Glyph name="freshness-badge" size={16} color={fresh.color} />
-          <Text maxFontSizeMultiplier={maxFontScale} style={[styles.meta, { color: fresh.color }]}>
-            {fresh.label}
+          ) : series.moderation_status === 'rejected' ? (
+            <>
+              <Text maxFontSizeMultiplier={maxFontScale} style={styles.rejectedNote}>
+                This listing was rejected in review and is not public. Edit the wording to resubmit,
+                or contact support.
+              </Text>
+              <Button
+                label="Contact support"
+                kind="secondary"
+                onPress={() => contactSupport(`Rejected listing: ${series.title}`)}
+              />
+            </>
+          ) : null}
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.meta}>
+            {describeRecurrence(series.rrule, series.start_time) ?? 'Schedule varies'} ·{' '}
+            {series.venue?.name}
           </Text>
-        </View>
-        {/* The night in front of them, before anything else on the screen.
+          <View style={styles.freshRow}>
+            <Glyph name="freshness-badge" size={16} color={fresh.color} />
+            <Text
+              maxFontSizeMultiplier={maxFontScale}
+              style={[styles.meta, { color: fresh.color }]}
+            >
+              {fresh.label}
+            </Text>
+          </View>
+          {/* The night in front of them, before anything else on the screen.
             Live used to be buried on the list screen, which is not where a
             host looks an hour before the door. */}
-        {liveTonight ? (
-          <View style={styles.liveBox}>
-            <Text maxFontSizeMultiplier={maxFontScale} style={styles.liveTitle}>
-              Tonight is live
-            </Text>
-            <Body>
-              {eventDate(liveTonight.starts_at, series.timezone)}. Run the room from here: the
-              running order, a silent set timer, and on deck notices.
-            </Body>
-            <Button
-              label="Go live"
-              onPress={() => router.push(`/producer/live/${liveTonight.id}`)}
-            />
-          </View>
-        ) : null}
+          {liveTonight ? (
+            <View style={styles.liveBox}>
+              <Text maxFontSizeMultiplier={maxFontScale} style={styles.liveTitle}>
+                Tonight is live
+              </Text>
+              <Body>
+                {eventDate(liveTonight.starts_at, series.timezone)}. Run the room from here: the
+                running order, a silent set timer, and on deck notices.
+              </Body>
+              <Button
+                label="Go live"
+                onPress={() => router.push(`/producer/live/${liveTonight.id}`)}
+              />
+            </View>
+          ) : null}
 
-        <Body>
-          One tap keeps your listing trusted: confirming updates the freshness badge every performer
-          sees.
-        </Body>
-        <Button
-          label="Confirm this listing is accurate"
-          busy={confirm.isPending}
-          onPress={() => confirm.mutate(series.id)}
-        />
-        {confirm.isError ? (
-          <ErrorText>Could not confirm the listing. Check your connection and try again.</ErrorText>
-        ) : null}
-        <View style={styles.buttonRow}>
-          <View style={styles.buttonFlex}>
-            <Button
-              label="Analytics"
-              kind="secondary"
-              onPress={() => router.push(`/producer/analytics/${series.id}`)}
-            />
-          </View>
-          <View style={styles.buttonFlex}>
-            <Button
-              label={editing ? 'Close editor' : 'Edit mic'}
-              kind="secondary"
-              onPress={() => {
-                if (editing && editorDirty) {
-                  setConfirmCloseEditor(true);
-                } else if (editing) {
-                  closeEditor();
-                } else {
-                  setEditing(true);
-                }
-              }}
-            />
-          </View>
-          <View style={styles.buttonFlex}>
-            <Button
-              label={series.is_active ? 'Pause' : 'Resume'}
-              kind="secondary"
-              busy={(updateSeries.isPending || pauseSeries.isPending) && !editing}
-              onPress={() => {
-                if (series.is_active) {
-                  setConfirmPause(true);
-                } else {
-                  updateSeries.mutate({
-                    seriesId: series.id,
-                    patch: { is_active: true },
-                  });
-                }
-              }}
-            />
-          </View>
-        </View>
-        {pauseSeries.isError ? (
-          <ErrorText>
-            {pauseSeries.error instanceof Error
-              ? pauseSeries.error.message
-              : 'Could not pause the listing. Try again.'}
-          </ErrorText>
-        ) : null}
-        {updateSeries.isError && !editing ? (
-          <ErrorText>
-            {updateSeries.error instanceof Error
-              ? updateSeries.error.message
-              : 'Could not save the changes. Try again.'}
-          </ErrorText>
-        ) : null}
-
-        <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
-          Lineup
-        </Text>
-        <Button
-          label="Host and featured artist"
-          kind="secondary"
-          onPress={() => router.push(`/producer/credits/${series.id}`)}
-        />
-
-        <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
-          Poster
-        </Text>
-        {series.poster_url ? (
-          <Image
-            source={{ uri: transformedImageUrl(series.poster_url, { width: 1080, height: 608 })! }}
-            accessibilityLabel="Listing poster"
-            style={styles.poster}
-            contentFit="cover"
-          />
-        ) : (
           <Body>
-            A poster makes your listing pop. Performers see it at the top of your mic page.
+            One tap keeps your listing trusted: confirming updates the freshness badge every
+            performer sees.
           </Body>
-        )}
-        <Button
-          label={series.poster_url ? 'Replace poster' : 'Add a poster'}
-          kind="secondary"
-          busy={posterBusy}
-          onPress={changePoster}
-        />
-        {posterError ? <ErrorText>{posterError}</ErrorText> : null}
-
-        <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
-          Spread the word
-        </Text>
-        <Body>
-          Share a flyer for your night, or export the scan-to-sign-up poster and hang it at the
-          venue. Everything you share carries a QR code that opens this mic in the app, and offers
-          the App Store and Google Play to anyone without it.
-        </Body>
-        <Button label="Share this mic" kind="secondary" onPress={() => setShareOpen(true)} />
-
-        {editing ? (
-          <View style={styles.editorBox}>
-            <Body>
-              These changes apply to this and all future nights. Nights you cancelled or edited
-              individually are left alone, and tonight keeps its current time if it is already on
-              the calendar. To change a single night, use the list below instead.
-            </Body>
-            <SeriesForm
-              existing={{
-                title: series.title,
-                description: series.description,
-                disciplines: series.disciplines as Discipline[],
-                signup_method: series.signup_method,
-                rrule: series.rrule,
-                start_time: series.start_time,
-                timezone: series.timezone,
-                signup_opens: series.signup_opens,
-                venue_label: series.venue ? `${series.venue.name}, ${series.venue.city}` : null,
-                cost_cents: series.cost_cents,
-                cost_note: series.cost_note,
-                set_length_minutes: series.set_length_minutes,
-                capacity: series.capacity,
-              }}
-              busy={updateSeries.isPending}
-              error={
-                updateSeries.isError
-                  ? updateSeries.error instanceof Error
-                    ? updateSeries.error.message
-                    : 'Could not save.'
-                  : null
-              }
-              submitLabel="Save for all future nights"
-              onSubmit={submitEdit}
-              onDirtyChange={setEditorDirty}
-            />
-          </View>
-        ) : null}
-
-        <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
-          Upcoming nights
-        </Text>
-        {updateOccurrence.isError ? (
-          <ErrorText>
-            {updateOccurrence.error instanceof Error
-              ? updateOccurrence.error.message
-              : 'Could not save that night. Try again.'}
-          </ErrorText>
-        ) : null}
-        {occurrences.isPending ? (
-          <Body>Loading nights</Body>
-        ) : occurrences.isError ? (
-          <>
-            <ErrorText>Could not load upcoming nights.</ErrorText>
-            <Button label="Try again" kind="secondary" onPress={() => occurrences.refetch()} />
-          </>
-        ) : occurrences.data.length === 0 ? (
-          <Body>No upcoming nights. Resume the listing or adjust the schedule.</Body>
-        ) : (
-          occurrences.data.map((occ) => (
-            <View key={occ.id} style={styles.nightRow}>
-              <View style={styles.nightInfo}>
-                <Text
-                  maxFontSizeMultiplier={maxFontScale}
-                  style={[styles.nightDate, occ.status === 'cancelled' && styles.cancelled]}
-                >
-                  {formatRelativeDay(occ.starts_at, series.timezone)}
-                  {occ.override_title ? ` · ${occ.override_title}` : ''}
-                </Text>
-                {occ.featured_name ? (
-                  <Text maxFontSizeMultiplier={maxFontScale} style={styles.featured}>
-                    Featuring {occ.featured_name}
-                  </Text>
-                ) : null}
-                {occ.live_ended_at ? (
-                  <Text maxFontSizeMultiplier={maxFontScale} style={styles.nightCount}>
-                    Show ended
-                  </Text>
-                ) : null}
-                {occ.status === 'scheduled' &&
-                !rruleMatches(series.rrule, series.anchor_date, occ.local_date) ? (
-                  // Rule changes keep nights that carry an override or a
-                  // signup; without this line they masqueraded as part of
-                  // the new schedule.
-                  <Text maxFontSizeMultiplier={maxFontScale} style={styles.offPatternNote}>
-                    Off the current schedule: kept because of its signups or edits. Cancel it if the
-                    night is not happening.
-                  </Text>
-                ) : null}
-                {occ.status === 'cancelled' ? (
-                  <Text maxFontSizeMultiplier={maxFontScale} style={styles.cancelledNote}>
-                    Cancelled{occ.cancellation_note ? `: ${occ.cancellation_note}` : ''}
-                  </Text>
-                ) : attendance.isError ? (
-                  // A failed count is not "nobody is coming"; a host reads
-                  // zeros as permission to stay home.
-                  <Text maxFontSizeMultiplier={maxFontScale} style={styles.nightCount}>
-                    Headcount unavailable right now
-                  </Text>
-                ) : (
-                  <Text maxFontSizeMultiplier={maxFontScale} style={styles.nightCount}>
-                    {attendanceSummary(
-                      counts.get(occ.id) ?? {
-                        plan_count: 0,
-                        performer_plan_count: 0,
-                        signup_count: 0,
-                      },
-                      isWalkIn(series.signup_method),
-                    )}
-                  </Text>
-                )}
-              </View>
-              {occ.status === 'cancelled' ? (
-                <Button
-                  label="Restore"
-                  kind="secondary"
-                  onPress={() =>
-                    updateOccurrence.mutate({
-                      occurrenceId: occ.id,
-                      seriesId: series.id,
-                      patch: { status: 'scheduled', cancellation_note: null },
-                    })
+          <Button
+            label="Confirm this listing is accurate"
+            busy={confirm.isPending}
+            onPress={() => confirm.mutate(series.id)}
+          />
+          {confirm.isError ? (
+            <ErrorText>
+              Could not confirm the listing. Check your connection and try again.
+            </ErrorText>
+          ) : null}
+          <View style={styles.buttonRow}>
+            <View style={styles.buttonFlex}>
+              <Button
+                label="Analytics"
+                kind="secondary"
+                onPress={() => router.push(`/producer/analytics/${series.id}`)}
+              />
+            </View>
+            <View style={styles.buttonFlex}>
+              <Button
+                label={editing ? 'Close editor' : 'Edit mic'}
+                kind="secondary"
+                onPress={() => {
+                  if (editing && editorDirty) {
+                    setConfirmCloseEditor(true);
+                  } else if (editing) {
+                    closeEditor();
+                  } else {
+                    setEditing(true);
                   }
-                />
-              ) : (
-                <View style={styles.nightActions}>
-                  {liveWindow(occ.starts_at, new Date(), occ.live_ended_at).state === 'open' ? (
-                    <Button
-                      label="Go live"
-                      onPress={() => router.push(`/producer/live/${occ.id}`)}
-                    />
+                }}
+              />
+            </View>
+            <View style={styles.buttonFlex}>
+              <Button
+                label={series.is_active ? 'Pause' : 'Resume'}
+                kind="secondary"
+                busy={(updateSeries.isPending || pauseSeries.isPending) && !editing}
+                onPress={() => {
+                  if (series.is_active) {
+                    setConfirmPause(true);
+                  } else {
+                    updateSeries.mutate({
+                      seriesId: series.id,
+                      patch: { is_active: true },
+                    });
+                  }
+                }}
+              />
+            </View>
+          </View>
+          {pauseSeries.isError ? (
+            <ErrorText>
+              {pauseSeries.error instanceof Error
+                ? pauseSeries.error.message
+                : 'Could not pause the listing. Try again.'}
+            </ErrorText>
+          ) : null}
+          {updateSeries.isError && !editing ? (
+            <ErrorText>
+              {updateSeries.error instanceof Error
+                ? updateSeries.error.message
+                : 'Could not save the changes. Try again.'}
+            </ErrorText>
+          ) : null}
+
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+            Lineup
+          </Text>
+          <Button
+            label="Host and featured artist"
+            kind="secondary"
+            onPress={() => router.push(`/producer/credits/${series.id}`)}
+          />
+
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+            Poster
+          </Text>
+          {series.poster_url ? (
+            <Image
+              source={{
+                uri: transformedImageUrl(series.poster_url, { width: 1080, height: 608 })!,
+              }}
+              accessibilityLabel="Listing poster"
+              style={styles.poster}
+              contentFit="cover"
+            />
+          ) : (
+            <Body>
+              A poster makes your listing pop. Performers see it at the top of your mic page.
+            </Body>
+          )}
+          <Button
+            label={series.poster_url ? 'Replace poster' : 'Add a poster'}
+            kind="secondary"
+            busy={posterBusy}
+            onPress={changePoster}
+          />
+          {posterError ? <ErrorText>{posterError}</ErrorText> : null}
+
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+            Spread the word
+          </Text>
+          <Body>
+            Share a flyer for your night, or export the scan-to-sign-up poster and hang it at the
+            venue. Everything you share carries a QR code that opens this mic in the app, and offers
+            the App Store and Google Play to anyone without it.
+          </Body>
+          <Button label="Share this mic" kind="secondary" onPress={() => setShareOpen(true)} />
+
+          {editing ? (
+            <View style={styles.editorBox}>
+              <Body>
+                These changes apply to this and all future nights. Nights you cancelled or edited
+                individually are left alone, and tonight keeps its current time if it is already on
+                the calendar. To change a single night, use the list below instead.
+              </Body>
+              <SeriesForm
+                existing={{
+                  title: series.title,
+                  description: series.description,
+                  disciplines: series.disciplines as Discipline[],
+                  signup_method: series.signup_method,
+                  rrule: series.rrule,
+                  start_time: series.start_time,
+                  timezone: series.timezone,
+                  signup_opens: series.signup_opens,
+                  venue_label: series.venue ? `${series.venue.name}, ${series.venue.city}` : null,
+                  cost_cents: series.cost_cents,
+                  cost_note: series.cost_note,
+                  set_length_minutes: series.set_length_minutes,
+                  capacity: series.capacity,
+                }}
+                busy={updateSeries.isPending}
+                error={
+                  updateSeries.isError
+                    ? updateSeries.error instanceof Error
+                      ? updateSeries.error.message
+                      : 'Could not save.'
+                    : null
+                }
+                submitLabel="Save for all future nights"
+                onSubmit={submitEdit}
+                onDirtyChange={setEditorDirty}
+              />
+            </View>
+          ) : null}
+
+          <Text maxFontSizeMultiplier={maxFontScale} style={styles.sectionTitle}>
+            Upcoming nights
+          </Text>
+          {updateOccurrence.isError ? (
+            <ErrorText>
+              {updateOccurrence.error instanceof Error
+                ? updateOccurrence.error.message
+                : 'Could not save that night. Try again.'}
+            </ErrorText>
+          ) : null}
+          {occurrences.isPending ? (
+            <Body>Loading nights</Body>
+          ) : occurrences.isError ? (
+            <>
+              <ErrorText>Could not load upcoming nights.</ErrorText>
+              <Button label="Try again" kind="secondary" onPress={() => occurrences.refetch()} />
+            </>
+          ) : occurrences.data.length === 0 ? (
+            <Body>No upcoming nights. Resume the listing or adjust the schedule.</Body>
+          ) : (
+            occurrences.data.map((occ) => (
+              <View key={occ.id} style={styles.nightRow}>
+                <View style={styles.nightInfo}>
+                  <Text
+                    maxFontSizeMultiplier={maxFontScale}
+                    style={[styles.nightDate, occ.status === 'cancelled' && styles.cancelled]}
+                  >
+                    {formatRelativeDay(occ.starts_at, series.timezone)}
+                    {occ.override_title ? ` · ${occ.override_title}` : ''}
+                  </Text>
+                  {occ.featured_name ? (
+                    <Text maxFontSizeMultiplier={maxFontScale} style={styles.featured}>
+                      Featuring {occ.featured_name}
+                    </Text>
                   ) : null}
+                  {occ.live_ended_at ? (
+                    <Text maxFontSizeMultiplier={maxFontScale} style={styles.nightCount}>
+                      Show ended
+                    </Text>
+                  ) : null}
+                  {occ.status === 'scheduled' &&
+                  !rruleMatches(series.rrule, series.anchor_date, occ.local_date) ? (
+                    // Rule changes keep nights that carry an override or a
+                    // signup; without this line they masqueraded as part of
+                    // the new schedule.
+                    <Text maxFontSizeMultiplier={maxFontScale} style={styles.offPatternNote}>
+                      Off the current schedule: kept because of its signups or edits. Cancel it if
+                      the night is not happening.
+                    </Text>
+                  ) : null}
+                  {occ.status === 'cancelled' ? (
+                    <Text maxFontSizeMultiplier={maxFontScale} style={styles.cancelledNote}>
+                      Cancelled{occ.cancellation_note ? `: ${occ.cancellation_note}` : ''}
+                    </Text>
+                  ) : attendance.isError ? (
+                    // A failed count is not "nobody is coming"; a host reads
+                    // zeros as permission to stay home.
+                    <Text maxFontSizeMultiplier={maxFontScale} style={styles.nightCount}>
+                      Headcount unavailable right now
+                    </Text>
+                  ) : (
+                    <Text maxFontSizeMultiplier={maxFontScale} style={styles.nightCount}>
+                      {attendanceSummary(
+                        counts.get(occ.id) ?? {
+                          plan_count: 0,
+                          performer_plan_count: 0,
+                          signup_count: 0,
+                        },
+                        isWalkIn(series.signup_method),
+                      )}
+                    </Text>
+                  )}
+                </View>
+                {occ.status === 'cancelled' ? (
                   <Button
-                    label="List"
-                    kind="secondary"
-                    onPress={() => router.push(`/producer/night/${occ.id}`)}
-                  />
-                  <Button
-                    label="This night"
-                    kind="secondary"
-                    onPress={() => setNightAction({ occurrence: occ, mode: 'edit' })}
-                  />
-                  <Button
-                    label="Lineup"
+                    label="Restore"
                     kind="secondary"
                     onPress={() =>
-                      router.push(`/producer/credits/${series.id}?occurrence=${occ.id}`)
+                      updateOccurrence.mutate({
+                        occurrenceId: occ.id,
+                        seriesId: series.id,
+                        patch: { status: 'scheduled', cancellation_note: null },
+                      })
                     }
                   />
-                  <Button
-                    label="Cancel"
-                    kind="secondary"
-                    onPress={() => setNightAction({ occurrence: occ, mode: 'cancel' })}
-                  />
-                </View>
-              )}
-            </View>
-          ))
-        )}
-      </ScrollView>
+                ) : (
+                  <View style={styles.nightActions}>
+                    {liveWindow(occ.starts_at, new Date(), occ.live_ended_at).state === 'open' ? (
+                      <Button
+                        label="Go live"
+                        onPress={() => router.push(`/producer/live/${occ.id}`)}
+                      />
+                    ) : null}
+                    <Button
+                      label="List"
+                      kind="secondary"
+                      onPress={() => router.push(`/producer/night/${occ.id}`)}
+                    />
+                    <Button
+                      label="This night"
+                      kind="secondary"
+                      onPress={() => setNightAction({ occurrence: occ, mode: 'edit' })}
+                    />
+                    <Button
+                      label="Lineup"
+                      kind="secondary"
+                      onPress={() =>
+                        router.push(`/producer/credits/${series.id}?occurrence=${occ.id}`)
+                      }
+                    />
+                    <Button
+                      label="Cancel"
+                      kind="secondary"
+                      onPress={() => setNightAction({ occurrence: occ, mode: 'cancel' })}
+                    />
+                  </View>
+                )}
+              </View>
+            ))
+          )}
+        </ScrollView>
+      </KeyboardShift>
 
       {confirmCloseEditor ? (
         <ConfirmSheet
