@@ -175,7 +175,7 @@
           "locationWhenInUsePermission": "Open Mic Explorer uses your location only while you use the app, to show open mics near you. It is never tracked in the background.",
           "locationAlwaysPermission": false,
           "locationAlwaysAndWhenInUsePermission": false,
-          "motionUsagePermission": false,
+          "motionUsagePermission": "Open Mic Explorer never tracks motion or fitness activity and never asks for this permission. Apple requires this text because a system location library references motion services.",
           "isAndroidBackgroundLocationEnabled": false
         }
       ],
