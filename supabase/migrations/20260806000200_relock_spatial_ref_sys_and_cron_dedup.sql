@@ -18,6 +18,12 @@ do $$
 declare
   v_grantor name;
   v_left int;
+  -- The role to come back to after each grantor impersonation. `reset role`
+  -- is wrong here: under the Supabase CLI the session is a low-privilege
+  -- login role that has SET ROLE'd to postgres, and reset drops back to the
+  -- login role, breaking every later statement in the transaction
+  -- (including the CLI's own migration bookkeeping insert).
+  v_self name := current_user;
 begin
   -- Belt and braces for plain-Postgres dev databases, where the migration
   -- role holds the grants itself.
@@ -40,7 +46,7 @@ begin
     exception when others then
       raise warning 'could not revoke spatial_ref_sys writes as %: %', v_grantor, sqlerrm;
     end;
-    reset role;
+    execute format('set local role %I', v_self);
   end loop;
 
   select count(*) into v_left
