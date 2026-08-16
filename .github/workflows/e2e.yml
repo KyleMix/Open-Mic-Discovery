@@ -64,9 +64,19 @@ jobs:
       - run: supabase start
       - name: Point the app at the local stack
         run: |
+          # `supabase status -o env` prints shell-quoted values, e.g.
+          #   API_URL="http://127.0.0.1:54321"
+          # The literal quotes must be stripped before the value reaches
+          # $GITHUB_ENV: GitHub does not unquote, so a quoted value is inlined
+          # verbatim as EXPO_PUBLIC_SUPABASE_URL='"http://127.0.0.1:54321"',
+          # which fails supabase-js's ^https?:// check ("Invalid supabaseUrl")
+          # and crashes the app at startup before anything renders. cut -f2-
+          # keeps '=' inside values (JWT anon keys), tr -d '"' drops the quotes.
           STATUS=$(supabase status -o env)
-          echo "$STATUS" | grep API_URL | sed 's/^API_URL=/EXPO_PUBLIC_SUPABASE_URL=/' >> "$GITHUB_ENV"
-          echo "$STATUS" | grep ANON_KEY | sed 's/^ANON_KEY=/EXPO_PUBLIC_SUPABASE_ANON_KEY=/' >> "$GITHUB_ENV"
+          API_URL=$(echo "$STATUS" | grep '^API_URL=' | cut -d= -f2- | tr -d '"')
+          ANON_KEY=$(echo "$STATUS" | grep '^ANON_KEY=' | cut -d= -f2- | tr -d '"')
+          echo "EXPO_PUBLIC_SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "EXPO_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
 
       - uses: actions/setup-java@v4
         with:
@@ -75,6 +85,30 @@ jobs:
 
       - name: Prebuild the Android project
         run: npx expo prebuild --platform android --no-install
+
+      # Allow cleartext HTTP in the release APK so it can reach the local
+      # Supabase stack at http://127.0.0.1:54321 (routed to the host by
+      # `adb reverse`). Expo enables cleartext only in the debug manifest
+      # overlay (android/app/src/debug/AndroidManifest.xml); the main manifest
+      # the release build uses has no usesCleartextTraffic, so on targetSdk 28+
+      # it defaults to false and Android blocks every request to the HTTP
+      # localhost URL. The app then boots but loads no data, so Discover comes
+      # up empty and every flow fails its first content assertion. This patch
+      # is safe because this APK is a CI-only artifact that only ever talks to
+      # localhost; shipped release builds come from EAS and talk HTTPS. The
+      # grep guard fails loudly if a future Expo template already sets the
+      # attribute (making the sed a no-op) or renames the application tag.
+      - name: Allow cleartext to local Supabase in the release manifest
+        run: |
+          MANIFEST=android/app/src/main/AndroidManifest.xml
+          if grep -q 'android:usesCleartextTraffic' "$MANIFEST"; then
+            echo "Main manifest already sets usesCleartextTraffic; template changed, revisit this step." >&2
+            exit 1
+          fi
+          sed -i 's/<application android:name=".MainApplication"/<application android:usesCleartextTraffic="true" android:name=".MainApplication"/' "$MANIFEST"
+          grep -q 'android:usesCleartextTraffic="true"' "$MANIFEST" \
+            || { echo "Failed to inject usesCleartextTraffic into $MANIFEST" >&2; exit 1; }
+          echo "Cleartext enabled for the CI release build."
 
       # Release, not debug, on purpose. A debug APK loads its JS from a Metro
       # dev server at launch, and CI runs none (no `expo start`, no
